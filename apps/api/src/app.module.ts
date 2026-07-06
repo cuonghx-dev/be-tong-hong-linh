@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { LoggerModule } from 'nestjs-pino'
 import { DatabaseModule } from './database/database.module'
+import { CashModule } from './modules/cash/cash.module'
 
 @Module({
   imports: [
@@ -13,8 +14,9 @@ import { DatabaseModule } from './database/database.module'
       },
     }),
     DatabaseModule,
+    CashModule,
     // TODO: import feature module: AuthModule, CatalogModule, SalesModule, PurchaseModule,
-    // CashModule, BankModule, InventoryModule, ReportModule.
+    // BankModule, InventoryModule, ReportModule.
   ],
 })
 export class AppModule {}

@@ -197,7 +197,7 @@ Một hàng ngang. Có thể tràn 2 cụm (cụm action trái, cụm tiện íc
 **Cụm trái:**
 - Icon export/collapse (nút vuông).
 - Dropdown **"Thực hiện hàng loạt"** — disabled khi chưa tick dòng, bật khi có dòng chọn.
-- Dropdown **"Lọc"**.
+- Dropdown **"Lọc"** — mở **filter popover** (xem [§3.7](#37-filter-popover--panel-lọc)).
 - Dropdown trạng thái/loại (vd "Tất cả").
 - Label kỳ thời gian (vd "Đầu năm tới hiện tại").
 
@@ -221,13 +221,14 @@ Một hàng ngang. Có thể tràn 2 cụm (cụm action trái, cụm tiện íc
 | 4 | Diễn giải | text (wrap 2 dòng) | trái | cột co giãn rộng nhất |
 | 5 | Số tiền | number | **phải** | định dạng nghìn `.` |
 | 6 | Đối tượng | text (truncate) | trái | |
-| 7 | Chức năng | action | trái/giữa | link "Xem" + mũi tên dropdown |
+| 7 | Chức năng | action | trái/giữa | **Row action menu** "Xem ▾" — xem [§3.8](#38-row-action-menu-cột-chức-năng) |
 
 **Quy tắc chung:**
 - Cột số (Số tiền) canh **phải**, format phân tách nghìn.
 - Cột text dài (Diễn giải) cho **wrap**; cột hẹp (Đối tượng) **truncate** (…).
 - Cột link (Số chứng từ) mở chi tiết chứng từ.
-- Cột "Chức năng" = link hành động chính ("Xem") + dropdown `▾` cho hành động khác.
+- Cột "Chức năng" = **row action menu** (link "Xem" + dropdown `▾`) — [§3.8](#38-row-action-menu-cột-chức-năng); **ghim phải** khi cuộn ngang.
+- **Sticky cột**: table đặt `min-width` → cuộn ngang; cột "Chức năng" `sticky right-0` (nền che + bóng/viền trái, z trên cell thường). Có thể ghim thêm cột trái (checkbox/số chứng từ) tương tự với `sticky left-0`.
 - Row hover highlight; tick checkbox → bật "Thực hiện hàng loạt".
 
 ### Total row
@@ -294,9 +295,165 @@ function DataListView({ columns, rows, totals, page, pageCount, total }) {
 1. **Sticky**: toolbar + header cột + total row + footer cố định; chỉ body cuộn.
 2. **Chọn dòng**: tick checkbox (hoặc "chọn tất cả") → bật "Thực hiện hàng loạt".
 3. **Cột số** canh phải + format nghìn; **total row** cộng cột số.
-4. **Cuộn ngang** khi tổng bề rộng cột vượt viewport.
+4. **Cuộn ngang** khi tổng bề rộng cột vượt viewport (table đặt `min-width` để tràn). Cột **"Chức năng" ghim phải** (`sticky right-0`) — luôn hiện khi cuộn ngang; nền che (`bg`), viền/bóng trái để tách; z cao hơn cell thường (header góc phải z cao nhất). Nền sticky cell khớp hover row (`group-hover`).
 5. **Phân trang** + **page size** ở footer → reload data.
 6. Lồng bên trong tab content của [§2 Content Layout](#2-content-layout--tổ-chức-vùng-content).
+
+## 3.7. Filter popover (panel "Lọc")
+
+> Chuẩn cho **mọi bảng danh sách**. Nút **"Lọc ▾"** ở [Toolbar §3.2](#32-toolbar) mở **popover** — panel nổi neo dưới nút, chứa các tiêu chí lọc. Chỉ mô tả bố cục.
+
+### Sơ đồ
+
+```
+[ Lọc ▾ ]
+  └────────────────────────────────────────┐
+  │  <Nhãn tiêu chí 1>                       │
+  │  [ dropdown ....................... ▾ ]  │
+  │                                          │
+  │  <Nhãn tiêu chí 2>                       │
+  │  [ dropdown ....................... ▾ ]  │
+  │                                          │
+  │  Thời gian        Từ ngày     Đến ngày   │
+  │  [ preset ▾ ]     [ date  ]   [ date  ]  │
+  │                                          │
+  │  [ Đặt lại ]                    [ Lọc ]  │
+  └──────────────────────────────────────────┘
+```
+
+### Bố cục
+
+- **Neo**: dưới-trái nút "Lọc", nổi trên nội dung (z cao), có bóng đổ, bo góc.
+- **Mỗi tiêu chí** = nhãn đậm ở trên + control full-width ở dưới (dropdown / input), xếp dọc, cách đều.
+- **Nhóm Thời gian** (1 hàng): **preset** dropdown (vd `Đầu năm đến hiện tại`, `Tháng này`, `Quý này`, `Tùy chọn`) + **Từ ngày** + **Đến ngày**. Chọn preset → tự điền 2 ngày; `Tùy chọn` → nhập tay.
+- **Đáy** (1 hàng): **Đặt lại** (trái, xóa hết tiêu chí về mặc định) + **Lọc** (phải, primary, áp dụng + đóng popover).
+
+### Hành vi
+
+1. **Draft state**: sửa tiêu chí trong popover **chưa** áp dụng ngay; bấm **Lọc** mới apply.
+2. **Đóng popover**: bấm **Lọc**, click ra ngoài, hoặc `Esc`.
+3. **Áp dụng** → đẩy tiêu chí lên **URL query param** (share link, back/forward hoạt động) + về trang 1.
+4. **Đặt lại**: xóa toàn bộ tiêu chí (xóa param tương ứng).
+5. Số tiêu chí đang áp dụng có thể hiện badge trên nút "Lọc".
+
+### Skeleton (React gợi ý)
+
+```jsx
+function FilterPopover({ value, onApply, onReset }) {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState(value)   // draft — chưa apply
+  return (
+    <Popover open={open} onOpenChange={setOpen} trigger={<Button>Lọc ▾</Button>}>
+      <div className="flex flex-col gap-3">
+        <Field label="<Tiêu chí 1>"><Select .../></Field>
+        <Field label="<Tiêu chí 2>"><Select .../></Field>
+        <div className="flex gap-2">
+          <Field label="Thời gian"><PresetSelect .../></Field>
+          <Field label="Từ ngày"><DateInput .../></Field>
+          <Field label="Đến ngày"><DateInput .../></Field>
+        </div>
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={() => { setDraft(EMPTY); onReset() }}>Đặt lại</Button>
+          <Button onClick={() => { onApply(draft); setOpen(false) }}>Lọc</Button>
+        </div>
+      </div>
+    </Popover>
+  )
+}
+```
+
+## 3.8. Row action menu (cột "Chức năng")
+
+> Chuẩn cho **mọi bảng danh sách**. Cột cuối "Chức năng" = **link hành động chính** + **dropdown ▾** mở menu hành động phụ. Chỉ mô tả bố cục.
+
+### Sơ đồ
+
+```
+│ … │  Chức năng    │
+│ … │  Xem  ▾       │   ← ▾ mở menu:
+│ … │  Xem  ▾ ┌──────────────┐
+│ … │  Xem  ▾ │  Sửa         │
+│ … │  Xem  ▾ │  Nhân bản    │
+│ … │  Xem  ▾ │  ──────────  │
+│ … │  Xem  ▾ │  Xóa   (đỏ)  │
+                └──────────────┘
+```
+
+### Bố cục
+
+- **Link chính** ("Xem") — hành động phổ biến nhất (mở chi tiết/sửa). Style link primary.
+- **Nút ▾** ngay cạnh — mở **menu dropdown** các hành động phụ (Sửa · Nhân bản · In · Xóa…).
+- **Menu item**: 1 hàng/hành động, canh trái, có thể kèm icon; item **nguy hiểm** (Xóa) tô **đỏ**, tách bằng divider.
+- Cột thường **ghim phải** (sticky right) khi bảng cuộn ngang.
+
+### Hành vi
+
+1. **Click "Xem"** → hành động chính ngay (không mở menu).
+2. **Click ▾** → mở/đóng menu; chọn item → chạy hành động + đóng menu.
+3. **Đóng menu**: click ra ngoài, `Esc`, hoặc khi cuộn/resize.
+4. **Chống clip**: menu render **`position: fixed`** (neo theo tọa độ nút) → không bị cắt bởi `overflow` của vùng bảng; đóng khi cuộn vì fixed không trôi theo.
+5. Hành động nguy hiểm (Xóa) nên **confirm** trước khi chạy.
+
+### Skeleton (React gợi ý)
+
+```jsx
+function RowActionMenu({ primaryLabel = 'Xem', onPrimary, items }) {
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ top: 0, right: 0 })
+  const btnRef = useRef(null)
+  const toggle = () => {
+    const r = btnRef.current.getBoundingClientRect()
+    setPos({ top: r.bottom + 4, right: window.innerWidth - r.right })  // neo phải
+    setOpen((v) => !v)
+  }
+  // đóng khi click-ngoài / Esc / scroll / resize
+  return (
+    <div className="flex items-center gap-1">
+      <button className="text-primary" onClick={onPrimary}>{primaryLabel}</button>
+      <button ref={btnRef} onClick={toggle}><ChevronDown /></button>
+      {open && (
+        <div style={{ position: 'fixed', top: pos.top, right: pos.right }} className="z-50 …">
+          {items.map((it) => (
+            <button key={it.label} onClick={() => { setOpen(false); it.onClick() }}
+              className={it.danger ? 'text-red-600' : ''}>
+              {it.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+## 3.9. Trạng thái & edge-case của bảng
+
+> Chuẩn cho **mọi bảng danh sách**. Bố cục các trạng thái dữ liệu (loading/empty/error) và xử lý nội dung tràn. Chỉ mô tả bố cục.
+
+### Trạng thái dữ liệu (thay phần body)
+
+Giữ nguyên **toolbar + header cột + footer**; chỉ đổi vùng **body**. Mỗi trạng thái = **1 hàng phủ toàn bộ cột** (`colSpan` = tổng số cột), nội dung **canh giữa**, padding dọc rộng.
+
+| Trạng thái | Body | Ghi chú |
+|---|---|---|
+| **Loading** | 1 hàng "Đang tải…" (hoặc skeleton rows) | Giữ khung; không nhảy layout |
+| **Empty** | 1 hàng thông điệp rỗng (vd "Chưa có phiếu…") | Có thể kèm CTA tạo mới |
+| **Error** | 1 hàng thông điệp lỗi + link **"Thử lại"** | Link gọi refetch |
+| **Refetch** (đã có data) | Giữ data cũ, chỉ hiện spinner ở nút refresh | Dùng `keepPreviousData` — không xóa bảng khi đổi trang/lọc |
+
+### Nội dung tràn (overflow) trong ô
+
+- **Text dài** (Diễn giải): **wrap** tối đa 2 dòng, hoặc `truncate` + `title` (tooltip) tùy cột.
+- **Cột hẹp** (Đối tượng, Lý do): `truncate` (`max-w` + `…`) + `title` full text.
+- **Số** (Số tiền): `nowrap`, canh phải, không truncate.
+- **Long row**: chiều cao hàng tự giãn theo nội dung wrap; **sticky cột** ([§3.6](#36-hành-vi)) vẫn hoạt động đúng khi hàng cao.
+
+### Hành vi
+
+1. **Loading/empty/error**: **must** giữ toolbar + header + footer cố định, chỉ thay body (tránh layout shift).
+2. Hàng trạng thái **must** `colSpan` phủ hết cột, canh giữa.
+3. Error **must** có hành động phục hồi (link "Thử lại").
+4. Đổi trang/lọc **should** giữ data cũ (`keepPreviousData`) để không nháy.
 
 ---
 

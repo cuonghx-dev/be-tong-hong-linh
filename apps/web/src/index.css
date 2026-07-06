@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    @apply font-sans;
+  }
+  body {
+    /* Cỡ chữ nền toàn cục = 13px (spec Thu chi tiền) */
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}

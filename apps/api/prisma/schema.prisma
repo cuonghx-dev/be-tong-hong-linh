@@ -11,12 +11,79 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// TODO: thêm model theo feature: catalog, sales, purchase, cash, bank, inventory, report, auth.
-// Model placeholder — Prisma cần >=1 model để generate client. Xóa khi thêm model thật.
-model AppMeta {
-  key        String   @id
-  value      String
-  updatedAt  DateTime @updatedAt @map("updated_at")
+// TODO: thêm model theo feature còn lại: catalog, sales, purchase, bank, inventory, report, auth.
 
-  @@map("app_meta")
+// ── Tiền mặt (01-tien-mat) ──────────────────────────────────────────────────
+
+// Loại chứng từ quỹ: Phiếu thu (PT) / Phiếu chi (PC).
+enum CashVoucherType {
+  RECEIPT
+  PAYMENT
+}
+
+// Loại nghiệp vụ (§5) — quyết định định khoản mặc định + nguồn sinh phiếu.
+enum CashVoucherCategory {
+  SALES_CASH
+  RECEIPT
+  PAYMENT
+  PURCHASE_SERVICE_CASH
+  PURCHASE_GOODS_CASH
+  DEPOSIT_TO_BANK
+}
+
+// Đối tượng liên kết: Khách hàng / Nhà cung cấp / Nhân viên.
+enum PartnerType {
+  CUSTOMER
+  SUPPLIER
+  EMPLOYEE
+}
+
+// Phiếu thu/chi tiền mặt.
+model CashVoucher {
+  id              String              @id @default(uuid())
+  type            CashVoucherType
+  category        CashVoucherCategory
+  voucherNo       String              @unique @map("voucher_no")
+  postingDate     DateTime            @map("posting_date") @db.Date
+  voucherDate     DateTime            @map("voucher_date") @db.Date
+  partnerType     PartnerType?        @map("partner_type")
+  partnerId       String?             @map("partner_id")
+  partnerName     String?             @map("partner_name")
+  payerReceiver   String?             @map("payer_receiver")
+  address         String?
+  employeeId      String?             @map("employee_id")
+  reason          String?
+  attachmentCount Int                 @default(0) @map("attachment_count")
+  totalAmount     Decimal             @default(0) @map("total_amount") @db.Decimal(18, 2)
+  branchId        String?             @map("branch_id")
+  lines           CashVoucherLine[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([type, postingDate])
+  @@index([partnerId])
+  @@map("cash_vouchers")
+}
+
+// Dòng hạch toán (bút toán kép) của phiếu thu/chi.
+model CashVoucherLine {
+  id            String      @id @default(uuid())
+  voucherId     String      @map("voucher_id")
+  voucher       CashVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  lineNo        Int         @map("line_no")
+  description   String?
+  debitAccount  String      @map("debit_account")
+  creditAccount String      @map("credit_account")
+  amount        Decimal     @db.Decimal(18, 2)
+  operation     String?
+  partnerId     String?     @map("partner_id")
+  partnerName   String?     @map("partner_name")
+  costItemId    String?     @map("cost_item_id")
+  bankAccountNo String?     @map("bank_account_no")
+  bankName      String?     @map("bank_name")
+
+  @@index([voucherId])
+  @@map("cash_voucher_lines")
 }

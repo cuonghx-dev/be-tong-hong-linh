@@ -2,7 +2,9 @@
 
 export const CHART_OF_ACCOUNTS = {
   CASH: '111', // Tiền mặt
+  CASH_ON_HAND: '1111', // Tiền mặt Việt Nam (quỹ tiền mặt mặc định)
   BANK: '112', // Tiền gửi ngân hàng
+  BANK_DEPOSIT: '1121', // Tiền gửi ngân hàng Việt Nam
   RECEIVABLE: '131', // Phải thu khách hàng
   PAYABLE: '331', // Phải trả người bán
   INVENTORY: '156', // Hàng hóa

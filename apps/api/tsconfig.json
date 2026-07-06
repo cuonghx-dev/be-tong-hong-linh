@@ -10,7 +10,8 @@
     "rootDir": "src",
     "outDir": "dist",
     "declaration": false,
-    "noEmit": false
+    "noEmit": false,
+    "paths": {}
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", "test"]
