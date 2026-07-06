@@ -9,6 +9,9 @@ export const CHART_OF_ACCOUNTS = {
   PAYABLE: '331', // Phải trả người bán
   INVENTORY: '156', // Hàng hóa
   REVENUE: '511', // Doanh thu bán hàng
+  REVENUE_GOODS: '5111', // Doanh thu bán hàng hóa
+  REVENUE_SERVICE: '5112', // Doanh thu cung cấp dịch vụ
   VAT_OUTPUT: '3331', // Thuế GTGT đầu ra
+  VAT_OUTPUT_DETAIL: '33311', // Thuế GTGT đầu ra hàng hóa, dịch vụ trong nước
   VAT_INPUT: '133', // Thuế GTGT đầu vào
 } as const

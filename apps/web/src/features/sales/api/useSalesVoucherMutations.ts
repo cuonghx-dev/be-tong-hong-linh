@@ -1,0 +1,41 @@
+import type {
+  CreateSalesVoucherInput,
+  SalesVoucherDto,
+  UpdateSalesVoucherInput,
+} from '@app/shared'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { api } from '@/shared/lib/api'
+import { salesKeys } from './keys'
+
+export function useCreateSalesVoucher() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: CreateSalesVoucherInput) =>
+      api.post<SalesVoucherDto>('/sales/vouchers', dto).then((r) => r.data),
+    onSuccess: () => {
+      // Chứng từ ảnh hưởng doanh thu + công nợ + hóa đơn → invalidate toàn phân hệ.
+      qc.invalidateQueries({ queryKey: salesKeys.all })
+    },
+  })
+}
+
+export function useUpdateSalesVoucher() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: UpdateSalesVoucherInput }) =>
+      api.patch<SalesVoucherDto>(`/sales/vouchers/${id}`, dto).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: salesKeys.all })
+    },
+  })
+}
+
+export function useDeleteSalesVoucher() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/sales/vouchers/${id}`).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: salesKeys.all })
+    },
+  })
+}

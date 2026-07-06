@@ -87,3 +87,169 @@ model CashVoucherLine {
   @@index([voucherId])
   @@map("cash_voucher_lines")
 }
+
+// ── Bán hàng (04-ban-hang) ───────────────────────────────────────────────────
+
+// Hình thức thanh toán khi thu tiền ngay (dùng chung nhiều phân hệ).
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+}
+
+// Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.
+enum SalesVoucherType {
+  DOMESTIC_GOODS
+  DOMESTIC_SERVICE
+}
+
+// Tùy chọn thanh toán (§3) — quyết định định khoản + sinh phiếu thu.
+enum SalesPaymentMode {
+  UNPAID
+  PAID_NOW
+}
+
+// Trạng thái phát hành hóa đơn điện tử (§5).
+enum InvoiceIssueStatus {
+  UNISSUED
+  CODE_ISSUED
+}
+
+// Loại đối tượng khách hàng (§8): Tổ chức / Cá nhân.
+enum CustomerType {
+  ORG
+  INDIVIDUAL
+}
+
+// Khách hàng (§8) — đối tượng dùng chung KH/NCC qua cờ isSupplier.
+model Customer {
+  id                 String       @id @default(uuid())
+  code               String       @unique
+  name               String
+  type               CustomerType @default(ORG)
+  isSupplier         Boolean      @default(false) @map("is_supplier")
+  isInternal         Boolean      @default(false) @map("is_internal")
+  taxCode            String?      @map("tax_code")
+  budgetRelationCode String?      @map("budget_relation_code")
+  phone              String?
+  website            String?
+  address            String?
+  groupId            String?      @map("group_id")
+  salesEmployeeId    String?      @map("sales_employee_id")
+  contactName        String?      @map("contact_name")
+  contactEmail       String?      @map("contact_email")
+  contactPhone       String?      @map("contact_phone")
+
+  salesVouchers SalesVoucher[]
+  invoices      Invoice[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@map("customers")
+}
+
+// Chứng từ bán hàng (§3) — ghi nhận doanh thu + công nợ phải thu.
+model SalesVoucher {
+  id                 String             @id @default(uuid())
+  voucherNo          String             @unique @map("voucher_no")
+  voucherType        SalesVoucherType   @map("voucher_type")
+  paymentMode        SalesPaymentMode   @default(UNPAID) @map("payment_mode")
+  paymentMethod      PaymentMethod?     @map("payment_method")
+  isInventoryIssue   Boolean            @default(false) @map("is_inventory_issue")
+  withInvoice        Boolean            @default(false) @map("with_invoice")
+  isPosInvoice       Boolean            @default(false) @map("is_pos_invoice")
+  postingDate        DateTime           @map("posting_date") @db.Date
+  voucherDate        DateTime           @map("voucher_date") @db.Date
+  customerId         String?            @map("customer_id")
+  customer           Customer?          @relation(fields: [customerId], references: [id])
+  customerName       String?            @map("customer_name")
+  taxCode            String?            @map("tax_code")
+  contactPerson      String?            @map("contact_person")
+  address            String?
+  salesEmployeeId    String?            @map("sales_employee_id")
+  description        String?
+  attachmentCount    Int                @default(0) @map("attachment_count")
+  paymentTermId      String?            @map("payment_term_id")
+  creditDays         Int?               @map("credit_days")
+  dueDate            DateTime?          @map("due_date") @db.Date
+  totalGoods         Decimal            @default(0) @map("total_goods") @db.Decimal(18, 2)
+  totalVat           Decimal            @default(0) @map("total_vat") @db.Decimal(18, 2)
+  totalAmount        Decimal            @default(0) @map("total_amount") @db.Decimal(18, 2)
+  einvoiceLookupCode String?            @map("einvoice_lookup_code")
+  einvoiceLookupUrl  String?            @map("einvoice_lookup_url")
+  receiptId          String?            @map("receipt_id")
+  branchId           String?            @map("branch_id")
+  lines              SalesVoucherLine[]
+  invoice            Invoice?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([voucherType, postingDate])
+  @@index([customerId])
+  @@index([paymentMode])
+  @@map("sales_vouchers")
+}
+
+// Dòng hàng tiền của chứng từ bán hàng.
+model SalesVoucherLine {
+  id             String       @id @default(uuid())
+  voucherId      String       @map("voucher_id")
+  voucher        SalesVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  lineNo         Int          @map("line_no")
+  itemId         String?      @map("item_id")
+  itemName       String?      @map("item_name")
+  tradeDiscount  Decimal      @default(0) @map("trade_discount") @db.Decimal(18, 2)
+  debtAccount    String       @map("debt_account")
+  revenueAccount String       @map("revenue_account")
+  unit           String?
+  quantity       Decimal      @default(0) @db.Decimal(18, 4)
+  unitPrice      Decimal      @default(0) @map("unit_price") @db.Decimal(18, 2)
+  amount         Decimal      @default(0) @db.Decimal(18, 2)
+  vatRate        Decimal      @default(0) @map("vat_rate") @db.Decimal(5, 2)
+  vatAmount      Decimal      @default(0) @map("vat_amount") @db.Decimal(18, 2)
+  vatAccount     String       @map("vat_account")
+  lotNo          String?      @map("lot_no")
+
+  @@index([voucherId])
+  @@map("sales_voucher_lines")
+}
+
+// Hóa đơn điện tử (§5) — sinh từ chứng từ bán hàng khi "Lập kèm hóa đơn".
+model Invoice {
+  id               String             @id @default(uuid())
+  invoiceNo        String?            @map("invoice_no")
+  invoiceType      String?            @map("invoice_type")
+  status           String             @default("Hóa đơn mới")
+  issueStatus      InvoiceIssueStatus @default(UNISSUED) @map("issue_status")
+  templateNo       String?            @map("template_no")
+  symbol           String?
+  taxAuthorityCode String?            @map("tax_authority_code")
+  taxSubmitStatus  String?            @map("tax_submit_status")
+  sendStatus       String?            @map("send_status")
+  customerReceived Boolean            @default(false) @map("customer_received")
+  lookupCode       String?            @map("lookup_code")
+  lookupUrl        String?            @map("lookup_url")
+  paymentForm      String?            @map("payment_form")
+  bankAccount      String?            @map("bank_account")
+  invoiceDate      DateTime           @map("invoice_date") @db.Date
+  posted           Boolean            @default(false)
+  salesVoucherId   String?            @unique @map("sales_voucher_id")
+  salesVoucher     SalesVoucher?      @relation(fields: [salesVoucherId], references: [id], onDelete: SetNull)
+  customerId       String?            @map("customer_id")
+  customer         Customer?          @relation(fields: [customerId], references: [id])
+  customerName     String?            @map("customer_name")
+  totalAmount      Decimal            @default(0) @map("total_amount") @db.Decimal(18, 2)
+  branchId         String?            @map("branch_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([issueStatus, invoiceDate])
+  @@index([customerId])
+  @@map("invoices")
+}

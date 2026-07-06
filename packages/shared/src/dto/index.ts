@@ -1,6 +1,7 @@
 // Type request/response dùng chung.
 
 export * from './cash'
+export * from './sales'
 
 export interface Pagination {
   page: number

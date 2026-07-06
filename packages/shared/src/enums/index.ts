@@ -43,3 +43,29 @@ export enum PartnerType {
   Supplier = 'SUPPLIER',
   Employee = 'EMPLOYEE',
 }
+
+// Bán hàng (04-ban-hang) ------------------------------------------------------
+
+// Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.
+export enum SalesVoucherType {
+  DomesticGoods = 'DOMESTIC_GOODS', // Bán hàng hóa trong nước (TK 5111)
+  DomesticService = 'DOMESTIC_SERVICE', // Bán dịch vụ trong nước (TK 5112)
+}
+
+// Tùy chọn thanh toán (§3) — quyết định định khoản TK Nợ + sinh phiếu thu.
+export enum SalesPaymentMode {
+  Unpaid = 'UNPAID', // Chưa thu tiền → công nợ 131
+  PaidNow = 'PAID_NOW', // Thu tiền ngay → Nợ 1111/1121, sinh phiếu thu
+}
+
+// Trạng thái phát hành hóa đơn điện tử (§5).
+export enum InvoiceIssueStatus {
+  Unissued = 'UNISSUED', // Chưa phát hành
+  CodeIssued = 'CODE_ISSUED', // Đã cấp mã (có mã CQT)
+}
+
+// Loại đối tượng khách hàng (§8): Tổ chức / Cá nhân.
+export enum CustomerType {
+  Organization = 'ORG',
+  Individual = 'INDIVIDUAL',
+}
