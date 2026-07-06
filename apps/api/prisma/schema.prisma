@@ -88,13 +88,215 @@ model CashVoucherLine {
   @@map("cash_voucher_lines")
 }
 
-// ── Bán hàng (04-ban-hang) ───────────────────────────────────────────────────
+// ── Tiền gửi (02-tien-gui) ──────────────────────────────────────────────────
 
-// Hình thức thanh toán khi thu tiền ngay (dùng chung nhiều phân hệ).
+// Loại chứng từ tiền gửi: Thu tiền gửi (NTTK) / Ủy nhiệm chi (UNC).
+enum BankVoucherType {
+  RECEIPT
+  PAYMENT
+}
+
+// Loại nghiệp vụ (§5) — quyết định định khoản mặc định + nguồn sinh phiếu.
+enum BankVoucherCategory {
+  RECEIPT
+  PAYMENT
+  SALES_BANK
+  PURCHASE_SERVICE_BANK
+  PURCHASE_GOODS_BANK
+}
+
+// Phương thức thanh toán khi chi (§4) — chỉ dùng cho UNC.
+enum BankPaymentMethod {
+  UNC
+  TRANSFER
+  CHECK
+}
+
+// Chứng từ thu (NTTK) / chi (UNC) tiền gửi.
+model BankVoucher {
+  id                String              @id @default(uuid())
+  type              BankVoucherType
+  category          BankVoucherCategory
+  voucherNo         String              @unique @map("voucher_no")
+  paymentMethod     BankPaymentMethod?  @map("payment_method")
+  isBatchTransfer   Boolean             @default(false) @map("is_batch_transfer")
+  internalRef       String?             @map("internal_ref")
+  postingDate       DateTime            @map("posting_date") @db.Date
+  voucherDate       DateTime            @map("voucher_date") @db.Date
+  bankAccountNo     String?             @map("bank_account_no")
+  bankName          String?             @map("bank_name")
+  receiverAccountNo String?             @map("receiver_account_no")
+  partnerType       PartnerType?        @map("partner_type")
+  partnerId         String?             @map("partner_id")
+  partnerName       String?             @map("partner_name")
+  address           String?
+  employeeId        String?             @map("employee_id")
+  reason            String?
+  reference         String?
+  attachmentCount   Int                 @default(0) @map("attachment_count")
+  totalAmount       Decimal             @default(0) @map("total_amount") @db.Decimal(18, 2)
+  branchId          String?             @map("branch_id")
+  lines             BankVoucherLine[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([type, postingDate])
+  @@index([partnerId])
+  @@map("bank_vouchers")
+}
+
+// Dòng hạch toán (bút toán kép) của chứng từ thu/chi tiền gửi.
+model BankVoucherLine {
+  id            String      @id @default(uuid())
+  voucherId     String      @map("voucher_id")
+  voucher       BankVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  lineNo        Int         @map("line_no")
+  description   String?
+  debitAccount  String      @map("debit_account")
+  creditAccount String      @map("credit_account")
+  amount        Decimal     @db.Decimal(18, 2)
+  partnerId     String?     @map("partner_id")
+  partnerName   String?     @map("partner_name")
+
+  @@index([voucherId])
+  @@map("bank_voucher_lines")
+}
+
+// ── Mua hàng (03-mua-hang) ───────────────────────────────────────────────────
+
+// Loại chứng từ mua hàng (§5): nhập kho / không qua kho / dịch vụ.
+enum PurchaseVoucherType {
+  STOCK
+  NON_STOCK
+  SERVICE
+}
+
+// Hình thức thanh toán khi lập chứng từ.
+enum PurchasePaymentMode {
+  UNPAID
+  IMMEDIATE
+}
+
+// Trạng thái nhận hóa đơn.
+enum PurchaseReceiveStatus {
+  NOT_RECEIVED
+  RECEIVED
+}
+
+// Trạng thái thanh toán công nợ.
+enum PurchasePaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+// Loại nhà cung cấp.
+enum SupplierType {
+  ORG
+  INDIVIDUAL
+}
+
+// Hình thức thanh toán (khi thanh toán ngay).
 enum PaymentMethod {
   CASH
   BANK_TRANSFER
 }
+
+// Nhà cung cấp (§6).
+model Supplier {
+  id                 String       @id @default(uuid())
+  code               String       @unique
+  name               String
+  type               SupplierType @default(ORG)
+  isCustomer         Boolean      @default(false) @map("is_customer")
+  taxCode            String?      @map("tax_code")
+  budgetRelationCode String?      @map("budget_relation_code")
+  phone              String?
+  website            String?
+  address            String?
+  groupId            String?      @map("group_id")
+  employeeId         String?      @map("employee_id")
+  isInternal         Boolean      @default(false) @map("is_internal")
+  debtAmount         Decimal      @default(0) @map("debt_amount") @db.Decimal(18, 2)
+  invoiceRisk        String?      @map("invoice_risk")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@map("suppliers")
+}
+
+// Chứng từ mua hàng (§4).
+model PurchaseVoucher {
+  id                 String                @id @default(uuid())
+  type               PurchaseVoucherType
+  paymentMode        PurchasePaymentMode   @default(UNPAID) @map("payment_mode")
+  paymentMethod      PaymentMethod?        @map("payment_method")
+  receiveWithInvoice Boolean               @default(false) @map("receive_with_invoice")
+  voucherNo          String                @unique @map("voucher_no")
+  invoiceNo          String?               @map("invoice_no")
+  postingDate        DateTime              @map("posting_date") @db.Date
+  voucherDate        DateTime              @map("voucher_date") @db.Date
+  supplierId         String?               @map("supplier_id")
+  supplierName       String?               @map("supplier_name")
+  deliverer          String?
+  address            String?
+  employeeId         String?               @map("employee_id")
+  description        String?
+  attachmentCount    Int                   @default(0) @map("attachment_count")
+  contractNo         String?               @map("contract_no")
+  paymentTermId      String?               @map("payment_term_id")
+  creditDays         Int?                  @map("credit_days")
+  dueDate            DateTime?             @map("due_date") @db.Date
+  totalGoods         Decimal               @default(0) @map("total_goods") @db.Decimal(18, 2)
+  totalVat           Decimal               @default(0) @map("total_vat") @db.Decimal(18, 2)
+  totalPayment       Decimal               @default(0) @map("total_payment") @db.Decimal(18, 2)
+  purchaseCost       Decimal               @default(0) @map("purchase_cost") @db.Decimal(18, 2)
+  stockValue         Decimal               @default(0) @map("stock_value") @db.Decimal(18, 2)
+  einvoiceLookupCode String?               @map("einvoice_lookup_code")
+  einvoiceLookupUrl  String?               @map("einvoice_lookup_url")
+  receiveStatus      PurchaseReceiveStatus @default(NOT_RECEIVED) @map("receive_status")
+  paymentStatus      PurchasePaymentStatus @default(UNPAID) @map("payment_status")
+  branchId           String?               @map("branch_id")
+  lines              PurchaseVoucherLine[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([type, postingDate])
+  @@index([supplierId])
+  @@map("purchase_vouchers")
+}
+
+// Dòng hàng tiền của chứng từ mua hàng.
+model PurchaseVoucherLine {
+  id             String          @id @default(uuid())
+  voucherId      String          @map("voucher_id")
+  voucher        PurchaseVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  lineNo         Int             @map("line_no")
+  itemId         String?         @map("item_id")
+  itemName       String?         @map("item_name")
+  warehouseId    String?         @map("warehouse_id")
+  stockAccount   String?         @map("stock_account")
+  payableAccount String          @map("payable_account")
+  unit           String?
+  quantity       Decimal         @default(0) @db.Decimal(18, 4)
+  unitPrice      Decimal         @default(0) @map("unit_price") @db.Decimal(18, 2)
+  amount         Decimal         @default(0) @db.Decimal(18, 2)
+  vatRate        Decimal         @default(0) @map("vat_rate") @db.Decimal(5, 2)
+  vatAmount      Decimal         @default(0) @map("vat_amount") @db.Decimal(18, 2)
+  vatAccount     String          @map("vat_account")
+
+  @@index([voucherId])
+  @@map("purchase_voucher_lines")
+}
+
+// ── Bán hàng (04-ban-hang) ───────────────────────────────────────────────────
 
 // Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.
 enum SalesVoucherType {
@@ -253,130 +455,3 @@ model Invoice {
   @@index([customerId])
   @@map("invoices")
 }
-
-// ── Mua hàng (03-mua-hang) ───────────────────────────────────────────────────
-
-// Loại chứng từ mua hàng (§5): nhập kho / không qua kho / dịch vụ.
-enum PurchaseVoucherType {
-  STOCK
-  NON_STOCK
-  SERVICE
-}
-
-// Hình thức thanh toán khi lập chứng từ.
-enum PurchasePaymentMode {
-  UNPAID
-  IMMEDIATE
-}
-
-// Trạng thái nhận hóa đơn.
-enum PurchaseReceiveStatus {
-  NOT_RECEIVED
-  RECEIVED
-}
-
-// Trạng thái thanh toán công nợ.
-enum PurchasePaymentStatus {
-  UNPAID
-  PARTIAL
-  PAID
-}
-
-// Loại nhà cung cấp.
-enum SupplierType {
-  ORG
-  INDIVIDUAL
-}
-
-// Nhà cung cấp (§6).
-model Supplier {
-  id                 String       @id @default(uuid())
-  code               String       @unique
-  name               String
-  type               SupplierType @default(ORG)
-  isCustomer         Boolean      @default(false) @map("is_customer")
-  taxCode            String?      @map("tax_code")
-  budgetRelationCode String?      @map("budget_relation_code")
-  phone              String?
-  website            String?
-  address            String?
-  groupId            String?      @map("group_id")
-  employeeId         String?      @map("employee_id")
-  isInternal         Boolean      @default(false) @map("is_internal")
-  debtAmount         Decimal      @default(0) @map("debt_amount") @db.Decimal(18, 2)
-  invoiceRisk        String?      @map("invoice_risk")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  createdBy String?  @map("created_by")
-
-  @@index([name])
-  @@map("suppliers")
-}
-
-// Chứng từ mua hàng (§4).
-model PurchaseVoucher {
-  id                 String                @id @default(uuid())
-  type               PurchaseVoucherType
-  paymentMode        PurchasePaymentMode   @default(UNPAID) @map("payment_mode")
-  paymentMethod      PaymentMethod?        @map("payment_method")
-  receiveWithInvoice Boolean               @default(false) @map("receive_with_invoice")
-  voucherNo          String                @unique @map("voucher_no")
-  invoiceNo          String?               @map("invoice_no")
-  postingDate        DateTime              @map("posting_date") @db.Date
-  voucherDate        DateTime              @map("voucher_date") @db.Date
-  supplierId         String?               @map("supplier_id")
-  supplierName       String?               @map("supplier_name")
-  deliverer          String?
-  address            String?
-  employeeId         String?               @map("employee_id")
-  description        String?
-  attachmentCount    Int                   @default(0) @map("attachment_count")
-  contractNo         String?               @map("contract_no")
-  paymentTermId      String?               @map("payment_term_id")
-  creditDays         Int?                  @map("credit_days")
-  dueDate            DateTime?             @map("due_date") @db.Date
-  totalGoods         Decimal               @default(0) @map("total_goods") @db.Decimal(18, 2)
-  totalVat           Decimal               @default(0) @map("total_vat") @db.Decimal(18, 2)
-  totalPayment       Decimal               @default(0) @map("total_payment") @db.Decimal(18, 2)
-  purchaseCost       Decimal               @default(0) @map("purchase_cost") @db.Decimal(18, 2)
-  stockValue         Decimal               @default(0) @map("stock_value") @db.Decimal(18, 2)
-  einvoiceLookupCode String?               @map("einvoice_lookup_code")
-  einvoiceLookupUrl  String?               @map("einvoice_lookup_url")
-  receiveStatus      PurchaseReceiveStatus @default(NOT_RECEIVED) @map("receive_status")
-  paymentStatus      PurchasePaymentStatus @default(UNPAID) @map("payment_status")
-  branchId           String?               @map("branch_id")
-  lines              PurchaseVoucherLine[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  createdBy String?  @map("created_by")
-
-  @@index([type, postingDate])
-  @@index([supplierId])
-  @@map("purchase_vouchers")
-}
-
-// Dòng hàng tiền của chứng từ mua hàng.
-model PurchaseVoucherLine {
-  id             String          @id @default(uuid())
-  voucherId      String          @map("voucher_id")
-  voucher        PurchaseVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  lineNo         Int             @map("line_no")
-  itemId         String?         @map("item_id")
-  itemName       String?         @map("item_name")
-  warehouseId    String?         @map("warehouse_id")
-  stockAccount   String?         @map("stock_account")
-  payableAccount String          @map("payable_account")
-  unit           String?
-  quantity       Decimal         @default(0) @db.Decimal(18, 4)
-  unitPrice      Decimal         @default(0) @map("unit_price") @db.Decimal(18, 2)
-  amount         Decimal         @default(0) @db.Decimal(18, 2)
-  vatRate        Decimal         @default(0) @map("vat_rate") @db.Decimal(5, 2)
-  vatAmount      Decimal         @default(0) @map("vat_amount") @db.Decimal(18, 2)
-  vatAccount     String          @map("vat_account")
-
-  @@index([voucherId])
-  @@map("purchase_voucher_lines")
-}
-
