@@ -14,4 +14,8 @@ export const CHART_OF_ACCOUNTS = {
   VAT_OUTPUT: '3331', // Thuế GTGT đầu ra
   VAT_OUTPUT_DETAIL: '33311', // Thuế GTGT đầu ra hàng hóa, dịch vụ trong nước
   VAT_INPUT: '133', // Thuế GTGT đầu vào
+  VAT_INPUT_DEDUCTIBLE: '1331', // Thuế GTGT đầu vào được khấu trừ (mua hàng)
+  MATERIAL: '152', // Nguyên liệu, vật liệu
+  GOODS: '156', // Hàng hóa (nhập kho)
+  SERVICE_EXPENSE: '642', // Chi phí quản lý DN (mua dịch vụ mặc định)
 } as const

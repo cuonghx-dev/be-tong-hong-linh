@@ -1,4 +1,6 @@
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
+import { PurchaseTable } from '../components/PurchaseTable'
+import { SupplierTable } from '../components/SupplierTable'
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -10,11 +12,11 @@ function Placeholder({ title }: { title: string }) {
 
 const TABS: ModuleTab[] = [
   { key: 'chart', label: 'Biểu đồ', render: () => <Placeholder title="Biểu đồ" /> },
-  { key: 'purchase', label: 'Mua hàng', render: () => <Placeholder title="Mua hàng" /> },
+  { key: 'purchase', label: 'Mua hàng', render: () => <PurchaseTable /> },
   { key: 'item', label: 'Hàng hóa - dịch vụ', render: () => <Placeholder title="Hàng hóa - dịch vụ" /> },
-  { key: 'supplier', label: 'Nhà cung cấp', render: () => <Placeholder title="Nhà cung cấp" /> },
+  { key: 'supplier', label: 'Nhà cung cấp', render: () => <SupplierTable /> },
 ]
 
 export function PurchasePage() {
-  return <ModuleContent tabs={TABS} />
+  return <ModuleContent tabs={TABS} defaultTab="purchase" />
 }
