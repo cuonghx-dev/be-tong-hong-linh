@@ -1,0 +1,22 @@
+// Prisma schema — model bổ sung theo nghiệp vụ (misa-specs).
+// Nguyên tắc: tiền dùng Decimal @db.Decimal(18,2); audit created_at/updated_at/created_by;
+// soft delete bằng cờ trạng thái, KHÔNG xóa cứng chứng từ; bút toán kép cân Nợ = Có.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// TODO: thêm model theo feature: catalog, sales, purchase, cash, bank, inventory, report, auth.
+// Model placeholder — Prisma cần >=1 model để generate client. Xóa khi thêm model thật.
+model AppMeta {
+  key        String   @id
+  value      String
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("app_meta")
+}
