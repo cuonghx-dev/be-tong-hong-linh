@@ -44,6 +44,30 @@ export enum PartnerType {
   Employee = 'EMPLOYEE',
 }
 
+// Tiền gửi (02-tien-gui) ------------------------------------------------------
+
+// Loại chứng từ tiền gửi: Thu tiền gửi (NTTK) tăng / Ủy nhiệm chi (UNC) giảm.
+export enum BankVoucherType {
+  Receipt = 'RECEIPT', // Thu tiền gửi (NTTK)
+  Payment = 'PAYMENT', // Ủy nhiệm chi (UNC)
+}
+
+// Loại nghiệp vụ (§5) — quyết định định khoản mặc định + nguồn sinh phiếu.
+export enum BankVoucherCategory {
+  Receipt = 'RECEIPT', // Thu tiền gửi nhập tay (thu khác)
+  Payment = 'PAYMENT', // Ủy nhiệm chi nhập tay (chi khác)
+  SalesBank = 'SALES_BANK', // Bán hàng - chuyển khoản (NTTK tự sinh)
+  PurchaseServiceBank = 'PURCHASE_SERVICE_BANK', // Mua dịch vụ - chuyển khoản (UNC tự sinh)
+  PurchaseGoodsBank = 'PURCHASE_GOODS_BANK', // Mua hàng - chuyển khoản (UNC tự sinh)
+}
+
+// Phương thức thanh toán khi chi (§4) — chỉ dùng cho UNC.
+export enum BankPaymentMethod {
+  UNC = 'UNC', // Ủy nhiệm chi
+  Transfer = 'TRANSFER', // Chuyển khoản
+  Check = 'CHECK', // Séc
+}
+
 // Bán hàng (04-ban-hang) ------------------------------------------------------
 
 // Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.
