@@ -1,37 +1,36 @@
 import { CashVoucherCategory, CashVoucherType, type CashVoucherFilter } from '@app/shared'
-import { useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
-import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useCashVouchers } from '../api/useCashVouchers'
 import { useDeleteCashVoucher, useImportCashVouchers } from '../api/useCashVoucherMutations'
 import { CashFilterPopover, type CashFilterValue } from '../components/CashFilterPopover'
-import { CashVoucherForm } from '../components/CashVoucherForm'
 import { CATEGORY_LABEL } from '../types'
 
 const PAGE_SIZE = 20
 
-interface FormState {
-  type: CashVoucherType
-  voucherId?: string
-  readOnly?: boolean
-}
-
 function CashTable() {
   const [params, setParams] = useSearchParams()
-  const [formState, setFormState] = useState<FormState | null>(null)
+  const navigate = useNavigate()
   const del = useDeleteCashVoucher()
   const importXlsx = useImportCashVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const confirm = useConfirm()
+
+  // Điều hướng sang trang chứng từ full-page (§5).
+  const openNew = (type: CashVoucherType) => navigate(`/cash/vouchers/new?type=${type}`)
+  const openView = (id: string, type: CashVoucherType) =>
+    navigate(`/cash/vouchers/${id}?type=${type}`)
+  const openEdit = (id: string, type: CashVoucherType) =>
+    navigate(`/cash/vouchers/${id}/edit?type=${type}`)
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -106,8 +105,6 @@ function CashTable() {
     setParams(next)
   }
 
-  const closeForm = () => setFormState(null)
-
   return (
     <div className="flex h-full flex-col rounded-lg border border-border bg-white">
       {/* Toolbar */}
@@ -135,13 +132,13 @@ function CashTable() {
         </Button>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" onClick={() => setFormState({ type: CashVoucherType.Receipt })}>
+          <Button size="sm" onClick={() => openNew(CashVoucherType.Receipt)}>
             Thu tiền
           </Button>
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => setFormState({ type: CashVoucherType.Payment })}
+            onClick={() => openNew(CashVoucherType.Payment)}
           >
             Chi tiền
           </Button>
@@ -227,7 +224,7 @@ function CashTable() {
                   <td className="px-3 py-2">
                     <button
                       className="text-primary hover:underline"
-                      onClick={() => setFormState({ type: r.type, voucherId: r.id, readOnly: true })}
+                      onClick={() => openView(r.id, r.type)}
                     >
                       {r.voucherNo}
                     </button>
@@ -261,11 +258,11 @@ function CashTable() {
                   <td className="px-3 py-2 text-slate-600">{CATEGORY_LABEL[r.category]}</td>
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
-                      onPrimary={() => setFormState({ type: r.type, voucherId: r.id, readOnly: true })}
+                      onPrimary={() => openView(r.id, r.type)}
                       items={[
                         {
                           label: 'Sửa',
-                          onClick: () => setFormState({ type: r.type, voucherId: r.id }),
+                          onClick: () => openEdit(r.id, r.type),
                         },
                         {
                           label: 'Xóa',
@@ -319,36 +316,6 @@ function CashTable() {
         </div>
       </div>
 
-      {/* Form modal */}
-      <Modal
-        open={!!formState}
-        onClose={closeForm}
-        size="full"
-        title={
-          formState?.readOnly
-            ? formState.type === CashVoucherType.Receipt
-              ? 'Xem phiếu thu'
-              : 'Xem phiếu chi'
-            : formState?.voucherId
-              ? formState.type === CashVoucherType.Receipt
-                ? 'Sửa phiếu thu'
-                : 'Sửa phiếu chi'
-              : formState?.type === CashVoucherType.Receipt
-                ? 'Phiếu thu'
-                : 'Phiếu chi'
-        }
-      >
-        {formState && (
-          <CashVoucherForm
-            key={`${formState.type}-${formState.voucherId ?? 'new'}`}
-            type={formState.type}
-            voucherId={formState.voucherId ?? null}
-            readOnly={formState.readOnly}
-            onSaved={closeForm}
-            onCancel={closeForm}
-          />
-        )}
-      </Modal>
     </div>
   )
 }

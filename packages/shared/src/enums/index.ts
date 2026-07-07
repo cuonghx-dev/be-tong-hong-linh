@@ -116,6 +116,22 @@ export enum SupplierType {
   Individual = 'INDIVIDUAL',
 }
 
+// Tính chất hàng hóa - dịch vụ (cột "Tính chất" DS hàng hóa).
+export enum ItemNature {
+  Goods = 'GOODS', // Hàng hóa
+  FinishedGood = 'FINISHED_GOOD', // Thành phẩm
+  Service = 'SERVICE', // Dịch vụ
+  Material = 'MATERIAL', // Nguyên vật liệu
+  Tool = 'TOOL', // Công cụ dụng cụ
+}
+
+// Giảm thuế theo quy định (cột "Giảm thuế theo quy định").
+export enum ItemTaxReduction {
+  Undetermined = 'UNDETERMINED', // Chưa xác định
+  Reduced = 'REDUCED', // Được giảm
+  NotReduced = 'NOT_REDUCED', // Không được giảm
+}
+
 // Bán hàng (04-ban-hang) ------------------------------------------------------
 
 // Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.

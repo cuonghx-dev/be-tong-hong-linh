@@ -4,14 +4,38 @@ import { RequireAuth } from '@/features/auth/RequireAuth'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { HomePage } from '@/features/dashboard/pages/HomePage'
 import { CashPage } from '@/features/cash/pages/CashPage'
+import { CashVoucherPage } from '@/features/cash/pages/CashVoucherPage'
 import { BankPage } from '@/features/bank/pages/BankPage'
+import { BankVoucherPage } from '@/features/bank/pages/BankVoucherPage'
 import { SalesPage } from '@/features/sales/pages/SalesPage'
+import { SalesVoucherPage } from '@/features/sales/pages/SalesVoucherPage'
 import { PurchasePage } from '@/features/purchase/pages/PurchasePage'
+import { PurchaseVoucherPage } from '@/features/purchase/pages/PurchaseVoucherPage'
 import { InventoryPage } from '@/features/inventory/pages/InventoryPage'
 import { FixedAssetPage } from '@/features/fixed-asset/pages/FixedAssetPage'
 
+// Trang chứng từ full-page (§5) — standalone, đè Sidebar/Header.
+const recordRoutes = [
+  { path: '/cash/vouchers/new', element: <CashVoucherPage mode="new" /> },
+  { path: '/cash/vouchers/:id', element: <CashVoucherPage mode="view" /> },
+  { path: '/cash/vouchers/:id/edit', element: <CashVoucherPage mode="edit" /> },
+  { path: '/bank/vouchers/new', element: <BankVoucherPage mode="new" /> },
+  { path: '/bank/vouchers/:id', element: <BankVoucherPage mode="view" /> },
+  { path: '/bank/vouchers/:id/edit', element: <BankVoucherPage mode="edit" /> },
+  { path: '/purchase/vouchers/new', element: <PurchaseVoucherPage mode="new" /> },
+  { path: '/purchase/vouchers/:id', element: <PurchaseVoucherPage mode="view" /> },
+  { path: '/purchase/vouchers/:id/edit', element: <PurchaseVoucherPage mode="edit" /> },
+  { path: '/sales/vouchers/new', element: <SalesVoucherPage mode="new" /> },
+  { path: '/sales/vouchers/:id', element: <SalesVoucherPage mode="view" /> },
+  { path: '/sales/vouchers/:id/edit', element: <SalesVoucherPage mode="edit" /> },
+].map((r) => ({
+  path: r.path,
+  element: <RequireAuth>{r.element}</RequireAuth>,
+}))
+
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  ...recordRoutes,
   {
     path: '/',
     element: (

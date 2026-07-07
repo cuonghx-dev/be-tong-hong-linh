@@ -1,12 +1,10 @@
 import { PurchaseVoucherType, type PurchaseVoucherFilter } from '@app/shared'
-import { useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
-import { ChevronDownIcon, RefreshIcon, SearchIcon } from '@/shared/ui/icons'
+import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
-import { Modal } from '@/shared/ui/modal'
-import { Popover } from '@/shared/ui/popover'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { usePurchaseVouchers } from '../api/usePurchaseVouchers'
@@ -19,21 +17,8 @@ import {
   PurchaseFilterPopover,
   type PurchaseFilterValue,
 } from './PurchaseFilterPopover'
-import { PurchaseVoucherForm } from './PurchaseVoucherForm'
 
 const PAGE_SIZE = 20
-
-interface FormState {
-  type: PurchaseVoucherType
-  voucherId?: string
-  readOnly?: boolean
-}
-
-const NEW_TYPES: { type: PurchaseVoucherType; label: string }[] = [
-  { type: PurchaseVoucherType.Stock, label: 'Mua hàng nhập kho' },
-  { type: PurchaseVoucherType.NonStock, label: 'Mua hàng không qua kho' },
-  { type: PurchaseVoucherType.Service, label: 'Mua dịch vụ' },
-]
 
 function formatDate(iso: string): string {
   const [y, m, d] = iso.slice(0, 10).split('-')
@@ -42,12 +27,19 @@ function formatDate(iso: string): string {
 
 export function PurchaseTable() {
   const [params, setParams] = useSearchParams()
-  const [formState, setFormState] = useState<FormState | null>(null)
+  const navigate = useNavigate()
   const del = useDeletePurchaseVoucher()
   const importXlsx = useImportPurchaseVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const confirm = useConfirm()
+
+  // Điều hướng sang trang chứng từ full-page (§5).
+  const openNew = (type: PurchaseVoucherType) => navigate(`/purchase/vouchers/new?type=${type}`)
+  const openView = (id: string, type: PurchaseVoucherType) =>
+    navigate(`/purchase/vouchers/${id}?type=${type}`)
+  const openEdit = (id: string, type: PurchaseVoucherType) =>
+    navigate(`/purchase/vouchers/${id}/edit?type=${type}`)
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -124,8 +116,6 @@ export function PurchaseTable() {
     setParams(next)
   }
 
-  const closeForm = () => setFormState(null)
-
   return (
     <div className="flex h-full flex-col rounded-lg border border-border bg-white">
       {/* Toolbar */}
@@ -159,32 +149,9 @@ export function PurchaseTable() {
         </Button>
 
         <div className="ml-auto flex items-center gap-2">
-          <Popover
-            align="right"
-            className="w-56"
-            trigger={({ open, toggle }) => (
-              <Button size="sm" onClick={toggle} aria-expanded={open}>
-                Thêm <ChevronDownIcon size={14} />
-              </Button>
-            )}
-          >
-            {(close) => (
-              <div className="flex flex-col">
-                {NEW_TYPES.map((t) => (
-                  <button
-                    key={t.type}
-                    onClick={() => {
-                      setFormState({ type: t.type })
-                      close()
-                    }}
-                    className="rounded px-3 py-2 text-left text-sm hover:bg-slate-50"
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </Popover>
+          <Button size="sm" onClick={() => openNew(PurchaseVoucherType.Stock)}>
+            Thêm
+          </Button>
 
           <div className="relative">
             <SearchIcon
@@ -220,11 +187,11 @@ export function PurchaseTable() {
               </th>
               <th className="px-3 py-2">Ngày hạch toán</th>
               <th className="px-3 py-2">Số chứng từ</th>
-              <th className="px-3 py-2">Số hóa đơn</th>
               <th className="px-3 py-2">Nhà cung cấp</th>
-              <th className="px-3 py-2 text-right">Tổng tiền TT</th>
+              <th className="px-3 py-2 text-right">Tổng tiền thanh toán</th>
+              <th className="px-3 py-2 text-right">Chi phí mua hàng</th>
               <th className="px-3 py-2 text-right">Giá trị nhập kho</th>
-              <th className="px-3 py-2">TT nhận HĐ</th>
+              <th className="px-3 py-2">TT nhận hóa đơn</th>
               <th className="px-3 py-2">TT thanh toán</th>
               <th className="px-3 py-2">Loại chứng từ</th>
               <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
@@ -268,17 +235,19 @@ export function PurchaseTable() {
                 <td className="px-3 py-2">
                   <button
                     className="text-primary hover:underline"
-                    onClick={() => setFormState({ type: r.type, voucherId: r.id, readOnly: true })}
+                    onClick={() => openView(r.id, r.type)}
                   >
                     {r.voucherNo}
                   </button>
                 </td>
-                <td className="px-3 py-2 text-slate-600">{r.invoiceNo}</td>
                 <td className="max-w-[180px] truncate px-3 py-2 text-slate-700">
                   {r.supplierName}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-700">
                   {formatCurrency(Number(r.totalPayment))}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-600">
+                  {formatCurrency(Number(r.purchaseCost))}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-600">
                   {formatCurrency(Number(r.stockValue))}
@@ -288,11 +257,11 @@ export function PurchaseTable() {
                 <td className="px-3 py-2 text-slate-600">{VOUCHER_TYPE_LABEL[r.type]}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
-                    onPrimary={() => setFormState({ type: r.type, voucherId: r.id, readOnly: true })}
+                    onPrimary={() => openView(r.id, r.type)}
                     items={[
                       {
                         label: 'Sửa',
-                        onClick: () => setFormState({ type: r.type, voucherId: r.id }),
+                        onClick: () => openEdit(r.id, r.type),
                       },
                       {
                         label: 'Xóa',
@@ -345,32 +314,6 @@ export function PurchaseTable() {
         </div>
       </div>
 
-      {/* Form modal */}
-      <Modal
-        open={!!formState}
-        onClose={closeForm}
-        size="xl"
-        title={
-          formState?.readOnly
-            ? `Xem chứng từ mua hàng`
-            : formState?.voucherId
-              ? `Sửa chứng từ mua hàng`
-              : formState
-                ? VOUCHER_TYPE_LABEL[formState.type]
-                : ''
-        }
-      >
-        {formState && (
-          <PurchaseVoucherForm
-            key={`${formState.type}-${formState.voucherId ?? 'new'}`}
-            type={formState.type}
-            voucherId={formState.voucherId ?? null}
-            readOnly={formState.readOnly}
-            onSaved={closeForm}
-            onCancel={closeForm}
-          />
-        )}
-      </Modal>
     </div>
   )
 }

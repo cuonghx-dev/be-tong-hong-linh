@@ -8,6 +8,7 @@
 2. [Content Layout — Tổ chức vùng Content](#2-content-layout--tổ-chức-vùng-content)
 3. [Table Layout — Màn hình danh sách](#3-table-layout--màn-hình-danh-sách)
 4. [Login Layout — Màn hình đăng nhập](#4-login-layout--màn-hình-đăng-nhập)
+5. [Record Page Layout — Trang chi tiết/chứng từ (full-page)](#5-record-page-layout--trang-chi-tiếtchứng-từ-full-page)
 
 ---
 
@@ -38,10 +39,9 @@
 - **Rộng**: cố định; thu gọn (collapse) còn chế độ icon-only qua nút "Thu gọn" ở đáy.
 - **Cuộn**: độc lập khi menu dài.
 - **Bố cục dọc**:
-  1. Logo / brand trên cùng.
-  2. Nút action "+ Thêm nhanh".
-  3. Các nhóm menu (mỗi nhóm: tiêu đề + list item; item = icon + label).
-  4. Nút "Thu gọn" ghim đáy.
+  1. Logo / brand trên cùng = **tên công ty** (logo vuông = ký tự đầu của tên; khi thu gọn chỉ còn logo).
+  2. Các nhóm menu (mỗi nhóm: tiêu đề + list item; item = icon + label).
+  3. Nút "Thu gọn" ghim đáy.
 - Có 1 item **active** tại một thời điểm.
 
 ## 1.3. Header (top bar)
@@ -49,9 +49,8 @@
 - **Vị trí**: sticky top, trong vùng Main (phải sidebar), full width vùng phải.
 - **Cao**: cố định.
 - **Bố cục ngang** (trái → phải):
-  1. **Trái**: brand/logo + context (tên công ty, kỳ dữ liệu) + dropdown.
-  2. **Giữa**: ô tìm kiếm toàn cục.
-  3. **Phải**: cụm icon tiện ích (thông báo, help, settings, avatar user).
+  1. **Trái**: ô tìm kiếm toàn cục (sát trái, `mr-auto`).
+  2. **Phải**: cụm icon tiện ích (thông báo, help, settings, avatar user).
 
 ## 1.4. Content (vùng chính)
 
@@ -579,3 +578,145 @@ function LoginScreen() {
 3. **Toggle mật khẩu**: icon con mắt ẩn/hiện text mật khẩu.
 4. **Social login**: click provider → luồng OAuth tương ứng.
 5. **Responsive**: màn hẹp ẩn panel trái, chỉ còn form; card co full width.
+
+---
+
+# 5. Record Page Layout — Trang chi tiết/chứng từ (full-page)
+
+> Chuẩn cho **Xem / Sửa / Tạo** một bản ghi (chứng từ, đối tượng…). Thay cho modal: mở **trang riêng full-page** theo route (vd `/purchase/vouchers/:id`, `/purchase/vouchers/new`). Trang chiếm **toàn màn** (đè cả Sidebar/Header của [§1 App Layout](#1-app-layout--bố-cục-tổng-thể)), tối ưu cho biểu mẫu nhiều trường + bảng dòng hàng. Chỉ mô tả bố cục, bỏ qua style/màu sắc.
+
+## 5.1. Sơ đồ khung
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│  PAGE HEADER  (⟲ · Tiêu đề+số CT · dropdown loại · tra cứu | trợ giúp ⌨ ⚙ ✕) │ ← sticky top
+├──────────────────────────────────────────────────────────────────────┤
+│  SUB HEADER  (○ radio trạng thái · dropdown · …          Tổng tiền TT ▓) │
+├──────────────────────────────────────────────────────────────────────┤
+│  TABS  (Phiếu nhập | Hóa đơn)                                          │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│  FORM BODY  (lưới trường thông tin — nhiều cột)                        │  ← cuộn dọc
+│                                                                        │
+│  ── LINE SECTION ──────────────────────────────────────────────────   │
+│  [Hàng tiền | Chi phí]                         toolbar dòng · summary   │
+│  ┌──────────── bảng dòng hàng (cuộn ngang) ────────────┐   Tổng tiền hàng │
+│  │  # · Mã · Tên · Kho · TK … · SL · Đơn giá · …        │   Thuế GTGT      │
+│  └──────────────────────────────────────────────────────┘   Tổng TT / …  │
+│  [Thêm dòng] [Thêm ghi chú] [Xóa hết dòng]                             │
+│                                                                        │
+├──────────────────────────────────────────────────────────────────────┤
+│  ACTION BAR  (⟨ ⟩ · phụ trợ   |  In · Tiện ích · toggle  |  Sửa nhanh · Cất/Bỏ ghi) │ ← sticky bottom
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+- **3 tầng cố định**: Page header (sticky top) + Action bar (sticky bottom) + phần thân giữa cuộn dọc.
+- Thân giữa gồm: **Sub-header** → **Tabs** → **Form body** (lưới trường) → **Line section** (bảng dòng hàng + summary).
+
+## 5.2. Page header (thanh trên)
+
+Một hàng ngang, trái → phải:
+- **Trái**: icon lịch sử/⟲ + **tiêu đề + số chứng từ** (vd `Chứng từ mua hàng NK07098`) + dropdown **loại nghiệp vụ** (vd `Mua hàng trong nước nhập kho`) + ô tra cứu (số hợp đồng…).
+- **Phải**: link `Hướng dẫn sử dụng` + icon bàn phím (phím tắt) + icon ⚙ (cấu hình) + **✕ đóng** (thoát về danh sách).
+- Chế độ **Xem**: các control chỉ đọc; chế độ **Sửa/Tạo**: cho nhập.
+
+## 5.3. Sub-header (dải trạng thái + tổng tiền)
+
+- **Trái**: nhóm control quyết định định khoản/luồng — radio (`Chưa thanh toán` / `Thanh toán ngay`) + dropdown (phương thức TT, `Nhận kèm hóa đơn`…).
+- **Phải**: **Tổng tiền thanh toán** cỡ lớn (số nổi bật), cập nhật realtime theo dòng hàng.
+
+## 5.4. Tabs bản ghi
+
+- Hàng tab ngay dưới sub-header (vd `Phiếu nhập | Hóa đơn`), 1 tab active. Đổi tab → đổi vùng form body (không rời trang).
+
+## 5.5. Form body (lưới trường)
+
+- **Lưới nhiều cột** (thường 3 cụm): mỗi trường = nhãn trên + control dưới. Nhóm liên quan xếp cùng cột (vd: NCC | địa chỉ/diễn giải | ngày+số CT).
+- Trường mở rộng (dropdown có nút `+` thêm nhanh đối tượng, icon tra cứu…) theo nhu cầu nghiệp vụ.
+- **Chế độ Xem** = toàn bộ `fieldset disabled` (chỉ đọc, mờ nhẹ); **Sửa/Tạo** = bật nhập.
+
+## 5.6. Line section (bảng dòng hàng)
+
+- **Sub-tabs** trái (vd `Hàng tiền | Chi phí`) + toolbar phải (chọn sổ, `Chiết khấu`…).
+- **Bảng dòng hàng**: cột `# · Mã hàng · Tên hàng · Kho · TK Kho · TK Công nợ · ĐVT · SL · Đơn giá · …` — cuộn ngang khi rộng; total row cộng cột số. Cột tài khoản (TK Kho/CN/thuế) ẩn/hiện theo toggle "Hiển thị tài khoản" ở action bar.
+- **Nút dòng**: `Thêm dòng` · `Thêm ghi chú` · `Xóa hết dòng`.
+- **Summary (phải)**: `Tổng tiền hàng` · `Thuế GTGT` · `Tổng tiền thanh toán` · `Chi phí mua hàng` · `Giá trị nhập kho` — khối số canh phải, khớp Tổng ở sub-header.
+
+## 5.7. Action bar (thanh đáy sticky)
+
+Một hàng, 3 cụm:
+- **Trái**: điều hướng bản ghi trước/sau (`⟨ ⟩`) + hành động phụ trợ theo nghiệp vụ (vd `Lập phiếu xuất thẳng`).
+- **Giữa**: `In ▾` · `Tiện ích` · toggle `Hiển thị tài khoản`.
+- **Phải**: nút phụ (`Sửa nhanh`) + **nút primary chính** (`Cất` / `Cất và Thêm` khi tạo; `Bỏ ghi` khi xem bản ghi đã ghi sổ).
+
+## 5.8. Chế độ (mode)
+
+| Mode | Route | Trường | Action bar chính |
+|---|---|---|---|
+| **Tạo** | `/…/new` | nhập được | `Cất` / `Cất và Thêm` |
+| **Sửa** | `/…/:id/edit` (hoặc `:id?edit`) | nhập được | `Cất` |
+| **Xem** | `/…/:id` | chỉ đọc (`fieldset disabled`) | `Sửa` / `Bỏ ghi`; ✕ đóng |
+
+## 5.9. Skeleton (React gợi ý)
+
+```jsx
+function RecordPage({ mode }) {           // 'new' | 'edit' | 'view'
+  const navigate = useNavigate()
+  const close = () => navigate('..')       // quay lại danh sách
+  const readOnly = mode === 'view'
+  return (
+    <div className="flex h-screen flex-col">
+      {/* Page header */}
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+        <button onClick={close} aria-label="Lịch sử">⟲</button>
+        <h1 className="font-bold">Chứng từ … <span>{code}</span></h1>
+        <TypeSelect />
+        <div className="ml-auto flex items-center gap-2">
+          <HelpLink /> <ShortcutBtn /> <SettingsBtn />
+          <button onClick={close} aria-label="Đóng">✕</button>
+        </div>
+      </header>
+
+      {/* Sub-header */}
+      <div className="flex shrink-0 items-center gap-3 border-b px-4 py-2">
+        <StatusRadios /> <PaymentSelect />
+        <div className="ml-auto text-right">
+          <div className="text-xs text-slate-500">Tổng tiền thanh toán</div>
+          <div className="text-3xl font-bold">{formatCurrency(total)}</div>
+        </div>
+      </div>
+
+      {/* Tabs + body cuộn */}
+      <RecordTabs tabs={['Phiếu nhập', 'Hóa đơn']} />
+      <form className="flex-1 overflow-y-auto p-4">
+        <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
+          <FieldGrid />              {/* lưới trường §5.5 */}
+          <LineSection />            {/* bảng dòng hàng + summary §5.6 */}
+        </fieldset>
+      </form>
+
+      {/* Action bar */}
+      <footer className="flex h-14 shrink-0 items-center border-t px-4">
+        <RecordNav /> {/* ⟨ ⟩ + phụ trợ */}
+        <div className="mx-auto flex items-center gap-3">
+          <PrintMenu /> <UtilsMenu /> <AccountsToggle />
+        </div>
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline">Sửa nhanh</Button>
+          <Button>{mode === 'view' ? 'Bỏ ghi' : 'Cất'}</Button>
+        </div>
+      </footer>
+    </div>
+  )
+}
+```
+
+## 5.10. Hành vi
+
+1. **Route-based**: mỗi bản ghi có URL riêng (share link, back/forward, refresh giữ nguyên) — thay cho modal.
+2. **Full-page**: đè Sidebar/Header; **✕ đóng** hoặc back → về danh sách ([§3 Table Layout](#3-table-layout--màn-hình-danh-sách)).
+3. **Sticky**: page header + action bar cố định; chỉ thân giữa cuộn.
+4. **Sub-header ↔ line**: đổi trạng thái/dòng hàng → tính lại **Tổng tiền thanh toán** + summary realtime.
+5. **Chế độ Xem**: `fieldset disabled` toàn form; nút chính đổi sang `Sửa`/`Bỏ ghi`.
+6. **Điều hướng trước/sau** (`⟨ ⟩`): nhảy sang bản ghi liền kề trong danh sách hiện tại (giữ filter).
+7. Row action ([§3.8](#38-row-action-menu-cột-chức-năng)) "Xem"/"Sửa" và nút "Thêm" ở toolbar ([§3.2](#32-toolbar)) **điều hướng sang trang này** thay vì mở modal.

@@ -1,4 +1,6 @@
 import {
+  ItemNature,
+  ItemTaxReduction,
   PaymentMethod,
   PurchasePaymentMode,
   PurchasePaymentStatus,
@@ -45,6 +47,22 @@ export const PAYMENT_STATUS_LABEL: Record<PurchasePaymentStatus, string> = {
 export const SUPPLIER_TYPE_LABEL: Record<SupplierType, string> = {
   [SupplierType.Organization]: 'Tổ chức',
   [SupplierType.Individual]: 'Cá nhân',
+}
+
+// Nhãn tính chất HHDV (cột "Tính chất").
+export const ITEM_NATURE_LABEL: Record<ItemNature, string> = {
+  [ItemNature.Goods]: 'Hàng hóa',
+  [ItemNature.FinishedGood]: 'Thành phẩm',
+  [ItemNature.Service]: 'Dịch vụ',
+  [ItemNature.Material]: 'Nguyên vật liệu',
+  [ItemNature.Tool]: 'Công cụ dụng cụ',
+}
+
+// Nhãn giảm thuế theo quy định.
+export const ITEM_TAX_REDUCTION_LABEL: Record<ItemTaxReduction, string> = {
+  [ItemTaxReduction.Undetermined]: 'Chưa xác định',
+  [ItemTaxReduction.Reduced]: 'Được giảm',
+  [ItemTaxReduction.NotReduced]: 'Không được giảm',
 }
 
 // Loại nhập kho có cột Kho + TK Kho (§4).

@@ -4,6 +4,7 @@ import { Prisma, type Supplier } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { CreateSupplierDto } from './dto/create-supplier.dto'
 import { SupplierFilterDto } from './dto/supplier-filter.dto'
+import { parseSupplierXlsx } from './supplier-import'
 import { UpdateSupplierDto } from './dto/update-supplier.dto'
 
 @Injectable()
@@ -89,6 +90,44 @@ export class SupplierService {
       },
     })
     return toSupplierDto(updated)
+  }
+
+  // Nhập khẩu NCC từ Excel. Bỏ qua mã đã tồn tại (trong DB và trùng trong chính file).
+  async importXlsx(buffer: Buffer) {
+    const parsed = parseSupplierXlsx(buffer)
+    if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
+
+    const codes = parsed.map((p) => p.code)
+    const existing = await this.prisma.supplier.findMany({
+      where: { code: { in: codes } },
+      select: { code: true },
+    })
+    const seen = new Set(existing.map((e) => e.code))
+
+    const data: Prisma.SupplierCreateManyInput[] = []
+    for (const p of parsed) {
+      if (seen.has(p.code)) continue
+      seen.add(p.code)
+      data.push({
+        code: p.code,
+        name: p.name,
+        type: p.type,
+        taxCode: p.taxCode,
+        budgetRelationCode: p.budgetRelationCode,
+        phone: p.phone,
+        website: p.website,
+        address: p.address,
+        debtAmount: new Prisma.Decimal(p.debtAmount),
+        invoiceRisk: p.invoiceRisk,
+      })
+    }
+
+    const chunk = 500
+    for (let i = 0; i < data.length; i += chunk) {
+      await this.prisma.supplier.createMany({ data: data.slice(i, i + chunk) })
+    }
+
+    return { total: parsed.length, created: data.length, skipped: parsed.length - data.length }
   }
 
   async remove(id: string) {

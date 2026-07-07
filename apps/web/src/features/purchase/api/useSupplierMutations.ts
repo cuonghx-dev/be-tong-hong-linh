@@ -12,6 +12,28 @@ export function useCreateSupplier() {
   })
 }
 
+export interface SupplierImportResult {
+  total: number
+  created: number
+  skipped: number
+}
+
+export function useImportSuppliers() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return api
+        .post<SupplierImportResult>('/purchase/suppliers/import', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        .then((r) => r.data)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: purchaseKeys.all }),
+  })
+}
+
 export function useUpdateSupplier() {
   const qc = useQueryClient()
   return useMutation({

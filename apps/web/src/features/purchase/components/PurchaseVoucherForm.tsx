@@ -1,17 +1,20 @@
 import {
   CHART_OF_ACCOUNTS,
+  PartnerType,
   PaymentMethod,
   PurchasePaymentMode,
   PurchaseVoucherType,
   type CreatePurchaseVoucherInput,
 } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
+import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import { useSuppliers } from '../api/useSuppliers'
 import { usePurchaseVoucher } from '../api/usePurchaseVouchers'
 import {
   useCreatePurchaseVoucher,
@@ -75,8 +78,24 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
     resolver: zodResolver(purchaseVoucherSchema),
     defaultValues: defaultValues(type),
   })
-  const { control, register, handleSubmit, reset, watch, formState } = form
+  const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+
+  // Picker nhà cung cấp: tra cứu theo mã/tên, tự điền tên + địa chỉ.
+  const [supplierKw, setSupplierKw] = useState('')
+  const suppliers = useSuppliers({ page: 1, pageSize: 20, keyword: supplierKw.trim() || undefined })
+  const supplierItems = useMemo<PartnerOption[]>(
+    () =>
+      (suppliers.data?.data ?? []).map((s) => ({
+        code: s.code,
+        name: s.name,
+        type: PartnerType.Supplier,
+        taxCode: s.taxCode,
+        address: s.address,
+        phone: s.phone,
+      })),
+    [suppliers.data],
+  )
 
   // Nạp dữ liệu khi sửa.
   useEffect(() => {
@@ -123,7 +142,9 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
   const lines = watch('lines')
   const purchaseCost = watch('purchaseCost') ?? 0
   const paymentMode = watch('paymentMode')
+  const receiveWithInvoice = watch('receiveWithInvoice')
   const showWarehouse = hasWarehouse(type)
+  const isUnpaid = paymentMode === PurchasePaymentMode.Unpaid
 
   // §10.2 tổng hợp.
   const totalGoods = lines?.reduce((s, l) => s + (l.quantity || 0) * (l.unitPrice || 0), 0) ?? 0
@@ -161,8 +182,8 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
   const saving = create.isPending || update.isPending
 
   return (
-    <form className="space-y-4">
-      <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
+    <form className="flex h-full flex-col">
+      <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto pr-1 disabled:opacity-90">
       {/* Loại nghiệp vụ + số hợp đồng */}
       <div className="flex flex-wrap items-center gap-3">
         <span className="rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
@@ -203,7 +224,19 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
       {/* Thông tin chung */}
       <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
         <Field label="Mã nhà cung cấp">
-          <input {...register('supplierId')} className={inputCls} placeholder="Mã NCC" />
+          <PartnerPicker
+            value={watch('supplierId')}
+            items={supplierItems}
+            loading={suppliers.isLoading}
+            keyword={supplierKw}
+            onKeywordChange={setSupplierKw}
+            placeholder="Mã NCC"
+            onSelect={(p) => {
+              setValue('supplierId', p.code)
+              setValue('supplierName', p.name)
+              if (p.address) setValue('address', p.address)
+            }}
+          />
         </Field>
         <Field label="Tên nhà cung cấp">
           <input {...register('supplierName')} className={inputCls} />
@@ -220,9 +253,6 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
         <Field label="Diễn giải">
           <input {...register('description')} className={inputCls} />
         </Field>
-        <Field label="Số hóa đơn">
-          <input {...register('invoiceNo')} className={inputCls} />
-        </Field>
         <Field label="Số chứng từ">
           <input
             value={editing.data?.voucherNo ?? 'Tự động'}
@@ -236,18 +266,23 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
         <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
           <input type="date" {...register('voucherDate')} className={inputCls} />
         </Field>
-        <Field label="Số ngày được nợ">
-          <input type="number" min={0} {...register('creditDays')} className={inputCls} />
-        </Field>
-        <Field label="Hạn thanh toán">
-          <input type="date" {...register('dueDate')} className={inputCls} />
-        </Field>
         <Field label="Kèm theo (chứng từ gốc)">
           <input type="number" min={0} {...register('attachmentCount')} className={inputCls} />
         </Field>
-        <Field label="Điều khoản thanh toán">
-          <input {...register('paymentTermId')} className={inputCls} />
-        </Field>
+        {/* Điều khoản thanh toán chỉ có nghĩa khi còn nợ (§chưa thanh toán) */}
+        {isUnpaid && (
+          <>
+            <Field label="Điều khoản thanh toán">
+              <input {...register('paymentTermId')} className={inputCls} />
+            </Field>
+            <Field label="Số ngày được nợ">
+              <input type="number" min={0} {...register('creditDays')} className={inputCls} />
+            </Field>
+            <Field label="Hạn thanh toán">
+              <input type="date" {...register('dueDate')} className={inputCls} />
+            </Field>
+          </>
+        )}
       </div>
 
       {/* Bảng hàng tiền */}
@@ -404,20 +439,26 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
         </span>
       </div>
 
-      {/* Tra cứu HĐĐT */}
-      <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
-        <Field label="Mã tra cứu HĐĐT">
-          <input {...register('einvoiceLookupCode')} className={inputCls} />
-        </Field>
-        <Field label="Đường dẫn tra cứu HĐĐT">
-          <input {...register('einvoiceLookupUrl')} className={inputCls} />
-        </Field>
-      </div>
+      {/* Thông tin hóa đơn — chỉ khi nhận kèm hóa đơn (tab Hóa đơn của MISA) */}
+      {receiveWithInvoice && (
+        <div className="grid grid-cols-1 gap-x-6 gap-y-3 rounded-md border border-border p-3 md:grid-cols-2">
+          <Field label="Số hóa đơn">
+            <input {...register('invoiceNo')} className={inputCls} />
+          </Field>
+          <div className="hidden md:block" />
+          <Field label="Mã tra cứu HĐĐT">
+            <input {...register('einvoiceLookupCode')} className={inputCls} />
+          </Field>
+          <Field label="Đường dẫn tra cứu HĐĐT">
+            <input {...register('einvoiceLookupUrl')} className={inputCls} />
+          </Field>
+        </div>
+      )}
 
       </fieldset>
 
-      {/* Nút hành động */}
-      <div className="flex justify-end gap-2">
+      {/* Nút hành động — footer cố định */}
+      <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-border pt-3">
         {readOnly ? (
           <Button type="button" variant="outline" onClick={onCancel}>
             Đóng

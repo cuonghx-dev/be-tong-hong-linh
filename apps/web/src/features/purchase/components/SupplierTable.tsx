@@ -1,5 +1,5 @@
 import type { SupplierFilter } from '@app/shared'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
@@ -8,8 +8,9 @@ import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { PlusIcon, RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import { useToast } from '@/shared/ui/toast'
 import { useSuppliers } from '../api/useSuppliers'
-import { useDeleteSupplier } from '../api/useSupplierMutations'
+import { useDeleteSupplier, useImportSuppliers } from '../api/useSupplierMutations'
 import { SupplierForm } from './SupplierForm'
 
 const PAGE_SIZE = 20
@@ -21,7 +22,30 @@ export function SupplierTable() {
   const [params, setParams] = useSearchParams()
   const [formState, setFormState] = useState<{ supplierId?: string; readOnly?: boolean } | null>(null)
   const del = useDeleteSupplier()
+  const importXlsx = useImportSuppliers()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
   const confirm = useConfirm()
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // cho phép chọn lại cùng file
+    if (!file) return
+    importXlsx.mutate(file, {
+      onSuccess: (r) =>
+        toast({
+          variant: 'success',
+          title: 'Nhập khẩu thành công',
+          description: `${r.created} NCC mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`,
+        }),
+      onError: () =>
+        toast({
+          variant: 'error',
+          title: 'Nhập khẩu thất bại',
+          description: 'Kiểm tra lại file Excel.',
+        }),
+    })
+  }
 
   const page = Number(params.get(P.page) ?? 1)
   const keyword = params.get(P.q) ?? ''
@@ -51,6 +75,22 @@ export function SupplierTable() {
     <div className="flex h-full flex-col rounded-lg border border-border bg-white">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={onPickFile}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileRef.current?.click()}
+          disabled={importXlsx.isPending}
+        >
+          {importXlsx.isPending ? 'Đang nhập…' : 'Nhập khẩu Excel'}
+        </Button>
+
         <div className="ml-auto flex items-center gap-2">
           <Button size="sm" onClick={() => setFormState({})}>
             <PlusIcon size={16} /> Thêm

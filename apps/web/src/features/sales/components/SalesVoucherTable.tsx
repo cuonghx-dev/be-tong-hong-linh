@@ -1,26 +1,28 @@
 import { SalesPaymentMode, SalesVoucherType, type SalesVoucherFilter } from '@app/shared'
-import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
-import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useSalesVouchers } from '../api/useSalesVouchers'
 import { useDeleteSalesVoucher } from '../api/useSalesVoucherMutations'
 import { PAYMENT_MODE_LABEL, VOUCHER_TYPE_LABEL } from '../types'
 import { SalesFilterPopover, type SalesFilterValue } from './SalesFilterPopover'
-import { SalesVoucherForm } from './SalesVoucherForm'
 
 const PAGE_SIZE = 20
 
 export function SalesVoucherTable() {
   const [params, setParams] = useSearchParams()
-  const [form, setForm] = useState<{ voucherId?: string; readOnly?: boolean } | null>(null)
+  const navigate = useNavigate()
   const del = useDeleteSalesVoucher()
   const confirm = useConfirm()
+
+  // Điều hướng sang trang chứng từ full-page (§5).
+  const openNew = () => navigate('/sales/vouchers/new')
+  const openView = (id: string) => navigate(`/sales/vouchers/${id}`)
+  const openEdit = (id: string) => navigate(`/sales/vouchers/${id}/edit`)
 
   const page = Number(params.get('page') ?? 1)
   const keyword = params.get('q') ?? ''
@@ -88,7 +90,7 @@ export function SalesVoucherTable() {
           onReset={resetFilter}
         />
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" onClick={() => setForm({})}>
+          <Button size="sm" onClick={openNew}>
             Thêm chứng từ
           </Button>
           <div className="relative">
@@ -166,7 +168,7 @@ export function SalesVoucherTable() {
                 <td className="px-3 py-2">
                   <button
                     className="text-primary hover:underline"
-                    onClick={() => setForm({ voucherId: r.id, readOnly: true })}
+                    onClick={() => openView(r.id)}
                   >
                     {r.voucherNo}
                   </button>
@@ -194,9 +196,9 @@ export function SalesVoucherTable() {
                 <td className="px-3 py-2 text-slate-600">{VOUCHER_TYPE_LABEL[r.voucherType]}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
-                    onPrimary={() => setForm({ voucherId: r.id, readOnly: true })}
+                    onPrimary={() => openView(r.id)}
                     items={[
-                      { label: 'Sửa', onClick: () => setForm({ voucherId: r.id }) },
+                      { label: 'Sửa', onClick: () => openEdit(r.id) },
                       {
                         label: 'Xóa',
                         danger: true,
@@ -248,28 +250,6 @@ export function SalesVoucherTable() {
         </div>
       </div>
 
-      <Modal
-        open={!!form}
-        onClose={() => setForm(null)}
-        size="xl"
-        title={
-          form?.readOnly
-            ? 'Xem chứng từ bán hàng'
-            : form?.voucherId
-              ? 'Sửa chứng từ bán hàng'
-              : 'Chứng từ bán hàng'
-        }
-      >
-        {form && (
-          <SalesVoucherForm
-            key={form.voucherId ?? 'new'}
-            voucherId={form.voucherId ?? null}
-            readOnly={form.readOnly}
-            onSaved={() => setForm(null)}
-            onCancel={() => setForm(null)}
-          />
-        )}
-      </Modal>
     </div>
   )
 }
