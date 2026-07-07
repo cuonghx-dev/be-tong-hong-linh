@@ -23,10 +23,17 @@ import { cashVoucherSchema, type CashLineFormValues, type CashVoucherFormValues 
 import { CATEGORY_LABEL, CATEGORY_OPTIONS, lineColumns } from '../types'
 import { AmountInput } from './AmountInput'
 
+interface CashVoucherPrefill {
+  category?: CashVoucherCategory
+  partnerId?: string
+  partnerName?: string
+}
+
 interface CashVoucherFormProps {
   type: CashVoucherType
   voucherId?: string | null
   readOnly?: boolean
+  prefill?: CashVoucherPrefill
   onSaved: () => void
   onCancel: () => void
 }
@@ -63,20 +70,24 @@ function emptyLine(category: CashVoucherCategory, type: CashVoucherType): CashLi
     : { amount: 0, debitAccount: PAYMENT_DEBIT_ACCOUNT[category] ?? '', creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND }
 }
 
-function defaultValues(type: CashVoucherType): CashVoucherFormValues {
-  const category = type === CashVoucherType.Receipt ? CashVoucherCategory.Receipt : CashVoucherCategory.Payment
+function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): CashVoucherFormValues {
+  const fallback = type === CashVoucherType.Receipt ? CashVoucherCategory.Receipt : CashVoucherCategory.Payment
+  const category = prefill?.category ?? fallback
+  const base = type === CashVoucherType.Receipt ? 'Thu tiền của ' : 'Chi tiền cho '
   return {
     type,
     category,
     postingDate: today(),
     voucherDate: today(),
     partnerType: PartnerType.Customer,
-    reason: type === CashVoucherType.Receipt ? 'Thu tiền của ' : 'Chi tiền cho ',
+    partnerId: prefill?.partnerId,
+    partnerName: prefill?.partnerName,
+    reason: prefill?.partnerName ? base + prefill.partnerName : base,
     lines: [emptyLine(category, type)],
   }
 }
 
-export function CashVoucherForm({ type, voucherId, readOnly = false, onSaved, onCancel }: CashVoucherFormProps) {
+export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, onSaved, onCancel }: CashVoucherFormProps) {
   const isReceipt = type === CashVoucherType.Receipt
   const editing = useCashVoucher(voucherId ?? null)
   const create = useCreateCashVoucher()
@@ -84,7 +95,7 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, onSaved, on
 
   const form = useForm<CashVoucherFormValues>({
     resolver: zodResolver(cashVoucherSchema),
-    defaultValues: defaultValues(type),
+    defaultValues: defaultValues(type, prefill),
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
@@ -162,7 +173,7 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, onSaved, on
         await create.mutateAsync(dto)
       }
       if (goNext && !voucherId) {
-        reset(defaultValues(type))
+        reset(defaultValues(type, prefill))
       } else {
         onSaved()
       }

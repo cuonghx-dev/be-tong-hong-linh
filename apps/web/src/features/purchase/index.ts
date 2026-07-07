@@ -1,5 +1,7 @@
 // Public API — phân hệ Mua hàng.
 export { PurchasePage } from './pages/PurchasePage'
+// HHDV là master dùng chung (mua + bán) — export để phân hệ Bán hàng tái dùng.
+export { ItemTable } from './components/ItemTable'
 export { usePurchaseVouchers, usePurchaseVoucher } from './api/usePurchaseVouchers'
 export {
   useCreatePurchaseVoucher,

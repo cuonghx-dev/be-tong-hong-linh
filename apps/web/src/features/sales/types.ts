@@ -2,6 +2,8 @@ import {
   CustomerType,
   InvoiceIssueStatus,
   PaymentMethod,
+  ReceivableAging,
+  ReceivableStatus,
   SalesPaymentMode,
   SalesVoucherType,
 } from '@app/shared'
@@ -32,4 +34,22 @@ export const CUSTOMER_TYPE_LABEL: Record<CustomerType, string> = {
 export const ISSUE_STATUS_LABEL: Record<InvoiceIssueStatus, string> = {
   [InvoiceIssueStatus.Unissued]: 'Chưa phát hành',
   [InvoiceIssueStatus.CodeIssued]: 'Đã cấp mã',
+}
+
+// Nhãn phân tích tuổi nợ công nợ phải thu (§6).
+export const RECEIVABLE_AGING_LABEL: Record<ReceivableAging, string> = {
+  [ReceivableAging.All]: 'Tất cả',
+  [ReceivableAging.Current]: 'Trong hạn',
+  [ReceivableAging.Days1_30]: 'Quá hạn 1–30 ngày',
+  [ReceivableAging.Days31_60]: 'Quá hạn 31–60 ngày',
+  [ReceivableAging.Days61_90]: 'Quá hạn 61–90 ngày',
+  [ReceivableAging.Over90]: 'Quá hạn trên 90 ngày',
+}
+
+// Nhãn tình trạng nợ công nợ phải thu (§6).
+export const RECEIVABLE_STATUS_LABEL: Record<ReceivableStatus, string> = {
+  [ReceivableStatus.All]: 'Tất cả',
+  [ReceivableStatus.Outstanding]: 'Còn nợ',
+  [ReceivableStatus.Settled]: 'Đã thu hết',
+  [ReceivableStatus.Prepaid]: 'Trả trước',
 }

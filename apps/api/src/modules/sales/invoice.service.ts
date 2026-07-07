@@ -3,7 +3,9 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { randomUUID } from 'node:crypto'
 import { InvoiceIssueStatus, Prisma, type Invoice, type SalesVoucher } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { InvoiceFilterDto } from './dto/invoice-filter.dto'
+import { parseInvoiceXlsx } from './invoice-import'
 
 type InvoiceWithVoucher = Invoice & { salesVoucher: SalesVoucher | null }
 
@@ -52,6 +54,66 @@ export class InvoiceService {
     })
     if (!invoice) throw new NotFoundException(`Không tìm thấy hóa đơn ${id}`)
     return toInvoiceDto(invoice)
+  }
+
+  // Tạo hóa đơn nhập tay (header-only) → trạng thái chưa phát hành.
+  async create(dto: CreateInvoiceDto) {
+    const invoice = await this.prisma.invoice.create({
+      data: {
+        invoiceType: dto.invoiceType ?? 'Hóa đơn GTGT',
+        invoiceDate: new Date(dto.invoiceDate),
+        customerId: dto.customerId ?? null,
+        customerName: dto.customerName ?? null,
+        paymentForm: dto.paymentForm ?? null,
+        bankAccount: dto.bankAccount ?? null,
+        symbol: dto.symbol ?? null,
+        templateNo: dto.templateNo ?? null,
+        totalAmount: new Prisma.Decimal(dto.totalAmount),
+        branchId: dto.branchId ?? null,
+      },
+      include: { salesVoucher: true },
+    })
+    return toInvoiceDto(invoice)
+  }
+
+  // Nhập khẩu hóa đơn từ Excel — bỏ qua HĐ trùng số, createMany theo lô 500.
+  async importXlsx(buffer: Buffer) {
+    const parsed = parseInvoiceXlsx(buffer)
+    if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
+
+    const nos = parsed.map((p) => p.invoiceNo)
+    const existing = await this.prisma.invoice.findMany({
+      where: { invoiceNo: { in: nos } },
+      select: { invoiceNo: true },
+    })
+    const seen = new Set(existing.map((e) => e.invoiceNo))
+
+    const invoices: Prisma.InvoiceCreateManyInput[] = []
+    for (const p of parsed) {
+      if (seen.has(p.invoiceNo)) continue
+      seen.add(p.invoiceNo) // chống trùng trong chính file
+      const issued = p.issueStatus === InvoiceIssueStatus.CODE_ISSUED
+      invoices.push({
+        invoiceNo: p.invoiceNo,
+        invoiceType: p.invoiceType,
+        status: p.status ?? (issued ? 'Đã cấp mã' : 'Hóa đơn mới'),
+        issueStatus: p.issueStatus,
+        taxAuthorityCode: p.taxAuthorityCode,
+        sendStatus: p.sendStatus,
+        customerReceived: p.customerReceived,
+        invoiceDate: p.date,
+        customerName: p.customerName,
+        totalAmount: new Prisma.Decimal(p.totalAmount),
+        posted: issued,
+      })
+    }
+
+    const chunk = 500
+    for (let i = 0; i < invoices.length; i += chunk) {
+      await this.prisma.invoice.createMany({ data: invoices.slice(i, i + chunk) })
+    }
+
+    return { total: parsed.length, created: invoices.length, skipped: parsed.length - invoices.length }
   }
 
   // Phát hành hóa đơn (§5) → cấp số + mã CQT + mã tra cứu (§11.3).

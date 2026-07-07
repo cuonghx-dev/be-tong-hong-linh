@@ -9,6 +9,7 @@ import { BankPage } from '@/features/bank/pages/BankPage'
 import { BankVoucherPage } from '@/features/bank/pages/BankVoucherPage'
 import { SalesPage } from '@/features/sales/pages/SalesPage'
 import { SalesVoucherPage } from '@/features/sales/pages/SalesVoucherPage'
+import { InvoicePage } from '@/features/sales/pages/InvoicePage'
 import { PurchasePage } from '@/features/purchase/pages/PurchasePage'
 import { PurchaseVoucherPage } from '@/features/purchase/pages/PurchaseVoucherPage'
 import { InventoryPage } from '@/features/inventory/pages/InventoryPage'
@@ -28,6 +29,8 @@ const recordRoutes = [
   { path: '/sales/vouchers/new', element: <SalesVoucherPage mode="new" /> },
   { path: '/sales/vouchers/:id', element: <SalesVoucherPage mode="view" /> },
   { path: '/sales/vouchers/:id/edit', element: <SalesVoucherPage mode="edit" /> },
+  { path: '/sales/invoices/new', element: <InvoicePage mode="new" /> },
+  { path: '/sales/invoices/:id', element: <InvoicePage mode="view" /> },
 ].map((r) => ({
   path: r.path,
   element: <RequireAuth>{r.element}</RequireAuth>,

@@ -163,3 +163,22 @@ export enum CustomerType {
   Organization = 'ORG',
   Individual = 'INDIVIDUAL',
 }
+
+// Phân tích tuổi nợ công nợ phải thu (§6) — theo số ngày quá hạn tính đến "Đến ngày".
+// Tuổi = (Đến ngày − hạn thanh toán), hạn = dueDate, không có thì lấy voucherDate.
+export enum ReceivableAging {
+  All = 'ALL', // Tất cả
+  Current = 'CURRENT', // Trong hạn (chưa quá hạn)
+  Days1_30 = 'DAYS_1_30', // Quá hạn 1–30 ngày
+  Days31_60 = 'DAYS_31_60', // Quá hạn 31–60 ngày
+  Days61_90 = 'DAYS_61_90', // Quá hạn 61–90 ngày
+  Over90 = 'OVER_90', // Quá hạn trên 90 ngày
+}
+
+// Tình trạng nợ công nợ phải thu (§6) — theo Số còn phải thu sau tổng hợp.
+export enum ReceivableStatus {
+  All = 'ALL', // Tất cả
+  Outstanding = 'OUTSTANDING', // Còn nợ (> 0)
+  Settled = 'SETTLED', // Đã thu hết (= 0)
+  Prepaid = 'PREPAID', // Trả trước (< 0)
+}

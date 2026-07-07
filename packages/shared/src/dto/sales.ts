@@ -3,6 +3,8 @@ import type {
   CustomerType,
   InvoiceIssueStatus,
   PaymentMethod,
+  ReceivableAging,
+  ReceivableStatus,
   SalesPaymentMode,
   SalesVoucherType,
 } from '../enums'
@@ -152,6 +154,20 @@ export interface InvoiceDto {
   updatedAt: string
 }
 
+// Payload tạo hóa đơn nhập tay (header-only, chưa phát hành).
+export interface CreateInvoiceInput {
+  invoiceType?: string | null // Loại HĐ (mặc định "Hóa đơn GTGT")
+  invoiceDate: string // Ngày HĐ (ISO date-only)
+  customerId?: string | null
+  customerName?: string | null
+  paymentForm?: string | null // Hình thức thanh toán (TM/CK)
+  bankAccount?: string | null
+  symbol?: string | null // Ký hiệu HĐ
+  templateNo?: string | null // Mẫu số HĐ
+  totalAmount: number // Giá trị hóa đơn
+  branchId?: string | null
+}
+
 // Tham số lọc danh sách hóa đơn.
 export interface InvoiceFilter {
   page?: number
@@ -232,4 +248,8 @@ export interface CustomerReceivableFilter {
   page?: number
   pageSize?: number
   keyword?: string
+  account?: string // Mã TK công nợ (vd '131'); rỗng = tất cả
+  aging?: ReceivableAging // Phân tích theo tuổi nợ
+  status?: ReceivableStatus // Tình trạng nợ
+  toDate?: string // Đến ngày (YYYY-MM-DD): số dư tính đến ngày này (voucherDate ≤ toDate)
 }

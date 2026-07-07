@@ -1,14 +1,16 @@
 import { SalesPaymentMode, SalesVoucherType, type SalesVoucherFilter } from '@app/shared'
+import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
-import { Button } from '@/shared/ui/button'
+import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import { useToast } from '@/shared/ui/toast'
 import { useSalesVouchers } from '../api/useSalesVouchers'
-import { useDeleteSalesVoucher } from '../api/useSalesVoucherMutations'
-import { PAYMENT_MODE_LABEL, VOUCHER_TYPE_LABEL } from '../types'
+import { useDeleteSalesVoucher, useImportSalesVouchers } from '../api/useSalesVoucherMutations'
+import { PAYMENT_MODE_LABEL } from '../types'
 import { SalesFilterPopover, type SalesFilterValue } from './SalesFilterPopover'
 
 const PAGE_SIZE = 20
@@ -17,12 +19,35 @@ export function SalesVoucherTable() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const del = useDeleteSalesVoucher()
+  const importXlsx = useImportSalesVouchers()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
   const confirm = useConfirm()
 
   // Điều hướng sang trang chứng từ full-page (§5).
   const openNew = () => navigate('/sales/vouchers/new')
   const openView = (id: string) => navigate(`/sales/vouchers/${id}`)
   const openEdit = (id: string) => navigate(`/sales/vouchers/${id}/edit`)
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // cho phép chọn lại cùng file
+    if (!file) return
+    importXlsx.mutate(file, {
+      onSuccess: (r) =>
+        toast({
+          variant: 'success',
+          title: 'Nhập khẩu thành công',
+          description: `${r.created} chứng từ mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`,
+        }),
+      onError: () =>
+        toast({
+          variant: 'error',
+          title: 'Nhập khẩu thất bại',
+          description: 'Kiểm tra lại file Excel.',
+        }),
+    })
+  }
 
   const page = Number(params.get('page') ?? 1)
   const keyword = params.get('q') ?? ''
@@ -89,10 +114,20 @@ export function SalesVoucherTable() {
           onApply={applyFilter}
           onReset={resetFilter}
         />
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={onPickFile}
+        />
+
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" onClick={openNew}>
-            Thêm chứng từ
-          </Button>
+          <AddMenu
+            actions={[{ label: 'Chứng từ bán hàng', onClick: openNew }]}
+            onImportExcel={() => fileRef.current?.click()}
+            importing={importXlsx.isPending}
+          />
           <div className="relative">
             <SearchIcon
               size={15}
@@ -129,7 +164,7 @@ export function SalesVoucherTable() {
               <th className="px-3 py-2 text-right">Tổng tiền thanh toán</th>
               <th className="px-3 py-2">TT lập hóa đơn</th>
               <th className="px-3 py-2">TT thanh toán</th>
-              <th className="px-3 py-2">Loại nghiệp vụ</th>
+              <th className="px-3 py-2">TT xuất hàng</th>
               <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
               </th>
@@ -193,7 +228,9 @@ export function SalesVoucherTable() {
                     offLabel={PAYMENT_MODE_LABEL[SalesPaymentMode.Unpaid]}
                   />
                 </td>
-                <td className="px-3 py-2 text-slate-600">{VOUCHER_TYPE_LABEL[r.voucherType]}</td>
+                <td className="px-3 py-2">
+                  <Badge on={r.isInventoryIssue} onLabel="Đã xuất" offLabel="Chưa xuất" />
+                </td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
                     onPrimary={() => openView(r.id)}

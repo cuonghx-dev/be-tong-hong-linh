@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
-import { CustomerFilterDto } from './dto/customer-filter.dto'
+import { ReceivableFilterDto } from './dto/receivable-filter.dto'
 import { ReceivableService } from './receivable.service'
 
 @ApiTags('sales')
@@ -10,7 +10,7 @@ export class ReceivableController {
 
   @Get()
   @ApiOperation({ summary: 'Công nợ phải thu theo khách hàng (tổng hợp)' })
-  list(@Query() filter: CustomerFilterDto) {
+  list(@Query() filter: ReceivableFilterDto) {
     return this.receivables.list(filter)
   }
 }

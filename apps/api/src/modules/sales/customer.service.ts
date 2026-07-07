@@ -2,6 +2,7 @@ import type { Paginated } from '@app/shared'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma, SalesPaymentMode, type Customer } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { parseCustomerXlsx } from './customer-import'
 import { CreateCustomerDto } from './dto/create-customer.dto'
 import { CustomerFilterDto } from './dto/customer-filter.dto'
 import { UpdateCustomerDto } from './dto/update-customer.dto'
@@ -81,6 +82,39 @@ export class CustomerService {
     })
     const receivables = await this.receivableByCustomer([id])
     return toCustomerDto(updated, receivables.get(id))
+  }
+
+  // Nhập khẩu khách hàng từ Excel — bỏ qua KH trùng mã, createMany theo lô 500.
+  async importXlsx(buffer: Buffer) {
+    const parsed = parseCustomerXlsx(buffer)
+    if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
+
+    const codes = parsed.map((p) => p.code)
+    const existing = await this.prisma.customer.findMany({
+      where: { code: { in: codes } },
+      select: { code: true },
+    })
+    const seen = new Set(existing.map((e) => e.code))
+
+    const customers: Prisma.CustomerCreateManyInput[] = []
+    for (const p of parsed) {
+      if (seen.has(p.code)) continue
+      seen.add(p.code) // chống trùng trong chính file
+      customers.push({
+        code: p.code,
+        name: p.name,
+        address: p.address,
+        taxCode: p.taxCode,
+        phone: p.phone,
+      })
+    }
+
+    const chunk = 500
+    for (let i = 0; i < customers.length; i += chunk) {
+      await this.prisma.customer.createMany({ data: customers.slice(i, i + chunk) })
+    }
+
+    return { total: parsed.length, created: customers.length, skipped: parsed.length - customers.length }
   }
 
   async remove(id: string) {

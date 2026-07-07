@@ -1,4 +1,9 @@
-import type { CustomerFilter, InvoiceFilter, SalesVoucherFilter } from '@app/shared'
+import type {
+  CustomerFilter,
+  CustomerReceivableFilter,
+  InvoiceFilter,
+  SalesVoucherFilter,
+} from '@app/shared'
 
 // Query keys phân hệ Bán hàng.
 export const salesKeys = {
@@ -9,5 +14,6 @@ export const salesKeys = {
   invoice: (id: string) => [...salesKeys.all, 'invoice', id] as const,
   customers: (filter: CustomerFilter) => [...salesKeys.all, 'customers', filter] as const,
   customer: (id: string) => [...salesKeys.all, 'customer', id] as const,
-  receivables: (filter: CustomerFilter) => [...salesKeys.all, 'receivables', filter] as const,
+  receivables: (filter: CustomerReceivableFilter) =>
+    [...salesKeys.all, 'receivables', filter] as const,
 }

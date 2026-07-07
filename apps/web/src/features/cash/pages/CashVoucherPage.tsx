@@ -1,4 +1,4 @@
-import { CashVoucherType } from '@app/shared'
+import { CashVoucherCategory, CashVoucherType } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { CashVoucherForm } from '../components/CashVoucherForm'
@@ -12,6 +12,16 @@ export function CashVoucherPage({ mode }: { mode: Mode }) {
   const [sp] = useSearchParams()
   const type = (sp.get('type') as CashVoucherType) ?? CashVoucherType.Receipt
   const isReceipt = type === CashVoucherType.Receipt
+
+  // Điền sẵn khi mở từ nơi khác (vd. "Thu nợ" ở bảng Công nợ) — chỉ áp dụng lúc tạo mới.
+  const prefill =
+    mode === 'new'
+      ? {
+          category: (sp.get('category') as CashVoucherCategory) ?? undefined,
+          partnerId: sp.get('partnerId') ?? undefined,
+          partnerName: sp.get('partnerName') ?? undefined,
+        }
+      : undefined
 
   const close = () => navigate('/cash')
 
@@ -31,6 +41,7 @@ export function CashVoucherPage({ mode }: { mode: Mode }) {
         type={type}
         voucherId={id ?? null}
         readOnly={mode === 'view'}
+        prefill={prefill}
         onSaved={close}
         onCancel={close}
       />

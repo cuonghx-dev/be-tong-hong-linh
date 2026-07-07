@@ -9,9 +9,11 @@ import {
   type SalesVoucher,
   type SalesVoucherLine,
 } from '@prisma/client'
+import { randomUUID } from 'crypto'
 import { PrismaService } from '../../database/prisma.service'
 import { CreateSalesVoucherDto, CreateSalesVoucherLineDto } from './dto/create-sales-voucher.dto'
 import { SalesVoucherFilterDto } from './dto/sales-voucher-filter.dto'
+import { parseSalesXlsx } from './sales-import'
 import { UpdateSalesVoucherDto } from './dto/update-sales-voucher.dto'
 
 type VoucherWithRelations = SalesVoucher & {
@@ -203,6 +205,88 @@ export class SalesService {
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
     await this.prisma.salesVoucher.delete({ where: { id } })
     return { id }
+  }
+
+  // Nhập khẩu chứng từ bán hàng từ Excel (mức tổng hợp, 1 dòng hàng/chứng từ).
+  // File không tách tiền hàng/thuế → coi toàn bộ tổng TT là tiền hàng, VAT = 0.
+  async importXlsx(buffer: Buffer) {
+    const parsed = parseSalesXlsx(buffer)
+    if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
+
+    const nos = parsed.map((p) => p.voucherNo)
+    const existing = await this.prisma.salesVoucher.findMany({
+      where: { voucherNo: { in: nos } },
+      select: { voucherNo: true },
+    })
+    const seen = new Set(existing.map((e) => e.voucherNo))
+
+    const vouchers: Prisma.SalesVoucherCreateManyInput[] = []
+    const lines: Prisma.SalesVoucherLineCreateManyInput[] = []
+    const invoices: Prisma.InvoiceCreateManyInput[] = []
+    for (const p of parsed) {
+      if (seen.has(p.voucherNo)) continue
+      seen.add(p.voucherNo) // chống trùng trong chính file
+
+      const totalGoods = new Prisma.Decimal(p.totalPayment)
+      const ctx: NormalizeCtx = { voucherType: p.type, paymentMode: p.paymentMode }
+      const id = randomUUID()
+      vouchers.push({
+        id,
+        voucherNo: p.voucherNo,
+        voucherType: p.type,
+        paymentMode: p.paymentMode,
+        isInventoryIssue: p.isInventoryIssue,
+        withInvoice: p.withInvoice,
+        postingDate: p.date,
+        voucherDate: p.date,
+        customerName: p.customerName,
+        description: 'Bán hàng',
+        totalGoods,
+        totalVat: new Prisma.Decimal(0),
+        totalAmount: totalGoods,
+        branchId: p.branchId,
+      })
+      // Số hóa đơn có trong file → sinh hóa đơn liên kết (đã cấp mã).
+      if (p.invoiceNo) {
+        invoices.push({
+          invoiceNo: p.invoiceNo,
+          invoiceType: 'Hóa đơn GTGT',
+          issueStatus: 'CODE_ISSUED',
+          invoiceDate: p.date,
+          salesVoucherId: id,
+          customerName: p.customerName,
+          totalAmount: totalGoods,
+          branchId: p.branchId,
+        })
+      }
+      lines.push({
+        id: randomUUID(),
+        voucherId: id,
+        lineNo: 1,
+        debtAccount: defaultDebtAccount(ctx),
+        revenueAccount: defaultRevenueAccount(ctx),
+        quantity: new Prisma.Decimal(1),
+        unitPrice: totalGoods,
+        amount: totalGoods,
+        vatRate: new Prisma.Decimal(0),
+        vatAmount: new Prisma.Decimal(0),
+        vatAccount: CHART_OF_ACCOUNTS.VAT_OUTPUT_DETAIL,
+      })
+    }
+
+    // Chèn theo lô để tránh statement quá lớn.
+    const chunk = 500
+    for (let i = 0; i < vouchers.length; i += chunk) {
+      await this.prisma.salesVoucher.createMany({ data: vouchers.slice(i, i + chunk) })
+    }
+    for (let i = 0; i < lines.length; i += chunk) {
+      await this.prisma.salesVoucherLine.createMany({ data: lines.slice(i, i + chunk) })
+    }
+    for (let i = 0; i < invoices.length; i += chunk) {
+      await this.prisma.invoice.createMany({ data: invoices.slice(i, i + chunk) })
+    }
+
+    return { total: parsed.length, created: vouchers.length, skipped: parsed.length - vouchers.length }
   }
 }
 

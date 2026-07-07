@@ -1,5 +1,18 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
-import { ApiOperation, ApiTags } from '@nestjs/swagger'
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CustomerService } from './customer.service'
 import { CreateCustomerDto } from './dto/create-customer.dto'
 import { CustomerFilterDto } from './dto/customer-filter.dto'
@@ -26,6 +39,18 @@ export class CustomerController {
   @ApiOperation({ summary: 'Thêm khách hàng' })
   create(@Body() dto: CreateCustomerDto) {
     return this.customers.create(dto)
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Nhập khẩu khách hàng từ file Excel (.xlsx)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } },
+  })
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 20 * 1024 * 1024 } }))
+  import(@UploadedFile() file?: { buffer: Buffer }) {
+    if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
+    return this.customers.importXlsx(file.buffer)
   }
 
   @Patch(':id')

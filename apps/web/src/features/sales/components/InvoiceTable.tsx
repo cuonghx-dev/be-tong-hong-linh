@@ -1,17 +1,47 @@
 import { InvoiceIssueStatus, type InvoiceFilter } from '@app/shared'
-import { useSearchParams } from 'react-router-dom'
+import { useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
+import { AddMenu } from '@/shared/ui/add-menu'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
-import { useInvoices, useIssueInvoice } from '../api/useInvoices'
+import { useToast } from '@/shared/ui/toast'
+import { useImportInvoices, useInvoices, useIssueInvoice } from '../api/useInvoices'
 import { ISSUE_STATUS_LABEL } from '../types'
 
 const PAGE_SIZE = 20
 
 export function InvoiceTable() {
   const [params, setParams] = useSearchParams()
+  const navigate = useNavigate()
   const issue = useIssueInvoice()
+  const importXlsx = useImportInvoices()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
+
+  const openNew = () => navigate('/sales/invoices/new')
+  const openView = (id: string) => navigate(`/sales/invoices/${id}`)
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // cho phép chọn lại cùng file
+    if (!file) return
+    importXlsx.mutate(file, {
+      onSuccess: (r) =>
+        toast({
+          variant: 'success',
+          title: 'Nhập khẩu thành công',
+          description: `${r.created} hóa đơn mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`,
+        }),
+      onError: () =>
+        toast({
+          variant: 'error',
+          title: 'Nhập khẩu thất bại',
+          description: 'Kiểm tra lại file Excel.',
+        }),
+    })
+  }
 
   const page = Number(params.get('ipage') ?? 1)
   const keyword = params.get('iq') ?? ''
@@ -33,7 +63,19 @@ export function InvoiceTable() {
   return (
     <div className="flex h-full flex-col rounded-lg border border-border bg-white">
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={onPickFile}
+        />
         <div className="ml-auto flex items-center gap-2">
+          <AddMenu
+            actions={[{ label: 'Hóa đơn', onClick: openNew }]}
+            onImportExcel={() => fileRef.current?.click()}
+            importing={importXlsx.isPending}
+          />
           <div className="relative">
             <SearchIcon
               size={15}
@@ -59,16 +101,20 @@ export function InvoiceTable() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[980px] border-collapse text-sm">
+        <table className="w-full min-w-[1400px] border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2">Ngày hóa đơn</th>
               <th className="px-3 py-2">Số hóa đơn</th>
+              <th className="px-3 py-2">Loại</th>
+              <th className="px-3 py-2">TT hóa đơn</th>
               <th className="px-3 py-2">Khách hàng</th>
               <th className="px-3 py-2 text-right">Giá trị hóa đơn</th>
-              <th className="px-3 py-2">TT phát hành</th>
+              <th className="px-3 py-2">TT lập chứng từ</th>
+              <th className="px-3 py-2">TT phát hành hóa đơn</th>
               <th className="px-3 py-2">Mã của CQT</th>
-              <th className="px-3 py-2">Chứng từ</th>
+              <th className="px-3 py-2">TT gửi hóa đơn</th>
+              <th className="px-3 py-2">KH đã nhận hóa đơn</th>
               <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
               </th>
@@ -77,14 +123,14 @@ export function InvoiceTable() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={12} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={12} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -94,7 +140,7 @@ export function InvoiceTable() {
             )}
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={12} className="px-3 py-10 text-center text-slate-400">
                   Chưa có hóa đơn nào. Lập chứng từ bán hàng kèm hóa đơn để sinh HĐ.
                 </td>
               </tr>
@@ -108,6 +154,13 @@ export function InvoiceTable() {
                   </td>
                   <td className="px-3 py-2 font-medium text-slate-700">{r.invoiceNo ?? '—'}</td>
                   <td
+                    className="max-w-[180px] truncate px-3 py-2 text-slate-600"
+                    title={r.invoiceType || ''}
+                  >
+                    {r.invoiceType ?? '—'}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">{r.status}</td>
+                  <td
                     className="max-w-[220px] truncate px-3 py-2 text-slate-700"
                     title={r.customerName || ''}
                   >
@@ -115,6 +168,9 @@ export function InvoiceTable() {
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-800">
                     {formatCurrency(Number(r.totalAmount))}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">
+                    {r.salesVoucherId ? 'Đã lập' : 'Chưa lập'}
                   </td>
                   <td className="px-3 py-2">
                     <span
@@ -129,23 +185,37 @@ export function InvoiceTable() {
                   <td className="max-w-[200px] truncate px-3 py-2 text-slate-600" title={r.taxAuthorityCode || ''}>
                     {r.taxAuthorityCode ?? '—'}
                   </td>
-                  <td className="px-3 py-2 text-slate-600">{r.salesVoucherNo ?? '—'}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">
+                    {r.sendStatus ?? '—'}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <span
+                      className={cn(
+                        'rounded px-1.5 py-0.5 text-xs',
+                        r.customerReceived
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-slate-100 text-slate-500',
+                      )}
+                    >
+                      {r.customerReceived ? 'Đã nhận' : 'Chưa nhận'}
+                    </span>
+                  </td>
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
                       primaryLabel={r.lookupUrl ? 'Tra cứu' : 'Xem'}
                       onPrimary={() => {
                         if (r.lookupUrl) window.open(r.lookupUrl, '_blank')
+                        else openView(r.id)
                       }}
-                      items={
+                      items={[
+                        { label: 'Xem chi tiết', onClick: () => openView(r.id) },
                         issued
-                          ? [{ label: 'Đã cấp mã', onClick: () => {} }]
-                          : [
-                              {
-                                label: issue.isPending ? 'Đang phát hành…' : 'Phát hành (cấp mã)',
-                                onClick: () => issue.mutate(r.id),
-                              },
-                            ]
-                      }
+                          ? { label: 'Đã cấp mã', onClick: () => {} }
+                          : {
+                              label: issue.isPending ? 'Đang phát hành…' : 'Phát hành (cấp mã)',
+                              onClick: () => issue.mutate(r.id),
+                            },
+                      ]}
                     />
                   </td>
                 </tr>

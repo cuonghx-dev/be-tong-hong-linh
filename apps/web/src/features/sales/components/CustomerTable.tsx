@@ -1,15 +1,15 @@
 import type { CustomerFilter } from '@app/shared'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
-import { Button } from '@/shared/ui/button'
+import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import { useToast } from '@/shared/ui/toast'
 import { useCustomers } from '../api/useCustomers'
-import { useDeleteCustomer } from '../api/useCustomerMutations'
-import { CUSTOMER_TYPE_LABEL } from '../types'
+import { useDeleteCustomer, useImportCustomers } from '../api/useCustomerMutations'
 import { CustomerForm } from './CustomerForm'
 
 const PAGE_SIZE = 20
@@ -18,7 +18,30 @@ export function CustomerTable() {
   const [params, setParams] = useSearchParams()
   const [form, setForm] = useState<{ customerId?: string; readOnly?: boolean } | null>(null)
   const del = useDeleteCustomer()
+  const importXlsx = useImportCustomers()
+  const fileRef = useRef<HTMLInputElement>(null)
   const confirm = useConfirm()
+  const { toast } = useToast()
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // cho phép chọn lại cùng file
+    if (!file) return
+    importXlsx.mutate(file, {
+      onSuccess: (r) =>
+        toast({
+          variant: 'success',
+          title: 'Nhập khẩu thành công',
+          description: `${r.created} khách hàng mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`,
+        }),
+      onError: () =>
+        toast({
+          variant: 'error',
+          title: 'Nhập khẩu thất bại',
+          description: 'Kiểm tra lại file Excel.',
+        }),
+    })
+  }
 
   const page = Number(params.get('cpage') ?? 1)
   const keyword = params.get('cq') ?? ''
@@ -40,10 +63,19 @@ export function CustomerTable() {
   return (
     <div className="flex h-full flex-col rounded-lg border border-border bg-white">
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={onPickFile}
+        />
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" onClick={() => setForm({})}>
-            Thêm khách hàng
-          </Button>
+          <AddMenu
+            actions={[{ label: 'Khách hàng', onClick: () => setForm({}) }]}
+            onImportExcel={() => fileRef.current?.click()}
+            importing={importXlsx.isPending}
+          />
           <div className="relative">
             <SearchIcon
               size={15}
@@ -72,12 +104,12 @@ export function CustomerTable() {
         <table className="w-full min-w-[900px] border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-3 py-2">Mã KH</th>
+              <th className="px-3 py-2">Mã khách hàng</th>
               <th className="px-3 py-2">Tên khách hàng</th>
               <th className="px-3 py-2">Địa chỉ</th>
               <th className="px-3 py-2 text-right">Công nợ</th>
-              <th className="px-3 py-2">Mã số thuế</th>
-              <th className="px-3 py-2">Loại</th>
+              <th className="px-3 py-2">Mã số thuế/CCCD chủ hộ</th>
+              <th className="px-3 py-2">Điện thoại</th>
               <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
               </th>
@@ -131,7 +163,7 @@ export function CustomerTable() {
                   {formatCurrency(Number(r.receivable))}
                 </td>
                 <td className="px-3 py-2 text-slate-600">{r.taxCode}</td>
-                <td className="px-3 py-2 text-slate-600">{CUSTOMER_TYPE_LABEL[r.type]}</td>
+                <td className="px-3 py-2 text-slate-600">{r.phone}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
                     onPrimary={() => setForm({ customerId: r.id, readOnly: true })}
