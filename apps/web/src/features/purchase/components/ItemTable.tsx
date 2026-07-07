@@ -1,14 +1,15 @@
 import { ItemNature, type InventoryItemFilter } from '@app/shared'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
-import { Button } from '@/shared/ui/button'
+import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
-import { PlusIcon, RefreshIcon, SearchIcon } from '@/shared/ui/icons'
+import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import { useToast } from '@/shared/ui/toast'
 import { useItems } from '../api/useItems'
-import { useDeleteItem } from '../api/useItemMutations'
+import { useDeleteItem, useImportItems } from '../api/useItemMutations'
 import { ITEM_NATURE_LABEL, ITEM_TAX_REDUCTION_LABEL } from '../types'
 import { ItemForm } from './ItemForm'
 
@@ -26,7 +27,30 @@ export function ItemTable() {
   const [params, setParams] = useSearchParams()
   const [formState, setFormState] = useState<{ itemId?: string; readOnly?: boolean } | null>(null)
   const del = useDeleteItem()
+  const importXlsx = useImportItems()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
   const confirm = useConfirm()
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // cho phép chọn lại cùng file
+    if (!file) return
+    importXlsx.mutate(file, {
+      onSuccess: (r) =>
+        toast({
+          variant: 'success',
+          title: 'Nhập khẩu thành công',
+          description: `${r.created} HHDV mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`,
+        }),
+      onError: () =>
+        toast({
+          variant: 'error',
+          title: 'Nhập khẩu thất bại',
+          description: 'Kiểm tra lại file Excel.',
+        }),
+    })
+  }
 
   const page = Number(params.get(P.page) ?? 1)
   const keyword = params.get(P.q) ?? ''
@@ -63,6 +87,13 @@ export function ItemTable() {
     <div className="flex h-full flex-col rounded-lg border border-border bg-white">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={onPickFile}
+        />
         <select
           value={nature ?? ''}
           onChange={(e) => setParam(P.nature, e.target.value || null)}
@@ -85,9 +116,11 @@ export function ItemTable() {
         </label>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" onClick={() => setFormState({})}>
-            <PlusIcon size={16} /> Thêm
-          </Button>
+          <AddMenu
+            actions={[{ label: 'Hàng hóa - dịch vụ', onClick: () => setFormState({}) }]}
+            onImportExcel={() => fileRef.current?.click()}
+            importing={importXlsx.isPending}
+          />
           <div className="relative">
             <SearchIcon
               size={15}
@@ -126,7 +159,6 @@ export function ItemTable() {
               <th className="px-3 py-2">Tính chất</th>
               <th className="px-3 py-2 text-right">Số lượng tồn</th>
               <th className="px-3 py-2 text-right">Giá trị tồn</th>
-              <th className="px-3 py-2">Chi nhánh</th>
               <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
               </th>
@@ -135,14 +167,14 @@ export function ItemTable() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={8} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -152,7 +184,7 @@ export function ItemTable() {
             )}
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
                   Chưa có hàng hóa - dịch vụ nào.
                 </td>
               </tr>
@@ -181,7 +213,6 @@ export function ItemTable() {
                 <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-600">
                   {formatCurrency(Number(r.stockValue))}
                 </td>
-                <td className="max-w-[200px] truncate px-3 py-2 text-slate-600">{r.branchName}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
                     primaryLabel="Sửa"
@@ -222,7 +253,6 @@ export function ItemTable() {
                 <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
                   {formatCurrency(sumValue)}
                 </td>
-                <td className="px-3 py-2" />
                 <td className="sticky right-0 bg-slate-50 px-3 py-2" />
               </tr>
             </tfoot>

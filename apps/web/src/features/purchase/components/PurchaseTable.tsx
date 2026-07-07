@@ -12,7 +12,7 @@ import {
   useDeletePurchaseVoucher,
   useImportPurchaseVouchers,
 } from '../api/usePurchaseVoucherMutations'
-import { PAYMENT_STATUS_LABEL, RECEIVE_STATUS_LABEL, VOUCHER_TYPE_LABEL } from '../types'
+import { PAYMENT_STATUS_LABEL, RECEIVE_STATUS_LABEL, purchaseReasonLabel } from '../types'
 import {
   PurchaseFilterPopover,
   type PurchaseFilterValue,
@@ -250,7 +250,7 @@ export function PurchaseTable() {
                 </td>
                 <td className="px-3 py-2 text-slate-600">{RECEIVE_STATUS_LABEL[r.receiveStatus]}</td>
                 <td className="px-3 py-2 text-slate-600">{PAYMENT_STATUS_LABEL[r.paymentStatus]}</td>
-                <td className="px-3 py-2 text-slate-600">{VOUCHER_TYPE_LABEL[r.type]}</td>
+                <td className="px-3 py-2 text-slate-600">{purchaseReasonLabel(r.origin, r.type)}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
                     onPrimary={() => openView(r.id, r.type)}

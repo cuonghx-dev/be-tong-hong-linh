@@ -126,7 +126,6 @@ export function SupplierTable() {
               <th className="px-3 py-2">Địa chỉ</th>
               <th className="px-3 py-2 text-right">Số tiền nợ</th>
               <th className="px-3 py-2">Mã số thuế/CCCD</th>
-              <th className="px-3 py-2">Rủi ro về hóa đơn</th>
               <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
               </th>
@@ -135,14 +134,14 @@ export function SupplierTable() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={7} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={7} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -152,7 +151,7 @@ export function SupplierTable() {
             )}
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={7} className="px-3 py-10 text-center text-slate-400">
                   Chưa có nhà cung cấp nào.
                 </td>
               </tr>
@@ -183,7 +182,6 @@ export function SupplierTable() {
                     {debt > 0 ? `(${formatCurrency(debt)})` : formatCurrency(debt)}
                   </td>
                   <td className="px-3 py-2 text-slate-600">{r.taxCode}</td>
-                  <td className="px-3 py-2 text-slate-600">{r.invoiceRisk}</td>
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
                       primaryLabel="Sửa"

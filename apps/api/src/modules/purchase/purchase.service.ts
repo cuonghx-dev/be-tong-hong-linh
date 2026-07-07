@@ -74,6 +74,7 @@ export class PurchaseService {
       return tx.purchaseVoucher.create({
         data: {
           type: dto.type,
+          origin: dto.origin ?? 'DOMESTIC',
           paymentMode: dto.paymentMode,
           paymentMethod: dto.paymentMethod ?? null,
           receiveWithInvoice: dto.receiveWithInvoice ?? false,
@@ -113,6 +114,7 @@ export class PurchaseService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const data: Prisma.PurchaseVoucherUpdateInput = {
+        origin: dto.origin ?? undefined,
         paymentMode: dto.paymentMode ?? undefined,
         paymentMethod: dto.paymentMethod ?? undefined,
         receiveWithInvoice: dto.receiveWithInvoice ?? undefined,
@@ -342,6 +344,7 @@ function toVoucherDto(v: VoucherWithLines) {
   return {
     id: v.id,
     type: v.type,
+    origin: v.origin,
     paymentMode: v.paymentMode,
     paymentMethod: v.paymentMethod,
     receiveWithInvoice: v.receiveWithInvoice,

@@ -86,9 +86,15 @@ export enum BankPaymentMethod {
 
 // Loại chứng từ mua hàng (§5) — quyết định định khoản + cột bảng + prefix số.
 export enum PurchaseVoucherType {
-  Stock = 'STOCK', // Mua hàng trong nước nhập kho (NK) → có TK Kho
-  NonStock = 'NON_STOCK', // Mua hàng trong nước không qua kho (MH)
+  Stock = 'STOCK', // Nhập kho (NK) → có TK Kho
+  NonStock = 'NON_STOCK', // Không qua kho (MH)
   Service = 'SERVICE', // Mua dịch vụ (MDV)
+}
+
+// Nguồn gốc hàng mua (§5) — kết hợp với loại kho để ra "Lý do" nhập chứng từ.
+export enum PurchaseOrigin {
+  Domestic = 'DOMESTIC', // Trong nước
+  Import = 'IMPORT', // Nhập khẩu
 }
 
 // Hình thức thanh toán khi lập chứng từ (§4 - Tùy chọn đầu form).

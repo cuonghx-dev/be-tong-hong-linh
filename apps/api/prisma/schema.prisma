@@ -185,6 +185,12 @@ enum PurchaseVoucherType {
   SERVICE
 }
 
+// Nguồn gốc hàng mua (§5): trong nước / nhập khẩu.
+enum PurchaseOrigin {
+  DOMESTIC
+  IMPORT
+}
+
 // Hình thức thanh toán khi lập chứng từ.
 enum PurchasePaymentMode {
   UNPAID
@@ -299,6 +305,7 @@ model Supplier {
 model PurchaseVoucher {
   id                 String                @id @default(uuid())
   type               PurchaseVoucherType
+  origin             PurchaseOrigin        @default(DOMESTIC)
   paymentMode        PurchasePaymentMode   @default(UNPAID) @map("payment_mode")
   paymentMethod      PaymentMethod?        @map("payment_method")
   receiveWithInvoice Boolean               @default(false) @map("receive_with_invoice")

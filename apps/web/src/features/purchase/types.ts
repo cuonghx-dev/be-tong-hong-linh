@@ -2,6 +2,7 @@ import {
   ItemNature,
   ItemTaxReduction,
   PaymentMethod,
+  PurchaseOrigin,
   PurchasePaymentMode,
   PurchasePaymentStatus,
   PurchaseReceiveStatus,
@@ -14,6 +15,44 @@ export const VOUCHER_TYPE_LABEL: Record<PurchaseVoucherType, string> = {
   [PurchaseVoucherType.Stock]: 'Mua hàng trong nước nhập kho',
   [PurchaseVoucherType.NonStock]: 'Mua hàng trong nước không qua kho',
   [PurchaseVoucherType.Service]: 'Mua dịch vụ',
+}
+
+// Nhãn nguồn gốc mua hàng (§5).
+export const PURCHASE_ORIGIN_LABEL: Record<PurchaseOrigin, string> = {
+  [PurchaseOrigin.Domestic]: 'trong nước',
+  [PurchaseOrigin.Import]: 'nhập khẩu',
+}
+
+// "Lý do" nhập chứng từ mua hàng hóa = nguồn gốc × loại kho (§5).
+// Không gồm Mua dịch vụ (chứng từ riêng).
+export interface PurchaseReasonOption {
+  origin: PurchaseOrigin
+  type: PurchaseVoucherType
+  label: string
+}
+
+export const PURCHASE_REASON_OPTIONS: PurchaseReasonOption[] = [
+  { origin: PurchaseOrigin.Domestic, type: PurchaseVoucherType.Stock, label: 'Mua hàng trong nước nhập kho' },
+  { origin: PurchaseOrigin.Domestic, type: PurchaseVoucherType.NonStock, label: 'Mua hàng trong nước không qua kho' },
+  { origin: PurchaseOrigin.Import, type: PurchaseVoucherType.Stock, label: 'Mua hàng nhập khẩu nhập kho' },
+  { origin: PurchaseOrigin.Import, type: PurchaseVoucherType.NonStock, label: 'Mua hàng nhập khẩu không qua kho' },
+]
+
+// Mã hóa lựa chọn "Lý do" thành value cho <select> ("DOMESTIC:STOCK").
+export const reasonKey = (origin: PurchaseOrigin, type: PurchaseVoucherType) => `${origin}:${type}`
+
+export function parseReasonKey(key: string): { origin: PurchaseOrigin; type: PurchaseVoucherType } {
+  const [origin, type] = key.split(':') as [PurchaseOrigin, PurchaseVoucherType]
+  return { origin, type }
+}
+
+// Nhãn "Lý do" đầy đủ theo nguồn gốc + loại (dùng cho tiêu đề trang, dòng bảng).
+export function purchaseReasonLabel(origin: PurchaseOrigin, type: PurchaseVoucherType): string {
+  if (type === PurchaseVoucherType.Service) return VOUCHER_TYPE_LABEL[type]
+  return (
+    PURCHASE_REASON_OPTIONS.find((o) => o.origin === origin && o.type === type)?.label ??
+    VOUCHER_TYPE_LABEL[type]
+  )
 }
 
 // Prefix số chứng từ theo loại (§10.1).

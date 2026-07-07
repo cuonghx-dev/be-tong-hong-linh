@@ -3,6 +3,7 @@ import type {
   ItemNature,
   ItemTaxReduction,
   PaymentMethod,
+  PurchaseOrigin,
   PurchasePaymentMode,
   PurchasePaymentStatus,
   PurchaseReceiveStatus,
@@ -34,6 +35,7 @@ export interface PurchaseVoucherLineDto {
 export interface PurchaseVoucherDto {
   id: string
   type: PurchaseVoucherType
+  origin: PurchaseOrigin // Nguồn gốc: trong nước / nhập khẩu
   paymentMode: PurchasePaymentMode
   paymentMethod: PaymentMethod | null // Khi thanh toán ngay
   receiveWithInvoice: boolean // Nhận kèm hóa đơn
@@ -84,6 +86,7 @@ export interface CreatePurchaseVoucherLineInput {
 // Payload tạo chứng từ mua hàng.
 export interface CreatePurchaseVoucherInput {
   type: PurchaseVoucherType
+  origin?: PurchaseOrigin // Mặc định trong nước (DOMESTIC)
   paymentMode: PurchasePaymentMode
   paymentMethod?: PaymentMethod | null
   receiveWithInvoice?: boolean

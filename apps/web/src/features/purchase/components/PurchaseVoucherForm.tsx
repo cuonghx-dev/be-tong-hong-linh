@@ -2,6 +2,7 @@ import {
   CHART_OF_ACCOUNTS,
   PartnerType,
   PaymentMethod,
+  PurchaseOrigin,
   PurchasePaymentMode,
   PurchaseVoucherType,
   type CreatePurchaseVoucherInput,
@@ -25,7 +26,14 @@ import {
   type PurchaseLineFormValues,
   type PurchaseVoucherFormValues,
 } from '../schema'
-import { PAYMENT_METHOD_LABEL, VOUCHER_TYPE_LABEL, hasWarehouse } from '../types'
+import {
+  PAYMENT_METHOD_LABEL,
+  PURCHASE_REASON_OPTIONS,
+  VOUCHER_TYPE_LABEL,
+  hasWarehouse,
+  parseReasonKey,
+  reasonKey,
+} from '../types'
 import { MoneyInput } from './MoneyInput'
 
 interface Props {
@@ -58,6 +66,7 @@ function emptyLine(type: PurchaseVoucherType): PurchaseLineFormValues {
 function defaultValues(type: PurchaseVoucherType): PurchaseVoucherFormValues {
   return {
     type,
+    origin: PurchaseOrigin.Domestic,
     paymentMode: PurchasePaymentMode.Unpaid,
     paymentMethod: PaymentMethod.Cash,
     receiveWithInvoice: false,
@@ -103,6 +112,7 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
     if (!v) return
     reset({
       type: v.type,
+      origin: v.origin,
       paymentMode: v.paymentMode,
       paymentMethod: v.paymentMethod ?? undefined,
       receiveWithInvoice: v.receiveWithInvoice,
@@ -143,7 +153,11 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
   const purchaseCost = watch('purchaseCost') ?? 0
   const paymentMode = watch('paymentMode')
   const receiveWithInvoice = watch('receiveWithInvoice')
-  const showWarehouse = hasWarehouse(type)
+  // Loại/nguồn gốc là trạng thái form (đổi qua dropdown "Lý do"), không dùng prop cố định.
+  const currentType = watch('type')
+  const currentOrigin = watch('origin')
+  const showWarehouse = hasWarehouse(currentType)
+  const isService = type === PurchaseVoucherType.Service
   const isUnpaid = paymentMode === PurchasePaymentMode.Unpaid
 
   // §10.2 tổng hợp.
@@ -175,8 +189,10 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
       }
       if (voucherId) await update.mutateAsync({ id: voucherId, dto })
       else await create.mutateAsync(dto)
-      if (goNext && !voucherId) reset(defaultValues(type))
-      else onSaved()
+      if (goNext && !voucherId) {
+        // Giữ nguyên "Lý do" (loại + nguồn gốc) đang chọn khi cất và thêm tiếp.
+        reset({ ...defaultValues(values.type), origin: values.origin })
+      } else onSaved()
     })
 
   const saving = create.isPending || update.isPending
@@ -184,11 +200,33 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
   return (
     <form className="flex h-full flex-col">
       <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto pr-1 disabled:opacity-90">
-      {/* Loại nghiệp vụ + số hợp đồng */}
+      {/* Lý do (loại nghiệp vụ) + số hợp đồng */}
       <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
-          {VOUCHER_TYPE_LABEL[type]}
-        </span>
+        {isService ? (
+          <span className="rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
+            {VOUCHER_TYPE_LABEL[type]}
+          </span>
+        ) : (
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-slate-500">Lý do</span>
+            <select
+              value={reasonKey(currentOrigin, currentType)}
+              disabled={readOnly}
+              onChange={(e) => {
+                const { origin, type: t } = parseReasonKey(e.target.value)
+                setValue('origin', origin)
+                setValue('type', t)
+              }}
+              className={cn(inputCls, 'w-64')}
+            >
+              {PURCHASE_REASON_OPTIONS.map((opt) => (
+                <option key={reasonKey(opt.origin, opt.type)} value={reasonKey(opt.origin, opt.type)}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <input
           {...register('contractNo')}
           placeholder="Nhập số hợp đồng mua …"
@@ -289,7 +327,7 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
       <div className="rounded-md border border-border">
         <div className="flex items-center gap-2 border-b border-border bg-slate-50 px-2 py-1.5">
           <span className="text-sm font-medium text-slate-600">Hàng tiền</span>
-          <Button type="button" variant="outline" size="sm" onClick={() => append(emptyLine(type))}>
+          <Button type="button" variant="outline" size="sm" onClick={() => append(emptyLine(currentType))}>
             <PlusIcon size={14} /> Thêm dòng
           </Button>
         </div>

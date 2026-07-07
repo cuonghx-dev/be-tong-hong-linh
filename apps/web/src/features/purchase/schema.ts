@@ -2,6 +2,7 @@ import {
   ItemNature,
   ItemTaxReduction,
   PaymentMethod,
+  PurchaseOrigin,
   PurchasePaymentMode,
   PurchaseVoucherType,
   SupplierType,
@@ -24,6 +25,7 @@ export const purchaseLineSchema = z.object({
 
 export const purchaseVoucherSchema = z.object({
   type: z.nativeEnum(PurchaseVoucherType),
+  origin: z.nativeEnum(PurchaseOrigin),
   paymentMode: z.nativeEnum(PurchasePaymentMode),
   paymentMethod: z.nativeEnum(PaymentMethod).optional(),
   receiveWithInvoice: z.boolean().optional(),

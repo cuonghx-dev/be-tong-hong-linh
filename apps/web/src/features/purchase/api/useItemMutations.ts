@@ -12,6 +12,28 @@ export function useCreateItem() {
   })
 }
 
+export interface ItemImportResult {
+  total: number
+  created: number
+  skipped: number
+}
+
+export function useImportItems() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return api
+        .post<ItemImportResult>('/purchase/items/import', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        .then((r) => r.data)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: purchaseKeys.all }),
+  })
+}
+
 export function useUpdateItem() {
   const qc = useQueryClient()
   return useMutation({
