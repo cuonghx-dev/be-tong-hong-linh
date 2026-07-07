@@ -6,7 +6,7 @@ import {
   type CreatePurchaseVoucherInput,
 } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
@@ -28,6 +28,7 @@ import { MoneyInput } from './MoneyInput'
 interface Props {
   type: PurchaseVoucherType
   voucherId?: string | null
+  readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
 }
@@ -65,11 +66,10 @@ function defaultValues(type: PurchaseVoucherType): PurchaseVoucherFormValues {
   }
 }
 
-export function PurchaseVoucherForm({ type, voucherId, onSaved, onCancel }: Props) {
+export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved, onCancel }: Props) {
   const editing = usePurchaseVoucher(voucherId ?? null)
   const create = useCreatePurchaseVoucher()
   const update = useUpdatePurchaseVoucher()
-  const [showAccounts, setShowAccounts] = useState(true)
 
   const form = useForm<PurchaseVoucherFormValues>({
     resolver: zodResolver(purchaseVoucherSchema),
@@ -162,6 +162,7 @@ export function PurchaseVoucherForm({ type, voucherId, onSaved, onCancel }: Prop
 
   return (
     <form className="space-y-4">
+      <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
       {/* Loại nghiệp vụ + số hợp đồng */}
       <div className="flex flex-wrap items-center gap-3">
         <span className="rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
@@ -256,14 +257,6 @@ export function PurchaseVoucherForm({ type, voucherId, onSaved, onCancel }: Prop
           <Button type="button" variant="outline" size="sm" onClick={() => append(emptyLine(type))}>
             <PlusIcon size={14} /> Thêm dòng
           </Button>
-          <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-600">
-            <input
-              type="checkbox"
-              checked={showAccounts}
-              onChange={(e) => setShowAccounts(e.target.checked)}
-            />
-            Hiển thị tài khoản
-          </label>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] border-collapse text-sm">
@@ -273,15 +266,15 @@ export function PurchaseVoucherForm({ type, voucherId, onSaved, onCancel }: Prop
                 <th className="px-2 py-1.5">Mã hàng</th>
                 <th className="px-2 py-1.5">Tên hàng</th>
                 {showWarehouse && <th className="px-2 py-1.5">Kho</th>}
-                {showAccounts && <th className="w-20 px-2 py-1.5">TK Kho</th>}
+                <th className="w-20 px-2 py-1.5">TK Kho</th>
                 <th className="w-16 px-2 py-1.5">ĐVT</th>
                 <th className="w-20 px-2 py-1.5 text-right">SL</th>
                 <th className="w-28 px-2 py-1.5 text-right">Đơn giá</th>
                 <th className="w-32 px-2 py-1.5 text-right">Thành tiền</th>
                 <th className="w-16 px-2 py-1.5 text-right">% GTGT</th>
                 <th className="w-28 px-2 py-1.5 text-right">Tiền thuế</th>
-                {showAccounts && <th className="w-20 px-2 py-1.5">TK CN</th>}
-                {showAccounts && <th className="w-20 px-2 py-1.5">TK thuế</th>}
+                <th className="w-20 px-2 py-1.5">TK CN</th>
+                <th className="w-20 px-2 py-1.5">TK thuế</th>
                 <th className="w-8 px-2 py-1.5" />
               </tr>
             </thead>
@@ -304,11 +297,9 @@ export function PurchaseVoucherForm({ type, voucherId, onSaved, onCancel }: Prop
                         <input {...register(`lines.${i}.warehouseId`)} className={cellCls} />
                       </td>
                     )}
-                    {showAccounts && (
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.stockAccount`)} className={cellCls} />
-                      </td>
-                    )}
+                    <td className="px-2 py-1">
+                      <input {...register(`lines.${i}.stockAccount`)} className={cellCls} />
+                    </td>
                     <td className="px-2 py-1">
                       <input {...register(`lines.${i}.unit`)} className={cellCls} />
                     </td>
@@ -346,16 +337,12 @@ export function PurchaseVoucherForm({ type, voucherId, onSaved, onCancel }: Prop
                     <td className="px-2 py-1 text-right tabular-nums text-slate-700">
                       {formatCurrency(vat)}
                     </td>
-                    {showAccounts && (
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.payableAccount`)} className={cellCls} />
-                      </td>
-                    )}
-                    {showAccounts && (
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.vatAccount`)} className={cellCls} />
-                      </td>
-                    )}
+                    <td className="px-2 py-1">
+                      <input {...register(`lines.${i}.payableAccount`)} className={cellCls} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input {...register(`lines.${i}.vatAccount`)} className={cellCls} />
+                    </td>
                     <td className="px-2 py-1 text-center">
                       <button
                         type="button"
@@ -372,13 +359,13 @@ export function PurchaseVoucherForm({ type, voucherId, onSaved, onCancel }: Prop
             </tbody>
             <tfoot className="bg-slate-100 font-medium">
               <tr className="border-t border-border">
-                <td className="px-2 py-1.5" colSpan={showWarehouse ? (showAccounts ? 8 : 7) : showAccounts ? 7 : 6}>
+                <td className="px-2 py-1.5" colSpan={showWarehouse ? 8 : 7}>
                   Tổng cộng
                 </td>
                 <td className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(totalGoods)}</td>
                 <td />
                 <td className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(totalVat)}</td>
-                <td colSpan={showAccounts ? 3 : 1} />
+                <td colSpan={3} />
               </tr>
             </tfoot>
           </table>
@@ -427,18 +414,28 @@ export function PurchaseVoucherForm({ type, voucherId, onSaved, onCancel }: Prop
         </Field>
       </div>
 
+      </fieldset>
+
       {/* Nút hành động */}
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
-          Hủy
-        </Button>
-        <Button type="button" onClick={submit(false)} disabled={saving}>
-          {saving ? 'Đang cất…' : 'Cất'}
-        </Button>
-        {!voucherId && (
-          <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-            Cất và Thêm
+        {readOnly ? (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Đóng
           </Button>
+        ) : (
+          <>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+              Hủy
+            </Button>
+            <Button type="button" onClick={submit(false)} disabled={saving}>
+              {saving ? 'Đang cất…' : 'Cất'}
+            </Button>
+            {!voucherId && (
+              <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
+                Cất và Thêm
+              </Button>
+            )}
+          </>
         )}
       </div>
     </form>

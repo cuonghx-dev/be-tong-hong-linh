@@ -225,10 +225,19 @@ async function nextVoucherNo(
   const year = voucherDate.getFullYear()
   const yearStart = new Date(year, 0, 1)
   const yearEnd = new Date(year + 1, 0, 1)
-  const count = await tx.cashVoucher.count({
+  // Số kế tiếp = MAX(số hiện có trong năm) + 1 — không dùng count vì số phiếu
+  // (nhất là dữ liệu nhập khẩu) có thể không liên tục → count+1 gây trùng.
+  const rows = await tx.cashVoucher.findMany({
     where: { type, voucherDate: { gte: yearStart, lt: yearEnd } },
+    select: { voucherNo: true },
   })
-  const seq = String(count + 1).padStart(4, '0')
+  const maxSeq = rows.reduce((max, r) => {
+    // Lấy phần số trước dấu "/": "PT4510/2026" → 4510, "PC 0119/2026" → 119.
+    const digits = r.voucherNo.split('/')[0]?.replace(/\D/g, '') ?? ''
+    const n = Number.parseInt(digits, 10)
+    return Number.isNaN(n) ? max : Math.max(max, n)
+  }, 0)
+  const seq = String(maxSeq + 1).padStart(4, '0')
   const prefix = type === CashVoucherType.RECEIPT ? 'PT' : 'PC '
   return `${prefix}${seq}/${year}`
 }

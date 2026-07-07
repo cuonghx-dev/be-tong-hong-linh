@@ -6,38 +6,61 @@ import {
   type CreateCashVoucherInput,
 } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
-import { PlusIcon } from '@/shared/ui/icons'
+import { ChevronDownIcon, PlusIcon } from '@/shared/ui/icons'
+import { PartnerPicker } from '@/shared/ui/partner-picker'
 import { cn } from '@/shared/lib/cn'
 import { useCashVoucher } from '../api/useCashVouchers'
 import {
   useCreateCashVoucher,
   useUpdateCashVoucher,
 } from '../api/useCashVoucherMutations'
+import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
 import { cashVoucherSchema, type CashLineFormValues, type CashVoucherFormValues } from '../schema'
-import { CATEGORY_LABEL, CATEGORY_OPTIONS, PARTNER_TYPE_LABEL, lineColumns } from '../types'
+import { CATEGORY_LABEL, CATEGORY_OPTIONS, lineColumns } from '../types'
 import { AmountInput } from './AmountInput'
 
 interface CashVoucherFormProps {
   type: CashVoucherType
   voucherId?: string | null
+  readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
 
+// TK Có mặc định theo loại nghiệp vụ Phiếu thu (§5) — TK Nợ luôn 1111.
+const RECEIPT_CREDIT_ACCOUNT: Partial<Record<CashVoucherCategory, string>> = {
+  [CashVoucherCategory.ReceiptBankWithdraw]: CHART_OF_ACCOUNTS.BANK_DEPOSIT, // 1121
+  [CashVoucherCategory.ReceiptEmployeeAdvance]: CHART_OF_ACCOUNTS.ADVANCE, // 141
+  [CashVoucherCategory.ReceiptCustomer]: CHART_OF_ACCOUNTS.RECEIVABLE, // 131
+  [CashVoucherCategory.Receipt]: '', // Thu khác — tự nhập
+  [CashVoucherCategory.ReceiptLoanRecovery]: CHART_OF_ACCOUNTS.LOAN, // 1283
+}
+
+// TK Nợ mặc định theo loại nghiệp vụ Phiếu chi (§5) — TK Có luôn 1111.
+const PAYMENT_DEBIT_ACCOUNT: Partial<Record<CashVoucherCategory, string>> = {
+  [CashVoucherCategory.PaymentEmployeeAdvance]: CHART_OF_ACCOUNTS.ADVANCE, // 141
+  [CashVoucherCategory.Payment]: '', // Chi khác — tự nhập
+  [CashVoucherCategory.DepositToBank]: CHART_OF_ACCOUNTS.BANK_DEPOSIT, // 1121
+  [CashVoucherCategory.PaymentSupplier]: CHART_OF_ACCOUNTS.PAYABLE, // 331
+  [CashVoucherCategory.PaymentPurchaseWithInvoice]: '', // Chi mua ngoài có HĐ — tự nhập
+  [CashVoucherCategory.PaymentSalaryAdvance]: CHART_OF_ACCOUNTS.SALARY_PAYABLE, // 334
+  [CashVoucherCategory.PaymentSalary]: CHART_OF_ACCOUNTS.SALARY_PAYABLE, // 334
+  [CashVoucherCategory.PaymentToBranch]: CHART_OF_ACCOUNTS.INTERNAL_RECEIVABLE, // 1368
+  [CashVoucherCategory.PaymentLoan]: CHART_OF_ACCOUNTS.LOAN, // 1283
+  [CashVoucherCategory.PaymentCITTax]: CHART_OF_ACCOUNTS.CIT_PAYABLE, // 3334
+}
+
 // Dòng mặc định — định khoản theo loại nghiệp vụ (§8.3).
 function emptyLine(category: CashVoucherCategory, type: CashVoucherType): CashLineFormValues {
-  if (category === CashVoucherCategory.DepositToBank) {
-    return { amount: 0, debitAccount: CHART_OF_ACCOUNTS.BANK_DEPOSIT, creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND }
-  }
   return type === CashVoucherType.Receipt
-    ? { amount: 0, debitAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND, creditAccount: '' }
-    : { amount: 0, debitAccount: '', creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND }
+    ? { amount: 0, debitAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND, creditAccount: RECEIPT_CREDIT_ACCOUNT[category] ?? '' }
+    : { amount: 0, debitAccount: PAYMENT_DEBIT_ACCOUNT[category] ?? '', creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND }
 }
 
 function defaultValues(type: CashVoucherType): CashVoucherFormValues {
@@ -53,7 +76,7 @@ function defaultValues(type: CashVoucherType): CashVoucherFormValues {
   }
 }
 
-export function CashVoucherForm({ type, voucherId, onSaved, onCancel }: CashVoucherFormProps) {
+export function CashVoucherForm({ type, voucherId, readOnly = false, onSaved, onCancel }: CashVoucherFormProps) {
   const isReceipt = type === CashVoucherType.Receipt
   const editing = useCashVoucher(voucherId ?? null)
   const create = useCreateCashVoucher()
@@ -65,6 +88,10 @@ export function CashVoucherForm({ type, voucherId, onSaved, onCancel }: CashVouc
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+
+  // Picker "Mã đối tượng" (nguồn tạm: khách hàng + nhà cung cấp).
+  const [partnerKw, setPartnerKw] = useState('')
+  const { items: partnerItems, loading: partnerLoading } = usePartnerOptions(partnerKw)
 
   // Nạp dữ liệu khi sửa.
   useEffect(() => {
@@ -102,6 +129,14 @@ export function CashVoucherForm({ type, voucherId, onSaved, onCancel }: CashVouc
   const category = watch('category')
   const lines = watch('lines')
   const cols = lineColumns(category)
+
+  // Dòng mới kế thừa Đối tượng/Tên đối tượng từ header (MISA tự điền).
+  const newLine = (): CashLineFormValues => ({
+    ...emptyLine(category, type),
+    description: watch('reason'),
+    partnerId: watch('partnerId'),
+    partnerName: watch('partnerName'),
+  })
   const total = lines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
 
   const submit = (goNext: boolean) =>
@@ -137,228 +172,273 @@ export function CashVoucherForm({ type, voucherId, onSaved, onCancel }: CashVouc
   const colSpan = 4 + (cols.showPartner ? 2 : 0) + (cols.showCostItem ? 1 : 0) + (cols.showBank ? 2 : 0)
 
   return (
-    <form className="space-y-4">
-      {/* Loại nghiệp vụ */}
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="text-sm font-medium text-slate-600">Loại nghiệp vụ</label>
-        <select
-          {...register('category')}
-          onChange={(e) => {
-            const next = e.target.value as CashVoucherCategory
-            setValue('category', next)
-            // Đổi loại nghiệp vụ → reset định khoản mặc định dòng đầu.
-            setValue('lines.0.debitAccount', emptyLine(next, type).debitAccount)
-            setValue('lines.0.creditAccount', emptyLine(next, type).creditAccount)
-          }}
-          className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-        >
-          {CATEGORY_OPTIONS[type].map((c) => (
-            <option key={c} value={c}>
-              {CATEGORY_LABEL[c]}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Thông tin chung */}
-      <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
-        <Field label="Mã đối tượng">
-          <div className="flex gap-2">
+    <form className="flex h-full flex-col">
+      <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto disabled:opacity-90">
+        {/* Loại nghiệp vụ */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
             <select
-              {...register('partnerType')}
-              className="h-9 rounded-md border border-border px-2 text-sm"
+              {...register('category')}
+              onChange={(e) => {
+                const next = e.target.value as CashVoucherCategory
+                setValue('category', next)
+                // Đổi loại nghiệp vụ → reset định khoản mặc định dòng đầu.
+                setValue('lines.0.debitAccount', emptyLine(next, type).debitAccount)
+                setValue('lines.0.creditAccount', emptyLine(next, type).creditAccount)
+              }}
+              className="h-9 min-w-[180px] rounded-md border border-border pl-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
-              {Object.values(PartnerType).map((t) => (
-                <option key={t} value={t}>
-                  {PARTNER_TYPE_LABEL[t]}
+              {CATEGORY_OPTIONS[type].map((c) => (
+                <option key={c} value={c}>
+                  {CATEGORY_LABEL[c]}
                 </option>
               ))}
             </select>
-            <input {...register('partnerId')} className={inputCls} placeholder="Mã" />
+            <ChevronDownIcon
+              size={14}
+              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
+            />
           </div>
-        </Field>
-        <Field label="Tên đối tượng">
-          <input {...register('partnerName')} className={inputCls} />
-        </Field>
-
-        {isReceipt ? (
-          <>
-            <Field label="Người nộp">
-              <input {...register('payerReceiver')} className={inputCls} />
-            </Field>
-            <Field label="Địa chỉ">
-              <input {...register('address')} className={inputCls} />
-            </Field>
-            <Field label="Nhân viên">
-              <input {...register('employeeId')} className={inputCls} />
-            </Field>
-            <Field label="Lý do nộp">
-              <input {...register('reason')} className={inputCls} />
-            </Field>
-          </>
-        ) : (
-          <>
-            <Field label="Người nhận">
-              <input {...register('payerReceiver')} className={inputCls} />
-            </Field>
-            <Field label="Địa chỉ">
-              <input {...register('address')} className={inputCls} />
-            </Field>
-            {/* PC: Lý do chi nằm TRÊN Nhân viên (§4) */}
-            <Field label="Lý do chi">
-              <input {...register('reason')} className={inputCls} />
-            </Field>
-            <Field label="Nhân viên">
-              <input {...register('employeeId')} className={inputCls} />
-            </Field>
-          </>
-        )}
-
-        <Field label="Kèm theo (chứng từ gốc)">
-          <input type="number" min={0} {...register('attachmentCount')} className={inputCls} />
-        </Field>
-        <Field label={`Số phiếu ${isReceipt ? 'thu' : 'chi'}`}>
-          <input
-            value={editing.data?.voucherNo ?? 'Tự động'}
-            readOnly
-            className={cn(inputCls, 'bg-slate-50 text-slate-500')}
-          />
-        </Field>
-        <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
-          <input type="date" {...register('postingDate')} className={inputCls} />
-        </Field>
-        <Field label="Ngày phiếu" error={formState.errors.voucherDate?.message}>
-          <input type="date" {...register('voucherDate')} className={inputCls} />
-        </Field>
-      </div>
-
-      {/* Bảng hạch toán */}
-      <div className="rounded-md border border-border">
-        <div className="flex items-center gap-2 border-b border-border bg-slate-50 px-2 py-1.5">
-          <span className="text-sm font-medium text-slate-600">Hạch toán</span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => append(emptyLine(category, type))}
-          >
-            <PlusIcon size={14} /> Thêm dòng
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => reset({ ...watch(), lines: [emptyLine(category, type)] })}
-          >
-            Xóa hết dòng
-          </Button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="w-8 px-2 py-1.5 text-center">#</th>
-                <th className="px-2 py-1.5">Diễn giải</th>
-                <th className="w-24 px-2 py-1.5">TK Nợ</th>
-                <th className="w-24 px-2 py-1.5">TK Có</th>
-                <th className="w-36 px-2 py-1.5 text-right">Số tiền</th>
-                {cols.showPartner && <th className="px-2 py-1.5">Đối tượng</th>}
-                {cols.showPartner && <th className="px-2 py-1.5">Tên đối tượng</th>}
-                {cols.showCostItem && <th className="px-2 py-1.5">Khoản mục CP</th>}
-                {cols.showBank && <th className="px-2 py-1.5">TK ngân hàng</th>}
-                {cols.showBank && <th className="px-2 py-1.5">Tên ngân hàng</th>}
-                <th className="w-8 px-2 py-1.5" />
-              </tr>
-            </thead>
-            <tbody>
-              {fields.map((f, i) => (
-                <tr key={f.id} className="border-t border-border">
-                  <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                  <td className="px-2 py-1">
-                    <input {...register(`lines.${i}.description`)} className={cellCls} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <input {...register(`lines.${i}.debitAccount`)} className={cellCls} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <input {...register(`lines.${i}.creditAccount`)} className={cellCls} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <Controller
-                      control={control}
-                      name={`lines.${i}.amount`}
-                      render={({ field }) => (
-                        <AmountInput value={field.value} onChange={field.onChange} />
+
+        {/* Thông tin chung: cột trái (đối tượng) | cột phải (ngày) | tổng tiền */}
+        <div className="flex flex-wrap gap-6">
+          {/* Cột trái */}
+          <div className="grid min-w-[520px] flex-1 grid-cols-2 gap-x-6 gap-y-3">
+            <Field label="Mã đối tượng">
+              <PartnerPicker
+                value={watch('partnerId')}
+                items={partnerItems}
+                loading={partnerLoading}
+                keyword={partnerKw}
+                onKeywordChange={setPartnerKw}
+                onSelect={(p) => {
+                  setValue('partnerId', p.code)
+                  setValue('partnerName', p.name)
+                  setValue('partnerType', p.type)
+                  if (p.address) setValue('address', p.address)
+                  // Lý do nộp/chi: "Thu tiền của <tên>" / "Chi tiền cho <tên>".
+                  const reason = `${isReceipt ? 'Thu tiền của ' : 'Chi tiền cho '}${p.name}`
+                  setValue('reason', reason)
+                  // Tự điền Diễn giải + Đối tượng / Tên đối tượng cho mọi dòng hạch toán.
+                  ;(watch('lines') ?? []).forEach((_, i) => {
+                    setValue(`lines.${i}.description`, reason)
+                    setValue(`lines.${i}.partnerId`, p.code)
+                    setValue(`lines.${i}.partnerName`, p.name)
+                  })
+                }}
+              />
+            </Field>
+            <Field label="Tên đối tượng">
+              <input {...register('partnerName')} className={inputCls} />
+            </Field>
+
+            {isReceipt ? (
+              <>
+                <Field label="Người nộp">
+                  <input {...register('payerReceiver')} className={inputCls} />
+                </Field>
+                <Field label="Địa chỉ">
+                  <input {...register('address')} className={inputCls} />
+                </Field>
+                <Field label="Nhân viên">
+                  <input {...register('employeeId')} className={inputCls} />
+                </Field>
+                <Field label="Lý do nộp">
+                  <input {...register('reason')} className={inputCls} />
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field label="Người nhận">
+                  <input {...register('payerReceiver')} className={inputCls} />
+                </Field>
+                <Field label="Địa chỉ">
+                  <input {...register('address')} className={inputCls} />
+                </Field>
+                {/* PC: Lý do chi nằm TRÊN Nhân viên (§4) */}
+                <Field label="Lý do chi">
+                  <input {...register('reason')} className={inputCls} />
+                </Field>
+                <Field label="Nhân viên">
+                  <input {...register('employeeId')} className={inputCls} />
+                </Field>
+              </>
+            )}
+
+            <Field label="Kèm theo (chứng từ gốc)" className="col-span-2">
+              <input type="number" min={0} {...register('attachmentCount')} className={inputCls} />
+            </Field>
+          </div>
+
+          {/* Cột phải: ngày + số phiếu */}
+          <div className="w-56 space-y-3">
+            <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
+              <input type="date" {...register('postingDate')} className={inputCls} />
+            </Field>
+            <Field label="Ngày phiếu" error={formState.errors.voucherDate?.message}>
+              <input type="date" {...register('voucherDate')} className={inputCls} />
+            </Field>
+            <Field label={`Số phiếu ${isReceipt ? 'thu' : 'chi'}`}>
+              <input
+                value={editing.data?.voucherNo ?? 'Tự động'}
+                readOnly
+                className={cn(inputCls, 'bg-slate-50 text-slate-500')}
+              />
+            </Field>
+          </div>
+
+          {/* Tổng tiền */}
+          <div className="ml-auto text-right">
+            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Tổng tiền
+            </div>
+            <div className="mt-1 text-3xl font-semibold tabular-nums text-slate-800">
+              {formatCurrency(total)}
+            </div>
+          </div>
+        </div>
+
+        {/* Bảng hạch toán */}
+        <div className="space-y-2">
+          <span className="text-base font-semibold text-slate-700">Hạch toán</span>
+          <div className="overflow-x-auto rounded-md border border-border">
+              <table className="w-full border-collapse text-sm">
+                <thead className="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="w-8 px-2 py-1.5 text-center">#</th>
+                    <th className="px-2 py-1.5">Diễn giải</th>
+                    <th className="w-24 px-2 py-1.5">TK Nợ</th>
+                    <th className="w-24 px-2 py-1.5">TK Có</th>
+                    <th className="w-36 px-2 py-1.5 text-right">Số tiền</th>
+                    <th className="px-2 py-1.5">Nghiệp vụ</th>
+                    {cols.showPartner && <th className="px-2 py-1.5">Đối tượng</th>}
+                    {cols.showPartner && <th className="px-2 py-1.5">Tên đối tượng</th>}
+                    {cols.showCostItem && <th className="px-2 py-1.5">Khoản mục CP</th>}
+                    {cols.showBank && <th className="px-2 py-1.5">TK ngân hàng</th>}
+                    {cols.showBank && <th className="px-2 py-1.5">Tên ngân hàng</th>}
+                    <th className="w-8 px-2 py-1.5" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {fields.map((f, i) => (
+                    <tr key={f.id} className="border-t border-border">
+                      <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
+                      <td className="px-2 py-1">
+                        <input {...register(`lines.${i}.description`)} className={cellCls} />
+                      </td>
+                      <td className="px-2 py-1">
+                        <input {...register(`lines.${i}.debitAccount`)} className={cellCls} />
+                      </td>
+                      <td className="px-2 py-1">
+                        <input {...register(`lines.${i}.creditAccount`)} className={cellCls} />
+                      </td>
+                      <td className="px-2 py-1">
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.amount`}
+                          render={({ field }) => (
+                            <AmountInput value={field.value} onChange={field.onChange} />
+                          )}
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <input {...register(`lines.${i}.operation`)} className={cellCls} />
+                      </td>
+                      {cols.showPartner && (
+                        <td className="px-2 py-1">
+                          <input {...register(`lines.${i}.partnerId`)} className={cellCls} />
+                        </td>
                       )}
-                    />
-                  </td>
-                  {cols.showPartner && (
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.partnerId`)} className={cellCls} />
-                    </td>
-                  )}
-                  {cols.showPartner && (
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.partnerName`)} className={cellCls} />
-                    </td>
-                  )}
-                  {cols.showCostItem && (
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.costItemId`)} className={cellCls} />
-                    </td>
-                  )}
-                  {cols.showBank && (
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.bankAccountNo`)} className={cellCls} />
-                    </td>
-                  )}
-                  {cols.showBank && (
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.bankName`)} className={cellCls} />
-                    </td>
-                  )}
-                  <td className="px-2 py-1 text-center">
-                    <button
-                      type="button"
-                      onClick={() => fields.length > 1 && remove(i)}
-                      className="text-slate-400 hover:text-red-600"
-                      aria-label="Xóa dòng"
-                    >
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot className="bg-slate-100 font-medium">
-              <tr className="border-t border-border">
-                <td className="px-2 py-1.5" colSpan={4}>
-                  Tổng cộng
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(total)}</td>
-                <td colSpan={Math.max(colSpan - 5 + 1, 1)} />
-              </tr>
-            </tfoot>
-          </table>
+                      {cols.showPartner && (
+                        <td className="px-2 py-1">
+                          <input {...register(`lines.${i}.partnerName`)} className={cellCls} />
+                        </td>
+                      )}
+                      {cols.showCostItem && (
+                        <td className="px-2 py-1">
+                          <input {...register(`lines.${i}.costItemId`)} className={cellCls} />
+                        </td>
+                      )}
+                      {cols.showBank && (
+                        <td className="px-2 py-1">
+                          <input {...register(`lines.${i}.bankAccountNo`)} className={cellCls} />
+                        </td>
+                      )}
+                      {cols.showBank && (
+                        <td className="px-2 py-1">
+                          <input {...register(`lines.${i}.bankName`)} className={cellCls} />
+                        </td>
+                      )}
+                      <td className="px-2 py-1 text-center">
+                        <button
+                          type="button"
+                          onClick={() => fields.length > 1 && remove(i)}
+                          className="text-slate-400 hover:text-red-600"
+                          aria-label="Xóa dòng"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-slate-100 font-medium">
+                  <tr className="border-t border-border">
+                    <td className="px-2 py-1.5" colSpan={4} />
+                    <td className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(total)}</td>
+                    <td colSpan={Math.max(colSpan - 3, 1)} />
+                  </tr>
+                </tfoot>
+              </table>
+          </div>
+
+          <div className="flex items-center justify-between text-sm text-slate-500">
+            <span>
+              Tổng số: <b className="text-slate-700">{fields.length}</b> bản ghi
+            </span>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append(newLine())}
+            >
+              <PlusIcon size={14} /> Thêm dòng
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => reset({ ...watch(), lines: [newLine()] })}
+            >
+              Xóa hết dòng
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {typeof formState.errors.lines?.message === 'string' && (
-        <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
-      )}
+        {typeof formState.errors.lines?.message === 'string' && (
+          <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
+        )}
+      </fieldset>
 
-      {/* Nút hành động */}
-      <div className="flex justify-end gap-2">
+      {/* Thanh hành động */}
+      <div className="mt-3 flex items-center border-t border-border pt-3">
         <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
-          Hủy
+          {readOnly ? 'Đóng' : 'Hủy'}
         </Button>
-        <Button type="button" onClick={submit(false)} disabled={saving}>
-          {saving ? 'Đang cất…' : 'Cất'}
-        </Button>
-        {!voucherId && (
-          <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-            {isReceipt ? 'Cất và Thêm' : 'Cất và In'}
-          </Button>
+
+        {!readOnly && (
+          <div className="ml-auto flex gap-2">
+            <Button type="button" variant="outline" onClick={submit(false)} disabled={saving}>
+              {saving ? 'Đang cất…' : 'Cất'}
+            </Button>
+            <Button type="button" onClick={submit(!voucherId)} disabled={saving}>
+              {isReceipt ? 'Cất và Thêm' : voucherId ? 'Cất' : 'Cất và In'}
+            </Button>
+          </div>
         )}
       </div>
     </form>
@@ -374,14 +454,16 @@ const cellCls =
 function Field({
   label,
   error,
+  className,
   children,
 }: {
   label: string
   error?: string
+  className?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-1">
+    <div className={cn('space-y-1', className)}>
       <label className="text-xs font-medium text-slate-500">{label}</label>
       {children}
       {error && <p className="text-xs text-red-600">{error}</p>}

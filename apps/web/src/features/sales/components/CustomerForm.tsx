@@ -10,6 +10,7 @@ import { CUSTOMER_TYPE_LABEL } from '../types'
 
 interface CustomerFormProps {
   customerId?: string | null
+  readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
 }
@@ -18,7 +19,7 @@ function defaultValues(): CustomerFormValues {
   return { code: '', name: '', type: CustomerType.Organization, isSupplier: false, isInternal: false }
 }
 
-export function CustomerForm({ customerId, onSaved, onCancel }: CustomerFormProps) {
+export function CustomerForm({ customerId, readOnly = false, onSaved, onCancel }: CustomerFormProps) {
   const editing = useCustomer(customerId ?? null)
   const create = useCreateCustomer()
   const update = useUpdateCustomer()
@@ -64,6 +65,7 @@ export function CustomerForm({ customerId, onSaved, onCancel }: CustomerFormProp
 
   return (
     <form className="space-y-4">
+      <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
       {/* Loại đối tượng */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
         {Object.values(CustomerType).map((t) => (
@@ -127,17 +129,27 @@ export function CustomerForm({ customerId, onSaved, onCancel }: CustomerFormProp
         </div>
       </div>
 
+      </fieldset>
+
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
-          Hủy
-        </Button>
-        <Button type="button" onClick={submit(false)} disabled={saving}>
-          {saving ? 'Đang cất…' : 'Cất'}
-        </Button>
-        {!customerId && (
-          <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-            Cất và Thêm
+        {readOnly ? (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Đóng
           </Button>
+        ) : (
+          <>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+              Hủy
+            </Button>
+            <Button type="button" onClick={submit(false)} disabled={saving}>
+              {saving ? 'Đang cất…' : 'Cất'}
+            </Button>
+            {!customerId && (
+              <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
+                Cất và Thêm
+              </Button>
+            )}
+          </>
         )}
       </div>
     </form>

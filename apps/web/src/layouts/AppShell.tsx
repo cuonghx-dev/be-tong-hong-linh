@@ -13,7 +13,6 @@ import {
   HelpIcon,
   HomeIcon,
   PackageIcon,
-  PlusIcon,
   ReceiptIcon,
   SearchIcon,
   SettingsIcon,
@@ -21,7 +20,9 @@ import {
   WalletIcon,
   type IconProps,
 } from '@/shared/ui/icons'
-import { Button } from '@/shared/ui/button'
+
+// Tên công ty hiển thị ở brand sidebar (logo = ký tự đầu).
+const COMPANY_NAME = 'Công ty TNHH ABC'
 
 type NavItem = { to: string; label: string; icon: (p: IconProps) => JSX.Element }
 
@@ -43,20 +44,16 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         collapsed ? 'w-16' : 'w-60',
       )}
     >
-      {/* Brand */}
+      {/* Brand — tên công ty */}
       <div className="flex h-14 items-center gap-2 px-4">
         <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary text-sm font-bold text-white">
-          K
+          {COMPANY_NAME.charAt(0)}
         </div>
-        {!collapsed && <span className="font-bold text-slate-800">Kế toán SME</span>}
-      </div>
-
-      {/* Quick add */}
-      <div className="px-3 pb-2">
-        <Button className={cn('w-full', collapsed && 'px-0')} size="sm">
-          <PlusIcon size={16} />
-          {!collapsed && <span>Thêm nhanh</span>}
-        </Button>
+        {!collapsed && (
+          <span className="truncate font-bold text-slate-800" title={COMPANY_NAME}>
+            {COMPANY_NAME}
+          </span>
+        )}
       </div>
 
       {/* Nav */}
@@ -102,17 +99,8 @@ function Header() {
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-white px-4">
-      {/* Context trái */}
-      <button className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-slate-100">
-        <div className="flex flex-col items-start leading-tight">
-          <span className="font-medium text-slate-800">Công ty TNHH ABC</span>
-          <span className="text-xs text-slate-400">Kỳ: 2026</span>
-        </div>
-        <ChevronDownIcon size={16} className="text-slate-400" />
-      </button>
-
-      {/* Search giữa */}
-      <div className="relative mx-auto hidden w-full max-w-md md:block">
+      {/* Search trái */}
+      <div className="relative mr-auto hidden w-full max-w-md md:block">
         <SearchIcon
           size={16}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"

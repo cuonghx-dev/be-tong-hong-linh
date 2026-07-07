@@ -5,9 +5,11 @@ import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
+import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import { useToast } from '@/shared/ui/toast'
 import { useCashVouchers } from '../api/useCashVouchers'
 import { useDeleteCashVoucher, useImportCashVouchers } from '../api/useCashVoucherMutations'
 import { CashFilterPopover, type CashFilterValue } from '../components/CashFilterPopover'
@@ -19,6 +21,7 @@ const PAGE_SIZE = 20
 interface FormState {
   type: CashVoucherType
   voucherId?: string
+  readOnly?: boolean
 }
 
 function CashTable() {
@@ -27,6 +30,8 @@ function CashTable() {
   const del = useDeleteCashVoucher()
   const importXlsx = useImportCashVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
+  const confirm = useConfirm()
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -34,8 +39,17 @@ function CashTable() {
     if (!file) return
     importXlsx.mutate(file, {
       onSuccess: (r) =>
-        alert(`Nhập khẩu xong: ${r.created} phiếu mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`),
-      onError: () => alert('Nhập khẩu thất bại. Kiểm tra file Excel.'),
+        toast({
+          variant: 'success',
+          title: 'Nhập khẩu thành công',
+          description: `${r.created} phiếu mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`,
+        }),
+      onError: () =>
+        toast({
+          variant: 'error',
+          title: 'Nhập khẩu thất bại',
+          description: 'Kiểm tra lại file Excel.',
+        }),
     })
   }
 
@@ -213,7 +227,7 @@ function CashTable() {
                   <td className="px-3 py-2">
                     <button
                       className="text-primary hover:underline"
-                      onClick={() => setFormState({ type: r.type, voucherId: r.id })}
+                      onClick={() => setFormState({ type: r.type, voucherId: r.id, readOnly: true })}
                     >
                       {r.voucherNo}
                     </button>
@@ -247,7 +261,7 @@ function CashTable() {
                   <td className="px-3 py-2 text-slate-600">{CATEGORY_LABEL[r.category]}</td>
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
-                      onPrimary={() => setFormState({ type: r.type, voucherId: r.id })}
+                      onPrimary={() => setFormState({ type: r.type, voucherId: r.id, readOnly: true })}
                       items={[
                         {
                           label: 'Sửa',
@@ -256,8 +270,14 @@ function CashTable() {
                         {
                           label: 'Xóa',
                           danger: true,
-                          onClick: () => {
-                            if (confirm(`Xóa phiếu ${r.voucherNo}?`)) del.mutate(r.id)
+                          onClick: async () => {
+                            const ok = await confirm({
+                              title: `Xóa phiếu ${r.voucherNo}?`,
+                              description: 'Hành động này không thể hoàn tác.',
+                              confirmText: 'Xóa',
+                              destructive: true,
+                            })
+                            if (ok) del.mutate(r.id)
                           },
                         },
                       ]}
@@ -303,15 +323,19 @@ function CashTable() {
       <Modal
         open={!!formState}
         onClose={closeForm}
-        size="xl"
+        size="full"
         title={
-          formState?.voucherId
+          formState?.readOnly
             ? formState.type === CashVoucherType.Receipt
-              ? 'Sửa phiếu thu'
-              : 'Sửa phiếu chi'
-            : formState?.type === CashVoucherType.Receipt
-              ? 'Phiếu thu'
-              : 'Phiếu chi'
+              ? 'Xem phiếu thu'
+              : 'Xem phiếu chi'
+            : formState?.voucherId
+              ? formState.type === CashVoucherType.Receipt
+                ? 'Sửa phiếu thu'
+                : 'Sửa phiếu chi'
+              : formState?.type === CashVoucherType.Receipt
+                ? 'Phiếu thu'
+                : 'Phiếu chi'
         }
       >
         {formState && (
@@ -319,6 +343,7 @@ function CashTable() {
             key={`${formState.type}-${formState.voucherId ?? 'new'}`}
             type={formState.type}
             voucherId={formState.voucherId ?? null}
+            readOnly={formState.readOnly}
             onSaved={closeForm}
             onCancel={closeForm}
           />

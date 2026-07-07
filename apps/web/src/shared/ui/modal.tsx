@@ -7,13 +7,14 @@ interface ModalProps {
   title: ReactNode
   children: ReactNode
   footer?: ReactNode
-  size?: 'md' | 'lg' | 'xl'
+  size?: 'md' | 'lg' | 'xl' | 'full'
 }
 
 const sizeClass = {
   md: 'max-w-lg',
   lg: 'max-w-3xl',
   xl: 'max-w-6xl',
+  full: 'max-w-[96vw]',
 }
 
 // Overlay modal dùng chung — đóng bằng Esc / click nền.
