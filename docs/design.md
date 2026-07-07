@@ -201,12 +201,26 @@ Một hàng ngang. Có thể tràn 2 cụm (cụm action trái, cụm tiện íc
 - Label kỳ thời gian (vd "Đầu năm tới hiện tại").
 
 **Cụm phải:**
-- Nút primary chính (vd split-button "Thu tiền", "Chi tiền" — phần chính + mũi tên dropdown).
+- **Nút "＋ Thêm ▾"** (component `AddMenu`) — nút primary mở **menu tạo mới** (xem [§3.2.1](#321-add-menu--nút-thêm)).
 - Nút primary phụ (vd "Thêm bằng AI").
 - Ô tìm kiếm + icon AI.
 - Icon refresh.
 - Icon xuất Excel.
 - Icon settings (cấu hình cột/bảng).
+
+### 3.2.1. Add menu — nút "＋ Thêm"
+
+> Chuẩn cho **mọi bảng danh sách**. Component dùng chung `AddMenu` (`shared/ui/add-menu.tsx`). Một nút primary `＋ Thêm ▾`; click mở **menu** gộp mọi thao tác tạo mới + nhập khẩu.
+
+**Nội dung menu (trên → dưới):**
+- **Các thao tác tạo mới** — 1 hoặc nhiều mục (vd `Thu tiền` · `Chi tiền`; hoặc `Chứng từ mua hàng`; `Nhà cung cấp`).
+- **Đường kẻ** phân tách.
+- **"Nhập Excel"** (icon Excel) — kích hoạt chọn file `.xlsx/.xls`; đang nhập hiển thị `Đang nhập…` và khóa mục.
+
+**Quy tắc:**
+- **Không** tạo nút "Nhập khẩu Excel" riêng ngoài toolbar — nhập Excel luôn là **1 mục trong menu này**.
+- Trang giữ 1 `<input type="file" hidden>` + `onImportExcel` gọi `fileRef.click()`.
+- Menu neo phải dưới nút, đóng khi click ngoài / Esc (dùng [Popover §3.7](#37-filter-popover--panel-lọc)).
 
 ## 3.3. Table
 
@@ -257,12 +271,10 @@ function DataListView({ columns, rows, totals, page, pageCount, total }) {
         <StatusDropdown />
         <PeriodLabel>Đầu năm tới hiện tại</PeriodLabel>
         <div className="ml-auto flex items-center gap-2">
-          <SplitButton>Thu tiền</SplitButton>
-          <SplitButton>Chi tiền</SplitButton>
+          <AddMenu actions={[…]} onImportExcel={…} />  {/* ＋ Thêm ▾ — gồm "Nhập Excel" (§3.2.1) */}
           <Button>Thêm bằng AI</Button>
           <SearchInput />
           <IconButton icon="refresh" />
-          <IconButton icon="excel" />
           <IconButton icon="settings" />
         </div>
       </div>

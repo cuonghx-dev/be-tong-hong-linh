@@ -2,7 +2,7 @@ import { PurchaseVoucherType, type PurchaseVoucherFilter } from '@app/shared'
 import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
-import { Button } from '@/shared/ui/button'
+import { AddMenu } from '@/shared/ui/add-menu'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
@@ -139,19 +139,15 @@ export function PurchaseTable() {
           className="hidden"
           onChange={onPickFile}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fileRef.current?.click()}
-          disabled={importXlsx.isPending}
-        >
-          {importXlsx.isPending ? 'Đang nhập…' : 'Nhập khẩu Excel'}
-        </Button>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" onClick={() => openNew(PurchaseVoucherType.Stock)}>
-            Thêm
-          </Button>
+          <AddMenu
+            actions={[
+              { label: 'Chứng từ mua hàng', onClick: () => openNew(PurchaseVoucherType.Stock) },
+            ]}
+            onImportExcel={() => fileRef.current?.click()}
+            importing={importXlsx.isPending}
+          />
 
           <div className="relative">
             <SearchIcon

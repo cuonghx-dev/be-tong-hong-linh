@@ -3,9 +3,9 @@ import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
-import { Button } from '@/shared/ui/button'
+import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
-import { PlusIcon, RefreshIcon, SearchIcon } from '@/shared/ui/icons'
+import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
@@ -82,19 +82,13 @@ export function SupplierTable() {
           className="hidden"
           onChange={onPickFile}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fileRef.current?.click()}
-          disabled={importXlsx.isPending}
-        >
-          {importXlsx.isPending ? 'Đang nhập…' : 'Nhập khẩu Excel'}
-        </Button>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" onClick={() => setFormState({})}>
-            <PlusIcon size={16} /> Thêm
-          </Button>
+          <AddMenu
+            actions={[{ label: 'Nhà cung cấp', onClick: () => setFormState({}) }]}
+            onImportExcel={() => fileRef.current?.click()}
+            importing={importXlsx.isPending}
+          />
           <div className="relative">
             <SearchIcon
               size={15}

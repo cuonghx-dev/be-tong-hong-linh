@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
-import { Button } from '@/shared/ui/button'
+import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
@@ -116,26 +116,16 @@ function BankTable() {
         />
 
         <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={onPickFile} />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fileRef.current?.click()}
-          disabled={importXlsx.isPending}
-        >
-          {importXlsx.isPending ? 'Đang nhập…' : 'Nhập khẩu Excel'}
-        </Button>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" onClick={() => openNew(BankVoucherType.Receipt)}>
-            Thu tiền
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => openNew(BankVoucherType.Payment)}
-          >
-            Chi tiền
-          </Button>
+          <AddMenu
+            actions={[
+              { label: 'Thu tiền', onClick: () => openNew(BankVoucherType.Receipt) },
+              { label: 'Chi tiền', onClick: () => openNew(BankVoucherType.Payment) },
+            ]}
+            onImportExcel={() => fileRef.current?.click()}
+            importing={importXlsx.isPending}
+          />
           <div className="relative">
             <SearchIcon
               size={15}
