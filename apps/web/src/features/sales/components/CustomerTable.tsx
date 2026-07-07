@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
+import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
@@ -15,8 +16,9 @@ const PAGE_SIZE = 20
 
 export function CustomerTable() {
   const [params, setParams] = useSearchParams()
-  const [form, setForm] = useState<{ customerId?: string } | null>(null)
+  const [form, setForm] = useState<{ customerId?: string; readOnly?: boolean } | null>(null)
   const del = useDeleteCustomer()
+  const confirm = useConfirm()
 
   const page = Number(params.get('cpage') ?? 1)
   const keyword = params.get('cq') ?? ''
@@ -111,7 +113,7 @@ export function CustomerTable() {
                 <td className="px-3 py-2">
                   <button
                     className="text-primary hover:underline"
-                    onClick={() => setForm({ customerId: r.id })}
+                    onClick={() => setForm({ customerId: r.id, readOnly: true })}
                   >
                     {r.code}
                   </button>
@@ -132,14 +134,20 @@ export function CustomerTable() {
                 <td className="px-3 py-2 text-slate-600">{CUSTOMER_TYPE_LABEL[r.type]}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
-                    onPrimary={() => setForm({ customerId: r.id })}
+                    onPrimary={() => setForm({ customerId: r.id, readOnly: true })}
                     items={[
                       { label: 'Sửa', onClick: () => setForm({ customerId: r.id }) },
                       {
                         label: 'Xóa',
                         danger: true,
-                        onClick: () => {
-                          if (confirm(`Xóa khách hàng ${r.code}?`)) del.mutate(r.id)
+                        onClick: async () => {
+                          const ok = await confirm({
+                            title: `Xóa khách hàng ${r.code}?`,
+                            description: 'Hành động này không thể hoàn tác.',
+                            confirmText: 'Xóa',
+                            destructive: true,
+                          })
+                          if (ok) del.mutate(r.id)
                         },
                       },
                     ]}
@@ -180,12 +188,19 @@ export function CustomerTable() {
         open={!!form}
         onClose={() => setForm(null)}
         size="lg"
-        title={form?.customerId ? 'Sửa khách hàng' : 'Thông tin khách hàng'}
+        title={
+          form?.readOnly
+            ? 'Xem khách hàng'
+            : form?.customerId
+              ? 'Sửa khách hàng'
+              : 'Thông tin khách hàng'
+        }
       >
         {form && (
           <CustomerForm
             key={form.customerId ?? 'new'}
             customerId={form.customerId ?? null}
+            readOnly={form.readOnly}
             onSaved={() => setForm(null)}
             onCancel={() => setForm(null)}
           />

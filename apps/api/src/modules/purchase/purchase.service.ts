@@ -1,5 +1,6 @@
 import { CHART_OF_ACCOUNTS, type Paginated } from '@app/shared'
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { randomUUID } from 'node:crypto'
 import {
   Prisma,
   PurchaseVoucherType,
@@ -9,6 +10,7 @@ import {
 import { PrismaService } from '../../database/prisma.service'
 import { CreatePurchaseVoucherDto, CreatePurchaseVoucherLineDto } from './dto/create-purchase-voucher.dto'
 import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
+import { parsePurchaseXlsx } from './purchase-import'
 import { UpdatePurchaseVoucherDto } from './dto/update-purchase-voucher.dto'
 
 type VoucherWithLines = PurchaseVoucher & { lines: PurchaseVoucherLine[] }
@@ -156,6 +158,85 @@ export class PurchaseService {
       })
     })
     return toVoucherDto(updated)
+  }
+
+  // Nhập khẩu chứng từ mua hàng từ file Excel (mức tổng hợp). Bỏ qua số chứng từ trùng.
+  async importXlsx(buffer: Buffer) {
+    const parsed = parsePurchaseXlsx(buffer)
+    if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
+
+    const nos = parsed.map((p) => p.voucherNo)
+    const existing = await this.prisma.purchaseVoucher.findMany({
+      where: { voucherNo: { in: nos } },
+      select: { voucherNo: true },
+    })
+    const seen = new Set(existing.map((e) => e.voucherNo))
+
+    const vouchers: Prisma.PurchaseVoucherCreateManyInput[] = []
+    const lines: Prisma.PurchaseVoucherLineCreateManyInput[] = []
+    for (const p of parsed) {
+      if (seen.has(p.voucherNo)) continue
+      seen.add(p.voucherNo) // chống trùng trong chính file
+
+      // Tách tiền hàng / thuế từ số tổng hợp Excel (§10.2, §10.4):
+      //   nhập kho: giá trị nhập kho = tiền hàng + chi phí → tiền hàng = GT nhập kho − chi phí;
+      //   thuế = tổng TT − tiền hàng. Loại khác không có GT nhập kho → coi toàn bộ là tiền hàng.
+      const cost = new Prisma.Decimal(p.purchaseCost)
+      const payment = new Prisma.Decimal(p.totalPayment)
+      const stock = new Prisma.Decimal(p.stockValue)
+      const totalGoods =
+        p.type === PurchaseVoucherType.STOCK && p.stockValue > 0 ? stock.sub(cost) : payment
+      const totalVat = payment.sub(totalGoods)
+      const vatRate = totalGoods.gt(0)
+        ? new Prisma.Decimal(totalVat.div(totalGoods).mul(100).toDecimalPlaces(0))
+        : new Prisma.Decimal(0)
+
+      const id = randomUUID()
+      vouchers.push({
+        id,
+        type: p.type,
+        paymentMode: p.paymentStatus === 'PAID' ? 'IMMEDIATE' : 'UNPAID',
+        receiveWithInvoice: p.receiveStatus === 'RECEIVED',
+        voucherNo: p.voucherNo,
+        invoiceNo: p.invoiceNo,
+        postingDate: p.date,
+        voucherDate: p.date,
+        supplierName: p.supplierName,
+        description: 'Mua hàng',
+        totalGoods,
+        totalVat,
+        totalPayment: payment,
+        purchaseCost: cost,
+        stockValue: p.type === PurchaseVoucherType.STOCK ? stock : totalGoods,
+        receiveStatus: p.receiveStatus,
+        paymentStatus: p.paymentStatus,
+        branchId: p.branchId,
+      })
+      lines.push({
+        id: randomUUID(),
+        voucherId: id,
+        lineNo: 1,
+        stockAccount: defaultStockAccount(p.type),
+        payableAccount: CHART_OF_ACCOUNTS.PAYABLE,
+        quantity: new Prisma.Decimal(1),
+        unitPrice: totalGoods,
+        amount: totalGoods,
+        vatRate,
+        vatAmount: totalVat,
+        vatAccount: CHART_OF_ACCOUNTS.VAT_INPUT_DEDUCTIBLE,
+      })
+    }
+
+    // Chèn theo lô để tránh statement quá lớn.
+    const chunk = 500
+    for (let i = 0; i < vouchers.length; i += chunk) {
+      await this.prisma.purchaseVoucher.createMany({ data: vouchers.slice(i, i + chunk) })
+    }
+    for (let i = 0; i < lines.length; i += chunk) {
+      await this.prisma.purchaseVoucherLine.createMany({ data: lines.slice(i, i + chunk) })
+    }
+
+    return { total: parsed.length, created: vouchers.length, skipped: parsed.length - vouchers.length }
   }
 
   async remove(id: string) {

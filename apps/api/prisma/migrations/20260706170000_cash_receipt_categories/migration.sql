@@ -1,0 +1,6 @@
+-- AlterEnum
+-- Thêm loại nghiệp vụ Phiếu thu nhập tay (§5 tiền mặt).
+ALTER TYPE "CashVoucherCategory" ADD VALUE IF NOT EXISTS 'RECEIPT_BANK_WITHDRAW';
+ALTER TYPE "CashVoucherCategory" ADD VALUE IF NOT EXISTS 'RECEIPT_EMPLOYEE_ADVANCE';
+ALTER TYPE "CashVoucherCategory" ADD VALUE IF NOT EXISTS 'RECEIPT_CUSTOMER';
+ALTER TYPE "CashVoucherCategory" ADD VALUE IF NOT EXISTS 'RECEIPT_LOAN_RECOVERY';

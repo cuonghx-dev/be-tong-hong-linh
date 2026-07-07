@@ -23,6 +23,7 @@ import { AmountInput } from './AmountInput'
 
 interface SalesVoucherFormProps {
   voucherId?: string | null
+  readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
 }
@@ -56,7 +57,7 @@ function lineVat(l: SalesLineFormValues): number {
   return Math.round((lineAmount(l) * (l.vatRate || 0)) / 100)
 }
 
-export function SalesVoucherForm({ voucherId, onSaved, onCancel }: SalesVoucherFormProps) {
+export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCancel }: SalesVoucherFormProps) {
   const editing = useSalesVoucher(voucherId ?? null)
   const create = useCreateSalesVoucher()
   const update = useUpdateSalesVoucher()
@@ -134,6 +135,7 @@ export function SalesVoucherForm({ voucherId, onSaved, onCancel }: SalesVoucherF
 
   return (
     <form className="space-y-4">
+      <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
       {/* Loại nghiệp vụ + trạng thái */}
       <div className="flex flex-wrap items-center gap-2">
         <label className="text-sm font-medium text-slate-600">Loại nghiệp vụ</label>
@@ -339,18 +341,28 @@ export function SalesVoucherForm({ voucherId, onSaved, onCancel }: SalesVoucherF
         </div>
       </div>
 
+      </fieldset>
+
       {/* Nút hành động */}
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
-          Hủy
-        </Button>
-        <Button type="button" onClick={submit(false)} disabled={saving}>
-          {saving ? 'Đang cất…' : 'Cất'}
-        </Button>
-        {!voucherId && (
-          <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-            Cất và Thêm
+        {readOnly ? (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Đóng
           </Button>
+        ) : (
+          <>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+              Hủy
+            </Button>
+            <Button type="button" onClick={submit(false)} disabled={saving}>
+              {saving ? 'Đang cất…' : 'Cất'}
+            </Button>
+            {!voucherId && (
+              <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
+                Cất và Thêm
+              </Button>
+            )}
+          </>
         )}
       </div>
     </form>

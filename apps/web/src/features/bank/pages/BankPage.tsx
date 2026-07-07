@@ -5,9 +5,11 @@ import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
+import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import { useToast } from '@/shared/ui/toast'
 import { useBankVouchers } from '../api/useBankVouchers'
 import { useDeleteBankVoucher, useImportBankVouchers } from '../api/useBankVoucherMutations'
 import { BankFilterPopover, type BankFilterValue } from '../components/BankFilterPopover'
@@ -19,6 +21,7 @@ const PAGE_SIZE = 20
 interface FormState {
   type: BankVoucherType
   voucherId?: string
+  readOnly?: boolean
 }
 
 function BankTable() {
@@ -27,6 +30,8 @@ function BankTable() {
   const del = useDeleteBankVoucher()
   const importXlsx = useImportBankVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
+  const confirm = useConfirm()
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -34,8 +39,17 @@ function BankTable() {
     if (!file) return
     importXlsx.mutate(file, {
       onSuccess: (r) =>
-        alert(`Nhập khẩu xong: ${r.created} chứng từ mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`),
-      onError: () => alert('Nhập khẩu thất bại. Kiểm tra file Excel.'),
+        toast({
+          variant: 'success',
+          title: 'Nhập khẩu thành công',
+          description: `${r.created} chứng từ mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`,
+        }),
+      onError: () =>
+        toast({
+          variant: 'error',
+          title: 'Nhập khẩu thất bại',
+          description: 'Kiểm tra lại file Excel.',
+        }),
     })
   }
 
@@ -151,18 +165,20 @@ function BankTable() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[1040px] border-collapse text-sm">
+        <table className="w-full min-w-[1240px] border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
               <th className="px-3 py-2">Ngày hạch toán</th>
+              <th className="px-3 py-2">Ngày chứng từ</th>
               <th className="px-3 py-2">Số chứng từ</th>
               <th className="px-3 py-2">Diễn giải</th>
               <th className="px-3 py-2 text-right">Số tiền</th>
               <th className="px-3 py-2">Đối tượng</th>
               <th className="px-3 py-2">Số tài khoản NH</th>
+              <th className="px-3 py-2">Lý do thu/chi</th>
               <th className="px-3 py-2">Loại chứng từ</th>
               <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
@@ -172,14 +188,14 @@ function BankTable() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={11} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={11} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -189,7 +205,7 @@ function BankTable() {
             )}
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={11} className="px-3 py-10 text-center text-slate-400">
                   Chưa có chứng từ tiền gửi nào.
                 </td>
               </tr>
@@ -205,10 +221,13 @@ function BankTable() {
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">
                     {formatDate(r.postingDate)}
                   </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">
+                    {formatDate(r.voucherDate)}
+                  </td>
                   <td className="px-3 py-2">
                     <button
                       className="text-primary hover:underline"
-                      onClick={() => setFormState({ type: r.type, voucherId: r.id })}
+                      onClick={() => setFormState({ type: r.type, voucherId: r.id, readOnly: true })}
                     >
                       {r.voucherNo}
                     </button>
@@ -228,10 +247,13 @@ function BankTable() {
                     {r.partnerName}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">{r.bankAccountNo}</td>
+                  <td className="max-w-[160px] truncate px-3 py-2 text-slate-600">{r.reason}</td>
                   <td className="px-3 py-2 text-slate-600">{VOUCHER_TYPE_LABEL[r.type]}</td>
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
-                      onPrimary={() => setFormState({ type: r.type, voucherId: r.id })}
+                      onPrimary={() =>
+                        setFormState({ type: r.type, voucherId: r.id, readOnly: true })
+                      }
                       items={[
                         {
                           label: 'Sửa',
@@ -240,8 +262,14 @@ function BankTable() {
                         {
                           label: 'Xóa',
                           danger: true,
-                          onClick: () => {
-                            if (confirm(`Xóa chứng từ ${r.voucherNo}?`)) del.mutate(r.id)
+                          onClick: async () => {
+                            const ok = await confirm({
+                              title: `Xóa chứng từ ${r.voucherNo}?`,
+                              description: 'Hành động này không thể hoàn tác.',
+                              confirmText: 'Xóa',
+                              destructive: true,
+                            })
+                            if (ok) del.mutate(r.id)
                           },
                         },
                       ]}
@@ -287,12 +315,12 @@ function BankTable() {
       <Modal
         open={!!formState}
         onClose={closeForm}
-        size="xl"
+        size="full"
         title={
           formState?.voucherId
-            ? formState.type === BankVoucherType.Receipt
-              ? 'Sửa thu tiền gửi'
-              : 'Sửa ủy nhiệm chi'
+            ? `${formState.readOnly ? 'Xem' : 'Sửa'} ${
+                formState.type === BankVoucherType.Receipt ? 'thu tiền gửi' : 'ủy nhiệm chi'
+              }`
             : formState?.type === BankVoucherType.Receipt
               ? 'Thu tiền gửi'
               : 'Ủy nhiệm chi'
@@ -303,6 +331,7 @@ function BankTable() {
             key={`${formState.type}-${formState.voucherId ?? 'new'}`}
             type={formState.type}
             voucherId={formState.voucherId ?? null}
+            readOnly={formState.readOnly}
             onSaved={closeForm}
             onCancel={closeForm}
           />

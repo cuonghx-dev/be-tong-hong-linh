@@ -7,6 +7,11 @@ export const CHART_OF_ACCOUNTS = {
   BANK_DEPOSIT: '1121', // Tiền gửi ngân hàng Việt Nam
   RECEIVABLE: '131', // Phải thu khách hàng
   PAYABLE: '331', // Phải trả người bán
+  ADVANCE: '141', // Tạm ứng (thu hoàn ứng / tạm ứng cho nhân viên)
+  LOAN: '1283', // Cho vay (thu hồi / chi cho vay)
+  SALARY_PAYABLE: '334', // Phải trả người lao động (trả lương)
+  INTERNAL_RECEIVABLE: '1368', // Phải thu nội bộ khác (chuyển tiền chi nhánh)
+  CIT_PAYABLE: '3334', // Thuế thu nhập doanh nghiệp
   INVENTORY: '156', // Hàng hóa
   REVENUE: '511', // Doanh thu bán hàng
   REVENUE_GOODS: '5111', // Doanh thu bán hàng hóa

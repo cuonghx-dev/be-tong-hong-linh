@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
+import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { PlusIcon, RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
@@ -18,8 +19,9 @@ const P = { page: 'sp_page', q: 'sp_q' }
 
 export function SupplierTable() {
   const [params, setParams] = useSearchParams()
-  const [formState, setFormState] = useState<{ supplierId?: string } | null>(null)
+  const [formState, setFormState] = useState<{ supplierId?: string; readOnly?: boolean } | null>(null)
   const del = useDeleteSupplier()
+  const confirm = useConfirm()
 
   const page = Number(params.get(P.page) ?? 1)
   const keyword = params.get(P.q) ?? ''
@@ -131,7 +133,7 @@ export function SupplierTable() {
                   <td className="px-3 py-2">
                     <button
                       className="text-primary hover:underline"
-                      onClick={() => setFormState({ supplierId: r.id })}
+                      onClick={() => setFormState({ supplierId: r.id, readOnly: true })}
                     >
                       {r.code}
                     </button>
@@ -151,7 +153,7 @@ export function SupplierTable() {
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
                       primaryLabel="Sửa"
-                      onPrimary={() => setFormState({ supplierId: r.id })}
+                      onPrimary={() => setFormState({ supplierId: r.id, readOnly: true })}
                       items={[
                         {
                           label: 'Sửa',
@@ -160,8 +162,14 @@ export function SupplierTable() {
                         {
                           label: 'Xóa',
                           danger: true,
-                          onClick: () => {
-                            if (confirm(`Xóa nhà cung cấp ${r.code}?`)) del.mutate(r.id)
+                          onClick: async () => {
+                            const ok = await confirm({
+                              title: `Xóa nhà cung cấp ${r.code}?`,
+                              description: 'Hành động này không thể hoàn tác.',
+                              confirmText: 'Xóa',
+                              destructive: true,
+                            })
+                            if (ok) del.mutate(r.id)
                           },
                         },
                       ]}
@@ -208,12 +216,19 @@ export function SupplierTable() {
         open={!!formState}
         onClose={closeForm}
         size="lg"
-        title={formState?.supplierId ? 'Sửa nhà cung cấp' : 'Thông tin nhà cung cấp'}
+        title={
+          formState?.readOnly
+            ? 'Xem nhà cung cấp'
+            : formState?.supplierId
+              ? 'Sửa nhà cung cấp'
+              : 'Thông tin nhà cung cấp'
+        }
       >
         {formState && (
           <SupplierForm
             key={formState.supplierId ?? 'new'}
             supplierId={formState.supplierId ?? null}
+            readOnly={formState.readOnly}
             onSaved={closeForm}
             onCancel={closeForm}
           />

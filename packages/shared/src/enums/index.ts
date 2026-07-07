@@ -30,11 +30,25 @@ export enum CashVoucherType {
 // Loại nghiệp vụ (§5) — quyết định định khoản mặc định + nguồn sinh phiếu.
 export enum CashVoucherCategory {
   SalesCash = 'SALES_CASH', // Bán hàng hóa trong nước - Tiền mặt (PT tự sinh)
-  Receipt = 'RECEIPT', // Phiếu thu nhập tay (thu khác)
-  Payment = 'PAYMENT', // Phiếu chi nhập tay (chi khác)
+  // Loại nghiệp vụ Phiếu thu nhập tay (§5) — quyết định định khoản TK Có mặc định.
+  ReceiptBankWithdraw = 'RECEIPT_BANK_WITHDRAW', // 1. Rút tiền gửi về nhập quỹ (Có 1121)
+  ReceiptEmployeeAdvance = 'RECEIPT_EMPLOYEE_ADVANCE', // 2. Thu hoàn ứng nhân viên (Có 141)
+  ReceiptCustomer = 'RECEIPT_CUSTOMER', // 3. Thu tiền khách hàng không theo hóa đơn (Có 131)
+  Receipt = 'RECEIPT', // 4. Thu khác (Có tự nhập)
+  ReceiptLoanRecovery = 'RECEIPT_LOAN_RECOVERY', // 5. Thu hồi các khoản cho vay (Có 1283)
+  // Loại nghiệp vụ Phiếu chi nhập tay (§5) — quyết định định khoản TK Nợ mặc định.
+  PaymentEmployeeAdvance = 'PAYMENT_EMPLOYEE_ADVANCE', // 1. Tạm ứng cho nhân viên (Nợ 141)
+  Payment = 'PAYMENT', // 2. Chi khác (Nợ tự nhập)
+  DepositToBank = 'DEPOSIT_TO_BANK', // 3. Gửi tiền vào ngân hàng (Nợ 1121)
+  PaymentSupplier = 'PAYMENT_SUPPLIER', // 4. Trả tiền nhà cung cấp không theo hóa đơn (Nợ 331)
+  PaymentPurchaseWithInvoice = 'PAYMENT_PURCHASE_WITH_INVOICE', // 5. Chi mua ngoài có hóa đơn (Nợ tự nhập)
+  PaymentSalaryAdvance = 'PAYMENT_SALARY_ADVANCE', // 6. Trả lương tạm ứng cho nhân viên (Nợ 334)
+  PaymentSalary = 'PAYMENT_SALARY', // 7. Trả lương nhân viên (Nợ 334)
+  PaymentToBranch = 'PAYMENT_TO_BRANCH', // 8. Chuyển tiền cho chi nhánh khác (Nợ 1368)
+  PaymentLoan = 'PAYMENT_LOAN', // 9. Chi cho vay (Nợ 1283)
+  PaymentCITTax = 'PAYMENT_CIT_TAX', // 10. Nộp thuế TNDN tạm tính (Nợ 3334)
   PurchaseServiceCash = 'PURCHASE_SERVICE_CASH', // Chứng từ mua dịch vụ - Tiền mặt (PC tự sinh)
   PurchaseGoodsCash = 'PURCHASE_GOODS_CASH', // Mua hàng trong nước không qua kho - Tiền mặt (PC tự sinh)
-  DepositToBank = 'DEPOSIT_TO_BANK', // Gửi tiền vào ngân hàng (PC loại 3)
 }
 
 // Đối tượng liên kết chứng từ: Khách hàng / Nhà cung cấp / Nhân viên.

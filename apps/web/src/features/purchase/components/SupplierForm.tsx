@@ -10,6 +10,7 @@ import { SUPPLIER_TYPE_LABEL } from '../types'
 
 interface Props {
   supplierId?: string | null
+  readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
 }
@@ -22,7 +23,7 @@ const DEFAULTS: SupplierFormValues = {
   isInternal: false,
 }
 
-export function SupplierForm({ supplierId, onSaved, onCancel }: Props) {
+export function SupplierForm({ supplierId, readOnly = false, onSaved, onCancel }: Props) {
   const editing = useSupplier(supplierId ?? null)
   const create = useCreateSupplier()
   const update = useUpdateSupplier()
@@ -65,6 +66,7 @@ export function SupplierForm({ supplierId, onSaved, onCancel }: Props) {
 
   return (
     <form onSubmit={submit} className="space-y-4">
+      <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
       <div className="flex gap-4">
         {Object.values(SupplierType).map((t) => (
           <label key={t} className="flex items-center gap-1.5 text-sm">
@@ -117,14 +119,23 @@ export function SupplierForm({ supplierId, onSaved, onCancel }: Props) {
       </label>
 
       {serverMsg && <p className="text-sm text-red-600">{String(serverMsg)}</p>}
+      </fieldset>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
-          Hủy
-        </Button>
-        <Button type="submit" disabled={saving}>
-          {saving ? 'Đang cất…' : 'Cất'}
-        </Button>
+        {readOnly ? (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Đóng
+          </Button>
+        ) : (
+          <>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+              Hủy
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Đang cất…' : 'Cất'}
+            </Button>
+          </>
+        )}
       </div>
     </form>
   )

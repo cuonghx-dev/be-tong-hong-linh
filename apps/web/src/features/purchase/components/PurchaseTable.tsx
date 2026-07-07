@@ -1,14 +1,19 @@
 import { PurchaseVoucherType, type PurchaseVoucherFilter } from '@app/shared'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, RefreshIcon, SearchIcon } from '@/shared/ui/icons'
+import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { Modal } from '@/shared/ui/modal'
 import { Popover } from '@/shared/ui/popover'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import { useToast } from '@/shared/ui/toast'
 import { usePurchaseVouchers } from '../api/usePurchaseVouchers'
-import { useDeletePurchaseVoucher } from '../api/usePurchaseVoucherMutations'
+import {
+  useDeletePurchaseVoucher,
+  useImportPurchaseVouchers,
+} from '../api/usePurchaseVoucherMutations'
 import { PAYMENT_STATUS_LABEL, RECEIVE_STATUS_LABEL, VOUCHER_TYPE_LABEL } from '../types'
 import {
   PurchaseFilterPopover,
@@ -21,6 +26,7 @@ const PAGE_SIZE = 20
 interface FormState {
   type: PurchaseVoucherType
   voucherId?: string
+  readOnly?: boolean
 }
 
 const NEW_TYPES: { type: PurchaseVoucherType; label: string }[] = [
@@ -38,6 +44,30 @@ export function PurchaseTable() {
   const [params, setParams] = useSearchParams()
   const [formState, setFormState] = useState<FormState | null>(null)
   const del = useDeletePurchaseVoucher()
+  const importXlsx = useImportPurchaseVouchers()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
+  const confirm = useConfirm()
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // cho phép chọn lại cùng file
+    if (!file) return
+    importXlsx.mutate(file, {
+      onSuccess: (r) =>
+        toast({
+          variant: 'success',
+          title: 'Nhập khẩu thành công',
+          description: `${r.created} chứng từ mới, bỏ qua ${r.skipped} trùng (tổng ${r.total}).`,
+        }),
+      onError: () =>
+        toast({
+          variant: 'error',
+          title: 'Nhập khẩu thất bại',
+          description: 'Kiểm tra lại file Excel.',
+        }),
+    })
+  }
 
   const page = Number(params.get('page') ?? 1)
   const keyword = params.get('q') ?? ''
@@ -111,6 +141,22 @@ export function PurchaseTable() {
           onApply={applyFilter}
           onReset={resetFilter}
         />
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={onPickFile}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileRef.current?.click()}
+          disabled={importXlsx.isPending}
+        >
+          {importXlsx.isPending ? 'Đang nhập…' : 'Nhập khẩu Excel'}
+        </Button>
 
         <div className="ml-auto flex items-center gap-2">
           <Popover
@@ -222,7 +268,7 @@ export function PurchaseTable() {
                 <td className="px-3 py-2">
                   <button
                     className="text-primary hover:underline"
-                    onClick={() => setFormState({ type: r.type, voucherId: r.id })}
+                    onClick={() => setFormState({ type: r.type, voucherId: r.id, readOnly: true })}
                   >
                     {r.voucherNo}
                   </button>
@@ -242,7 +288,7 @@ export function PurchaseTable() {
                 <td className="px-3 py-2 text-slate-600">{VOUCHER_TYPE_LABEL[r.type]}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
-                    onPrimary={() => setFormState({ type: r.type, voucherId: r.id })}
+                    onPrimary={() => setFormState({ type: r.type, voucherId: r.id, readOnly: true })}
                     items={[
                       {
                         label: 'Sửa',
@@ -251,8 +297,14 @@ export function PurchaseTable() {
                       {
                         label: 'Xóa',
                         danger: true,
-                        onClick: () => {
-                          if (confirm(`Xóa chứng từ ${r.voucherNo}?`)) del.mutate(r.id)
+                        onClick: async () => {
+                          const ok = await confirm({
+                            title: `Xóa chứng từ ${r.voucherNo}?`,
+                            description: 'Hành động này không thể hoàn tác.',
+                            confirmText: 'Xóa',
+                            destructive: true,
+                          })
+                          if (ok) del.mutate(r.id)
                         },
                       },
                     ]}
@@ -299,11 +351,13 @@ export function PurchaseTable() {
         onClose={closeForm}
         size="xl"
         title={
-          formState?.voucherId
-            ? `Sửa chứng từ mua hàng`
-            : formState
-              ? VOUCHER_TYPE_LABEL[formState.type]
-              : ''
+          formState?.readOnly
+            ? `Xem chứng từ mua hàng`
+            : formState?.voucherId
+              ? `Sửa chứng từ mua hàng`
+              : formState
+                ? VOUCHER_TYPE_LABEL[formState.type]
+                : ''
         }
       >
         {formState && (
@@ -311,6 +365,7 @@ export function PurchaseTable() {
             key={`${formState.type}-${formState.voucherId ?? 'new'}`}
             type={formState.type}
             voucherId={formState.voucherId ?? null}
+            readOnly={formState.readOnly}
             onSaved={closeForm}
             onCancel={closeForm}
           />

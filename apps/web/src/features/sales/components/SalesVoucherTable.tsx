@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
+import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
@@ -17,8 +18,9 @@ const PAGE_SIZE = 20
 
 export function SalesVoucherTable() {
   const [params, setParams] = useSearchParams()
-  const [form, setForm] = useState<{ voucherId?: string } | null>(null)
+  const [form, setForm] = useState<{ voucherId?: string; readOnly?: boolean } | null>(null)
   const del = useDeleteSalesVoucher()
+  const confirm = useConfirm()
 
   const page = Number(params.get('page') ?? 1)
   const keyword = params.get('q') ?? ''
@@ -164,7 +166,7 @@ export function SalesVoucherTable() {
                 <td className="px-3 py-2">
                   <button
                     className="text-primary hover:underline"
-                    onClick={() => setForm({ voucherId: r.id })}
+                    onClick={() => setForm({ voucherId: r.id, readOnly: true })}
                   >
                     {r.voucherNo}
                   </button>
@@ -192,14 +194,20 @@ export function SalesVoucherTable() {
                 <td className="px-3 py-2 text-slate-600">{VOUCHER_TYPE_LABEL[r.voucherType]}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
-                    onPrimary={() => setForm({ voucherId: r.id })}
+                    onPrimary={() => setForm({ voucherId: r.id, readOnly: true })}
                     items={[
                       { label: 'Sửa', onClick: () => setForm({ voucherId: r.id }) },
                       {
                         label: 'Xóa',
                         danger: true,
-                        onClick: () => {
-                          if (confirm(`Xóa chứng từ ${r.voucherNo}?`)) del.mutate(r.id)
+                        onClick: async () => {
+                          const ok = await confirm({
+                            title: `Xóa chứng từ ${r.voucherNo}?`,
+                            description: 'Hành động này không thể hoàn tác.',
+                            confirmText: 'Xóa',
+                            destructive: true,
+                          })
+                          if (ok) del.mutate(r.id)
                         },
                       },
                     ]}
@@ -244,12 +252,19 @@ export function SalesVoucherTable() {
         open={!!form}
         onClose={() => setForm(null)}
         size="xl"
-        title={form?.voucherId ? 'Sửa chứng từ bán hàng' : 'Chứng từ bán hàng'}
+        title={
+          form?.readOnly
+            ? 'Xem chứng từ bán hàng'
+            : form?.voucherId
+              ? 'Sửa chứng từ bán hàng'
+              : 'Chứng từ bán hàng'
+        }
       >
         {form && (
           <SalesVoucherForm
             key={form.voucherId ?? 'new'}
             voucherId={form.voucherId ?? null}
+            readOnly={form.readOnly}
             onSaved={() => setForm(null)}
             onCancel={() => setForm(null)}
           />
