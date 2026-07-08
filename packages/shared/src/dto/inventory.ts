@@ -159,7 +159,6 @@ export interface CreateGoodsIssueInput {
   description?: string | null
   attachmentCount?: number
   deliveryLocation?: string | null
-  branchName?: string | null
   lines: CreateGoodsIssueLineInput[]
 }
 

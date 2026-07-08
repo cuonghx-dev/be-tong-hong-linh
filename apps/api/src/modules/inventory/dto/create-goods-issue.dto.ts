@@ -121,11 +121,6 @@ export class CreateGoodsIssueDto {
   @IsString()
   deliveryLocation?: string
 
-  @ApiPropertyOptional({ description: 'Chi nhánh' })
-  @IsOptional()
-  @IsString()
-  branchName?: string
-
   @ApiProperty({ type: [CreateGoodsIssueLineDto] })
   @IsArray()
   @ArrayMinSize(1)

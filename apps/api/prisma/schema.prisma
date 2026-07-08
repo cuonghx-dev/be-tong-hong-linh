@@ -454,7 +454,6 @@ model GoodsIssueVoucher {
   salesDocStatus     String?            @map("sales_doc_status")
   invoiceIssueStatus String?            @map("invoice_issue_status")
   taxAuthorityCode   String?            @map("tax_authority_code")
-  branchName         String?            @map("branch_name")
   lines              GoodsIssueLine[]
 
   createdAt DateTime @default(now()) @map("created_at")

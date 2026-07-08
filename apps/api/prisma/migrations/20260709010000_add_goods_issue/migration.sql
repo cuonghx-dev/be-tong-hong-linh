@@ -20,7 +20,6 @@ CREATE TABLE "goods_issue_vouchers" (
     "sales_doc_status" TEXT,
     "invoice_issue_status" TEXT,
     "tax_authority_code" TEXT,
-    "branch_name" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "created_by" TEXT,

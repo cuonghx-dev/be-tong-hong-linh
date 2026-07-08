@@ -11,7 +11,6 @@ export interface ParsedGoodsIssue {
   salesDocStatus: string | null
   invoiceIssueStatus: string | null
   taxAuthorityCode: string | null
-  branchName: string | null
 }
 
 // Tên cột cần tìm trong header (mẫu Xuat_kho.xlsx).
@@ -25,7 +24,6 @@ const COL = {
   invoiceIssue: 'TT Phát hành hóa đơn',
   taxCode: 'Mã CQT cấp',
   type: 'Loại chứng từ',
-  branch: 'Chi nhánh',
 }
 
 function toStr(v: unknown): string | null {
@@ -72,7 +70,6 @@ export function parseGoodsIssueXlsx(buffer: Buffer): ParsedGoodsIssue[] {
   const iInvoice = idx(COL.invoiceIssue)
   const iTaxCode = idx(COL.taxCode)
   const iType = idx(COL.type)
-  const iBranch = idx(COL.branch)
 
   const DAY = 86_400_000
   const out: ParsedGoodsIssue[] = []
@@ -97,7 +94,6 @@ export function parseGoodsIssueXlsx(buffer: Buffer): ParsedGoodsIssue[] {
       salesDocStatus: iSalesDoc >= 0 ? toStr(r[iSalesDoc]) : null,
       invoiceIssueStatus: iInvoice >= 0 ? toStr(r[iInvoice]) : null,
       taxAuthorityCode: iTaxCode >= 0 ? toStr(r[iTaxCode]) : null,
-      branchName: iBranch >= 0 ? toStr(r[iBranch]) : null,
     })
   }
   return out

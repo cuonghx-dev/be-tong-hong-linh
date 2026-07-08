@@ -81,7 +81,6 @@ export class GoodsIssueService {
           attachmentCount: dto.attachmentCount ?? 0,
           deliveryLocation: dto.deliveryLocation ?? null,
           totalAmount,
-          branchName: dto.branchName ?? null,
           lines: { create: lines },
         },
         include: { lines: { orderBy: { lineNo: 'asc' } } },
@@ -106,7 +105,6 @@ export class GoodsIssueService {
         description: dto.description ?? undefined,
         attachmentCount: dto.attachmentCount ?? undefined,
         deliveryLocation: dto.deliveryLocation ?? undefined,
-        branchName: dto.branchName ?? undefined,
       }
 
       if (dto.lines) {
@@ -158,7 +156,6 @@ export class GoodsIssueService {
         salesDocStatus: p.salesDocStatus,
         invoiceIssueStatus: p.invoiceIssueStatus,
         taxAuthorityCode: p.taxAuthorityCode,
-        branchName: p.branchName,
       })
       // Mức tổng hợp không có dòng hàng chi tiết → 1 dòng đại diện theo định khoản mặc định.
       lines.push({
@@ -277,7 +274,6 @@ function toIssueDto(v: IssueWithLines) {
     salesDocStatus: v.salesDocStatus,
     invoiceIssueStatus: v.invoiceIssueStatus,
     taxAuthorityCode: v.taxAuthorityCode,
-    branchName: v.branchName,
     lines: v.lines.map((l) => ({
       id: l.id,
       lineNo: l.lineNo,
