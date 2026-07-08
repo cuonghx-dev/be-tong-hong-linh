@@ -1,0 +1,65 @@
+import type {
+  CreateGoodsIssueInput,
+  GoodsIssueDto,
+  UpdateGoodsIssueInput,
+} from '@app/shared'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { api } from '@/shared/lib/api'
+import { inventoryKeys } from './keys'
+
+export function useCreateGoodsIssue() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: CreateGoodsIssueInput) =>
+      api.post<GoodsIssueDto>('/inventory/issues', dto).then((r) => r.data),
+    onSuccess: () => {
+      // Phiếu xuất kho ảnh hưởng tồn kho → invalidate toàn phân hệ.
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
+    },
+  })
+}
+
+export interface ImportResult {
+  total: number
+  created: number
+  skipped: number
+}
+
+export function useImportGoodsIssues() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return api
+        .post<ImportResult>('/inventory/issues/import', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        .then((r) => r.data)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
+    },
+  })
+}
+
+export function useUpdateGoodsIssue() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: UpdateGoodsIssueInput }) =>
+      api.patch<GoodsIssueDto>(`/inventory/issues/${id}`, dto).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
+    },
+  })
+}
+
+export function useDeleteGoodsIssue() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/inventory/issues/${id}`).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
+    },
+  })
+}

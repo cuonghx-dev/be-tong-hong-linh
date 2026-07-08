@@ -21,6 +21,10 @@ export const CHART_OF_ACCOUNTS = {
   VAT_INPUT: '133', // Thuế GTGT đầu vào
   VAT_INPUT_DEDUCTIBLE: '1331', // Thuế GTGT đầu vào được khấu trừ (mua hàng)
   MATERIAL: '152', // Nguyên liệu, vật liệu
+  FINISHED_GOODS: '155', // Thành phẩm (nhập kho từ sản xuất)
   GOODS: '156', // Hàng hóa (nhập kho)
+  WIP: '154', // Chi phí SXKD dở dang (kết chuyển thành phẩm)
+  DIRECT_MATERIAL_COST: '621', // Chi phí nguyên vật liệu trực tiếp (xuất kho sản xuất)
+  COGS: '632', // Giá vốn hàng bán (xuất kho bán hàng)
   SERVICE_EXPENSE: '642', // Chi phí quản lý DN (mua dịch vụ mặc định)
 } as const

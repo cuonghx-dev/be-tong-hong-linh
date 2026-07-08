@@ -1,0 +1,67 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { CreateGoodsIssueDto } from './dto/create-goods-issue.dto'
+import { GoodsIssueFilterDto } from './dto/goods-issue-filter.dto'
+import { UpdateGoodsIssueDto } from './dto/update-goods-issue.dto'
+import { GoodsIssueService } from './goods-issue.service'
+
+@ApiTags('inventory')
+@Controller('inventory/issues')
+export class GoodsIssueController {
+  constructor(private readonly issue: GoodsIssueService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Danh sách phiếu xuất kho (lọc + phân trang)' })
+  list(@Query() filter: GoodsIssueFilterDto) {
+    return this.issue.list(filter)
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Chi tiết 1 phiếu xuất kho' })
+  findOne(@Param('id') id: string) {
+    return this.issue.findOne(id)
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Tạo phiếu xuất kho' })
+  create(@Body() dto: CreateGoodsIssueDto) {
+    return this.issue.create(dto)
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Nhập khẩu phiếu xuất kho từ file Excel (.xlsx)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } },
+  })
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 20 * 1024 * 1024 } }))
+  import(@UploadedFile() file?: { buffer: Buffer }) {
+    if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
+    return this.issue.importXlsx(file.buffer)
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Sửa phiếu xuất kho' })
+  update(@Param('id') id: string, @Body() dto: UpdateGoodsIssueDto) {
+    return this.issue.update(id, dto)
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Xóa phiếu xuất kho' })
+  remove(@Param('id') id: string) {
+    return this.issue.remove(id)
+  }
+}

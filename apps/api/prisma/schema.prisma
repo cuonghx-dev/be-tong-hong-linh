@@ -368,6 +368,179 @@ model PurchaseVoucherLine {
   @@map("purchase_voucher_lines")
 }
 
+// ── Kho — Nhập kho (05-kho) ──────────────────────────────────────────────────
+
+// Loại chứng từ Phiếu nhập kho — quyết định định khoản TK Nợ/Có mặc định.
+enum InventoryReceiptType {
+  PURCHASE
+  FINISHED_GOODS
+  SALES_RETURN
+  OTHER
+}
+
+// Phiếu nhập kho (Nhập kho).
+model InventoryReceipt {
+  id              String                 @id @default(uuid())
+  receiptType     InventoryReceiptType   @default(OTHER) @map("receipt_type")
+  voucherNo       String                 @unique @map("voucher_no")
+  postingDate     DateTime               @map("posting_date") @db.Date
+  voucherDate     DateTime               @map("voucher_date") @db.Date
+  partnerId       String?                @map("partner_id")
+  partnerName     String?                @map("partner_name")
+  address         String?
+  deliverer       String?
+  description     String?
+  reference       String?
+  attachmentCount Int                    @default(0) @map("attachment_count")
+  totalAmount     Decimal                @default(0) @map("total_amount") @db.Decimal(18, 2)
+  branchName      String?                @map("branch_name")
+  lines           InventoryReceiptLine[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([receiptType, postingDate])
+  @@map("inventory_receipts")
+}
+
+// Dòng hàng của phiếu nhập kho.
+model InventoryReceiptLine {
+  id            String           @id @default(uuid())
+  receiptId     String           @map("receipt_id")
+  receipt       InventoryReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  lineNo        Int              @map("line_no")
+  itemId        String?          @map("item_id")
+  itemName      String?          @map("item_name")
+  warehouseId   String?          @map("warehouse_id")
+  debitAccount  String?          @map("debit_account")
+  creditAccount String?          @map("credit_account")
+  unit          String?
+  quantity      Decimal          @default(0) @db.Decimal(18, 4)
+  unitPrice     Decimal          @default(0) @map("unit_price") @db.Decimal(18, 2)
+  amount        Decimal          @default(0) @db.Decimal(18, 2)
+  lotNo         String?          @map("lot_no")
+  expiryDate    DateTime?        @map("expiry_date") @db.Date
+
+  @@index([receiptId])
+  @@map("inventory_receipt_lines")
+}
+
+// ── Kho — Xuất kho (05-kho) ──────────────────────────────────────────────────
+
+// Lý do xuất kho — quyết định định khoản TK Nợ/Có mặc định.
+enum GoodsIssueCategory {
+  SALES
+  PRODUCTION
+  OTHER
+}
+
+// Phiếu xuất kho (Xuất kho) — ghi giảm tồn kho theo bút toán kép.
+model GoodsIssueVoucher {
+  id                 String             @id @default(uuid())
+  category           GoodsIssueCategory @default(SALES)
+  voucherNo          String             @unique @map("voucher_no")
+  postingDate        DateTime           @map("posting_date") @db.Date
+  voucherDate        DateTime           @map("voucher_date") @db.Date
+  customerId         String?            @map("customer_id")
+  customerName       String?            @map("customer_name")
+  receiver           String?
+  address            String?
+  salesEmployeeId    String?            @map("sales_employee_id")
+  description        String?
+  attachmentCount    Int                @default(0) @map("attachment_count")
+  deliveryLocation   String?            @map("delivery_location")
+  totalAmount        Decimal            @default(0) @map("total_amount") @db.Decimal(18, 2)
+  salesDocStatus     String?            @map("sales_doc_status")
+  invoiceIssueStatus String?            @map("invoice_issue_status")
+  taxAuthorityCode   String?            @map("tax_authority_code")
+  branchName         String?            @map("branch_name")
+  lines              GoodsIssueLine[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([category, postingDate])
+  @@index([customerId])
+  @@map("goods_issue_vouchers")
+}
+
+// Dòng hàng của phiếu xuất kho.
+model GoodsIssueLine {
+  id            String            @id @default(uuid())
+  voucherId     String            @map("voucher_id")
+  voucher       GoodsIssueVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  lineNo        Int               @map("line_no")
+  itemId        String?           @map("item_id")
+  itemName      String?           @map("item_name")
+  warehouseId   String?           @map("warehouse_id")
+  debitAccount  String            @map("debit_account")
+  creditAccount String            @map("credit_account")
+  unit          String?
+  quantity      Decimal           @default(0) @db.Decimal(18, 4)
+  unitPrice     Decimal           @default(0) @map("unit_price") @db.Decimal(18, 2)
+  amount        Decimal           @default(0) @db.Decimal(18, 2)
+  lotNo         String?           @map("lot_no")
+  expiryDate    DateTime?         @map("expiry_date") @db.Date
+
+  @@index([voucherId])
+  @@map("goods_issue_lines")
+}
+
+// ── Lệnh sản xuất (05-kho) ───────────────────────────────────────────────────
+
+// Tình trạng lệnh sản xuất (cột "Tình trạng" trên danh sách MISA).
+enum ProductionOrderStatus {
+  NOT_STARTED // Chưa thực hiện
+  IN_PROGRESS // Đang thực hiện
+  COMPLETED // Hoàn thành
+}
+
+// Loại dòng của lệnh sản xuất: thành phẩm cần sản xuất / NVL định mức tiêu hao.
+enum ProductionOrderLineType {
+  PRODUCT
+  MATERIAL
+}
+
+// Lệnh sản xuất — chứng từ kế hoạch (không bút toán); sau đó sinh Phiếu xuất NVL (PX)
+// và Phiếu nhập thành phẩm (PN). Hai cờ theo dõi đã lập đủ PN/PX.
+model ProductionOrder {
+  id              String                @id @default(uuid())
+  voucherNo       String                @unique @map("voucher_no") // Số lệnh (vd LSX42/02.2026)
+  orderDate       DateTime              @map("order_date") @db.Date // Ngày
+  description     String? // Diễn giải
+  receiptComplete Boolean               @default(false) @map("receipt_complete") // Đã lập đủ PN
+  issueComplete   Boolean               @default(false) @map("issue_complete") // Đã lập đủ PX
+  status          ProductionOrderStatus @default(IN_PROGRESS) // Tình trạng
+  branchName      String?               @map("branch_name") // Chi nhánh
+  lines           ProductionOrderLine[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([status, orderDate])
+  @@map("production_orders")
+}
+
+// Dòng lệnh sản xuất (thành phẩm hoặc NVL định mức).
+model ProductionOrderLine {
+  id       String                  @id @default(uuid())
+  orderId  String                  @map("order_id")
+  order    ProductionOrder         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  lineNo   Int                     @map("line_no")
+  lineType ProductionOrderLineType @default(PRODUCT) @map("line_type")
+  itemId   String?                 @map("item_id")
+  itemName String?                 @map("item_name")
+  unit     String?
+  quantity Decimal                 @default(0) @db.Decimal(18, 4)
+  note     String?
+
+  @@index([orderId])
+  @@map("production_order_lines")
+}
+
 // ── Bán hàng (04-ban-hang) ───────────────────────────────────────────────────
 
 // Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.

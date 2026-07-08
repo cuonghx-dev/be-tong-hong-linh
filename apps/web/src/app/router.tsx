@@ -13,6 +13,8 @@ import { InvoicePage } from '@/features/sales/pages/InvoicePage'
 import { PurchasePage } from '@/features/purchase/pages/PurchasePage'
 import { PurchaseVoucherPage } from '@/features/purchase/pages/PurchaseVoucherPage'
 import { InventoryPage } from '@/features/inventory/pages/InventoryPage'
+import { InventoryReceiptPage } from '@/features/inventory/pages/InventoryReceiptPage'
+import { GoodsIssueVoucherPage } from '@/features/inventory/pages/GoodsIssueVoucherPage'
 import { FixedAssetPage } from '@/features/fixed-asset/pages/FixedAssetPage'
 
 // Trang chứng từ full-page (§5) — standalone, đè Sidebar/Header.
@@ -31,6 +33,9 @@ const recordRoutes = [
   { path: '/sales/vouchers/:id/edit', element: <SalesVoucherPage mode="edit" /> },
   { path: '/sales/invoices/new', element: <InvoicePage mode="new" /> },
   { path: '/sales/invoices/:id', element: <InvoicePage mode="view" /> },
+  { path: '/inventory/receipts/new', element: <InventoryReceiptPage mode="new" /> },
+  { path: '/inventory/receipts/:id', element: <InventoryReceiptPage mode="view" /> },
+  { path: '/inventory/receipts/:id/edit', element: <InventoryReceiptPage mode="edit" /> },
 ].map((r) => ({
   path: r.path,
   element: <RequireAuth>{r.element}</RequireAuth>,

@@ -182,3 +182,35 @@ export enum ReceivableStatus {
   Settled = 'SETTLED', // Đã thu hết (= 0)
   Prepaid = 'PREPAID', // Trả trước (< 0)
 }
+
+// Kho (05-kho) ----------------------------------------------------------------
+
+// Loại chứng từ Phiếu nhập kho (Nhập kho) — quyết định định khoản TK Nợ/Có mặc định.
+// Đối chiếu dropdown "Loại chứng từ" trên form MISA (vd "3. Khác (NVL thừa, HH thuê gia công, …)").
+export enum InventoryReceiptType {
+  Purchase = 'PURCHASE', // 1. Mua hàng trong nước nhập kho (Nợ 156 / Có 331)
+  FinishedGoods = 'FINISHED_GOODS', // 2. Nhập kho thành phẩm sản xuất (Nợ 155 / Có 154)
+  SalesReturn = 'SALES_RETURN', // 3. Nhập kho hàng bán bị trả lại (Nợ 156 / Có 632)
+  Other = 'OTHER', // 4. Khác (NVL thừa, HH thuê gia công, …) (Nợ 152 / Có tự nhập)
+}
+
+// Lý do xuất kho (Xuất kho) — quyết định định khoản TK Nợ/Có mặc định.
+// Đối chiếu dropdown "Lý do xuất" trên form MISA (vd "1. Bán hàng").
+export enum GoodsIssueCategory {
+  Sales = 'SALES', // 1. Xuất kho bán hàng (Nợ 632 / Có 156)
+  Production = 'PRODUCTION', // 2. Xuất kho cho sản xuất (Nợ 621 / Có 152)
+  Other = 'OTHER', // 3. Xuất kho khác (Nợ 632 tự nhập / Có 156)
+}
+
+// Tình trạng lệnh sản xuất (Lệnh sản xuất) — cột "Tình trạng" trên danh sách MISA.
+export enum ProductionOrderStatus {
+  NotStarted = 'NOT_STARTED', // Chưa thực hiện
+  InProgress = 'IN_PROGRESS', // Đang thực hiện
+  Completed = 'COMPLETED', // Hoàn thành
+}
+
+// Loại dòng của lệnh sản xuất: thành phẩm cần SX / NVL định mức tiêu hao.
+export enum ProductionOrderLineType {
+  Product = 'PRODUCT',
+  Material = 'MATERIAL',
+}
