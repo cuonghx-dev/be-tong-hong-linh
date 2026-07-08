@@ -1,4 +1,9 @@
-import { GoodsIssueCategory, InventoryReceiptType } from '@app/shared'
+import {
+  GoodsIssueCategory,
+  InventoryReceiptType,
+  ProductionOrderLineType,
+  ProductionOrderStatus,
+} from '@app/shared'
 import { z } from 'zod'
 
 // Dòng hàng của phiếu nhập kho.
@@ -65,3 +70,26 @@ export const goodsIssueSchema = z.object({
 
 export type GoodsIssueFormValues = z.infer<typeof goodsIssueSchema>
 export type GoodsIssueLineFormValues = z.infer<typeof goodsIssueLineSchema>
+
+// Dòng lệnh sản xuất (thành phẩm cần SX / NVL định mức — không bút toán).
+export const productionOrderLineSchema = z.object({
+  lineType: z.nativeEnum(ProductionOrderLineType),
+  itemId: z.string().optional(),
+  itemName: z.string().optional(),
+  unit: z.string().optional(),
+  quantity: z.coerce.number().min(0, 'Số lượng ≥ 0'),
+  note: z.string().optional(),
+})
+
+export const productionOrderSchema = z.object({
+  orderDate: z.string().min(1, 'Chọn ngày'),
+  description: z.string().optional(),
+  receiptComplete: z.boolean().optional(),
+  issueComplete: z.boolean().optional(),
+  status: z.nativeEnum(ProductionOrderStatus),
+  branchName: z.string().optional(),
+  lines: z.array(productionOrderLineSchema).min(1, 'Cần ít nhất 1 dòng'),
+})
+
+export type ProductionOrderFormValues = z.infer<typeof productionOrderSchema>
+export type ProductionOrderLineFormValues = z.infer<typeof productionOrderLineSchema>

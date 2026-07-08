@@ -1,4 +1,10 @@
-import { CHART_OF_ACCOUNTS, GoodsIssueCategory, InventoryReceiptType } from '@app/shared'
+import {
+  CHART_OF_ACCOUNTS,
+  GoodsIssueCategory,
+  InventoryReceiptType,
+  ProductionOrderLineType,
+  ProductionOrderStatus,
+} from '@app/shared'
 
 // Nhãn hiển thị loại chứng từ Phiếu nhập kho (đối chiếu dropdown "Loại chứng từ" MISA).
 export const RECEIPT_TYPE_LABEL: Record<InventoryReceiptType, string> = {
@@ -73,4 +79,19 @@ export function issueDefaultCreditAccount(category: GoodsIssueCategory): string 
   return category === GoodsIssueCategory.Production
     ? CHART_OF_ACCOUNTS.MATERIAL
     : CHART_OF_ACCOUNTS.GOODS
+}
+
+// ── Lệnh sản xuất ─────────────────────────────────────────────────────────────
+
+// Nhãn hiển thị tình trạng lệnh sản xuất (cột "Tình trạng" MISA).
+export const PRODUCTION_ORDER_STATUS_LABEL: Record<ProductionOrderStatus, string> = {
+  [ProductionOrderStatus.NotStarted]: 'Chưa thực hiện',
+  [ProductionOrderStatus.InProgress]: 'Đang thực hiện',
+  [ProductionOrderStatus.Completed]: 'Hoàn thành',
+}
+
+// Nhãn loại dòng lệnh sản xuất.
+export const PRODUCTION_ORDER_LINE_TYPE_LABEL: Record<ProductionOrderLineType, string> = {
+  [ProductionOrderLineType.Product]: 'Thành phẩm',
+  [ProductionOrderLineType.Material]: 'Nguyên vật liệu',
 }
