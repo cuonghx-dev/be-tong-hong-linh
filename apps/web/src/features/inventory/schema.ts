@@ -64,7 +64,6 @@ export const goodsIssueSchema = z.object({
   description: z.string().optional(),
   attachmentCount: z.coerce.number().int().min(0).optional(),
   deliveryLocation: z.string().optional(),
-  branchName: z.string().optional(),
   lines: z.array(goodsIssueLineSchema).min(1, 'Cần ít nhất 1 dòng hàng'),
 })
 

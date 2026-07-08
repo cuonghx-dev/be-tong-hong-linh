@@ -170,7 +170,6 @@ export function GoodsIssueTable() {
               <th className="px-3 py-2">TT phát hành hóa đơn</th>
               <th className="px-3 py-2">Mã CQT cấp</th>
               <th className="px-3 py-2">Loại chứng từ</th>
-              <th className="px-3 py-2">Chi nhánh</th>
               <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
               </th>
@@ -179,14 +178,14 @@ export function GoodsIssueTable() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={12} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={11} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={12} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={11} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -196,7 +195,7 @@ export function GoodsIssueTable() {
             )}
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={11} className="px-3 py-10 text-center text-slate-400">
                   Chưa có phiếu xuất kho nào.
                 </td>
               </tr>
@@ -225,7 +224,6 @@ export function GoodsIssueTable() {
                 <td className="px-3 py-2 text-slate-600">
                   {GOODS_ISSUE_CATEGORY_LABEL[r.category]}
                 </td>
-                <td className="max-w-[160px] truncate px-3 py-2 text-slate-600">{r.branchName}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
                     onPrimary={() => openView(r.id)}

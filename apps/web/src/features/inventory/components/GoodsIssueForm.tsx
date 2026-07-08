@@ -100,7 +100,6 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
       description: v.description ?? undefined,
       attachmentCount: v.attachmentCount,
       deliveryLocation: v.deliveryLocation ?? undefined,
-      branchName: v.branchName ?? undefined,
       lines: v.lines.map((l) => ({
         itemId: l.itemId ?? undefined,
         itemName: l.itemName ?? undefined,
@@ -348,9 +347,6 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           <Field label="Địa điểm giao hàng">
             <input {...register('deliveryLocation')} className={inputCls} />
-          </Field>
-          <Field label="Chi nhánh">
-            <input {...register('branchName')} className={inputCls} />
           </Field>
         </div>
 

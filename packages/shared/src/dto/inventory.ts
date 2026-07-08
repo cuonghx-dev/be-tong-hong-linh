@@ -127,7 +127,6 @@ export interface GoodsIssueDto {
   salesDocStatus: string | null // Đã lập CT bán hàng (từ nhập khẩu)
   invoiceIssueStatus: string | null // TT phát hành hóa đơn (từ nhập khẩu)
   taxAuthorityCode: string | null // Mã CQT cấp (từ nhập khẩu)
-  branchName: string | null // Chi nhánh
   lines: GoodsIssueLineDto[]
   createdAt: string
   updatedAt: string
