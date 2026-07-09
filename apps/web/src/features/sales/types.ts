@@ -1,6 +1,5 @@
 import {
   CustomerType,
-  InvoiceIssueStatus,
   PaymentMethod,
   ReceivableAging,
   ReceivableStatus,
@@ -28,12 +27,6 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
 export const CUSTOMER_TYPE_LABEL: Record<CustomerType, string> = {
   [CustomerType.Organization]: 'Tổ chức',
   [CustomerType.Individual]: 'Cá nhân',
-}
-
-// Nhãn trạng thái phát hành hóa đơn (§5).
-export const ISSUE_STATUS_LABEL: Record<InvoiceIssueStatus, string> = {
-  [InvoiceIssueStatus.Unissued]: 'Chưa phát hành',
-  [InvoiceIssueStatus.CodeIssued]: 'Đã cấp mã',
 }
 
 // Nhãn phân tích tuổi nợ công nợ phải thu (§6).

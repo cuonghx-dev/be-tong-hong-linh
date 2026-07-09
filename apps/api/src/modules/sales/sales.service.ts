@@ -5,7 +5,6 @@ import {
   Prisma,
   SalesPaymentMode,
   SalesVoucherType,
-  type Invoice,
   type SalesVoucher,
   type SalesVoucherLine,
 } from '@prisma/client'
@@ -18,7 +17,6 @@ import { UpdateSalesVoucherDto } from './dto/update-sales-voucher.dto'
 
 type VoucherWithRelations = SalesVoucher & {
   lines: SalesVoucherLine[]
-  invoice: Invoice | null
 }
 
 @Injectable()
@@ -46,7 +44,7 @@ export class SalesService {
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.salesVoucher.findMany({
         where,
-        include: { lines: { orderBy: { lineNo: 'asc' } }, invoice: true },
+        include: { lines: { orderBy: { lineNo: 'asc' } } },
         orderBy: [{ postingDate: 'desc' }, { createdAt: 'desc' }],
         skip: (filter.page - 1) * filter.pageSize,
         take: filter.pageSize,
@@ -63,7 +61,7 @@ export class SalesService {
   async findOne(id: string) {
     const voucher = await this.prisma.salesVoucher.findUnique({
       where: { id },
-      include: { lines: { orderBy: { lineNo: 'asc' } }, invoice: true },
+      include: { lines: { orderBy: { lineNo: 'asc' } } },
     })
     if (!voucher) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
     return toVoucherDto(voucher)
@@ -103,25 +101,8 @@ export class SalesService {
           ...totals,
           lines: { create: lines },
         },
-        include: { lines: { orderBy: { lineNo: 'asc' } }, invoice: true },
+        include: { lines: { orderBy: { lineNo: 'asc' } } },
       })
-
-      // Lập kèm hóa đơn (§7) → sinh hóa đơn điện tử chưa phát hành, tham chiếu chứng từ.
-      if (dto.withInvoice) {
-        const invoice = await tx.invoice.create({
-          data: {
-            invoiceType: dto.isPosInvoice ? 'Hóa đơn từ máy tính tiền' : 'Hóa đơn GTGT',
-            invoiceDate: new Date(dto.voucherDate),
-            customerId: dto.customerId ?? null,
-            customerName: dto.customerName ?? null,
-            totalAmount: totals.totalAmount,
-            salesVoucherId: voucher.id,
-            branchId: dto.branchId ?? null,
-            paymentForm: dto.paymentMode === SalesPaymentMode.PAID_NOW ? 'TM/CK' : 'CK',
-          },
-        })
-        voucher.invoice = invoice
-      }
 
       return voucher
     })
@@ -129,10 +110,7 @@ export class SalesService {
   }
 
   async update(id: string, dto: UpdateSalesVoucherDto) {
-    const existing = await this.prisma.salesVoucher.findUnique({
-      where: { id },
-      include: { invoice: true },
-    })
+    const existing = await this.prisma.salesVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -179,21 +157,8 @@ export class SalesService {
       const voucher = await tx.salesVoucher.update({
         where: { id },
         data,
-        include: { lines: { orderBy: { lineNo: 'asc' } }, invoice: true },
+        include: { lines: { orderBy: { lineNo: 'asc' } } },
       })
-
-      // Đồng bộ hóa đơn liên kết (nếu có) khi tổng tiền / khách hàng đổi.
-      if (voucher.invoice && totals) {
-        voucher.invoice = await tx.invoice.update({
-          where: { id: voucher.invoice.id },
-          data: {
-            totalAmount: totals.totalAmount,
-            customerId: voucher.customerId,
-            customerName: voucher.customerName,
-            invoiceDate: voucher.voucherDate,
-          },
-        })
-      }
 
       return voucher
     })
@@ -222,7 +187,6 @@ export class SalesService {
 
     const vouchers: Prisma.SalesVoucherCreateManyInput[] = []
     const lines: Prisma.SalesVoucherLineCreateManyInput[] = []
-    const invoices: Prisma.InvoiceCreateManyInput[] = []
     for (const p of parsed) {
       if (seen.has(p.voucherNo)) continue
       seen.add(p.voucherNo) // chống trùng trong chính file
@@ -246,19 +210,6 @@ export class SalesService {
         totalAmount: totalGoods,
         branchId: p.branchId,
       })
-      // Số hóa đơn có trong file → sinh hóa đơn liên kết (đã cấp mã).
-      if (p.invoiceNo) {
-        invoices.push({
-          invoiceNo: p.invoiceNo,
-          invoiceType: 'Hóa đơn GTGT',
-          issueStatus: 'CODE_ISSUED',
-          invoiceDate: p.date,
-          salesVoucherId: id,
-          customerName: p.customerName,
-          totalAmount: totalGoods,
-          branchId: p.branchId,
-        })
-      }
       lines.push({
         id: randomUUID(),
         voucherId: id,
@@ -281,9 +232,6 @@ export class SalesService {
     }
     for (let i = 0; i < lines.length; i += chunk) {
       await this.prisma.salesVoucherLine.createMany({ data: lines.slice(i, i + chunk) })
-    }
-    for (let i = 0; i < invoices.length; i += chunk) {
-      await this.prisma.invoice.createMany({ data: invoices.slice(i, i + chunk) })
     }
 
     return { total: parsed.length, created: vouchers.length, skipped: parsed.length - vouchers.length }
@@ -395,8 +343,6 @@ function toVoucherDto(v: VoucherWithRelations) {
     totalAmount: v.totalAmount.toString(),
     einvoiceLookupCode: v.einvoiceLookupCode,
     einvoiceLookupUrl: v.einvoiceLookupUrl,
-    invoiceId: v.invoice?.id ?? null,
-    invoiceNo: v.invoice?.invoiceNo ?? null,
     receiptId: v.receiptId,
     branchId: v.branchId,
     lines: v.lines.map((l) => ({

@@ -222,59 +222,6 @@ enum PaymentMethod {
   BANK_TRANSFER
 }
 
-// Tính chất hàng hóa - dịch vụ.
-enum ItemNature {
-  GOODS
-  FINISHED_GOOD
-  SERVICE
-  MATERIAL
-  TOOL
-}
-
-// Giảm thuế theo quy định.
-enum ItemTaxReduction {
-  UNDETERMINED
-  REDUCED
-  NOT_REDUCED
-}
-
-// Hàng hóa - dịch vụ (Danh sách HHDV - 03-mua-hang).
-model InventoryItem {
-  id                  String           @id @default(uuid())
-  code                String           @unique
-  name                String
-  nature              ItemNature       @default(GOODS)
-  taxReduction        ItemTaxReduction @default(UNDETERMINED) @map("tax_reduction")
-  groupName           String?          @map("group_name")
-  unit                String?
-  stockQuantity       Decimal          @default(0) @map("stock_quantity") @db.Decimal(18, 2)
-  stockValue          Decimal          @default(0) @map("stock_value") @db.Decimal(18, 2)
-  minStock            Decimal          @default(0) @map("min_stock") @db.Decimal(18, 2)
-  warrantyMonths      Int?             @map("warranty_months")
-  origin              String?
-  description         String?
-  purchaseDescription String?          @map("purchase_description")
-  salesDescription    String?          @map("sales_description")
-  defaultWarehouse    String?          @map("default_warehouse")
-  stockAccount        String?          @map("stock_account")
-  revenueAccount      String?          @map("revenue_account")
-  expenseAccount      String?          @map("expense_account")
-  purchasePrice       Decimal          @default(0) @map("purchase_price") @db.Decimal(18, 2)
-  salePrice           Decimal          @default(0) @map("sale_price") @db.Decimal(18, 2)
-  vatRate             Decimal          @default(0) @map("vat_rate") @db.Decimal(5, 2)
-  priceAfterTax       Boolean          @default(false) @map("price_after_tax")
-  branchName          String?          @map("branch_name")
-  isActive            Boolean          @default(true) @map("is_active")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  createdBy String?  @map("created_by")
-
-  @@index([name])
-  @@index([nature])
-  @@map("inventory_items")
-}
-
 // Nhà cung cấp (§6).
 model Supplier {
   id                 String       @id @default(uuid())
@@ -487,59 +434,6 @@ model GoodsIssueLine {
   @@map("goods_issue_lines")
 }
 
-// ── Lệnh sản xuất (05-kho) ───────────────────────────────────────────────────
-
-// Tình trạng lệnh sản xuất (cột "Tình trạng" trên danh sách MISA).
-enum ProductionOrderStatus {
-  NOT_STARTED // Chưa thực hiện
-  IN_PROGRESS // Đang thực hiện
-  COMPLETED // Hoàn thành
-}
-
-// Loại dòng của lệnh sản xuất: thành phẩm cần sản xuất / NVL định mức tiêu hao.
-enum ProductionOrderLineType {
-  PRODUCT
-  MATERIAL
-}
-
-// Lệnh sản xuất — chứng từ kế hoạch (không bút toán); sau đó sinh Phiếu xuất NVL (PX)
-// và Phiếu nhập thành phẩm (PN). Hai cờ theo dõi đã lập đủ PN/PX.
-model ProductionOrder {
-  id              String                @id @default(uuid())
-  voucherNo       String                @unique @map("voucher_no") // Số lệnh (vd LSX42/02.2026)
-  orderDate       DateTime              @map("order_date") @db.Date // Ngày
-  description     String? // Diễn giải
-  receiptComplete Boolean               @default(false) @map("receipt_complete") // Đã lập đủ PN
-  issueComplete   Boolean               @default(false) @map("issue_complete") // Đã lập đủ PX
-  status          ProductionOrderStatus @default(IN_PROGRESS) // Tình trạng
-  branchName      String?               @map("branch_name") // Chi nhánh
-  lines           ProductionOrderLine[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  createdBy String?  @map("created_by")
-
-  @@index([status, orderDate])
-  @@map("production_orders")
-}
-
-// Dòng lệnh sản xuất (thành phẩm hoặc NVL định mức).
-model ProductionOrderLine {
-  id       String                  @id @default(uuid())
-  orderId  String                  @map("order_id")
-  order    ProductionOrder         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  lineNo   Int                     @map("line_no")
-  lineType ProductionOrderLineType @default(PRODUCT) @map("line_type")
-  itemId   String?                 @map("item_id")
-  itemName String?                 @map("item_name")
-  unit     String?
-  quantity Decimal                 @default(0) @db.Decimal(18, 4)
-  note     String?
-
-  @@index([orderId])
-  @@map("production_order_lines")
-}
-
 // ── Bán hàng (04-ban-hang) ───────────────────────────────────────────────────
 
 // Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.
@@ -552,12 +446,6 @@ enum SalesVoucherType {
 enum SalesPaymentMode {
   UNPAID
   PAID_NOW
-}
-
-// Trạng thái phát hành hóa đơn điện tử (§5).
-enum InvoiceIssueStatus {
-  UNISSUED
-  CODE_ISSUED
 }
 
 // Loại đối tượng khách hàng (§8): Tổ chức / Cá nhân.
@@ -586,7 +474,6 @@ model Customer {
   contactPhone       String?      @map("contact_phone")
 
   salesVouchers SalesVoucher[]
-  invoices      Invoice[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -628,7 +515,6 @@ model SalesVoucher {
   receiptId          String?            @map("receipt_id")
   branchId           String?            @map("branch_id")
   lines              SalesVoucherLine[]
-  invoice            Invoice?
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -662,40 +548,4 @@ model SalesVoucherLine {
 
   @@index([voucherId])
   @@map("sales_voucher_lines")
-}
-
-// Hóa đơn điện tử (§5) — sinh từ chứng từ bán hàng khi "Lập kèm hóa đơn".
-model Invoice {
-  id               String             @id @default(uuid())
-  invoiceNo        String?            @map("invoice_no")
-  invoiceType      String?            @map("invoice_type")
-  status           String             @default("Hóa đơn mới")
-  issueStatus      InvoiceIssueStatus @default(UNISSUED) @map("issue_status")
-  templateNo       String?            @map("template_no")
-  symbol           String?
-  taxAuthorityCode String?            @map("tax_authority_code")
-  taxSubmitStatus  String?            @map("tax_submit_status")
-  sendStatus       String?            @map("send_status")
-  customerReceived Boolean            @default(false) @map("customer_received")
-  lookupCode       String?            @map("lookup_code")
-  lookupUrl        String?            @map("lookup_url")
-  paymentForm      String?            @map("payment_form")
-  bankAccount      String?            @map("bank_account")
-  invoiceDate      DateTime           @map("invoice_date") @db.Date
-  posted           Boolean            @default(false)
-  salesVoucherId   String?            @unique @map("sales_voucher_id")
-  salesVoucher     SalesVoucher?      @relation(fields: [salesVoucherId], references: [id], onDelete: SetNull)
-  customerId       String?            @map("customer_id")
-  customer         Customer?          @relation(fields: [customerId], references: [id])
-  customerName     String?            @map("customer_name")
-  totalAmount      Decimal            @default(0) @map("total_amount") @db.Decimal(18, 2)
-  branchId         String?            @map("branch_id")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  createdBy String?  @map("created_by")
-
-  @@index([issueStatus, invoiceDate])
-  @@index([customerId])
-  @@map("invoices")
 }

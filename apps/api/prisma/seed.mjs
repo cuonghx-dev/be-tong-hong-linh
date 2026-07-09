@@ -1,7 +1,7 @@
 // Seed phân hệ Bán hàng từ dữ liệu MISA (docs/misa-specs/04-ban-hang).
-// Nguồn: Ban_hang.xlsx (chứng từ) · Danh_sach_khach_hang.xlsx (KH) · Hoa_don.xlsx (HĐ).
+// Nguồn: Ban_hang.xlsx (chứng từ) · Danh_sach_khach_hang.xlsx (KH).
 // Chạy: pnpm --filter @app/api seed   (hoặc: node prisma/seed.mjs)
-import { PrismaClient, InvoiceIssueStatus, PaymentMethod, SalesPaymentMode, SalesVoucherType } from '@prisma/client'
+import { PrismaClient, PaymentMethod, SalesPaymentMode, SalesVoucherType } from '@prisma/client'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import xlsx from 'xlsx'
@@ -37,7 +37,7 @@ async function chunked(items, fn) {
 async function main() {
   console.log('Xóa dữ liệu bán hàng cũ…')
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "invoices","sales_voucher_lines","sales_vouchers","customers" RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE "sales_voucher_lines","sales_vouchers","customers" RESTART IDENTITY CASCADE',
   )
 
   // ── 1. Khách hàng ──────────────────────────────────────────────────────────
@@ -81,27 +81,9 @@ async function main() {
   await chunked(customers, (c) => prisma.customer.createMany({ data: c }))
   console.log(`Khách hàng: ${customers.length}`)
 
-  // ── 2. Hóa đơn (enrich theo số hóa đơn) ─────────────────────────────────────
-  const invoiceByNo = new Map()
-  for (const r of dataRows(rows('Hoa_don.xlsx'))) {
-    const [, invDate, invNo, type, status, , value, , issue, cqt, taxSubmit, , sendStatus] = r
-    if (!invNo) continue
-    invoiceByNo.set(String(invNo), {
-      invoiceDate: toDate(invDate),
-      invoiceType: type ? String(type) : null,
-      status: status ? String(status) : 'Hóa đơn mới',
-      value: Number(value) || 0,
-      issued: issue === 'Đã cấp mã',
-      cqt: cqt ? String(cqt) : null,
-      taxSubmit: taxSubmit ? String(taxSubmit) : null,
-      sendStatus: sendStatus ? String(sendStatus) : null,
-    })
-  }
-
-  // ── 3. Chứng từ bán hàng + dòng hàng + hóa đơn liên kết ──────────────────────
+  // ── 2. Chứng từ bán hàng + dòng hàng ─────────────────────────────────────────
   const vouchers = []
   const lines = []
-  const invoices = []
   const seenNo = new Set()
 
   for (const r of salesRows) {
@@ -148,34 +130,12 @@ async function main() {
       vatAmount: 0,
       vatAccount: '33311',
     })
-    if (withInvoice) {
-      const meta = invoiceByNo.get(String(invNo))
-      invoices.push({
-        id: randomUUID(),
-        invoiceNo: String(invNo),
-        invoiceType: meta?.invoiceType ?? 'Hóa đơn từ máy tính tiền',
-        status: meta?.status ?? 'Hóa đơn mới',
-        issueStatus: meta?.issued ? InvoiceIssueStatus.CODE_ISSUED : InvoiceIssueStatus.UNISSUED,
-        taxAuthorityCode: meta?.cqt ?? null,
-        taxSubmitStatus: meta?.taxSubmit ?? null,
-        sendStatus: meta?.sendStatus ?? null,
-        invoiceDate: meta?.invoiceDate ?? date,
-        posted: !!meta?.issued,
-        salesVoucherId: vId,
-        customerId,
-        customerName: khName ? String(khName).trim() : null,
-        totalAmount: amount,
-        branchId: branch ? String(branch) : null,
-      })
-    }
   }
 
   await chunked(vouchers, (c) => prisma.salesVoucher.createMany({ data: c }))
   console.log(`Chứng từ bán hàng: ${vouchers.length}`)
   await chunked(lines, (c) => prisma.salesVoucherLine.createMany({ data: c }))
   console.log(`Dòng hàng: ${lines.length}`)
-  await chunked(invoices, (c) => prisma.invoice.createMany({ data: c }))
-  console.log(`Hóa đơn: ${invoices.length}`)
 }
 
 main()

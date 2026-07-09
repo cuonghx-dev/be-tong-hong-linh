@@ -5,7 +5,6 @@ export interface ParsedSales {
   voucherNo: string
   type: SalesVoucherType
   date: Date
-  invoiceNo: string | null
   customerName: string | null
   totalPayment: number
   withInvoice: boolean
@@ -18,7 +17,6 @@ export interface ParsedSales {
 const COL = {
   voucherNo: 'Số chứng từ',
   date: 'Ngày hạch toán',
-  invoiceNo: 'Số hóa đơn',
   customer: 'Khách hàng',
   totalPayment: 'Tổng tiền thanh toán',
   invoiceStatus: 'TT lập hóa đơn',
@@ -61,7 +59,6 @@ export function parseSalesXlsx(buffer: Buffer): ParsedSales[] {
 
   const iNo = idx(COL.voucherNo)
   const iDate = idx(COL.date)
-  const iInvoice = idx(COL.invoiceNo)
   const iCustomer = idx(COL.customer)
   const iPayment = idx(COL.totalPayment)
   const iInvoiceStatus = idx(COL.invoiceStatus)
@@ -90,7 +87,6 @@ export function parseSalesXlsx(buffer: Buffer): ParsedSales[] {
       voucherNo,
       type: typeFromVoucherNo(voucherNo),
       date,
-      invoiceNo: iInvoice >= 0 ? toStr(r[iInvoice]) : null,
       customerName: iCustomer >= 0 ? toStr(r[iCustomer]) : null,
       totalPayment: iPayment >= 0 ? toNumber(r[iPayment]) : 0,
       withInvoice: !!invoiceText && invoiceText.includes('Đã lập'),

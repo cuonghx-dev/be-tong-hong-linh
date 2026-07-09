@@ -109,6 +109,7 @@ function AppShell({ children }) {
 - **Vị trí**: trên cùng vùng content, full width, sticky.
 - **Tab item**: label chữ, canh trái, cách đều.
 - Có 1 tab **active** tại một thời điểm (highlight).
+- **Thứ tự tab (bắt buộc)**: tab **"Quy trình" luôn đứng đầu tiên**, tab **"Báo cáo" luôn đứng cuối cùng** trong mọi phân hệ; các tab nghiệp vụ xếp ở giữa.
 - **Phải thanh tab**: cụm icon tiện ích của phân hệ (help/AI, settings/list…).
 
 Ví dụ tab (phân hệ Tiền mặt):

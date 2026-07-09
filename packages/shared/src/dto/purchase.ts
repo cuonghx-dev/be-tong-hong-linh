@@ -1,7 +1,5 @@
 // Type request/response phân hệ Mua hàng (03-mua-hang) — dùng chung FE ↔ BE.
 import type {
-  ItemNature,
-  ItemTaxReduction,
   PaymentMethod,
   PurchaseOrigin,
   PurchasePaymentMode,
@@ -174,70 +172,3 @@ export interface SupplierFilter {
   groupId?: string
 }
 
-// ── Hàng hóa - dịch vụ (Danh sách HHDV) ──────────────────────────────────────
-
-export interface InventoryItemDto {
-  id: string
-  code: string // Mã
-  name: string // Tên
-  nature: ItemNature // Tính chất
-  taxReduction: ItemTaxReduction // Giảm thuế theo quy định
-  groupName: string | null // Nhóm VTHH
-  unit: string | null // Đơn vị tính chính
-  stockQuantity: string // Số lượng tồn (Decimal → string)
-  stockValue: string // Giá trị tồn
-  minStock: string // Số lượng tồn tối thiểu
-  warrantyMonths: number | null // Thời hạn bảo hành (tháng)
-  origin: string | null // Nguồn gốc
-  description: string | null // Mô tả
-  purchaseDescription: string | null // Diễn giải khi mua
-  salesDescription: string | null // Diễn giải khi bán
-  defaultWarehouse: string | null // Kho ngầm định
-  stockAccount: string | null // TK Kho
-  revenueAccount: string | null // TK Doanh thu
-  expenseAccount: string | null // TK chi phí
-  purchasePrice: string // Đơn giá mua gần nhất
-  salePrice: string // Đơn giá bán 1
-  vatRate: string // Thuế suất GTGT (%)
-  priceAfterTax: boolean // Là đơn giá sau thuế
-  branchName: string | null // Chi nhánh
-  isActive: boolean // Trạng thái (Đang sử dụng)
-  createdAt: string
-  updatedAt: string
-}
-
-export interface CreateInventoryItemInput {
-  code: string
-  name: string
-  nature?: ItemNature
-  taxReduction?: ItemTaxReduction
-  groupName?: string | null
-  unit?: string | null
-  minStock?: number
-  warrantyMonths?: number | null
-  origin?: string | null
-  description?: string | null
-  purchaseDescription?: string | null
-  salesDescription?: string | null
-  defaultWarehouse?: string | null
-  stockAccount?: string | null
-  revenueAccount?: string | null
-  expenseAccount?: string | null
-  purchasePrice?: number
-  salePrice?: number
-  vatRate?: number
-  priceAfterTax?: boolean
-  branchName?: string | null
-  isActive?: boolean
-}
-
-export type UpdateInventoryItemInput = Partial<CreateInventoryItemInput>
-
-export interface InventoryItemFilter {
-  page?: number
-  pageSize?: number
-  keyword?: string
-  nature?: ItemNature
-  groupName?: string
-  outOfStock?: boolean // Lọc hàng hết hàng (SL tồn ≤ 0)
-}

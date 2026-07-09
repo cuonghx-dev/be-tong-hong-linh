@@ -1,6 +1,4 @@
 import {
-  ItemNature,
-  ItemTaxReduction,
   PaymentMethod,
   PurchaseOrigin,
   PurchasePaymentMode,
@@ -71,31 +69,3 @@ export const supplierSchema = z.object({
 })
 
 export type SupplierFormValues = z.infer<typeof supplierSchema>
-
-// Hàng hóa - dịch vụ.
-export const itemSchema = z.object({
-  code: z.string().min(1, 'Nhập mã hàng hóa'),
-  name: z.string().min(1, 'Nhập tên hàng hóa'),
-  nature: z.nativeEnum(ItemNature),
-  taxReduction: z.nativeEnum(ItemTaxReduction),
-  groupName: z.string().optional(),
-  unit: z.string().optional(),
-  minStock: z.coerce.number().min(0).optional(),
-  warrantyMonths: z.coerce.number().int().min(0).optional(),
-  origin: z.string().optional(),
-  description: z.string().optional(),
-  purchaseDescription: z.string().optional(),
-  salesDescription: z.string().optional(),
-  defaultWarehouse: z.string().optional(),
-  stockAccount: z.string().optional(),
-  revenueAccount: z.string().optional(),
-  expenseAccount: z.string().optional(),
-  purchasePrice: z.coerce.number().min(0).optional(),
-  salePrice: z.coerce.number().min(0).optional(),
-  vatRate: z.coerce.number().min(0).max(100).optional(),
-  priceAfterTax: z.boolean().optional(),
-  branchName: z.string().optional(),
-  isActive: z.boolean().optional(),
-})
-
-export type ItemFormValues = z.infer<typeof itemSchema>

@@ -1,7 +1,6 @@
 // Type request/response phân hệ Bán hàng (04-ban-hang) — dùng chung FE ↔ BE.
 import type {
   CustomerType,
-  InvoiceIssueStatus,
   PaymentMethod,
   ReceivableAging,
   ReceivableStatus,
@@ -58,8 +57,6 @@ export interface SalesVoucherDto {
   totalAmount: string // Tổng tiền thanh toán
   einvoiceLookupCode: string | null // Mã tra cứu HĐĐT
   einvoiceLookupUrl: string | null // Đường dẫn tra cứu HĐĐT
-  invoiceId: string | null // Hóa đơn liên kết
-  invoiceNo: string | null // Số hóa đơn liên kết (tiện hiển thị)
   receiptId: string | null // Phiếu thu (thu ngay)
   branchId: string | null
   lines: SalesVoucherLineDto[]
@@ -118,61 +115,6 @@ export interface SalesVoucherFilter {
   pageSize?: number
   voucherType?: SalesVoucherType
   paymentMode?: SalesPaymentMode
-  customerId?: string
-  fromDate?: string
-  toDate?: string
-  keyword?: string
-}
-
-// ── Hóa đơn điện tử ──────────────────────────────────────────────────────────
-
-export interface InvoiceDto {
-  id: string
-  invoiceNo: string | null // vd 00004692 (null khi chưa cấp số)
-  invoiceType: string | null // Loại hóa đơn (vd "Hóa đơn từ máy tính tiền")
-  status: string // Trạng thái HĐ (vd "Hóa đơn mới")
-  issueStatus: InvoiceIssueStatus // Chưa phát hành / Đã cấp mã
-  templateNo: string | null // Mẫu số HĐ
-  symbol: string | null // Ký hiệu HĐ (vd 1C26MYY)
-  taxAuthorityCode: string | null // Mã CQT
-  taxSubmitStatus: string | null // TT gửi CQT
-  sendStatus: string | null // TT gửi hóa đơn
-  customerReceived: boolean // KH đã nhận hóa đơn
-  lookupCode: string | null // Mã tra cứu HĐĐT
-  lookupUrl: string | null // Đường dẫn tra cứu
-  paymentForm: string | null // Hình thức thanh toán (vd TM/CK)
-  bankAccount: string | null
-  invoiceDate: string // Ngày HĐ (ISO date-only)
-  posted: boolean // Đã hạch toán
-  salesVoucherId: string | null // Chứng từ bán hàng nguồn
-  salesVoucherNo: string | null
-  customerId: string | null
-  customerName: string | null
-  totalAmount: string
-  branchId: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-// Payload tạo hóa đơn nhập tay (header-only, chưa phát hành).
-export interface CreateInvoiceInput {
-  invoiceType?: string | null // Loại HĐ (mặc định "Hóa đơn GTGT")
-  invoiceDate: string // Ngày HĐ (ISO date-only)
-  customerId?: string | null
-  customerName?: string | null
-  paymentForm?: string | null // Hình thức thanh toán (TM/CK)
-  bankAccount?: string | null
-  symbol?: string | null // Ký hiệu HĐ
-  templateNo?: string | null // Mẫu số HĐ
-  totalAmount: number // Giá trị hóa đơn
-  branchId?: string | null
-}
-
-// Tham số lọc danh sách hóa đơn.
-export interface InvoiceFilter {
-  page?: number
-  pageSize?: number
-  issueStatus?: InvoiceIssueStatus
   customerId?: string
   fromDate?: string
   toDate?: string

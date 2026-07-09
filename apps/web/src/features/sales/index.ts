@@ -13,11 +13,4 @@ export {
   useDeleteCustomer,
   useImportCustomers,
 } from './api/useCustomerMutations'
-export {
-  useInvoices,
-  useInvoice,
-  useIssueInvoice,
-  useCreateInvoice,
-  useImportInvoices,
-} from './api/useInvoices'
 export { useReceivables } from './api/useReceivables'

@@ -9,13 +9,11 @@ import { BankPage } from '@/features/bank/pages/BankPage'
 import { BankVoucherPage } from '@/features/bank/pages/BankVoucherPage'
 import { SalesPage } from '@/features/sales/pages/SalesPage'
 import { SalesVoucherPage } from '@/features/sales/pages/SalesVoucherPage'
-import { InvoicePage } from '@/features/sales/pages/InvoicePage'
 import { PurchasePage } from '@/features/purchase/pages/PurchasePage'
 import { PurchaseVoucherPage } from '@/features/purchase/pages/PurchaseVoucherPage'
 import { InventoryPage } from '@/features/inventory/pages/InventoryPage'
 import { InventoryReceiptPage } from '@/features/inventory/pages/InventoryReceiptPage'
 import { GoodsIssueVoucherPage } from '@/features/inventory/pages/GoodsIssueVoucherPage'
-import { ProductionOrderPage } from '@/features/inventory/pages/ProductionOrderPage'
 import { GeneralPage } from '@/features/general/pages/GeneralPage'
 import { OpeningBalancePage } from '@/features/opening-balance/pages/OpeningBalancePage'
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
@@ -34,14 +32,9 @@ const recordRoutes = [
   { path: '/sales/vouchers/new', element: <SalesVoucherPage mode="new" /> },
   { path: '/sales/vouchers/:id', element: <SalesVoucherPage mode="view" /> },
   { path: '/sales/vouchers/:id/edit', element: <SalesVoucherPage mode="edit" /> },
-  { path: '/sales/invoices/new', element: <InvoicePage mode="new" /> },
-  { path: '/sales/invoices/:id', element: <InvoicePage mode="view" /> },
   { path: '/inventory/receipts/new', element: <InventoryReceiptPage mode="new" /> },
   { path: '/inventory/receipts/:id', element: <InventoryReceiptPage mode="view" /> },
   { path: '/inventory/receipts/:id/edit', element: <InventoryReceiptPage mode="edit" /> },
-  { path: '/inventory/production-orders/new', element: <ProductionOrderPage mode="new" /> },
-  { path: '/inventory/production-orders/:id', element: <ProductionOrderPage mode="view" /> },
-  { path: '/inventory/production-orders/:id/edit', element: <ProductionOrderPage mode="edit" /> },
 ].map((r) => ({
   path: r.path,
   element: <RequireAuth>{r.element}</RequireAuth>,

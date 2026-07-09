@@ -1,10 +1,5 @@
-// Type request/response phân hệ Kho — Nhập kho + Xuất kho + Lệnh sản xuất (05-kho) — dùng chung FE ↔ BE.
-import type {
-  GoodsIssueCategory,
-  InventoryReceiptType,
-  ProductionOrderLineType,
-  ProductionOrderStatus,
-} from '../enums'
+// Type request/response phân hệ Kho — Nhập kho + Xuất kho (05-kho) — dùng chung FE ↔ BE.
+import type { GoodsIssueCategory, InventoryReceiptType } from '../enums'
 
 // ── Phiếu nhập kho ───────────────────────────────────────────────────────────
 
@@ -175,65 +170,3 @@ export interface GoodsIssueFilter {
   keyword?: string
 }
 
-// ── Lệnh sản xuất ─────────────────────────────────────────────────────────────
-
-// Dòng lệnh sản xuất (thành phẩm cần SX hoặc NVL định mức — không bút toán).
-export interface ProductionOrderLineDto {
-  id: string
-  lineNo: number
-  lineType: ProductionOrderLineType // PRODUCT | MATERIAL
-  itemId: string | null // Mã hàng
-  itemName: string | null // Tên hàng
-  unit: string | null // ĐVT
-  quantity: string // Số lượng (Decimal → string)
-  note: string | null // Ghi chú
-}
-
-// Lệnh sản xuất.
-export interface ProductionOrderDto {
-  id: string
-  voucherNo: string // Số lệnh (vd LSX42/02.2026)
-  orderDate: string // Ngày (ISO date-only)
-  description: string | null // Diễn giải
-  receiptComplete: boolean // Đã lập đủ PN (phiếu nhập thành phẩm)
-  issueComplete: boolean // Đã lập đủ PX (phiếu xuất NVL)
-  status: ProductionOrderStatus // Tình trạng
-  branchName: string | null // Chi nhánh
-  lines: ProductionOrderLineDto[]
-  createdAt: string
-  updatedAt: string
-}
-
-// Payload tạo dòng lệnh sản xuất.
-export interface CreateProductionOrderLineInput {
-  lineType?: ProductionOrderLineType
-  itemId?: string | null
-  itemName?: string | null
-  unit?: string | null
-  quantity: number
-  note?: string | null
-}
-
-// Payload tạo lệnh sản xuất.
-export interface CreateProductionOrderInput {
-  orderDate: string
-  description?: string | null
-  receiptComplete?: boolean
-  issueComplete?: boolean
-  status?: ProductionOrderStatus
-  branchName?: string | null
-  lines: CreateProductionOrderLineInput[]
-}
-
-// Sửa lệnh sản xuất.
-export type UpdateProductionOrderInput = Partial<CreateProductionOrderInput>
-
-// Tham số lọc danh sách lệnh sản xuất.
-export interface ProductionOrderFilter {
-  page?: number
-  pageSize?: number
-  status?: ProductionOrderStatus
-  fromDate?: string
-  toDate?: string
-  keyword?: string
-}

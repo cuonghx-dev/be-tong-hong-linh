@@ -5,12 +5,6 @@ export enum PaymentMethod {
   BankTransfer = 'BANK_TRANSFER',
 }
 
-export enum InvoiceStatus {
-  Draft = 'DRAFT',
-  Posted = 'POSTED',
-  Cancelled = 'CANCELLED',
-}
-
 export enum AccountType {
   Asset = 'ASSET',
   Liability = 'LIABILITY',
@@ -122,22 +116,6 @@ export enum SupplierType {
   Individual = 'INDIVIDUAL',
 }
 
-// Tính chất hàng hóa - dịch vụ (cột "Tính chất" DS hàng hóa).
-export enum ItemNature {
-  Goods = 'GOODS', // Hàng hóa
-  FinishedGood = 'FINISHED_GOOD', // Thành phẩm
-  Service = 'SERVICE', // Dịch vụ
-  Material = 'MATERIAL', // Nguyên vật liệu
-  Tool = 'TOOL', // Công cụ dụng cụ
-}
-
-// Giảm thuế theo quy định (cột "Giảm thuế theo quy định").
-export enum ItemTaxReduction {
-  Undetermined = 'UNDETERMINED', // Chưa xác định
-  Reduced = 'REDUCED', // Được giảm
-  NotReduced = 'NOT_REDUCED', // Không được giảm
-}
-
 // Bán hàng (04-ban-hang) ------------------------------------------------------
 
 // Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.
@@ -150,12 +128,6 @@ export enum SalesVoucherType {
 export enum SalesPaymentMode {
   Unpaid = 'UNPAID', // Chưa thu tiền → công nợ 131
   PaidNow = 'PAID_NOW', // Thu tiền ngay → Nợ 1111/1121, sinh phiếu thu
-}
-
-// Trạng thái phát hành hóa đơn điện tử (§5).
-export enum InvoiceIssueStatus {
-  Unissued = 'UNISSUED', // Chưa phát hành
-  CodeIssued = 'CODE_ISSUED', // Đã cấp mã (có mã CQT)
 }
 
 // Loại đối tượng khách hàng (§8): Tổ chức / Cá nhân.
@@ -200,17 +172,4 @@ export enum GoodsIssueCategory {
   Sales = 'SALES', // 1. Xuất kho bán hàng (Nợ 632 / Có 156)
   Production = 'PRODUCTION', // 2. Xuất kho cho sản xuất (Nợ 621 / Có 152)
   Other = 'OTHER', // 3. Xuất kho khác (Nợ 632 tự nhập / Có 156)
-}
-
-// Tình trạng lệnh sản xuất (Lệnh sản xuất) — cột "Tình trạng" trên danh sách MISA.
-export enum ProductionOrderStatus {
-  NotStarted = 'NOT_STARTED', // Chưa thực hiện
-  InProgress = 'IN_PROGRESS', // Đang thực hiện
-  Completed = 'COMPLETED', // Hoàn thành
-}
-
-// Loại dòng của lệnh sản xuất: thành phẩm cần SX / NVL định mức tiêu hao.
-export enum ProductionOrderLineType {
-  Product = 'PRODUCT',
-  Material = 'MATERIAL',
 }

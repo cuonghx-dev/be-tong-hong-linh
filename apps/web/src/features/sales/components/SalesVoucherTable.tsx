@@ -159,7 +159,6 @@ export function SalesVoucherTable() {
             <tr>
               <th className="px-3 py-2">Ngày hạch toán</th>
               <th className="px-3 py-2">Số chứng từ</th>
-              <th className="px-3 py-2">Số hóa đơn</th>
               <th className="px-3 py-2">Khách hàng</th>
               <th className="px-3 py-2 text-right">Tổng tiền thanh toán</th>
               <th className="px-3 py-2">TT lập hóa đơn</th>
@@ -173,14 +172,14 @@ export function SalesVoucherTable() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={8} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -190,7 +189,7 @@ export function SalesVoucherTable() {
             )}
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
                   Chưa có chứng từ bán hàng nào.
                 </td>
               </tr>
@@ -208,7 +207,6 @@ export function SalesVoucherTable() {
                     {r.voucherNo}
                   </button>
                 </td>
-                <td className="px-3 py-2 text-slate-600">{r.invoiceNo ?? '—'}</td>
                 <td
                   className="max-w-[220px] truncate px-3 py-2 text-slate-700"
                   title={r.customerName || ''}

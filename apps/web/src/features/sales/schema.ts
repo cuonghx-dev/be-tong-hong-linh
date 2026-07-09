@@ -38,19 +38,6 @@ export const salesVoucherSchema = z.object({
   lines: z.array(salesLineSchema).min(1, 'Cần ít nhất 1 dòng hàng'),
 })
 
-// Hóa đơn nhập tay (header-only).
-export const invoiceSchema = z.object({
-  invoiceType: z.string().optional(),
-  invoiceDate: z.string().min(1, 'Chọn ngày hóa đơn'),
-  customerId: z.string().optional(),
-  customerName: z.string().optional(),
-  paymentForm: z.string().optional(),
-  bankAccount: z.string().optional(),
-  symbol: z.string().optional(),
-  templateNo: z.string().optional(),
-  totalAmount: z.coerce.number().min(0, 'Giá trị hóa đơn ≥ 0'),
-})
-
 // Khách hàng.
 export const customerSchema = z.object({
   code: z.string().min(1, 'Nhập mã khách hàng'),
@@ -72,5 +59,4 @@ export const customerSchema = z.object({
 
 export type SalesVoucherFormValues = z.infer<typeof salesVoucherSchema>
 export type SalesLineFormValues = z.infer<typeof salesLineSchema>
-export type InvoiceFormValues = z.infer<typeof invoiceSchema>
 export type CustomerFormValues = z.infer<typeof customerSchema>

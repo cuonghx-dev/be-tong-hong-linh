@@ -1,8 +1,14 @@
 import type { CreateCustomerInput, CustomerDto, UpdateCustomerInput } from '@app/shared'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/lib/api'
-import type { ImportResult } from './useInvoices'
 import { salesKeys } from './keys'
+
+// Kết quả nhập khẩu Excel.
+export interface ImportResult {
+  total: number
+  created: number
+  skipped: number
+}
 
 export function useCreateCustomer() {
   const qc = useQueryClient()

@@ -150,11 +150,6 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
             </option>
           ))}
         </select>
-        {editing.data?.invoiceNo && (
-          <span className="ml-auto rounded bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-            ĐÃ LẬP HÓA ĐƠN {editing.data.invoiceNo}
-          </span>
-        )}
       </div>
 
       {/* Tùy chọn thanh toán / hóa đơn */}
