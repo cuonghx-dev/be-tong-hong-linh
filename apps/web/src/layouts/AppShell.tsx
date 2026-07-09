@@ -5,17 +5,19 @@ import { useAuth } from '@/features/auth/store'
 import {
   BankIcon,
   BellIcon,
-  BuildingIcon,
+  BookIcon,
   CartIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   HelpIcon,
   HomeIcon,
+  LayersIcon,
   PackageIcon,
   ReceiptIcon,
   SearchIcon,
   SettingsIcon,
+  SigmaIcon,
   UserIcon,
   WalletIcon,
   type IconProps,
@@ -27,13 +29,15 @@ const COMPANY_NAME = 'Công ty TNHH ABC'
 type NavItem = { to: string; label: string; icon: (p: IconProps) => JSX.Element }
 
 const NAV: NavItem[] = [
-  { to: '/', label: 'Trang chủ', icon: HomeIcon },
+  { to: '/', label: 'Tổng quan', icon: HomeIcon },
   { to: '/cash', label: 'Tiền mặt', icon: WalletIcon },
   { to: '/bank', label: 'Tiền gửi', icon: BankIcon },
   { to: '/purchase', label: 'Mua hàng', icon: ReceiptIcon },
   { to: '/sales', label: 'Bán hàng', icon: CartIcon },
   { to: '/inventory', label: 'Kho', icon: PackageIcon },
-  { to: '/fixed-asset', label: 'Tài sản cố định', icon: BuildingIcon },
+  { to: '/general', label: 'Tổng hợp', icon: SigmaIcon },
+  { to: '/opening-balance', label: 'Số dư ban đầu', icon: BookIcon },
+  { to: '/catalog', label: 'Danh mục', icon: LayersIcon },
 ]
 
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {

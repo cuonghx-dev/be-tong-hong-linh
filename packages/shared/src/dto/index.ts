@@ -5,7 +5,6 @@ export * from './bank'
 export * from './purchase'
 export * from './sales'
 export * from './inventory'
-export * from './fixed-asset'
 
 export interface Pagination {
   page: number

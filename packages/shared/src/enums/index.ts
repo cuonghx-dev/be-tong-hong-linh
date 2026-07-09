@@ -214,11 +214,3 @@ export enum ProductionOrderLineType {
   Product = 'PRODUCT',
   Material = 'MATERIAL',
 }
-
-// Tài sản cố định (06-tscd) ---------------------------------------------------
-
-// Tình trạng sử dụng tài sản (cột "Tình trạng sử dụng" trên Sổ tài sản MISA).
-export enum FixedAssetStatus {
-  InUse = 'IN_USE', // Đang sử dụng
-  Suspended = 'SUSPENDED', // Ngừng sử dụng
-}
