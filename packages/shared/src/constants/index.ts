@@ -27,4 +27,11 @@ export const CHART_OF_ACCOUNTS = {
   DIRECT_MATERIAL_COST: '621', // Chi phí nguyên vật liệu trực tiếp (xuất kho sản xuất)
   COGS: '632', // Giá vốn hàng bán (xuất kho bán hàng)
   SERVICE_EXPENSE: '642', // Chi phí quản lý DN (mua dịch vụ mặc định)
+  // Tài sản cố định (06-tscd)
+  FIXED_ASSET: '211', // TSCD hữu hình
+  FIXED_ASSET_BUILDINGS: '21111', // Nhà cửa, vật kiến trúc
+  FIXED_ASSET_MACHINERY: '21112', // Máy móc, thiết bị
+  FIXED_ASSET_VEHICLES: '21113', // Phương tiện vận tải, truyền dẫn
+  FIXED_ASSET_DEPRECIATION: '2141', // Hao mòn TSCD hữu hình
+  OTHER_EXPENSE: '811', // Chi phí khác (giá trị còn lại khi ghi giảm TSCD)
 } as const

@@ -540,6 +540,94 @@ model ProductionOrderLine {
   @@map("production_order_lines")
 }
 
+// ── Tài sản cố định (06-tscd) ─────────────────────────────────────────────────
+
+// Tình trạng sử dụng tài sản (cột "Tình trạng sử dụng" trên Sổ tài sản MISA).
+enum FixedAssetStatus {
+  IN_USE // Đang sử dụng
+  SUSPENDED // Ngừng sử dụng
+}
+
+// Thẻ tài sản cố định — 1 bản ghi = 1 TSCD. Sinh từ chứng từ Ghi tăng (voucherNo GTTSxx/yyyy);
+// dùng chung cho 2 view: Danh sách ghi tăng + Sổ tài sản. Nguyên giá/khấu hao/giá trị còn lại.
+model FixedAsset {
+  id                      String           @id @default(uuid())
+  voucherNo               String?          @unique @map("voucher_no") // Số chứng từ ghi tăng (vd GTTS05/2026)
+  code                    String           @unique @map("asset_code") // Mã tài sản
+  name                    String // Tên tài sản
+  assetType               String?          @map("asset_type") // Loại tài sản (Máy móc, Nhà cửa, …)
+  department              String? // Đơn vị sử dụng
+  description             String? // Diễn giải
+  attachmentCount         Int              @default(0) @map("attachment_count") // Kèm theo (chứng từ gốc)
+  increaseDate            DateTime?        @map("increase_date") @db.Date // Ngày ghi tăng
+  depreciationStartDate   DateTime?        @map("depreciation_start_date") @db.Date // Ngày bắt đầu tính KH
+  usefulLifeMonths        Int              @default(0) @map("useful_life_months") // Thời gian sử dụng (tháng)
+  remainingMonths         Int              @default(0) @map("remaining_months") // Thời gian sử dụng còn lại (tháng)
+  originalCost            Decimal          @default(0) @map("original_cost") @db.Decimal(18, 2) // Nguyên giá
+  depreciableValue        Decimal          @default(0) @map("depreciable_value") @db.Decimal(18, 2) // Giá trị tính KH
+  accumulatedDepreciation Decimal          @default(0) @map("accumulated_depreciation") @db.Decimal(18, 2) // Hao mòn lũy kế
+  residualValue           Decimal          @default(0) @map("residual_value") @db.Decimal(18, 2) // Giá trị còn lại
+  monthlyDepreciation     Decimal          @default(0) @map("monthly_depreciation") @db.Decimal(18, 2) // Giá trị KH tháng
+  costAccount             String?          @map("cost_account") // TK nguyên giá (211x)
+  depreciationAccount     String?          @map("depreciation_account") // TK khấu hao (2141)
+  status                  FixedAssetStatus @default(IN_USE) // Tình trạng sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([increaseDate])
+  @@index([assetType])
+  @@index([status])
+  @@map("fixed_assets")
+}
+
+// Chứng từ ghi giảm TSCD (Danh sách ghi giảm — 06-tscd): nhượng bán, thanh lý…
+// 1 header + nhiều dòng (mỗi dòng = 1 tài sản bị ghi giảm, snapshot giá trị lúc ghi giảm).
+model FixedAssetDisposal {
+  id          String   @id @default(uuid())
+  voucherNo   String   @unique @map("voucher_no") // Số chứng từ (GGTS####/YYYY)
+  postingDate DateTime @map("posting_date") @db.Date // Ngày hạch toán
+  voucherDate DateTime @map("voucher_date") @db.Date // Ngày chứng từ
+  reason      String? // Lý do ghi giảm
+
+  totalOriginalCost Decimal @default(0) @map("total_original_cost") @db.Decimal(18, 2) // Tổng nguyên giá
+  totalAccumulated  Decimal @default(0) @map("total_accumulated") @db.Decimal(18, 2) // Tổng hao mòn lũy kế
+  totalResidual     Decimal @default(0) @map("total_residual") @db.Decimal(18, 2) // Tổng giá trị còn lại
+
+  lines FixedAssetDisposalLine[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([postingDate])
+  @@map("fixed_asset_disposals")
+}
+
+// Dòng ghi giảm — snapshot nguyên giá/hao mòn/giá trị còn lại + bút toán (Nợ 2141+811 / Có 211x).
+model FixedAssetDisposalLine {
+  id         String             @id @default(uuid())
+  disposalId String             @map("disposal_id")
+  disposal   FixedAssetDisposal @relation(fields: [disposalId], references: [id], onDelete: Cascade)
+  lineNo     Int                @map("line_no")
+
+  assetId   String? @map("asset_id") // FK mềm tới FixedAsset.id (không cascade)
+  assetCode String? @map("asset_code") // Mã tài sản (snapshot)
+  assetName String? @map("asset_name") // Tên tài sản (snapshot)
+
+  originalCost            Decimal @default(0) @map("original_cost") @db.Decimal(18, 2) // Nguyên giá
+  accumulatedDepreciation Decimal @default(0) @map("accumulated_depreciation") @db.Decimal(18, 2) // Hao mòn lũy kế
+  residualValue           Decimal @default(0) @map("residual_value") @db.Decimal(18, 2) // Giá trị còn lại
+
+  debitAccount  String? @map("debit_account") // TK Nợ (2141 / 811)
+  creditAccount String? @map("credit_account") // TK Có (211x nguyên giá)
+
+  @@index([disposalId])
+  @@index([assetId])
+  @@map("fixed_asset_disposal_lines")
+}
+
 // ── Bán hàng (04-ban-hang) ───────────────────────────────────────────────────
 
 // Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.

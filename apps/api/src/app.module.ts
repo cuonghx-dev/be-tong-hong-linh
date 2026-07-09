@@ -4,6 +4,7 @@ import { LoggerModule } from 'nestjs-pino'
 import { DatabaseModule } from './database/database.module'
 import { BankModule } from './modules/bank/bank.module'
 import { CashModule } from './modules/cash/cash.module'
+import { FixedAssetModule } from './modules/fixed-asset/fixed-asset.module'
 import { InventoryModule } from './modules/inventory/inventory.module'
 import { PurchaseModule } from './modules/purchase/purchase.module'
 import { SalesModule } from './modules/sales/sales.module'
@@ -23,6 +24,7 @@ import { SalesModule } from './modules/sales/sales.module'
     PurchaseModule,
     SalesModule,
     InventoryModule,
+    FixedAssetModule,
     // TODO: import feature module: AuthModule, CatalogModule, ReportModule.
   ],
 })

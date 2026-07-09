@@ -17,6 +17,8 @@ import { InventoryReceiptPage } from '@/features/inventory/pages/InventoryReceip
 import { GoodsIssueVoucherPage } from '@/features/inventory/pages/GoodsIssueVoucherPage'
 import { ProductionOrderPage } from '@/features/inventory/pages/ProductionOrderPage'
 import { FixedAssetPage } from '@/features/fixed-asset/pages/FixedAssetPage'
+import { AssetIncreasePage } from '@/features/fixed-asset/pages/AssetIncreasePage'
+import { FixedAssetDisposalPage } from '@/features/fixed-asset/pages/FixedAssetDisposalPage'
 
 // Trang chứng từ full-page (§5) — standalone, đè Sidebar/Header.
 const recordRoutes = [
@@ -40,6 +42,12 @@ const recordRoutes = [
   { path: '/inventory/production-orders/new', element: <ProductionOrderPage mode="new" /> },
   { path: '/inventory/production-orders/:id', element: <ProductionOrderPage mode="view" /> },
   { path: '/inventory/production-orders/:id/edit', element: <ProductionOrderPage mode="edit" /> },
+  { path: '/fixed-asset/increases/new', element: <AssetIncreasePage mode="new" /> },
+  { path: '/fixed-asset/increases/:id', element: <AssetIncreasePage mode="view" /> },
+  { path: '/fixed-asset/increases/:id/edit', element: <AssetIncreasePage mode="edit" /> },
+  { path: '/fixed-asset/disposals/new', element: <FixedAssetDisposalPage mode="new" /> },
+  { path: '/fixed-asset/disposals/:id', element: <FixedAssetDisposalPage mode="view" /> },
+  { path: '/fixed-asset/disposals/:id/edit', element: <FixedAssetDisposalPage mode="edit" /> },
 ].map((r) => ({
   path: r.path,
   element: <RequireAuth>{r.element}</RequireAuth>,

@@ -1,4 +1,7 @@
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
+import { AssetIncreaseTable } from '../components/AssetIncreaseTable'
+import { DisposalTable } from '../components/DisposalTable'
+import { FixedAssetTable } from '../components/FixedAssetTable'
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -9,12 +12,12 @@ function Placeholder({ title }: { title: string }) {
 }
 
 const TABS: ModuleTab[] = [
-  { key: 'ledger', label: 'Sổ tài sản', render: () => <Placeholder title="Sổ tài sản" /> },
-  { key: 'increase', label: 'Ghi tăng', render: () => <Placeholder title="Ghi tăng" /> },
+  { key: 'ledger', label: 'Sổ tài sản', render: () => <FixedAssetTable /> },
+  { key: 'increase', label: 'Ghi tăng', render: () => <AssetIncreaseTable /> },
   { key: 'depreciation', label: 'Tính khấu hao', render: () => <Placeholder title="Tính khấu hao" /> },
-  { key: 'decrease', label: 'Ghi giảm', render: () => <Placeholder title="Ghi giảm" /> },
+  { key: 'decrease', label: 'Ghi giảm', render: () => <DisposalTable /> },
 ]
 
 export function FixedAssetPage() {
-  return <ModuleContent tabs={TABS} />
+  return <ModuleContent tabs={TABS} defaultTab="ledger" />
 }
