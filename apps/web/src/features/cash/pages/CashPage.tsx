@@ -317,9 +317,9 @@ function formatDate(iso: string): string {
 }
 
 const TABS: ModuleTab[] = [
+  { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
   { key: 'txn', label: 'Thu, chi tiền', render: () => <CashTable /> },
   { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
-  { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
 ]
 
 export function CashPage() {

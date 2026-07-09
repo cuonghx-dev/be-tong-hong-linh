@@ -5,11 +5,11 @@ import { ReceivableTable } from '../components/ReceivableTable'
 import { SalesVoucherTable } from '../components/SalesVoucherTable'
 
 const TABS: ModuleTab[] = [
+  { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
   { key: 'sale', label: 'Bán hàng', render: () => <SalesVoucherTable /> },
   { key: 'debt', label: 'Công nợ', render: () => <ReceivableTable /> },
-  { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
-  { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
   { key: 'customer', label: 'Khách hàng', render: () => <CustomerTable /> },
+  { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
 ]
 
 export function SalesPage() {
