@@ -1,3 +1,4 @@
+import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { ChevronRightIcon } from '@/shared/ui/icons'
@@ -16,7 +17,7 @@ const REPORTS = [
   'Tổng hợp công nợ phải thu',
 ]
 
-export function HomePage() {
+function OverviewTab() {
   return (
     <div className="mx-auto max-w-6xl space-y-4">
       {/* Stat cards */}
@@ -92,4 +93,10 @@ export function HomePage() {
       </div>
     </div>
   )
+}
+
+const TABS: ModuleTab[] = [{ key: 'overview', label: 'Tổng quan', render: () => <OverviewTab /> }]
+
+export function HomePage() {
+  return <ModuleContent tabs={TABS} defaultTab="overview" />
 }

@@ -8,6 +8,7 @@ import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import { TabPlaceholder } from '@/shared/ui/tab-placeholder'
 import { useToast } from '@/shared/ui/toast'
 import { useBankVouchers } from '../api/useBankVouchers'
 import { useDeleteBankVoucher, useImportBankVouchers } from '../api/useBankVoucherMutations'
@@ -305,7 +306,11 @@ function formatDate(iso: string): string {
   return d && m && y ? `${d}/${m}/${y}` : iso
 }
 
-const TABS: ModuleTab[] = [{ key: 'txn', label: 'Thu, chi tiền', render: () => <BankTable /> }]
+const TABS: ModuleTab[] = [
+  { key: 'txn', label: 'Thu, chi tiền', render: () => <BankTable /> },
+  { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
+  { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
+]
 
 export function BankPage() {
   return <ModuleContent tabs={TABS} defaultTab="txn" />

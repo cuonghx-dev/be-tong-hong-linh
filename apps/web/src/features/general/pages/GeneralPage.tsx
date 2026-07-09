@@ -1,14 +1,16 @@
-import { SigmaIcon } from '@/shared/ui/icons'
+import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
+import { TabPlaceholder } from '@/shared/ui/tab-placeholder'
 
-// Placeholder — phân hệ Tổng hợp chưa build.
+const TABS: ModuleTab[] = [
+  { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
+  {
+    key: 'other-voucher',
+    label: 'Chứng từ nghiệp vụ khác',
+    render: () => <TabPlaceholder label="Chứng từ nghiệp vụ khác" />,
+  },
+  { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
+]
+
 export function GeneralPage() {
-  return (
-    <div className="mx-auto max-w-6xl">
-      <div className="grid place-items-center rounded-lg border border-dashed border-border bg-white py-24 text-center">
-        <SigmaIcon size={40} className="text-slate-300" />
-        <div className="mt-3 text-lg font-semibold text-slate-700">Tổng hợp</div>
-        <div className="mt-1 text-sm text-slate-500">Phân hệ đang phát triển.</div>
-      </div>
-    </div>
-  )
+  return <ModuleContent tabs={TABS} defaultTab="process" />
 }
