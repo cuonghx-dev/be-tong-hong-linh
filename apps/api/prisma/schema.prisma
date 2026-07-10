@@ -589,6 +589,44 @@ model GeneralVoucherLine {
   @@map("general_voucher_lines")
 }
 
+// ── Danh mục (05-danh-muc) ───────────────────────────────────────────────────
+
+// Nhân viên (Danh_sach_nhan_vien.xlsx) — danh mục dùng chung các phân hệ.
+model Employee {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  name        String
+  title       String? // Chức danh
+  department  String? // Tên đơn vị (phòng ban)
+  bankAccount String? @map("bank_account") // Số tài khoản
+  bankName    String? @map("bank_name") // Tên ngân hàng
+  isActive    Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@map("employees")
+}
+
+// Nhóm khách hàng, nhà cung cấp (Danh_sach_nhom_khach_hang_nha_cung_cap.xlsx).
+// Customer.groupId / Supplier.groupId tham chiếu lỏng tới bảng này.
+model PartnerGroup {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  name        String
+  description String? // Diễn giải
+  isActive    Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@map("partner_groups")
+}
+
 // ── Số dư ban đầu (opening-balance) ──────────────────────────────────────────
 
 // Số dư tài khoản đầu kỳ — mỗi TK 1 dòng Dư Nợ/Dư Có (Danh_sach_so_du_tai_khoan.xlsx).

@@ -6,6 +6,7 @@ export * from './purchase'
 export * from './sales'
 export * from './inventory'
 export * from './general'
+export * from './catalog'
 export * from './opening-balance'
 
 export interface Pagination {

@@ -1,5 +1,6 @@
 // Public API — phân hệ Bán hàng.
 export { SalesPage } from './pages/SalesPage'
+export { CustomerTable } from './components/CustomerTable'
 export { useSalesVouchers, useSalesVoucher } from './api/useSalesVouchers'
 export {
   useCreateSalesVoucher,
