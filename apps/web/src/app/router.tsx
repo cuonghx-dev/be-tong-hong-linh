@@ -16,6 +16,7 @@ import { InventoryReceiptPage } from '@/features/inventory/pages/InventoryReceip
 import { GoodsIssueVoucherPage } from '@/features/inventory/pages/GoodsIssueVoucherPage'
 import { GeneralPage } from '@/features/general/pages/GeneralPage'
 import { OpeningBalancePage } from '@/features/opening-balance/pages/OpeningBalancePage'
+import { OpeningBalanceItemPage } from '@/features/opening-balance/pages/OpeningBalanceItemPage'
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
 import { CatalogItemPage } from '@/features/catalog/pages/CatalogItemPage'
 
@@ -60,6 +61,7 @@ const router = createBrowserRouter([
       { path: 'inventory', element: <InventoryPage /> },
       { path: 'general', element: <GeneralPage /> },
       { path: 'opening-balance', element: <OpeningBalancePage /> },
+      { path: 'opening-balance/:slug', element: <OpeningBalanceItemPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'catalog/:slug', element: <CatalogItemPage /> },
     ],
