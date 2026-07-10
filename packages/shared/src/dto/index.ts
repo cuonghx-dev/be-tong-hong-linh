@@ -5,6 +5,7 @@ export * from './bank'
 export * from './purchase'
 export * from './sales'
 export * from './inventory'
+export * from './general'
 
 export interface Pagination {
   page: number

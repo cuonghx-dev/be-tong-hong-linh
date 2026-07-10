@@ -15,6 +15,7 @@ import { InventoryPage } from '@/features/inventory/pages/InventoryPage'
 import { InventoryReceiptPage } from '@/features/inventory/pages/InventoryReceiptPage'
 import { GoodsIssueVoucherPage } from '@/features/inventory/pages/GoodsIssueVoucherPage'
 import { GeneralPage } from '@/features/general/pages/GeneralPage'
+import { GeneralVoucherPage } from '@/features/general/pages/GeneralVoucherPage'
 import { OpeningBalancePage } from '@/features/opening-balance/pages/OpeningBalancePage'
 import { OpeningBalanceItemPage } from '@/features/opening-balance/pages/OpeningBalanceItemPage'
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
@@ -37,6 +38,9 @@ const recordRoutes = [
   { path: '/inventory/receipts/new', element: <InventoryReceiptPage mode="new" /> },
   { path: '/inventory/receipts/:id', element: <InventoryReceiptPage mode="view" /> },
   { path: '/inventory/receipts/:id/edit', element: <InventoryReceiptPage mode="edit" /> },
+  { path: '/general/vouchers/new', element: <GeneralVoucherPage mode="new" /> },
+  { path: '/general/vouchers/:id', element: <GeneralVoucherPage mode="view" /> },
+  { path: '/general/vouchers/:id/edit', element: <GeneralVoucherPage mode="edit" /> },
 ].map((r) => ({
   path: r.path,
   element: <RequireAuth>{r.element}</RequireAuth>,

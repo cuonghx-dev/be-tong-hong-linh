@@ -549,3 +549,42 @@ model SalesVoucherLine {
   @@index([voucherId])
   @@map("sales_voucher_lines")
 }
+
+// ── Tổng hợp (Chung_tu_nghiep_vu_khac) ──────────────────────────────────────
+
+// Chứng từ nghiệp vụ khác (NVK) — bút toán tự do: hàng về trước hóa đơn về sau,
+// giải ngân vay, bù trừ công nợ, điều chỉnh… Định khoản tự nhập, không có TK mặc định.
+model GeneralVoucher {
+  id          String               @id @default(uuid())
+  voucherNo   String               @unique @map("voucher_no")
+  postingDate DateTime             @map("posting_date") @db.Date
+  voucherDate DateTime             @map("voucher_date") @db.Date
+  description String?
+  totalAmount Decimal              @default(0) @map("total_amount") @db.Decimal(18, 2)
+  branchId    String?              @map("branch_id")
+  lines       GeneralVoucherLine[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([postingDate])
+  @@map("general_vouchers")
+}
+
+// Dòng hạch toán (bút toán kép) của chứng từ nghiệp vụ khác.
+model GeneralVoucherLine {
+  id            String         @id @default(uuid())
+  voucherId     String         @map("voucher_id")
+  voucher       GeneralVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  lineNo        Int            @map("line_no")
+  description   String?
+  debitAccount  String         @map("debit_account")
+  creditAccount String         @map("credit_account")
+  amount        Decimal        @db.Decimal(18, 2)
+  partnerId     String?        @map("partner_id")
+  partnerName   String?        @map("partner_name")
+
+  @@index([voucherId])
+  @@map("general_voucher_lines")
+}
