@@ -28,15 +28,6 @@ export const CATALOG_COLUMNS: CatalogGroup[][] = [
       items: [
         { slug: 'doi-tuong-tap-hop-chi-phi', label: 'Đối tượng tập hợp chi phí' },
         { slug: 'khoan-muc-chi-phi', label: 'Khoản mục chi phí' },
-        { slug: 'cong-trinh', label: 'Công trình' },
-        { slug: 'loai-cong-trinh', label: 'Loại công trình' },
-      ],
-    },
-    {
-      title: 'Tài sản',
-      items: [
-        { slug: 'loai-cong-cu-dung-cu', label: 'Loại công cụ dụng cụ' },
-        { slug: 'loai-tai-san-co-dinh', label: 'Loại tài sản cố định' },
       ],
     },
   ],
@@ -76,8 +67,6 @@ export const CATALOG_COLUMNS: CatalogGroup[][] = [
       items: [
         { slug: 'dieu-khoan-thanh-toan', label: 'Điều khoản thanh toán' },
         { slug: 'muc-thu-chi', label: 'Mục thu/chi' },
-        { slug: 'ma-thong-ke', label: 'Mã thống kê' },
-        { slug: 'loai-tien', label: 'Loại tiền' },
         { slug: 'loai-chung-tu', label: 'Loại chứng từ' },
       ],
     },
