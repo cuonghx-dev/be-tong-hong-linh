@@ -627,6 +627,30 @@ model PartnerGroup {
   @@map("partner_groups")
 }
 
+// Loại đối tượng tập hợp chi phí (Doi_tuong_tap_hop_chi_phi.xlsx cột "Loại").
+enum CostObjectType {
+  PRODUCT // Sản phẩm
+  WORKSHOP // Phân xưởng
+  OTHER // Khác
+}
+
+// Đối tượng tập hợp chi phí (Doi_tuong_tap_hop_chi_phi.xlsx).
+model CostObject {
+  id          String         @id @default(uuid())
+  code        String         @unique
+  name        String
+  type        CostObjectType @default(PRODUCT) // Loại: Sản phẩm / Phân xưởng / Khác
+  description String? // Diễn giải
+  isActive    Boolean        @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@map("cost_objects")
+}
+
 // ── Số dư ban đầu (opening-balance) ──────────────────────────────────────────
 
 // Số dư tài khoản đầu kỳ — mỗi TK 1 dòng Dư Nợ/Dư Có (Danh_sach_so_du_tai_khoan.xlsx).

@@ -1,4 +1,5 @@
 // Type request/response phân hệ Danh mục (05-danh-muc) — dùng chung FE ↔ BE.
+import type { CostObjectType } from '../enums'
 
 // ── Nhân viên ────────────────────────────────────────────────────────────────
 
@@ -59,5 +60,36 @@ export interface PartnerGroupFilter {
   page?: number
   pageSize?: number
   keyword?: string // Tìm theo mã / tên / diễn giải
+  isActive?: boolean
+}
+
+// ── Đối tượng tập hợp chi phí ────────────────────────────────────────────────
+
+export interface CostObjectDto {
+  id: string
+  code: string // Mã đối tượng THCP
+  name: string // Tên đối tượng THCP
+  type: CostObjectType // Loại: Sản phẩm / Phân xưởng / Khác
+  description: string | null // Diễn giải
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateCostObjectInput {
+  code: string
+  name: string
+  type?: CostObjectType
+  description?: string | null
+  isActive?: boolean
+}
+
+export type UpdateCostObjectInput = Partial<CreateCostObjectInput>
+
+export interface CostObjectFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo mã / tên / diễn giải
+  type?: CostObjectType
   isActive?: boolean
 }

@@ -173,3 +173,19 @@ export enum GoodsIssueCategory {
   Production = 'PRODUCTION', // 2. Xuất kho cho sản xuất (Nợ 621 / Có 152)
   Other = 'OTHER', // 3. Xuất kho khác (Nợ 632 tự nhập / Có 156)
 }
+
+// Danh mục (05-danh-muc) ------------------------------------------------------
+
+// Loại đối tượng tập hợp chi phí (Doi_tuong_tap_hop_chi_phi.xlsx cột "Loại").
+export enum CostObjectType {
+  Product = 'PRODUCT', // Sản phẩm
+  Workshop = 'WORKSHOP', // Phân xưởng
+  Other = 'OTHER', // Khác
+}
+
+// Nhãn hiển thị loại đối tượng THCP.
+export const COST_OBJECT_TYPE_LABELS: Record<CostObjectType, string> = {
+  [CostObjectType.Product]: 'Sản phẩm',
+  [CostObjectType.Workshop]: 'Phân xưởng',
+  [CostObjectType.Other]: 'Khác',
+}

@@ -15,3 +15,10 @@ export {
   useUpdatePartnerGroup,
   useDeletePartnerGroup,
 } from './api/usePartnerGroupMutations'
+export { CostObjectTable } from './components/CostObjectTable'
+export { useCostObjects, useCostObject } from './api/useCostObjects'
+export {
+  useCreateCostObject,
+  useUpdateCostObject,
+  useDeleteCostObject,
+} from './api/useCostObjectMutations'

@@ -1,3 +1,4 @@
+import { CostObjectType } from '@app/shared'
 import { z } from 'zod'
 
 // Nhân viên.
@@ -22,3 +23,14 @@ export const partnerGroupSchema = z.object({
 })
 
 export type PartnerGroupFormValues = z.infer<typeof partnerGroupSchema>
+
+// Đối tượng tập hợp chi phí.
+export const costObjectSchema = z.object({
+  code: z.string().min(1, 'Nhập mã đối tượng THCP'),
+  name: z.string().min(1, 'Nhập tên đối tượng THCP'),
+  type: z.nativeEnum(CostObjectType),
+  description: z.string().optional(),
+  isActive: z.boolean().optional(),
+})
+
+export type CostObjectFormValues = z.infer<typeof costObjectSchema>
