@@ -93,3 +93,33 @@ export interface CostObjectFilter {
   type?: CostObjectType
   isActive?: boolean
 }
+
+// ── Khoản mục chi phí ────────────────────────────────────────────────────────
+
+export interface ExpenseItemDto {
+  id: string
+  code: string // Mã khoản mục chi phí
+  name: string // Tên khoản mục chi phí
+  description: string | null // Diễn giải
+  parentId: string | null // Thuộc khoản mục (id cha)
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateExpenseItemInput {
+  code: string
+  name: string
+  description?: string | null
+  parentId?: string | null // '' / null = khoản mục gốc
+  isActive?: boolean
+}
+
+export type UpdateExpenseItemInput = Partial<CreateExpenseItemInput>
+
+export interface ExpenseItemFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo mã / tên / diễn giải
+  isActive?: boolean
+}

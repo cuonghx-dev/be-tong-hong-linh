@@ -22,3 +22,10 @@ export {
   useUpdateCostObject,
   useDeleteCostObject,
 } from './api/useCostObjectMutations'
+export { ExpenseItemTable } from './components/ExpenseItemTable'
+export { useExpenseItems, useExpenseItem } from './api/useExpenseItems'
+export {
+  useCreateExpenseItem,
+  useUpdateExpenseItem,
+  useDeleteExpenseItem,
+} from './api/useExpenseItemMutations'

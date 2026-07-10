@@ -1,4 +1,9 @@
-import type { CostObjectFilter, EmployeeFilter, PartnerGroupFilter } from '@app/shared'
+import type {
+  CostObjectFilter,
+  EmployeeFilter,
+  ExpenseItemFilter,
+  PartnerGroupFilter,
+} from '@app/shared'
 
 // Query keys phân hệ Danh mục.
 export const catalogKeys = {
@@ -11,4 +16,7 @@ export const catalogKeys = {
   costObjects: (filter: CostObjectFilter) =>
     [...catalogKeys.all, 'cost-objects', filter] as const,
   costObject: (id: string) => [...catalogKeys.all, 'cost-object', id] as const,
+  expenseItems: (filter: ExpenseItemFilter) =>
+    [...catalogKeys.all, 'expense-items', filter] as const,
+  expenseItem: (id: string) => [...catalogKeys.all, 'expense-item', id] as const,
 }

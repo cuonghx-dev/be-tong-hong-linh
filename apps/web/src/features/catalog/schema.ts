@@ -34,3 +34,14 @@ export const costObjectSchema = z.object({
 })
 
 export type CostObjectFormValues = z.infer<typeof costObjectSchema>
+
+// Khoản mục chi phí.
+export const expenseItemSchema = z.object({
+  code: z.string().min(1, 'Nhập mã khoản mục chi phí'),
+  name: z.string().min(1, 'Nhập tên khoản mục chi phí'),
+  description: z.string().optional(),
+  parentId: z.string().optional(), // '' = khoản mục gốc
+  isActive: z.boolean().optional(),
+})
+
+export type ExpenseItemFormValues = z.infer<typeof expenseItemSchema>

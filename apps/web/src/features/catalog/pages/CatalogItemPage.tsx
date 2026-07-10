@@ -6,6 +6,7 @@ import { ChevronLeftIcon } from '@/shared/ui/icons'
 import { TabPlaceholder } from '@/shared/ui/tab-placeholder'
 import { CostObjectTable } from '../components/CostObjectTable'
 import { EmployeeTable } from '../components/EmployeeTable'
+import { ExpenseItemTable } from '../components/ExpenseItemTable'
 import { PartnerGroupTable } from '../components/PartnerGroupTable'
 import { findCatalogItem } from '../catalog-groups'
 
@@ -16,6 +17,7 @@ const CATALOG_VIEWS: Record<string, () => ReactNode> = {
   'nhan-vien': () => <EmployeeTable />,
   'nhom-khach-hang-nha-cung-cap': () => <PartnerGroupTable />,
   'doi-tuong-tap-hop-chi-phi': () => <CostObjectTable />,
+  'khoan-muc-chi-phi': () => <ExpenseItemTable />,
 }
 
 // Trang chi tiết 1 danh mục — render màn hình có sẵn, chưa build thì placeholder.

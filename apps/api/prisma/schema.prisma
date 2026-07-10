@@ -627,6 +627,26 @@ model PartnerGroup {
   @@map("partner_groups")
 }
 
+// Khoản mục chi phí (Danh_sach_khoan_muc_chi_phi_.xlsx).
+// Phân cấp cha-con qua parentId (tham chiếu lỏng, như Customer.groupId).
+// Nhập khẩu tự gán cha theo tiền tố dấu chấm của mã (MTC.VL → cha MTC).
+model ExpenseItem {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  name        String
+  description String? // Diễn giải
+  parentId    String? @map("parent_id") // Thuộc khoản mục (id cha)
+  isActive    Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@index([parentId])
+  @@map("expense_items")
+}
+
 // Loại đối tượng tập hợp chi phí (Doi_tuong_tap_hop_chi_phi.xlsx cột "Loại").
 enum CostObjectType {
   PRODUCT // Sản phẩm
