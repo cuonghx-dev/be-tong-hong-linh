@@ -23,8 +23,10 @@ import {
   type IconProps,
 } from '@/shared/ui/icons'
 
-// Tên công ty hiển thị ở brand sidebar (logo = ký tự đầu).
-const COMPANY_NAME = 'Công ty TNHH ABC'
+import logoUrl from '@/assets/logo.png'
+
+// Tên công ty + logo hiển thị ở brand sidebar.
+const COMPANY_NAME = 'CÔNG TY TNHH BÊ TÔNG HỒNG LĨNH'
 
 type NavItem = { to: string; label: string; icon: (p: IconProps) => JSX.Element }
 type NavGroup = { title?: string; items: NavItem[] }
@@ -64,13 +66,9 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     >
       {/* Brand — tên công ty */}
       <div className="flex h-14 items-center gap-2 px-4">
-        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary text-sm font-bold text-white">
-          {COMPANY_NAME.charAt(0)}
-        </div>
+        <img src={logoUrl} alt={COMPANY_NAME} className="h-8 w-8 shrink-0 rounded-md" />
         {!collapsed && (
-          <span className="truncate font-bold text-slate-800" title={COMPANY_NAME}>
-            {COMPANY_NAME}
-          </span>
+          <span className="text-xs font-bold leading-tight text-slate-800">{COMPANY_NAME}</span>
         )}
       </div>
 
