@@ -13,6 +13,7 @@ import { useToast } from '@/shared/ui/toast'
 import { useCashVouchers } from '../api/useCashVouchers'
 import { useDeleteCashVoucher, useImportCashVouchers } from '../api/useCashVoucherMutations'
 import { CashFilterPopover, type CashFilterValue } from '../components/CashFilterPopover'
+import { CashProcessTab } from '../components/CashProcessTab'
 import { CATEGORY_LABEL } from '../types'
 
 const PAGE_SIZE = 20
@@ -317,7 +318,7 @@ function formatDate(iso: string): string {
 }
 
 const TABS: ModuleTab[] = [
-  { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
+  { key: 'process', label: 'Quy trình', render: () => <CashProcessTab /> },
   { key: 'txn', label: 'Thu, chi tiền', render: () => <CashTable /> },
   { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
 ]
