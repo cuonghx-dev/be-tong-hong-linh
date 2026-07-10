@@ -13,6 +13,7 @@ import { useToast } from '@/shared/ui/toast'
 import { useBankVouchers } from '../api/useBankVouchers'
 import { useDeleteBankVoucher, useImportBankVouchers } from '../api/useBankVoucherMutations'
 import { BankFilterPopover, type BankFilterValue } from '../components/BankFilterPopover'
+import { BankProcessTab } from '../components/BankProcessTab'
 import { VOUCHER_TYPE_LABEL } from '../types'
 
 const PAGE_SIZE = 20
@@ -307,7 +308,7 @@ function formatDate(iso: string): string {
 }
 
 const TABS: ModuleTab[] = [
-  { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
+  { key: 'process', label: 'Quy trình', render: () => <BankProcessTab /> },
   { key: 'txn', label: 'Thu, chi tiền', render: () => <BankTable /> },
   { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
 ]
