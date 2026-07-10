@@ -39,13 +39,6 @@ export const CATALOG_COLUMNS: CatalogGroup[][] = [
         { slug: 'loai-tai-san-co-dinh', label: 'Loại tài sản cố định' },
       ],
     },
-    {
-      title: 'Tiền lương',
-      items: [
-        { slug: 'ky-hieu-cham-cong', label: 'Ký hiệu chấm công' },
-        { slug: 'bieu-tinh-thue-thu-nhap', label: 'Biểu tính thuế thu nhập' },
-      ],
-    },
   ],
   [
     {
@@ -62,13 +55,6 @@ export const CATALOG_COLUMNS: CatalogGroup[][] = [
       items: [
         { slug: 'ngan-hang', label: 'Ngân hàng' },
         { slug: 'tai-khoan-ngan-hang', label: 'Tài khoản ngân hàng' },
-      ],
-    },
-    {
-      title: 'Thuế',
-      items: [
-        { slug: 'bieu-thue-tieu-thu-dac-biet', label: 'Biểu thuế tiêu thụ đặc biệt' },
-        { slug: 'bieu-thue-tai-nguyen', label: 'Biểu thuế tài nguyên' },
       ],
     },
   ],
