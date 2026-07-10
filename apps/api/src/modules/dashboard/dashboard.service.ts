@@ -1,0 +1,378 @@
+import type {
+  CashflowReportDto,
+  DashboardPeriod,
+  DebtAgingDto,
+  ExpenseBreakdownDto,
+  FinanceOverviewDto,
+  InventorySummaryDto,
+  ProfitLossReportDto,
+  TopSellingReportDto,
+} from '@app/shared'
+import { Injectable } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
+import { PrismaService } from '../../database/prisma.service'
+
+const ZERO = new Prisma.Decimal(0)
+
+// Nhóm TK chi phí → nhãn hiển thị (cơ cấu chi phí, §TT133/200).
+const EXPENSE_GROUPS: { key: string; label: string; prefixes: string[] }[] = [
+  { key: 'production', label: 'Chi phí sản xuất', prefixes: ['154', '621', '622', '623', '627'] },
+  { key: 'cogs', label: 'Giá vốn hàng bán', prefixes: ['632'] },
+  { key: 'selling', label: 'Chi phí bán hàng', prefixes: ['641'] },
+  { key: 'admin', label: 'Chi phí quản lý DN', prefixes: ['642'] },
+  { key: 'finance', label: 'Chi phí tài chính', prefixes: ['635'] },
+  { key: 'other', label: 'Chi phí khác', prefixes: [] }, // các TK 6xx/8xx còn lại
+]
+
+@Injectable()
+export class DashboardService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  // ── Tình hình tài chính ────────────────────────────────────────────────────
+  // Số dư (tiền, công nợ, tồn kho) tính đến hiện tại; doanh thu/chi phí theo kỳ.
+  async financeOverview(period: DashboardPeriod): Promise<FinanceOverviewDto> {
+    const { from, to } = periodRange(period)
+
+    const [cash, bank, receivable, payable, inventory, revenueAgg, expense] = await Promise.all([
+      this.moneyBalance('cash'),
+      this.moneyBalance('bank'),
+      this.receivableAging(),
+      this.payableAging(),
+      this.inventoryTotal(),
+      this.prisma.salesVoucher.aggregate({
+        _sum: { totalGoods: true },
+        where: { postingDate: { gte: from, lte: to } },
+      }),
+      this.expenseTotal(from, to),
+    ])
+
+    const revenue = revenueAgg._sum.totalGoods ?? ZERO
+    return {
+      cash: cash.toString(),
+      bank: bank.toString(),
+      receivable: receivable.total,
+      payable: payable.total,
+      inventory: inventory.toString(),
+      revenue: revenue.toString(),
+      expense: expense.toString(),
+      profit: revenue.sub(expense).toString(),
+    }
+  }
+
+  // ── Nợ phải thu theo hạn ───────────────────────────────────────────────────
+  // Chứng từ bán hàng chưa thu; quá hạn khi hạn thanh toán (mặc định ngày CT) < hôm nay.
+  async receivableAging(): Promise<DebtAgingDto> {
+    const rows = await this.prisma.$queryRaw<{ total: string; overdue: string }[]>(Prisma.sql`
+      SELECT
+        COALESCE(SUM(total_amount), 0)::text AS total,
+        COALESCE(SUM(total_amount) FILTER (
+          WHERE COALESCE(due_date, voucher_date) < CURRENT_DATE
+        ), 0)::text AS overdue
+      FROM sales_vouchers
+      WHERE payment_mode = 'UNPAID'
+    `)
+    return toAging(rows[0])
+  }
+
+  // ── Nợ phải trả theo hạn ───────────────────────────────────────────────────
+  async payableAging(): Promise<DebtAgingDto> {
+    const rows = await this.prisma.$queryRaw<{ total: string; overdue: string }[]>(Prisma.sql`
+      SELECT
+        COALESCE(SUM(total_payment), 0)::text AS total,
+        COALESCE(SUM(total_payment) FILTER (
+          WHERE COALESCE(due_date, voucher_date) < CURRENT_DATE
+        ), 0)::text AS overdue
+      FROM purchase_vouchers
+      WHERE payment_status <> 'PAID' AND payment_mode = 'UNPAID'
+    `)
+    return toAging(rows[0])
+  }
+
+  // ── Doanh thu, chi phí, lợi nhuận theo tháng ───────────────────────────────
+  async profitLoss(year: number): Promise<ProfitLossReportDto> {
+    const { from, to } = yearRange(year)
+
+    const [revenueRows, expenseRows] = await Promise.all([
+      this.prisma.$queryRaw<{ m: number; s: string }[]>(Prisma.sql`
+        SELECT EXTRACT(MONTH FROM posting_date)::int AS m, COALESCE(SUM(total_goods), 0)::text AS s
+        FROM sales_vouchers
+        WHERE posting_date BETWEEN ${from} AND ${to}
+        GROUP BY 1
+      `),
+      this.prisma.$queryRaw<{ m: number; s: string }[]>(Prisma.sql`
+        SELECT EXTRACT(MONTH FROM d)::int AS m, COALESCE(SUM(amt), 0)::text AS s
+        FROM (${this.expenseLinesSql(from, to)}) e
+        GROUP BY 1
+      `),
+    ])
+
+    const revenueByMonth = byMonth(revenueRows)
+    const expenseByMonth = byMonth(expenseRows)
+    let totalRevenue = ZERO
+    let totalExpense = ZERO
+
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const revenue = revenueByMonth.get(i + 1) ?? ZERO
+      const expense = expenseByMonth.get(i + 1) ?? ZERO
+      totalRevenue = totalRevenue.add(revenue)
+      totalExpense = totalExpense.add(expense)
+      return {
+        month: i + 1,
+        revenue: revenue.toString(),
+        expense: expense.toString(),
+        profit: revenue.sub(expense).toString(),
+      }
+    })
+
+    return {
+      year,
+      totalRevenue: totalRevenue.toString(),
+      totalExpense: totalExpense.toString(),
+      totalProfit: totalRevenue.sub(totalExpense).toString(),
+      months,
+    }
+  }
+
+  // ── Dòng tiền theo tháng (tiền mặt + tiền gửi) ─────────────────────────────
+  // Tồn cuối tháng = số dư đầu năm + lũy kế thu − chi tới tháng đó.
+  async cashflow(year: number): Promise<CashflowReportDto> {
+    const { from, to } = yearRange(year)
+
+    const [monthly, openingRows] = await Promise.all([
+      this.prisma.$queryRaw<{ m: number; t: string; s: string }[]>(Prisma.sql`
+        SELECT EXTRACT(MONTH FROM posting_date)::int AS m, t,
+               COALESCE(SUM(total_amount), 0)::text AS s
+        FROM (
+          SELECT posting_date, type::text AS t, total_amount FROM cash_vouchers
+          UNION ALL
+          SELECT posting_date, type::text, total_amount FROM bank_vouchers
+        ) v
+        WHERE posting_date BETWEEN ${from} AND ${to}
+        GROUP BY 1, 2
+      `),
+      this.prisma.$queryRaw<{ t: string; s: string }[]>(Prisma.sql`
+        SELECT t, COALESCE(SUM(total_amount), 0)::text AS s
+        FROM (
+          SELECT posting_date, type::text AS t, total_amount FROM cash_vouchers
+          UNION ALL
+          SELECT posting_date, type::text, total_amount FROM bank_vouchers
+        ) v
+        WHERE posting_date < ${from}
+        GROUP BY 1
+      `),
+    ])
+
+    let balance = openingRows.reduce(
+      (acc, r) => (r.t === 'RECEIPT' ? acc.add(r.s) : acc.sub(r.s)),
+      ZERO,
+    )
+
+    const inflowByMonth = new Map<number, Prisma.Decimal>()
+    const outflowByMonth = new Map<number, Prisma.Decimal>()
+    for (const r of monthly) {
+      const target = r.t === 'RECEIPT' ? inflowByMonth : outflowByMonth
+      target.set(r.m, (target.get(r.m) ?? ZERO).add(r.s))
+    }
+
+    let totalInflow = ZERO
+    let totalOutflow = ZERO
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const inflow = inflowByMonth.get(i + 1) ?? ZERO
+      const outflow = outflowByMonth.get(i + 1) ?? ZERO
+      totalInflow = totalInflow.add(inflow)
+      totalOutflow = totalOutflow.add(outflow)
+      balance = balance.add(inflow).sub(outflow)
+      return {
+        month: i + 1,
+        inflow: inflow.toString(),
+        outflow: outflow.toString(),
+        balance: balance.toString(),
+      }
+    })
+
+    return {
+      year,
+      totalInflow: totalInflow.toString(),
+      totalOutflow: totalOutflow.toString(),
+      balance: balance.toString(),
+      months,
+    }
+  }
+
+  // ── Hàng hóa tồn kho — top theo giá trị ────────────────────────────────────
+  async inventorySummary(limit = 5): Promise<InventorySummaryDto> {
+    const [total, items] = await Promise.all([
+      this.inventoryTotal(),
+      this.prisma.$queryRaw<{ item_name: string; quantity: string; value: string }[]>(Prisma.sql`
+        SELECT
+          COALESCE(r.item_name, i.item_name) AS item_name,
+          (COALESCE(r.qty, 0) - COALESCE(i.qty, 0))::text AS quantity,
+          (COALESCE(r.amt, 0) - COALESCE(i.amt, 0))::text AS value
+        FROM (
+          SELECT item_name, SUM(quantity) AS qty, SUM(amount) AS amt
+          FROM inventory_receipt_lines WHERE item_name IS NOT NULL GROUP BY item_name
+        ) r
+        FULL OUTER JOIN (
+          SELECT item_name, SUM(quantity) AS qty, SUM(amount) AS amt
+          FROM goods_issue_lines WHERE item_name IS NOT NULL GROUP BY item_name
+        ) i USING (item_name)
+        ORDER BY (COALESCE(r.amt, 0) - COALESCE(i.amt, 0)) DESC
+        LIMIT ${limit}
+      `),
+    ])
+
+    return {
+      totalValue: total.toString(),
+      items: items.map((r) => ({ itemName: r.item_name, quantity: r.quantity, value: r.value })),
+    }
+  }
+
+  // ── Mặt hàng bán chạy — top theo doanh thu trong năm ───────────────────────
+  async topSelling(year: number, limit = 5): Promise<TopSellingReportDto> {
+    const { from, to } = yearRange(year)
+
+    const [revenueAgg, items] = await Promise.all([
+      this.prisma.salesVoucher.aggregate({
+        _sum: { totalGoods: true },
+        where: { postingDate: { gte: from, lte: to } },
+      }),
+      this.prisma.$queryRaw<{ item_name: string; quantity: string; revenue: string }[]>(Prisma.sql`
+        SELECT l.item_name, COALESCE(SUM(l.quantity), 0)::text AS quantity,
+               COALESCE(SUM(l.amount), 0)::text AS revenue
+        FROM sales_voucher_lines l
+        JOIN sales_vouchers v ON v.id = l.voucher_id
+        WHERE l.item_name IS NOT NULL AND v.posting_date BETWEEN ${from} AND ${to}
+        GROUP BY l.item_name
+        ORDER BY SUM(l.amount) DESC
+        LIMIT ${limit}
+      `),
+    ])
+
+    return {
+      year,
+      totalRevenue: (revenueAgg._sum.totalGoods ?? ZERO).toString(),
+      items: items.map((r) => ({ itemName: r.item_name, quantity: r.quantity, revenue: r.revenue })),
+    }
+  }
+
+  // ── Cơ cấu chi phí theo nhóm TK trong năm ──────────────────────────────────
+  async expenseBreakdown(year: number): Promise<ExpenseBreakdownDto> {
+    const { from, to } = yearRange(year)
+    const rows = await this.prisma.$queryRaw<{ acct3: string; s: string }[]>(Prisma.sql`
+      SELECT substring(acct, 1, 3) AS acct3, COALESCE(SUM(amt), 0)::text AS s
+      FROM (${this.expenseLinesSql(from, to)}) e
+      GROUP BY 1
+    `)
+
+    const sums = new Map<string, Prisma.Decimal>()
+    let total = ZERO
+    for (const r of rows) {
+      const group = EXPENSE_GROUPS.find((g) => g.prefixes.includes(r.acct3))
+      const key = group?.key ?? 'other'
+      sums.set(key, (sums.get(key) ?? ZERO).add(r.s))
+      total = total.add(r.s)
+    }
+
+    return {
+      year,
+      total: total.toString(),
+      groups: EXPENSE_GROUPS.filter((g) => sums.has(g.key)).map((g) => ({
+        key: g.key,
+        label: g.label,
+        amount: (sums.get(g.key) ?? ZERO).toString(),
+      })),
+    }
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  // Số dư tiền mặt / tiền gửi = Σ phiếu thu − Σ phiếu chi (toàn thời gian).
+  private async moneyBalance(kind: 'cash' | 'bank'): Promise<Prisma.Decimal> {
+    const table = kind === 'cash' ? Prisma.raw('cash_vouchers') : Prisma.raw('bank_vouchers')
+    const rows = await this.prisma.$queryRaw<{ s: string }[]>(Prisma.sql`
+      SELECT COALESCE(SUM(CASE WHEN type = 'RECEIPT' THEN total_amount ELSE -total_amount END), 0)::text AS s
+      FROM ${table}
+    `)
+    return new Prisma.Decimal(rows[0]?.s ?? 0)
+  }
+
+  // Giá trị tồn kho = Σ nhập − Σ xuất (toàn thời gian).
+  private async inventoryTotal(): Promise<Prisma.Decimal> {
+    const rows = await this.prisma.$queryRaw<{ s: string }[]>(Prisma.sql`
+      SELECT (
+        (SELECT COALESCE(SUM(amount), 0) FROM inventory_receipt_lines)
+        - (SELECT COALESCE(SUM(amount), 0) FROM goods_issue_lines)
+      )::text AS s
+    `)
+    return new Prisma.Decimal(rows[0]?.s ?? 0)
+  }
+
+  private async expenseTotal(from: Date, to: Date): Promise<Prisma.Decimal> {
+    const rows = await this.prisma.$queryRaw<{ s: string }[]>(Prisma.sql`
+      SELECT COALESCE(SUM(amt), 0)::text AS s FROM (${this.expenseLinesSql(from, to)}) e
+    `)
+    return new Prisma.Decimal(rows[0]?.s ?? 0)
+  }
+
+  // Phát sinh Nợ các TK chi phí (6xx, 8xx) gom từ mọi loại chứng từ có định khoản.
+  private expenseLinesSql(from: Date, to: Date): Prisma.Sql {
+    return Prisma.sql`
+      SELECT v.posting_date AS d, l.debit_account AS acct, l.amount AS amt
+      FROM cash_voucher_lines l JOIN cash_vouchers v ON v.id = l.voucher_id
+      WHERE l.debit_account ~ '^(6|8)' AND v.posting_date BETWEEN ${from} AND ${to}
+      UNION ALL
+      SELECT v.posting_date, l.debit_account, l.amount
+      FROM bank_voucher_lines l JOIN bank_vouchers v ON v.id = l.voucher_id
+      WHERE l.debit_account ~ '^(6|8)' AND v.posting_date BETWEEN ${from} AND ${to}
+      UNION ALL
+      SELECT v.posting_date, l.debit_account, l.amount
+      FROM general_voucher_lines l JOIN general_vouchers v ON v.id = l.voucher_id
+      WHERE l.debit_account ~ '^(6|8)' AND v.posting_date BETWEEN ${from} AND ${to}
+      UNION ALL
+      SELECT v.posting_date, l.debit_account, l.amount
+      FROM goods_issue_lines l JOIN goods_issue_vouchers v ON v.id = l.voucher_id
+      WHERE l.debit_account ~ '^(6|8)' AND v.posting_date BETWEEN ${from} AND ${to}
+      UNION ALL
+      SELECT v.posting_date, l.stock_account, l.amount
+      FROM purchase_voucher_lines l JOIN purchase_vouchers v ON v.id = l.voucher_id
+      WHERE l.stock_account ~ '^(6|8)' AND v.posting_date BETWEEN ${from} AND ${to}
+    `
+  }
+}
+
+// ── Date helpers (UTC, bỏ giờ — cột kiểu DATE) ────────────────────────────────
+
+function dateOnly(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+}
+
+function periodRange(period: DashboardPeriod): { from: Date; to: Date } {
+  const now = new Date()
+  const y = now.getUTCFullYear()
+  if (period === 'year') return yearRange(y)
+  if (period === 'quarter') {
+    const q = Math.floor(now.getUTCMonth() / 3)
+    return {
+      from: new Date(Date.UTC(y, q * 3, 1)),
+      to: new Date(Date.UTC(y, q * 3 + 3, 0)),
+    }
+  }
+  return {
+    from: new Date(Date.UTC(y, now.getUTCMonth(), 1)),
+    to: new Date(Date.UTC(y, now.getUTCMonth() + 1, 0)),
+  }
+}
+
+function yearRange(year: number): { from: Date; to: Date } {
+  return { from: new Date(Date.UTC(year, 0, 1)), to: new Date(Date.UTC(year, 11, 31)) }
+}
+
+function toAging(row?: { total: string; overdue: string }): DebtAgingDto {
+  const total = new Prisma.Decimal(row?.total ?? 0)
+  const overdue = new Prisma.Decimal(row?.overdue ?? 0)
+  return { total: total.toString(), overdue: overdue.toString(), current: total.sub(overdue).toString() }
+}
+
+function byMonth(rows: { m: number; s: string }[]): Map<number, Prisma.Decimal> {
+  return new Map(rows.map((r) => [r.m, new Prisma.Decimal(r.s)]))
+}
