@@ -18,6 +18,7 @@ import { GeneralPage } from '@/features/general/pages/GeneralPage'
 import { GeneralVoucherPage } from '@/features/general/pages/GeneralVoucherPage'
 import { OpeningBalancePage } from '@/features/opening-balance/pages/OpeningBalancePage'
 import { OpeningBalanceItemPage } from '@/features/opening-balance/pages/OpeningBalanceItemPage'
+import { AccountBalancePage } from '@/features/opening-balance/pages/AccountBalancePage'
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
 import { CatalogItemPage } from '@/features/catalog/pages/CatalogItemPage'
 
@@ -65,6 +66,7 @@ const router = createBrowserRouter([
       { path: 'inventory', element: <InventoryPage /> },
       { path: 'general', element: <GeneralPage /> },
       { path: 'opening-balance', element: <OpeningBalancePage /> },
+      { path: 'opening-balance/so-du-tai-khoan', element: <AccountBalancePage /> },
       { path: 'opening-balance/:slug', element: <OpeningBalanceItemPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'catalog/:slug', element: <CatalogItemPage /> },

@@ -588,3 +588,20 @@ model GeneralVoucherLine {
   @@index([voucherId])
   @@map("general_voucher_lines")
 }
+
+// ── Số dư ban đầu (opening-balance) ──────────────────────────────────────────
+
+// Số dư tài khoản đầu kỳ — mỗi TK 1 dòng Dư Nợ/Dư Có (Danh_sach_so_du_tai_khoan.xlsx).
+// Lưu cả TK tổng hợp lẫn TK chi tiết như file MISA; không tự cộng dồn cha-con.
+model AccountOpeningBalance {
+  id           String  @id @default(uuid())
+  accountCode  String  @unique @map("account_code")
+  accountName  String  @map("account_name")
+  debitAmount  Decimal @default(0) @map("debit_amount") @db.Decimal(18, 2)
+  creditAmount Decimal @default(0) @map("credit_amount") @db.Decimal(18, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("account_opening_balances")
+}
