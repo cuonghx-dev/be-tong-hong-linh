@@ -1,13 +1,41 @@
-import { LayersIcon } from '@/shared/ui/icons'
+import { Link } from 'react-router-dom'
+import { CATALOG_COLUMNS, type CatalogGroup } from '../catalog-groups'
 
-// Placeholder — phân hệ Danh mục chưa build.
+function GroupBlock({ group }: { group: CatalogGroup }) {
+  return (
+    <section>
+      <h2 className="text-base font-bold text-slate-800">{group.title}</h2>
+      <ul className="mt-2 space-y-2">
+        {group.items.map((item) => (
+          <li key={item.slug}>
+            <Link
+              to={`/catalog/${item.slug}`}
+              className="text-sm text-primary hover:underline"
+            >
+              {item.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+// Trang hub Danh mục: các nhóm danh mục xếp 3 cột (theo MISA).
 export function CatalogPage() {
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="grid place-items-center rounded-lg border border-dashed border-border bg-white py-24 text-center">
-        <LayersIcon size={40} className="text-slate-300" />
-        <div className="mt-3 text-lg font-semibold text-slate-700">Danh mục</div>
-        <div className="mt-1 text-sm text-slate-500">Phân hệ đang phát triển.</div>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold text-slate-800">Danh mục</h1>
+      <div className="mt-4 rounded-lg border border-border bg-white p-8">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+          {CATALOG_COLUMNS.map((column, i) => (
+            <div key={i} className="space-y-8">
+              {column.map((group) => (
+                <GroupBlock key={group.title} group={group} />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -17,6 +17,7 @@ import { GoodsIssueVoucherPage } from '@/features/inventory/pages/GoodsIssueVouc
 import { GeneralPage } from '@/features/general/pages/GeneralPage'
 import { OpeningBalancePage } from '@/features/opening-balance/pages/OpeningBalancePage'
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
+import { CatalogItemPage } from '@/features/catalog/pages/CatalogItemPage'
 
 // Trang chứng từ full-page (§5) — standalone, đè Sidebar/Header.
 const recordRoutes = [
@@ -60,6 +61,7 @@ const router = createBrowserRouter([
       { path: 'general', element: <GeneralPage /> },
       { path: 'opening-balance', element: <OpeningBalancePage /> },
       { path: 'catalog', element: <CatalogPage /> },
+      { path: 'catalog/:slug', element: <CatalogItemPage /> },
     ],
   },
 ])
