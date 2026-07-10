@@ -6,7 +6,7 @@ import { SupplierTable } from '../components/SupplierTable'
 const TABS: ModuleTab[] = [
   { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
   { key: 'purchase', label: 'Mua hàng hóa', render: () => <PurchaseTable /> },
-  { key: 'debt', label: 'Công nợ', render: () => <TabPlaceholder label="Công nợ" /> },
+  { key: 'debt', label: 'Đối chiếu công nợ', render: () => <TabPlaceholder label="Đối chiếu công nợ" /> },
   { key: 'supplier', label: 'Nhà cung cấp', render: () => <SupplierTable /> },
   { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
 ]
