@@ -8,7 +8,6 @@ import {
   ProcessInvoiceIcon,
   ProcessInvoiceInputIcon,
   ProcessPayInvoiceIcon,
-  ProcessPeopleIcon,
   ProcessPersonBoxIcon,
   ProcessPurchaseDiscountIcon,
   ProcessPurchaseOrderIcon,
@@ -50,7 +49,6 @@ export function PurchaseProcessTab() {
       shortcuts={[
         { label: 'Nhà cung cấp', to: '/catalog/nha-cung-cap', icon: <ProcessPersonBoxIcon /> },
         { label: 'Hàng hóa, dịch vụ', to: '/catalog/vat-tu-hang-hoa', icon: <ProcessCubeIcon /> },
-        { label: 'Điều khoản thanh toán', to: '/catalog/dieu-khoan-thanh-toan', icon: <ProcessPeopleIcon /> },
         { label: 'Tiện ích', icon: <ProcessToolsIcon /> },
         { label: 'Tùy chọn', icon: <ProcessGearIcon /> },
       ]}

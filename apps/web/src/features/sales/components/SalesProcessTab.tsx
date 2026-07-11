@@ -7,7 +7,6 @@ import {
   ProcessDashboard,
   ProcessGearIcon,
   ProcessInvoiceIcon,
-  ProcessPeopleIcon,
   ProcessPersonBoxIcon,
   ProcessQuotationIcon,
   ProcessRevenueIcon,
@@ -55,7 +54,6 @@ export function SalesProcessTab() {
       shortcuts={[
         { label: 'Khách hàng', to: '/catalog/khach-hang', icon: <ProcessPersonBoxIcon /> },
         { label: 'Hàng hóa, dịch vụ', to: '/catalog/vat-tu-hang-hoa', icon: <ProcessCubeIcon /> },
-        { label: 'Điều khoản thanh toán', to: '/catalog/dieu-khoan-thanh-toan', icon: <ProcessPeopleIcon /> },
         { label: 'Tiện ích', icon: <ProcessToolsIcon /> },
         { label: 'Tùy chọn', icon: <ProcessGearIcon /> },
       ]}
