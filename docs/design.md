@@ -110,6 +110,7 @@ function AppShell({ children }) {
 - **Tab item**: label chữ, canh trái, cách đều.
 - Có 1 tab **active** tại một thời điểm (highlight).
 - **Thứ tự tab (bắt buộc)**: tab **"Quy trình" luôn đứng đầu tiên**, tab **"Báo cáo" luôn đứng cuối cùng** trong mọi phân hệ; các tab nghiệp vụ xếp ở giữa.
+- **Tab mặc định (bắt buộc)**: tab **"Quy trình" luôn là tab active mặc định** khi vào mỗi phân hệ (chưa chọn tab / URL không chỉ định tab).
 - **Phải thanh tab**: cụm icon tiện ích của phân hệ (help/AI, settings/list…).
 
 Ví dụ tab (phân hệ Tiền mặt):
@@ -162,8 +163,9 @@ function ModuleContent({ tabs, activeTab, onTab, children }) {
 ## 2.5. Hành vi
 
 1. **Sticky tabs**: thanh tab cố định; chỉ tab content cuộn.
-2. **Đổi tab**: click → đổi active + render content tương ứng (đồng bộ URL/route nếu có).
-3. Vùng content này lồng bên trong Content của [§1 App Layout](#1-app-layout--bố-cục-tổng-thể) (dưới Header, phải Sidebar).
+2. **Tab mặc định**: vào phân hệ mà không chỉ định tab → **"Quy trình" active mặc định** (hiển thị màn hình quy trình dạng dashboard §2.3).
+3. **Đổi tab**: click → đổi active + render content tương ứng (đồng bộ URL/route nếu có).
+4. Vùng content này lồng bên trong Content của [§1 App Layout](#1-app-layout--bố-cục-tổng-thể) (dưới Header, phải Sidebar).
 
 ---
 

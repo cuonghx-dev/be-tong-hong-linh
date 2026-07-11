@@ -314,5 +314,5 @@ const TABS: ModuleTab[] = [
 ]
 
 export function BankPage() {
-  return <ModuleContent tabs={TABS} defaultTab="txn" />
+  return <ModuleContent tabs={TABS} />
 }

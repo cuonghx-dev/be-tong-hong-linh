@@ -13,5 +13,5 @@ const TABS: ModuleTab[] = [
 ]
 
 export function PurchasePage() {
-  return <ModuleContent tabs={TABS} defaultTab="purchase" />
+  return <ModuleContent tabs={TABS} />
 }

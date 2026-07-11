@@ -14,5 +14,5 @@ const TABS: ModuleTab[] = [
 ]
 
 export function SalesPage() {
-  return <ModuleContent tabs={TABS} defaultTab="sale" />
+  return <ModuleContent tabs={TABS} />
 }

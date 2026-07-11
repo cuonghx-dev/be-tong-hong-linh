@@ -296,5 +296,5 @@ const TABS: ModuleTab[] = [
 ]
 
 export function GeneralPage() {
-  return <ModuleContent tabs={TABS} defaultTab="other-voucher" />
+  return <ModuleContent tabs={TABS} />
 }

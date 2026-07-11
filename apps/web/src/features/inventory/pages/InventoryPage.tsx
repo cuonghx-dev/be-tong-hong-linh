@@ -12,5 +12,5 @@ const TABS: ModuleTab[] = [
 ]
 
 export function InventoryPage() {
-  return <ModuleContent tabs={TABS} defaultTab="process" />
+  return <ModuleContent tabs={TABS} />
 }
