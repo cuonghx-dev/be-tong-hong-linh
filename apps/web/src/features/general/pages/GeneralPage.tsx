@@ -15,6 +15,7 @@ import {
   useImportGeneralVouchers,
 } from '../api/useGeneralVoucherMutations'
 import { GeneralFilterPopover, type GeneralFilterValue } from '../components/GeneralFilterPopover'
+import { GeneralProcessTab } from '../components/GeneralProcessTab'
 
 const PAGE_SIZE = 20
 
@@ -285,7 +286,7 @@ function formatDate(iso: string): string {
 }
 
 const TABS: ModuleTab[] = [
-  { key: 'process', label: 'Quy trình', render: () => <TabPlaceholder label="Quy trình" /> },
+  { key: 'process', label: 'Quy trình', render: () => <GeneralProcessTab /> },
   {
     key: 'other-voucher',
     label: 'Chứng từ nghiệp vụ khác',
