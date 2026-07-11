@@ -204,9 +204,12 @@ function ProcessTimeline({
                 <FlowNode {...lead.middle} />
               </div>
             )}
-            {/* Vạch dọc nối các node nguồn + arm ngang tới đầu trục (căn giữa hàng trục) */}
+            {/* Vạch dọc nối các node nguồn (span cả 3 hàng) */}
             <div className="relative" style={{ gridColumn: 2, gridRow: '1 / 4' }}>
               <div className="absolute left-0 top-[18%] bottom-[18%] w-px bg-emerald-600/40" />
+            </div>
+            {/* Arm ngang gộp vào đầu trục — cùng hộp my-1 h-6 như trục để liền mạch (row 2 cao do node giữa) */}
+            <div className="relative my-1 h-6" style={{ gridColumn: 2, gridRow: 2 }}>
               <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-emerald-600/40" />
             </div>
           </>
