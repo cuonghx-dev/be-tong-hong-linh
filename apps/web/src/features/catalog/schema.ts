@@ -1,4 +1,4 @@
-import { AccountNature, CostObjectType, TransferSide } from '@app/shared'
+import { AccountNature, CostObjectType, IncomeExpenseType, TransferSide } from '@app/shared'
 import { z } from 'zod'
 
 // Nhân viên.
@@ -94,3 +94,33 @@ export const transferAccountSchema = z.object({
 })
 
 export type TransferAccountFormValues = z.infer<typeof transferAccountSchema>
+
+// Loại chứng từ.
+export const voucherTypeSchema = z.object({
+  code: z.string().min(1, 'Nhập mã loại chứng từ'),
+  name: z.string().min(1, 'Nhập tên loại chứng từ'),
+  isActive: z.boolean().optional(),
+})
+
+export type VoucherTypeFormValues = z.infer<typeof voucherTypeSchema>
+
+// Tài khoản ngầm định.
+export const defaultAccountSchema = z.object({
+  name: z.string().min(1, 'Nhập loại nghiệp vụ'),
+  debitAccount: z.string().optional(),
+  creditAccount: z.string().optional(),
+  isActive: z.boolean().optional(),
+})
+
+export type DefaultAccountFormValues = z.infer<typeof defaultAccountSchema>
+
+// Mục thu/chi.
+export const incomeExpenseItemSchema = z.object({
+  code: z.string().min(1, 'Nhập mã mục thu/chi'),
+  name: z.string().min(1, 'Nhập tên mục thu/chi'),
+  type: z.nativeEnum(IncomeExpenseType),
+  recurring: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+})
+
+export type IncomeExpenseItemFormValues = z.infer<typeof incomeExpenseItemSchema>

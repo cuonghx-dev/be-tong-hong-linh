@@ -84,8 +84,36 @@ async function seedAccounts() {
   console.log(`Hệ thống tài khoản: ${data.length}`)
 }
 
+// ── Tài khoản ngầm định (Danh_sach_tai_khoan_ngam_dinh.xlsx) ─────────────────
+// Loại nghiệp vụ + cặp TK Nợ / TK Có gợi ý sẵn. Idempotent: xóa sạch rồi tạo lại.
+async function seedDefaultAccounts() {
+  const wb = xlsx.readFile(path.join(MISA_DIR, 'Danh_sach_tai_khoan_ngam_dinh.xlsx'))
+  const ws = wb.Sheets[wb.SheetNames[0]]
+  const all = xlsx.utils.sheet_to_json(ws, { header: 1, defval: null, blankrows: false })
+  // Header: STT | Loại | TK Nợ | TK Có.
+  const headerIdx = all.findIndex(
+    (r) => Array.isArray(r) && r.some((c) => String(c ?? '').trim().toLowerCase() === 'loại'),
+  )
+  const data = all
+    .slice(headerIdx + 1)
+    .filter((r) => Array.isArray(r) && r[1] != null && String(r[1]).trim() !== '')
+    .map((r, i) => ({
+      id: randomUUID(),
+      order: Number.isFinite(Number(r[0])) ? Number(r[0]) : i + 1,
+      name: String(r[1]).trim(),
+      debitAccount: r[2] != null && String(r[2]).trim() !== '' ? String(r[2]).trim() : null,
+      creditAccount: r[3] != null && String(r[3]).trim() !== '' ? String(r[3]).trim() : null,
+      isActive: true,
+    }))
+
+  await prisma.defaultAccount.deleteMany()
+  await chunked(data, (c) => prisma.defaultAccount.createMany({ data: c }))
+  console.log(`Tài khoản ngầm định: ${data.length}`)
+}
+
 async function main() {
   await seedAccounts()
+  await seedDefaultAccounts()
 
   console.log('Xóa dữ liệu bán hàng cũ…')
   await prisma.$executeRawUnsafe(

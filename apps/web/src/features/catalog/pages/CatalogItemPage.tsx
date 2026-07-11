@@ -8,10 +8,13 @@ import { AccountTable } from '../components/AccountTable'
 import { BankAccountTable } from '../components/BankAccountTable'
 import { BankTable } from '../components/BankTable'
 import { CostObjectTable } from '../components/CostObjectTable'
+import { DefaultAccountTable } from '../components/DefaultAccountTable'
 import { EmployeeTable } from '../components/EmployeeTable'
 import { ExpenseItemTable } from '../components/ExpenseItemTable'
+import { IncomeExpenseItemTable } from '../components/IncomeExpenseItemTable'
 import { PartnerGroupTable } from '../components/PartnerGroupTable'
 import { TransferAccountTable } from '../components/TransferAccountTable'
+import { VoucherTypeTable } from '../components/VoucherTypeTable'
 import { findCatalogItem } from '../catalog-groups'
 
 // Danh mục đã có sẵn màn hình ở phân hệ khác → render lại tại đây (cùng data).
@@ -26,6 +29,9 @@ const CATALOG_VIEWS: Record<string, () => ReactNode> = {
   'khoan-muc-chi-phi': () => <ExpenseItemTable />,
   'he-thong-tai-khoan': () => <AccountTable />,
   'tai-khoan-ket-chuyen': () => <TransferAccountTable />,
+  'tai-khoan-ngam-dinh': () => <DefaultAccountTable />,
+  'loai-chung-tu': () => <VoucherTypeTable />,
+  'muc-thu-chi': () => <IncomeExpenseItemTable />,
 }
 
 // Trang chi tiết 1 danh mục — render màn hình có sẵn, chưa build thì placeholder.

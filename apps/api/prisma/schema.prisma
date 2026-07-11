@@ -719,6 +719,30 @@ model CostObject {
   @@map("cost_objects")
 }
 
+// Loại mục thu/chi (Danh_sach_muc_thuchi.xlsx cột "Loại").
+enum IncomeExpenseType {
+  INCOME // Mục thu
+  EXPENSE // Mục chi
+}
+
+// Mục thu/chi (Danh_sach_muc_thuchi.xlsx).
+// Phân loại dòng tiền khi lập phiếu thu / phiếu chi (mã + tên + loại thu|chi + định kỳ).
+model IncomeExpenseItem {
+  id        String            @id @default(uuid())
+  code      String            @unique // Mã mục thu/chi
+  name      String // Tên mục thu/chi
+  type      IncomeExpenseType // Loại: Mục thu / Mục chi
+  recurring Boolean           @default(false) // Phát sinh định kỳ
+  isActive  Boolean           @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@map("income_expense_items")
+}
+
 // Danh mục ngân hàng (Danh_sach_ngan_hang.xlsx).
 // Danh sách ngân hàng dùng chung (tên viết tắt + tên đầy đủ), gắn vào tài khoản ngân hàng.
 model Bank {
@@ -761,6 +785,42 @@ model TransferAccount {
 
   @@index([order])
   @@map("transfer_accounts")
+}
+
+// Tài khoản ngầm định (Danh_sach_tai_khoan_ngam_dinh.xlsx).
+// Mỗi loại nghiệp vụ gợi ý sẵn cặp TK Nợ / TK Có khi lập chứng từ.
+// Không có mã riêng — định danh theo loại nghiệp vụ (tên có thể trùng nếu khác định khoản).
+model DefaultAccount {
+  id            String  @id @default(uuid())
+  order         Int     @map("default_order") // STT trong danh sách MISA (giữ thứ tự gốc)
+  name          String  // Loại nghiệp vụ (cột "Loại")
+  debitAccount  String? @map("debit_account") // TK Nợ ngầm định (có thể để trống)
+  creditAccount String? @map("credit_account") // TK Có ngầm định (có thể để trống)
+  isActive      Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([order])
+  @@index([name])
+  @@map("default_accounts")
+}
+
+// Loại chứng từ (Danh_sach_loai_chung_tu.xlsx).
+// Danh mục phân loại chứng từ (VD PC "Phiếu chi", PT "Phiếu thu"); mã là khóa tự nhiên (unique).
+model VoucherType {
+  id       String  @id @default(uuid())
+  code     String  @unique // Mã loại chứng từ (VD "PC")
+  name     String // Tên loại chứng từ
+  isActive Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([code])
+  @@map("voucher_types")
 }
 
 // ── Số dư ban đầu (opening-balance) ──────────────────────────────────────────

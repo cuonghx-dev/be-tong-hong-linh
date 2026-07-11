@@ -1,5 +1,5 @@
 // Type request/response phân hệ Danh mục (05-danh-muc) — dùng chung FE ↔ BE.
-import type { AccountNature, CostObjectType, TransferSide } from '../enums'
+import type { AccountNature, CostObjectType, IncomeExpenseType, TransferSide } from '../enums'
 
 // ── Nhân viên ────────────────────────────────────────────────────────────────
 
@@ -249,5 +249,92 @@ export interface TransferAccountFilter {
   pageSize?: number
   keyword?: string // Tìm theo mã / TK từ / TK đến / diễn giải
   side?: TransferSide
+  isActive?: boolean
+}
+
+// ── Loại chứng từ ────────────────────────────────────────────────────────────
+
+export interface VoucherTypeDto {
+  id: string
+  code: string // Mã loại chứng từ (VD "PC")
+  name: string // Tên loại chứng từ
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateVoucherTypeInput {
+  code: string
+  name: string
+  isActive?: boolean
+}
+
+export type UpdateVoucherTypeInput = Partial<CreateVoucherTypeInput>
+
+export interface VoucherTypeFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo mã / tên loại chứng từ
+  isActive?: boolean
+}
+
+// ── Mục thu/chi ──────────────────────────────────────────────────────────────
+
+export interface IncomeExpenseItemDto {
+  id: string
+  code: string // Mã mục thu/chi
+  name: string // Tên mục thu/chi
+  type: IncomeExpenseType // Loại: Mục thu / Mục chi
+  recurring: boolean // Phát sinh định kỳ
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateIncomeExpenseItemInput {
+  code: string
+  name: string
+  type: IncomeExpenseType
+  recurring?: boolean
+  isActive?: boolean
+}
+
+export type UpdateIncomeExpenseItemInput = Partial<CreateIncomeExpenseItemInput>
+
+export interface IncomeExpenseItemFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo mã / tên
+  type?: IncomeExpenseType
+  isActive?: boolean
+}
+
+// ── Tài khoản ngầm định ──────────────────────────────────────────────────────
+
+export interface DefaultAccountDto {
+  id: string
+  order: number // STT trong danh sách MISA
+  name: string // Loại nghiệp vụ (cột "Loại")
+  debitAccount: string | null // TK Nợ ngầm định
+  creditAccount: string | null // TK Có ngầm định
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateDefaultAccountInput {
+  order?: number
+  name: string
+  debitAccount?: string | null
+  creditAccount?: string | null
+  isActive?: boolean
+}
+
+export type UpdateDefaultAccountInput = Partial<CreateDefaultAccountInput>
+
+export interface DefaultAccountFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo loại nghiệp vụ / TK Nợ / TK Có
   isActive?: boolean
 }

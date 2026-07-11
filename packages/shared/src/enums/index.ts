@@ -190,6 +190,18 @@ export const COST_OBJECT_TYPE_LABELS: Record<CostObjectType, string> = {
   [CostObjectType.Other]: 'Khác',
 }
 
+// Loại mục thu/chi (Danh_sach_muc_thuchi.xlsx cột "Loại").
+export enum IncomeExpenseType {
+  Income = 'INCOME', // Mục thu
+  Expense = 'EXPENSE', // Mục chi
+}
+
+// Nhãn hiển thị loại mục thu/chi.
+export const INCOME_EXPENSE_TYPE_LABELS: Record<IncomeExpenseType, string> = {
+  [IncomeExpenseType.Income]: 'Mục thu',
+  [IncomeExpenseType.Expense]: 'Mục chi',
+}
+
 // Bên kết chuyển (Danh_sach_tai_khoan_ket_chuyen.xlsx cột "Bên kết chuyển").
 export enum TransferSide {
   Debit = 'DEBIT', // Nợ

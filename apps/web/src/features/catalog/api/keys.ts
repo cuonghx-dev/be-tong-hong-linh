@@ -3,10 +3,13 @@ import type {
   BankAccountFilter,
   BankFilter,
   CostObjectFilter,
+  DefaultAccountFilter,
   EmployeeFilter,
   ExpenseItemFilter,
+  IncomeExpenseItemFilter,
   PartnerGroupFilter,
   TransferAccountFilter,
+  VoucherTypeFilter,
 } from '@app/shared'
 
 // Query keys phân hệ Danh mục.
@@ -33,4 +36,14 @@ export const catalogKeys = {
   transferAccounts: (filter: TransferAccountFilter) =>
     [...catalogKeys.all, 'transfer-accounts', filter] as const,
   transferAccount: (id: string) => [...catalogKeys.all, 'transfer-account', id] as const,
+  defaultAccounts: (filter: DefaultAccountFilter) =>
+    [...catalogKeys.all, 'default-accounts', filter] as const,
+  defaultAccount: (id: string) => [...catalogKeys.all, 'default-account', id] as const,
+  voucherTypes: (filter: VoucherTypeFilter) =>
+    [...catalogKeys.all, 'voucher-types', filter] as const,
+  voucherType: (id: string) => [...catalogKeys.all, 'voucher-type', id] as const,
+  incomeExpenseItems: (filter: IncomeExpenseItemFilter) =>
+    [...catalogKeys.all, 'income-expense-items', filter] as const,
+  incomeExpenseItem: (id: string) =>
+    [...catalogKeys.all, 'income-expense-item', id] as const,
 }
