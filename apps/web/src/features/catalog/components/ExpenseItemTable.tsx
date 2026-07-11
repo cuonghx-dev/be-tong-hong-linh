@@ -1,5 +1,5 @@
 import type { ExpenseItemDto, ExpenseItemFilter } from '@app/shared'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { AddMenu } from '@/shared/ui/add-menu'
@@ -87,6 +87,14 @@ export function ExpenseItemTable() {
 
   const items = data?.data ?? []
   const total = data?.pagination.total ?? 0
+
+  // Mặc định thu gọn cây (chỉ hiện khoản mục gốc). Khởi tạo 1 lần khi có dữ liệu.
+  const inited = useRef(false)
+  useEffect(() => {
+    if (inited.current || items.length === 0) return
+    inited.current = true
+    setCollapsed(new Set(items.map((i) => i.parentId).filter((id): id is string => !!id)))
+  }, [items])
 
   // Có từ khóa tìm kiếm → hiện phẳng (kết quả có thể thiếu cha nên không dựng cây).
   const treeMode = !keyword
