@@ -189,3 +189,31 @@ export const COST_OBJECT_TYPE_LABELS: Record<CostObjectType, string> = {
   [CostObjectType.Workshop]: 'Phân xưởng',
   [CostObjectType.Other]: 'Khác',
 }
+
+// Bên kết chuyển (Danh_sach_tai_khoan_ket_chuyen.xlsx cột "Bên kết chuyển").
+export enum TransferSide {
+  Debit = 'DEBIT', // Nợ
+  Credit = 'CREDIT', // Có
+  Both = 'BOTH', // Hai bên
+}
+
+// Nhãn hiển thị bên kết chuyển.
+export const TRANSFER_SIDE_LABELS: Record<TransferSide, string> = {
+  [TransferSide.Debit]: 'Nợ',
+  [TransferSide.Credit]: 'Có',
+  [TransferSide.Both]: 'Hai bên',
+}
+
+// Tính chất tài khoản (Danh_sach_he_thong_tai_khoan_.xlsx cột "Tính chất").
+export enum AccountNature {
+  Debit = 'DEBIT', // Dư Nợ
+  Credit = 'CREDIT', // Dư Có
+  Dual = 'DUAL', // Lưỡng tính
+}
+
+// Nhãn hiển thị tính chất tài khoản.
+export const ACCOUNT_NATURE_LABELS: Record<AccountNature, string> = {
+  [AccountNature.Debit]: 'Dư Nợ',
+  [AccountNature.Credit]: 'Dư Có',
+  [AccountNature.Dual]: 'Lưỡng tính',
+}

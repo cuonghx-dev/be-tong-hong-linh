@@ -627,6 +627,25 @@ model PartnerGroup {
   @@map("partner_groups")
 }
 
+// Tài khoản ngân hàng (Danh_sach_tai_khoan_ngan_hang.xlsx).
+// Số tài khoản là khóa tự nhiên (unique). Có thể chứa hậu tố mô tả (vd "030079181540 VAY").
+model BankAccount {
+  id            String  @id @default(uuid())
+  accountNumber String  @unique @map("account_number") // Số tài khoản
+  bankName      String  @map("bank_name") // Tên ngân hàng
+  bankBranch    String? @map("bank_branch") // Tên chi nhánh ngân hàng
+  accountHolder String? @map("account_holder") // Chủ tài khoản
+  branch        String? // Chi nhánh (đơn vị)
+  isActive      Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([bankName])
+  @@map("bank_accounts")
+}
+
 // Khoản mục chi phí (Danh_sach_khoan_muc_chi_phi_.xlsx).
 // Phân cấp cha-con qua parentId (tham chiếu lỏng, như Customer.groupId).
 // Nhập khẩu tự gán cha theo tiền tố dấu chấm của mã (MTC.VL → cha MTC).
@@ -645,6 +664,35 @@ model ExpenseItem {
   @@index([name])
   @@index([parentId])
   @@map("expense_items")
+}
+
+// Tính chất tài khoản (Danh_sach_he_thong_tai_khoan_.xlsx cột "Tính chất").
+enum AccountNature {
+  DEBIT // Dư Nợ
+  CREDIT // Dư Có
+  DUAL // Lưỡng tính
+}
+
+// Hệ thống tài khoản kế toán (Danh_sach_he_thong_tai_khoan_.xlsx — TT 133/200).
+// Phân cấp cha-con qua parentId (tham chiếu lỏng, như ExpenseItem).
+// Nhập khẩu tự gán cha theo tiền tố số tài khoản (1111 → cha 111 → cha null).
+model Account {
+  id          String        @id @default(uuid())
+  number      String        @unique // Số tài khoản
+  name        String // Tên tài khoản
+  nature      AccountNature // Tính chất
+  nameEn      String?       @map("name_en") // Tên tiếng Anh
+  description String? // Diễn giải
+  parentId    String?       @map("parent_id") // Thuộc tài khoản (id cha)
+  isActive    Boolean       @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@index([parentId])
+  @@map("accounts")
 }
 
 // Loại đối tượng tập hợp chi phí (Doi_tuong_tap_hop_chi_phi.xlsx cột "Loại").
@@ -669,6 +717,50 @@ model CostObject {
 
   @@index([name])
   @@map("cost_objects")
+}
+
+// Danh mục ngân hàng (Danh_sach_ngan_hang.xlsx).
+// Danh sách ngân hàng dùng chung (tên viết tắt + tên đầy đủ), gắn vào tài khoản ngân hàng.
+model Bank {
+  id        String  @id @default(uuid())
+  shortName String  @unique @map("short_name") // Tên viết tắt (VD: VCB, BIDV)
+  fullName  String  @map("full_name") // Tên đầy đủ
+  isActive  Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([fullName])
+  @@map("banks")
+}
+
+// Bên kết chuyển (Danh_sach_tai_khoan_ket_chuyen.xlsx cột "Bên kết chuyển").
+enum TransferSide {
+  DEBIT // Nợ
+  CREDIT // Có
+  BOTH // Hai bên
+}
+
+// Tài khoản kết chuyển (Danh_sach_tai_khoan_ket_chuyen.xlsx).
+// Cấu hình bút toán kết chuyển cuối kỳ: TK "từ" → TK "đến", chạy theo thứ tự tăng dần.
+// Mã kết chuyển là khóa tự nhiên (unique), dạng "<từ>-<đến>" (VD "511-911").
+model TransferAccount {
+  id          String       @id @default(uuid())
+  order       Int          @map("transfer_order") // Thứ tự kết chuyển (chạy tăng dần)
+  code        String       @unique // Mã kết chuyển (VD "511-911")
+  fromAccount String       @map("from_account") // Kết chuyển từ (mã TK)
+  toAccount   String       @map("to_account") // Kết chuyển đến (mã TK)
+  side        TransferSide @default(BOTH) // Bên kết chuyển: Nợ / Có / Hai bên
+  description String? // Diễn giải
+  isActive    Boolean      @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([order])
+  @@map("transfer_accounts")
 }
 
 // ── Số dư ban đầu (opening-balance) ──────────────────────────────────────────

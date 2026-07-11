@@ -4,10 +4,14 @@ import { SupplierTable } from '@/features/purchase'
 import { CustomerTable } from '@/features/sales'
 import { ChevronLeftIcon } from '@/shared/ui/icons'
 import { TabPlaceholder } from '@/shared/ui/tab-placeholder'
+import { AccountTable } from '../components/AccountTable'
+import { BankAccountTable } from '../components/BankAccountTable'
+import { BankTable } from '../components/BankTable'
 import { CostObjectTable } from '../components/CostObjectTable'
 import { EmployeeTable } from '../components/EmployeeTable'
 import { ExpenseItemTable } from '../components/ExpenseItemTable'
 import { PartnerGroupTable } from '../components/PartnerGroupTable'
+import { TransferAccountTable } from '../components/TransferAccountTable'
 import { findCatalogItem } from '../catalog-groups'
 
 // Danh mục đã có sẵn màn hình ở phân hệ khác → render lại tại đây (cùng data).
@@ -16,8 +20,12 @@ const CATALOG_VIEWS: Record<string, () => ReactNode> = {
   'nha-cung-cap': () => <SupplierTable />,
   'nhan-vien': () => <EmployeeTable />,
   'nhom-khach-hang-nha-cung-cap': () => <PartnerGroupTable />,
+  'ngan-hang': () => <BankTable />,
+  'tai-khoan-ngan-hang': () => <BankAccountTable />,
   'doi-tuong-tap-hop-chi-phi': () => <CostObjectTable />,
   'khoan-muc-chi-phi': () => <ExpenseItemTable />,
+  'he-thong-tai-khoan': () => <AccountTable />,
+  'tai-khoan-ket-chuyen': () => <TransferAccountTable />,
 }
 
 // Trang chi tiết 1 danh mục — render màn hình có sẵn, chưa build thì placeholder.

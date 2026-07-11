@@ -8,6 +8,7 @@ import xlsx from 'xlsx'
 
 const prisma = new PrismaClient()
 const SPEC_DIR = path.resolve(import.meta.dirname, '../../../docs/misa-specs/04-ban-hang')
+const MISA_DIR = path.resolve(import.meta.dirname, '../../../docs/misa-specs')
 const CHUNK = 1000
 
 // Excel serial (ngày) → Date (UTC midnight). Chấp nhận cả Date sẵn có.
@@ -34,7 +35,58 @@ async function chunked(items, fn) {
   for (let i = 0; i < items.length; i += CHUNK) await fn(items.slice(i, i + CHUNK))
 }
 
+// "Dư Có" → CREDIT, "Lưỡng tính" → DUAL, còn lại → DEBIT.
+function accountNature(text) {
+  const t = String(text ?? '').toLowerCase()
+  if (t.includes('lưỡng')) return 'DUAL'
+  if (t.includes('có')) return 'CREDIT'
+  return 'DEBIT'
+}
+
+// ── Hệ thống tài khoản (Danh_sach_he_thong_tai_khoan_.xlsx) ───────────────────
+// Cha gán theo tiền tố số TK (1111 → 111 → gốc). Idempotent: xóa sạch rồi tạo lại.
+async function seedAccounts() {
+  const wb = xlsx.readFile(path.join(MISA_DIR, 'Danh_sach_he_thong_tai_khoan_.xlsx'))
+  const ws = wb.Sheets[wb.SheetNames[0]]
+  const all = xlsx.utils.sheet_to_json(ws, { header: 1, defval: null, blankrows: false })
+  // Header: STT | Số tài khoản | Tên tài khoản | Tính chất | Tên tiếng Anh | Diễn giải | Trạng thái.
+  // blankrows:false đã bỏ dòng trống nên không hardcode vị trí — tìm dòng header động.
+  const headerIdx = all.findIndex(
+    (r) => Array.isArray(r) && r.some((c) => String(c ?? '').toLowerCase().includes('số tài khoản')),
+  )
+  const data = all
+    .slice(headerIdx + 1)
+    .filter((r) => Array.isArray(r) && r[1] != null && r[2] != null)
+    .map((r) => ({
+      id: randomUUID(),
+      number: String(r[1]).trim(),
+      name: String(r[2]).trim(),
+      nature: accountNature(r[3]),
+      nameEn: r[4] ? String(r[4]).trim() : null,
+      description: r[5] ? String(r[5]).trim() : null,
+      isActive: !(r[6] && String(r[6]).toLowerCase().includes('ngừng')),
+    }))
+
+  // Gán cha theo tiền tố số TK dài nhất đang tồn tại.
+  const idByNumber = new Map(data.map((a) => [a.number, a.id]))
+  for (const a of data) {
+    for (let len = a.number.length - 1; len >= 1; len--) {
+      const parentId = idByNumber.get(a.number.slice(0, len))
+      if (parentId) {
+        a.parentId = parentId
+        break
+      }
+    }
+  }
+
+  await prisma.account.deleteMany()
+  await chunked(data, (c) => prisma.account.createMany({ data: c }))
+  console.log(`Hệ thống tài khoản: ${data.length}`)
+}
+
 async function main() {
+  await seedAccounts()
+
   console.log('Xóa dữ liệu bán hàng cũ…')
   await prisma.$executeRawUnsafe(
     'TRUNCATE TABLE "sales_voucher_lines","sales_vouchers","customers" RESTART IDENTITY CASCADE',
