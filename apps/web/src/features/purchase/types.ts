@@ -90,3 +90,13 @@ export const SUPPLIER_TYPE_LABEL: Record<SupplierType, string> = {
 export function hasWarehouse(type: PurchaseVoucherType): boolean {
   return type === PurchaseVoucherType.Stock
 }
+
+// Danh mục báo cáo mua hàng (tab "Báo cáo", theo MISA).
+export type PurchaseReportSlug = 'detail' | 'by-item' | 'payable-summary' | 'payable-detail'
+
+export const PURCHASE_REPORTS: { slug: PurchaseReportSlug; name: string }[] = [
+  { slug: 'detail', name: 'Sổ chi tiết mua hàng' },
+  { slug: 'by-item', name: 'Tổng hợp mua hàng theo mặt hàng' },
+  { slug: 'payable-summary', name: 'Tổng hợp công nợ phải trả nhà cung cấp' },
+  { slug: 'payable-detail', name: 'Chi tiết công nợ phải trả nhà cung cấp' },
+]
