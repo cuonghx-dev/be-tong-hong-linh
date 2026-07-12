@@ -1,25 +1,54 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { cn } from '@/shared/lib/cn'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { SearchIcon } from '@/shared/ui/icons'
 import { useToast } from '@/shared/ui/toast'
-import { useAccountBalances } from '../api/useAccountBalances'
-import { buildTree, detailBalanceLabel, type BalanceRow } from '../tree'
+import { AmountInput } from '../components/AmountInput'
+import { usePartnerBalances } from '../api/usePartnerBalances'
+import { useSavePartnerBalances } from '../api/usePartnerBalanceMutations'
 
 const PAGE_SIZES = [20, 50, 100]
 
-// Màn "Nhập số dư tài khoản" — nhập số dư ở TK chi tiết (lá); TK cha tự cộng dồn (không hiện ở đây).
-// Vào từ nút "Sửa" của trang Số dư tài khoản (?focus=<số TK> để cuộn tới đúng dòng).
-export function AccountBalanceEntryPage() {
+// Tiêu đề + nhãn cột + slug danh mục theo loại TK công nợ (khách hàng 131 vs nhà cung cấp 331).
+function partnerLabels(accountCode: string) {
+  if (accountCode.startsWith('331'))
+    return {
+      title: 'Nhập số dư công nợ nhà cung cấp',
+      code: 'Mã nhà cung cấp',
+      name: 'Tên nhà cung cấp',
+      catalogSlug: 'nha-cung-cap',
+      catalogLabel: 'Nhà cung cấp',
+    }
+  return {
+    title: 'Nhập số dư công nợ khách hàng',
+    code: 'Mã khách hàng',
+    name: 'Tên khách hàng',
+    catalogSlug: 'khach-hang',
+    catalogLabel: 'Khách hàng',
+  }
+}
+
+interface EditRow {
+  customerId: string
+  customerCode: string
+  customerName: string
+  debitAmount: number
+  creditAmount: number
+}
+
+// Màn "Nhập số dư công nợ" — nhập Dư Nợ/Dư Có đầu kỳ theo từng đối tượng cho 1 TK công nợ.
+// Vào từ cột "Chi tiết số dư" của màn Nhập số dư tài khoản (?account=<số TK>). Full-page, đè shell.
+export function PartnerBalanceEntryPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const focus = params.get('focus')
-  const { data, isLoading, isError, refetch } = useAccountBalances()
-  const { toast } = useToast()
-  const focusRef = useRef<HTMLTableRowElement>(null)
+  const accountCode = params.get('account') ?? ''
+  const labels = partnerLabels(accountCode)
 
-  const [rows, setRows] = useState<BalanceRow[]>([])
+  const { data, isLoading, isError, refetch } = usePartnerBalances(accountCode)
+  const save = useSavePartnerBalances()
+  const { toast } = useToast()
+
+  const [rows, setRows] = useState<EditRow[]>([])
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -27,73 +56,79 @@ export function AccountBalanceEntryPage() {
   useEffect(() => {
     if (!data) return
     setRows(
-      data.map((r) => ({
-        accountCode: r.accountCode,
-        accountName: r.accountName,
+      data.items.map((r) => ({
+        customerId: r.customerId,
+        customerCode: r.customerCode,
+        customerName: r.customerName,
         debitAmount: Number(r.debitAmount),
         creditAmount: Number(r.creditAmount),
       })),
     )
   }, [data])
 
-  const tree = useMemo(() => buildTree(rows), [rows])
-
-  // Chỉ TK chi tiết (lá) mới nhập số dư — TK cha là tổng cộng dồn.
-  const leaves = useMemo(
-    () => tree.sorted.filter((r) => !tree.hasChildren(r.accountCode)),
-    [tree],
-  )
-
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase()
-    if (!q) return leaves
-    return leaves.filter(
+    if (!q) return rows
+    return rows.filter(
       (r) =>
-        r.accountCode.toLowerCase().includes(q) || r.accountName.toLowerCase().includes(q),
+        r.customerCode.toLowerCase().includes(q) || r.customerName.toLowerCase().includes(q),
     )
-  }, [leaves, keyword])
+  }, [rows, keyword])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const current = Math.min(page, pageCount)
   const pageRows = filtered.slice((current - 1) * pageSize, current * pageSize)
 
-  // Tổng cộng toàn bộ TK chi tiết (2 vế cân khi số dư đúng).
+  // Tổng cộng toàn bộ đối tượng (2 vế cân khi số dư đúng).
   const totals = useMemo(() => {
     let debit = 0
     let credit = 0
-    for (const r of leaves) {
+    for (const r of rows) {
       debit += r.debitAmount
       credit += r.creditAmount
     }
     return { debit, credit }
-  }, [leaves])
+  }, [rows])
 
-  // Cuộn tới dòng TK vừa bấm "Sửa" ở trang trước.
-  useEffect(() => {
-    if (focus && focusRef.current) focusRef.current.scrollIntoView({ block: 'center' })
-  }, [focus, pageRows])
+  const setAmount = (customerId: string, field: 'debitAmount' | 'creditAmount', value: number) =>
+    setRows((prev) =>
+      prev.map((r) => (r.customerId === customerId ? { ...r, [field]: value } : r)),
+    )
 
   const close = () => navigate('/opening-balance/so-du-tai-khoan')
 
-  const notReady = () => toast({ title: 'Màn nhập chi tiết đang phát triển.' })
-
-  // Công nợ theo đối tượng (131 khách hàng, 331 nhà cung cấp) đã có màn nhập chi tiết.
-  const openDetail = (code: string) => {
-    if (code.startsWith('131') || code.startsWith('331')) {
-      navigate(`/opening-balance/so-du-tai-khoan/cong-no?account=${encodeURIComponent(code)}`)
-      return
-    }
-    notReady()
+  const onSave = () => {
+    save.mutate(
+      {
+        accountCode,
+        items: rows.map((r) => ({
+          customerId: r.customerId,
+          debitAmount: r.debitAmount,
+          creditAmount: r.creditAmount,
+        })),
+      },
+      {
+        onSuccess: () => toast({ variant: 'success', title: 'Đã lưu số dư công nợ' }),
+        onError: () =>
+          toast({ variant: 'error', title: 'Lưu thất bại', description: 'Kiểm tra lại dữ liệu.' }),
+      },
+    )
   }
 
   return (
     <div className="flex h-screen flex-col bg-white">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <h1 className="text-lg font-bold text-slate-800">Nhập số dư tài khoản</h1>
-        <span className="text-sm text-slate-400">
-          Nhập số dư ở tài khoản chi tiết; tài khoản tổng hợp tự cộng dồn.
+        <h1 className="text-lg font-bold text-slate-800">{labels.title}</h1>
+        <span className="rounded bg-slate-100 px-2 py-0.5 text-sm font-medium text-slate-600">
+          TK {accountCode || '—'}
         </span>
+        <Link
+          to={`/catalog/${labels.catalogSlug}`}
+          className="text-sm text-primary hover:underline"
+        >
+          Danh mục {labels.catalogLabel}
+        </Link>
         <button
           onClick={close}
           className="ml-auto grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
@@ -127,11 +162,11 @@ export function AccountBalanceEntryPage() {
         <table className="w-full min-w-[900px] border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="w-32 px-3 py-2">Số tài khoản</th>
-              <th className="px-3 py-2">Tên tài khoản</th>
-              <th className="w-44 px-3 py-2 text-right">Dư Nợ</th>
-              <th className="w-44 px-3 py-2 text-right">Dư Có</th>
-              <th className="w-64 px-3 py-2">Chi tiết số dư</th>
+              <th className="w-28 px-3 py-2">Số tài khoản</th>
+              <th className="w-48 px-3 py-2">{labels.code}</th>
+              <th className="px-3 py-2">{labels.name}</th>
+              <th className="w-48 px-3 py-2 text-right">Dư Nợ</th>
+              <th className="w-48 px-3 py-2 text-right">Dư Có</th>
             </tr>
           </thead>
           <tbody>
@@ -155,52 +190,40 @@ export function AccountBalanceEntryPage() {
             {!isLoading && !isError && pageRows.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-3 py-10 text-center text-slate-400">
-                  Không có tài khoản chi tiết nào.
+                  Không có đối tượng nào. Thêm ở danh mục trước khi nhập số dư.
                 </td>
               </tr>
             )}
-            {pageRows.map((r) => {
-              const isFocus = r.accountCode === focus
-              return (
-                <tr
-                  key={r.accountCode}
-                  ref={isFocus ? focusRef : undefined}
-                  className={cn(
-                    'border-t border-border hover:bg-slate-50',
-                    isFocus && 'bg-primary/5',
-                  )}
-                >
-                  <td className="px-3 py-1.5 tabular-nums text-slate-700">{r.accountCode}</td>
-                  <td className="max-w-[320px] truncate px-3 py-1.5 text-slate-700">
-                    {r.accountName}
-                  </td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
-                    {r.debitAmount ? formatCurrency(r.debitAmount) : 0}
-                  </td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
-                    {r.creditAmount ? formatCurrency(r.creditAmount) : 0}
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <button
-                      onClick={() => openDetail(r.accountCode)}
-                      className="text-primary hover:underline"
-                    >
-                      {detailBalanceLabel(r.accountCode)}
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
+            {pageRows.map((r) => (
+              <tr key={r.customerId} className="border-t border-border hover:bg-slate-50">
+                <td className="px-3 py-1.5 tabular-nums text-slate-700">{accountCode}</td>
+                <td className="px-3 py-1.5 text-slate-700">{r.customerCode}</td>
+                <td className="max-w-[360px] truncate px-3 py-1.5 text-slate-700">
+                  {r.customerName}
+                </td>
+                <td className="px-3 py-1">
+                  <AmountInput
+                    value={r.debitAmount}
+                    onChange={(v) => setAmount(r.customerId, 'debitAmount', v)}
+                  />
+                </td>
+                <td className="px-3 py-1">
+                  <AmountInput
+                    value={r.creditAmount}
+                    onChange={(v) => setAmount(r.customerId, 'creditAmount', v)}
+                  />
+                </td>
+              </tr>
+            ))}
           </tbody>
-          {filtered.length > 0 && (
+          {rows.length > 0 && (
             <tfoot className="sticky bottom-0 border-t border-border bg-slate-50 font-semibold text-slate-800">
               <tr>
-                <td colSpan={2} className="px-3 py-2">
+                <td colSpan={3} className="px-3 py-2">
                   Tổng
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.debit)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.credit)}</td>
-                <td />
               </tr>
             </tfoot>
           )}
@@ -251,7 +274,14 @@ export function AccountBalanceEntryPage() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center border-t border-border bg-slate-900 px-4 py-2">
+      <div className="flex items-center gap-2 border-t border-border bg-slate-900 px-4 py-2">
+        <button
+          onClick={onSave}
+          disabled={save.isPending || isLoading}
+          className="h-9 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+        >
+          {save.isPending ? 'Đang lưu…' : 'Lưu'}
+        </button>
         <button
           onClick={close}
           className="h-9 rounded-md bg-white px-5 text-sm font-medium text-slate-800 hover:bg-slate-100"

@@ -3,6 +3,8 @@ import { Prisma, type AccountOpeningBalance } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { parseAccountBalanceXlsx } from './account-balance-import'
 import { SaveAccountBalancesDto } from './dto/save-account-balances.dto'
+import { SaveBankAccountBalancesDto } from './dto/save-bank-account-balances.dto'
+import { SavePartnerBalancesDto } from './dto/save-partner-balances.dto'
 
 @Injectable()
 export class OpeningBalanceService {
@@ -71,6 +73,146 @@ export class OpeningBalanceService {
     }
 
     return { total: parsed.length, created: rows.length, skipped: parsed.length - rows.length }
+  }
+
+  // ── Số dư công nợ chi tiết theo đối tượng (131 theo KH, 331 theo NCC…) ──────
+
+  // Danh sách công nợ của 1 TK: mọi đối tượng + số dư (0 nếu chưa nhập).
+  async listPartnerBalances(accountCode: string) {
+    const code = accountCode.trim()
+    const [account, customers, balances] = await Promise.all([
+      this.prisma.accountOpeningBalance.findUnique({ where: { accountCode: code } }),
+      this.prisma.customer.findMany({
+        orderBy: { code: 'asc' },
+        select: { id: true, code: true, name: true },
+      }),
+      this.prisma.partnerOpeningBalance.findMany({ where: { accountCode: code } }),
+    ])
+    const byCustomer = new Map(balances.map((b) => [b.customerId, b]))
+    return {
+      accountCode: code,
+      accountName: account?.accountName ?? '',
+      items: customers.map((c) => {
+        const b = byCustomer.get(c.id)
+        return {
+          customerId: c.id,
+          customerCode: c.code,
+          customerName: c.name,
+          debitAmount: (b?.debitAmount ?? new Prisma.Decimal(0)).toString(),
+          creditAmount: (b?.creditAmount ?? new Prisma.Decimal(0)).toString(),
+        }
+      }),
+    }
+  }
+
+  // Lưu số dư công nợ của 1 TK: thay thế dữ liệu cũ của TK đó, rồi cập nhật số dư
+  // của chính TK công nợ trong bảng số dư tài khoản = tổng cộng các dòng chi tiết.
+  async savePartnerBalances(dto: SavePartnerBalancesDto) {
+    const accountCode = dto.accountCode.trim()
+
+    // Trùng đối tượng trong payload → giữ dòng cuối. Bỏ dòng số dư 0 cả 2 vế.
+    const byCustomer = new Map(
+      dto.items.map((item) => [
+        item.customerId,
+        {
+          accountCode,
+          customerId: item.customerId,
+          debitAmount: new Prisma.Decimal(item.debitAmount),
+          creditAmount: new Prisma.Decimal(item.creditAmount),
+        },
+      ]),
+    )
+    const rows = [...byCustomer.values()].filter(
+      (r) => !r.debitAmount.isZero() || !r.creditAmount.isZero(),
+    )
+
+    const totalDebit = rows.reduce((s, r) => s.add(r.debitAmount), new Prisma.Decimal(0))
+    const totalCredit = rows.reduce((s, r) => s.add(r.creditAmount), new Prisma.Decimal(0))
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.partnerOpeningBalance.deleteMany({ where: { accountCode } })
+      const chunk = 500
+      for (let i = 0; i < rows.length; i += chunk) {
+        await tx.partnerOpeningBalance.createMany({ data: rows.slice(i, i + chunk) })
+      }
+      // Đồng bộ số dư TK công nợ = tổng chi tiết (chỉ khi TK đã tồn tại trong bảng số dư).
+      await tx.accountOpeningBalance.updateMany({
+        where: { accountCode },
+        data: { debitAmount: totalDebit, creditAmount: totalCredit },
+      })
+    })
+
+    return this.listPartnerBalances(accountCode)
+  }
+
+  // ── Số dư tiền gửi chi tiết theo tài khoản ngân hàng (1121 theo từng TK NH…) ──
+
+  // Danh sách tiền gửi của 1 TK: mọi tài khoản ngân hàng + số dư (0 nếu chưa nhập).
+  async listBankAccountBalances(accountCode: string) {
+    const code = accountCode.trim()
+    const [account, bankAccounts, balances] = await Promise.all([
+      this.prisma.accountOpeningBalance.findUnique({ where: { accountCode: code } }),
+      this.prisma.bankAccount.findMany({
+        orderBy: { accountNumber: 'asc' },
+        select: { id: true, accountNumber: true, bankName: true },
+      }),
+      this.prisma.bankAccountOpeningBalance.findMany({ where: { accountCode: code } }),
+    ])
+    const byBankAccount = new Map(balances.map((b) => [b.bankAccountId, b]))
+    return {
+      accountCode: code,
+      accountName: account?.accountName ?? '',
+      items: bankAccounts.map((a) => {
+        const b = byBankAccount.get(a.id)
+        return {
+          bankAccountId: a.id,
+          accountNumber: a.accountNumber,
+          bankName: a.bankName,
+          debitAmount: (b?.debitAmount ?? new Prisma.Decimal(0)).toString(),
+          creditAmount: (b?.creditAmount ?? new Prisma.Decimal(0)).toString(),
+        }
+      }),
+    }
+  }
+
+  // Lưu số dư tiền gửi của 1 TK: thay thế dữ liệu cũ của TK đó, rồi cập nhật số dư
+  // của chính TK tiền gửi trong bảng số dư tài khoản = tổng cộng các dòng chi tiết.
+  async saveBankAccountBalances(dto: SaveBankAccountBalancesDto) {
+    const accountCode = dto.accountCode.trim()
+
+    // Trùng TK NH trong payload → giữ dòng cuối. Bỏ dòng số dư 0 cả 2 vế.
+    const byBankAccount = new Map(
+      dto.items.map((item) => [
+        item.bankAccountId,
+        {
+          accountCode,
+          bankAccountId: item.bankAccountId,
+          debitAmount: new Prisma.Decimal(item.debitAmount),
+          creditAmount: new Prisma.Decimal(item.creditAmount),
+        },
+      ]),
+    )
+    const rows = [...byBankAccount.values()].filter(
+      (r) => !r.debitAmount.isZero() || !r.creditAmount.isZero(),
+    )
+
+    const totalDebit = rows.reduce((s, r) => s.add(r.debitAmount), new Prisma.Decimal(0))
+    const totalCredit = rows.reduce((s, r) => s.add(r.creditAmount), new Prisma.Decimal(0))
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.bankAccountOpeningBalance.deleteMany({ where: { accountCode } })
+      const chunk = 500
+      for (let i = 0; i < rows.length; i += chunk) {
+        await tx.bankAccountOpeningBalance.createMany({ data: rows.slice(i, i + chunk) })
+      }
+      // Đồng bộ số dư TK tiền gửi = tổng chi tiết (chỉ khi TK đã tồn tại trong bảng số dư).
+      await tx.accountOpeningBalance.updateMany({
+        where: { accountCode },
+        data: { debitAmount: totalDebit, creditAmount: totalCredit },
+      })
+    })
+
+    return this.listBankAccountBalances(accountCode)
   }
 }
 

@@ -20,6 +20,8 @@ import { OpeningBalancePage } from '@/features/opening-balance/pages/OpeningBala
 import { OpeningBalanceItemPage } from '@/features/opening-balance/pages/OpeningBalanceItemPage'
 import { AccountBalancePage } from '@/features/opening-balance/pages/AccountBalancePage'
 import { AccountBalanceEntryPage } from '@/features/opening-balance/pages/AccountBalanceEntryPage'
+import { PartnerBalanceEntryPage } from '@/features/opening-balance/pages/PartnerBalanceEntryPage'
+import { BankAccountBalanceEntryPage } from '@/features/opening-balance/pages/BankAccountBalanceEntryPage'
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
 import { CatalogItemPage } from '@/features/catalog/pages/CatalogItemPage'
 
@@ -48,6 +50,10 @@ const recordRoutes = [
   { path: '/general/vouchers/:id/edit', element: <GeneralVoucherPage mode="edit" /> },
   // Nhập số dư tài khoản chi tiết — full-page, đè shell (vào từ nút "Sửa").
   { path: '/opening-balance/so-du-tai-khoan/nhap', element: <AccountBalanceEntryPage /> },
+  // Nhập số dư công nợ theo đối tượng (131 KH, 331 NCC) — full-page (vào từ cột "Chi tiết số dư").
+  { path: '/opening-balance/so-du-tai-khoan/cong-no', element: <PartnerBalanceEntryPage /> },
+  // Nhập số dư tài khoản ngân hàng (TK tiền gửi 112x) — full-page (vào thẳng từ nút "Sửa").
+  { path: '/opening-balance/so-du-tai-khoan/ngan-hang', element: <BankAccountBalanceEntryPage /> },
 ].map((r) => ({
   path: r.path,
   element: <RequireAuth>{r.element}</RequireAuth>,

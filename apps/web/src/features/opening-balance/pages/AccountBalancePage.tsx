@@ -32,9 +32,20 @@ export function AccountBalancePage() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [addOpen, setAddOpen] = useState(false)
 
-  // Bấm "Sửa" ở 1 TK → nhảy sang màn "Nhập số dư tài khoản" (chi tiết), focus đúng TK đó.
-  const goEdit = (code: string) =>
+  // Bấm "Sửa" ở 1 TK chi tiết → nhảy sang màn nhập số dư tương ứng loại TK.
+  // TK tiền gửi (112x) vào thẳng màn "Nhập số dư tài khoản ngân hàng"; công nợ (131/331) vào thẳng
+  // màn "Nhập số dư công nợ" theo đối tượng; còn lại qua màn nhập chung.
+  const goEdit = (code: string) => {
+    if (code.startsWith('112'))
+      return navigate(
+        `/opening-balance/so-du-tai-khoan/ngan-hang?account=${encodeURIComponent(code)}`,
+      )
+    if (code.startsWith('131') || code.startsWith('331'))
+      return navigate(
+        `/opening-balance/so-du-tai-khoan/cong-no?account=${encodeURIComponent(code)}`,
+      )
     navigate(`/opening-balance/so-du-tai-khoan/nhap?focus=${encodeURIComponent(code)}`)
+  }
 
   // Đồng bộ lại bảng mỗi khi server trả dữ liệu mới (sau load / save / import).
   useEffect(() => {

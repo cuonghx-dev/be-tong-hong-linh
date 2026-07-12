@@ -473,7 +473,8 @@ model Customer {
   contactEmail       String?      @map("contact_email")
   contactPhone       String?      @map("contact_phone")
 
-  salesVouchers SalesVoucher[]
+  salesVouchers          SalesVoucher[]
+  partnerOpeningBalances PartnerOpeningBalance[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -721,6 +722,8 @@ model BankAccount {
   updatedAt DateTime @updatedAt @map("updated_at")
   createdBy String?  @map("created_by")
 
+  openingBalances BankAccountOpeningBalance[]
+
   @@index([bankName])
   @@map("bank_accounts")
 }
@@ -933,4 +936,40 @@ model AccountOpeningBalance {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("account_opening_balances")
+}
+
+// Số dư công nợ đầu kỳ chi tiết theo đối tượng (khách hàng/NCC) cho 1 TK công nợ (131, 331…).
+// TK công nợ trong AccountOpeningBalance = tổng cộng các dòng ở đây theo cùng accountCode.
+model PartnerOpeningBalance {
+  id           String   @id @default(uuid())
+  accountCode  String   @map("account_code") // Số TK công nợ (vd 131, 1311, 331)
+  customerId   String   @map("customer_id")
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  debitAmount  Decimal  @default(0) @map("debit_amount") @db.Decimal(18, 2)
+  creditAmount Decimal  @default(0) @map("credit_amount") @db.Decimal(18, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([accountCode, customerId])
+  @@index([accountCode])
+  @@map("partner_opening_balances")
+}
+
+// Số dư tiền gửi đầu kỳ chi tiết theo từng tài khoản ngân hàng cho 1 TK tiền gửi (1121, 1122…).
+// TK tiền gửi trong AccountOpeningBalance = tổng cộng các dòng ở đây theo cùng accountCode.
+model BankAccountOpeningBalance {
+  id            String      @id @default(uuid())
+  accountCode   String      @map("account_code") // Số TK tiền gửi (vd 1121, 1122)
+  bankAccountId String      @map("bank_account_id")
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  debitAmount   Decimal     @default(0) @map("debit_amount") @db.Decimal(18, 2)
+  creditAmount  Decimal     @default(0) @map("credit_amount") @db.Decimal(18, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([accountCode, bankAccountId])
+  @@index([accountCode])
+  @@map("bank_account_opening_balances")
 }
