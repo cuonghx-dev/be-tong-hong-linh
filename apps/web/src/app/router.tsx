@@ -8,6 +8,7 @@ import { CashVoucherPage } from '@/features/cash/pages/CashVoucherPage'
 import { CashReportPage } from '@/features/cash/pages/CashReportPage'
 import { BankPage } from '@/features/bank/pages/BankPage'
 import { BankVoucherPage } from '@/features/bank/pages/BankVoucherPage'
+import { BankReportPage } from '@/features/bank/pages/BankReportPage'
 import { SalesPage } from '@/features/sales/pages/SalesPage'
 import { SalesVoucherPage } from '@/features/sales/pages/SalesVoucherPage'
 import { PurchasePage } from '@/features/purchase/pages/PurchasePage'
@@ -36,6 +37,8 @@ const recordRoutes = [
   { path: '/bank/vouchers/new', element: <BankVoucherPage mode="new" /> },
   { path: '/bank/vouchers/:id', element: <BankVoucherPage mode="view" /> },
   { path: '/bank/vouchers/:id/edit', element: <BankVoucherPage mode="edit" /> },
+  // Xem báo cáo tiền gửi — full-page, đè shell (vào từ tab "Báo cáo").
+  { path: '/bank/reports/:slug', element: <BankReportPage /> },
   { path: '/purchase/vouchers/new', element: <PurchaseVoucherPage mode="new" /> },
   { path: '/purchase/vouchers/:id', element: <PurchaseVoucherPage mode="view" /> },
   { path: '/purchase/vouchers/:id/edit', element: <PurchaseVoucherPage mode="edit" /> },

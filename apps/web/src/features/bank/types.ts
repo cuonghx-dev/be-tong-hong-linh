@@ -37,3 +37,14 @@ export const CATEGORY_OPTIONS: Record<BankVoucherType, BankVoucherCategory[]> = 
     BankVoucherCategory.PurchaseGoodsBank,
   ],
 }
+
+// Danh mục báo cáo tiền gửi (tab "Báo cáo", theo MISA).
+// TODO: Sổ chi tiết chuyển tiền nội bộ (chờ chứng từ chuyển tiền nội bộ),
+// S03a1/S03a2-DNN bản tiền gửi, báo cáo khế ước vay/cho vay (chờ module vay).
+export type BankReportSlug = 'bank-book' | 'account-balances' | 'daily-balance'
+
+export const BANK_REPORTS: { slug: BankReportSlug; name: string }[] = [
+  { slug: 'bank-book', name: 'Sổ tiền gửi ngân hàng' },
+  { slug: 'account-balances', name: 'Bảng kê số dư ngân hàng' },
+  { slug: 'daily-balance', name: 'Bảng kê số dư tiền theo ngày' },
+]

@@ -8,12 +8,12 @@ import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
-import { TabPlaceholder } from '@/shared/ui/tab-placeholder'
 import { useToast } from '@/shared/ui/toast'
 import { useBankVouchers } from '../api/useBankVouchers'
 import { useDeleteBankVoucher, useImportBankVouchers } from '../api/useBankVoucherMutations'
 import { BankFilterPopover, type BankFilterValue } from '../components/BankFilterPopover'
 import { BankProcessTab } from '../components/BankProcessTab'
+import { BankReportListTab } from '../components/reports/BankReportListTab'
 import { VOUCHER_TYPE_LABEL } from '../types'
 
 const PAGE_SIZE = 20
@@ -310,7 +310,7 @@ function formatDate(iso: string): string {
 const TABS: ModuleTab[] = [
   { key: 'process', label: 'Quy trình', render: () => <BankProcessTab /> },
   { key: 'txn', label: 'Thu, chi tiền', render: () => <BankTable /> },
-  { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
+  { key: 'report', label: 'Báo cáo', render: () => <BankReportListTab /> },
 ]
 
 export function BankPage() {
