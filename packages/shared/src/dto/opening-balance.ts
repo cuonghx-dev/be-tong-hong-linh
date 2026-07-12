@@ -26,11 +26,14 @@ export interface SaveAccountOpeningBalancesInput {
 
 // ── Số dư công nợ đầu kỳ chi tiết theo đối tượng (khách hàng/NCC) ──────────────
 
-// 1 dòng số dư công nợ của 1 đối tượng cho 1 TK công nợ (vd 131 theo từng khách hàng).
+// Loại đối tượng công nợ theo TK: khách hàng (131) hoặc nhà cung cấp (331).
+export type OpeningBalancePartnerType = 'CUSTOMER' | 'SUPPLIER'
+
+// 1 dòng số dư công nợ của 1 đối tượng cho 1 TK công nợ (vd 131 theo từng KH, 331 theo từng NCC).
 export interface PartnerOpeningBalanceDto {
-  customerId: string
-  customerCode: string // Mã khách hàng
-  customerName: string // Tên khách hàng
+  partnerId: string
+  partnerCode: string // Mã đối tượng (KH/NCC)
+  partnerName: string // Tên đối tượng
   debitAmount: string // Dư Nợ — Decimal serialize thành string
   creditAmount: string // Dư Có
 }
@@ -39,12 +42,13 @@ export interface PartnerOpeningBalanceDto {
 export interface PartnerOpeningBalanceListDto {
   accountCode: string
   accountName: string
+  partnerType: OpeningBalancePartnerType
   items: PartnerOpeningBalanceDto[]
 }
 
 // Payload 1 dòng khi lưu số dư công nợ.
 export interface SavePartnerOpeningBalanceLineInput {
-  customerId: string
+  partnerId: string
   debitAmount: number
   creditAmount: number
 }

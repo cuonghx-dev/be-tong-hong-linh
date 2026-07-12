@@ -11,10 +11,10 @@ import {
 
 // 1 dòng số dư công nợ của 1 đối tượng khi lưu.
 export class SavePartnerBalanceLineDto {
-  @ApiProperty({ description: 'ID khách hàng/đối tượng' })
+  @ApiProperty({ description: 'ID đối tượng (khách hàng hoặc nhà cung cấp)' })
   @IsString()
   @IsNotEmpty()
-  customerId!: string
+  partnerId!: string
 
   @ApiProperty({ description: 'Dư Nợ (đồng)' })
   @IsNumber({ maxDecimalPlaces: 2 })

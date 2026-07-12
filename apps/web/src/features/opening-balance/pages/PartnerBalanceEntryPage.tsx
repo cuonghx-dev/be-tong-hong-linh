@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { SearchIcon } from '@/shared/ui/icons'
+import { Modal } from '@/shared/ui/modal'
 import { useToast } from '@/shared/ui/toast'
 import { AmountInput } from '../components/AmountInput'
 import { usePartnerBalances } from '../api/usePartnerBalances'
@@ -18,6 +19,8 @@ function partnerLabels(accountCode: string) {
       name: 'Tên nhà cung cấp',
       catalogSlug: 'nha-cung-cap',
       catalogLabel: 'Nhà cung cấp',
+      editTitle: 'Sửa chi tiết công nợ nhà cung cấp',
+      partnerField: 'Nhà cung cấp',
     }
   return {
     title: 'Nhập số dư công nợ khách hàng',
@@ -25,13 +28,15 @@ function partnerLabels(accountCode: string) {
     name: 'Tên khách hàng',
     catalogSlug: 'khach-hang',
     catalogLabel: 'Khách hàng',
+    editTitle: 'Sửa chi tiết công nợ khách hàng',
+    partnerField: 'Khách hàng',
   }
 }
 
 interface EditRow {
-  customerId: string
-  customerCode: string
-  customerName: string
+  partnerId: string
+  partnerCode: string
+  partnerName: string
   debitAmount: number
   creditAmount: number
 }
@@ -57,9 +62,9 @@ export function PartnerBalanceEntryPage() {
     if (!data) return
     setRows(
       data.items.map((r) => ({
-        customerId: r.customerId,
-        customerCode: r.customerCode,
-        customerName: r.customerName,
+        partnerId: r.partnerId,
+        partnerCode: r.partnerCode,
+        partnerName: r.partnerName,
         debitAmount: Number(r.debitAmount),
         creditAmount: Number(r.creditAmount),
       })),
@@ -71,7 +76,7 @@ export function PartnerBalanceEntryPage() {
     if (!q) return rows
     return rows.filter(
       (r) =>
-        r.customerCode.toLowerCase().includes(q) || r.customerName.toLowerCase().includes(q),
+        r.partnerCode.toLowerCase().includes(q) || r.partnerName.toLowerCase().includes(q),
     )
   }, [rows, keyword])
 
@@ -90,19 +95,32 @@ export function PartnerBalanceEntryPage() {
     return { debit, credit }
   }, [rows])
 
-  const setAmount = (customerId: string, field: 'debitAmount' | 'creditAmount', value: number) =>
-    setRows((prev) =>
-      prev.map((r) => (r.customerId === customerId ? { ...r, [field]: value } : r)),
-    )
+  // Sửa 1 dòng: mở modal nhập Dư Nợ/Dư Có cho đúng đối tượng đó (draft tách khỏi rows).
+  const [editing, setEditing] = useState<EditRow | null>(null)
+  const [draft, setDraft] = useState<{ debit: number; credit: number }>({ debit: 0, credit: 0 })
 
   const close = () => navigate('/opening-balance/so-du-tai-khoan')
 
-  const onSave = () => {
+  const startEdit = (r: EditRow) => {
+    setEditing(r)
+    setDraft({ debit: r.debitAmount, credit: r.creditAmount })
+  }
+  const cancelEdit = () => setEditing(null)
+
+  // Lưu dòng đang sửa → cập nhật rows rồi ghi cả bảng (backend thay thế dữ liệu cũ của TK).
+  const saveEdit = (partnerId: string) => {
+    const next = rows.map((r) =>
+      r.partnerId === partnerId
+        ? { ...r, debitAmount: draft.debit, creditAmount: draft.credit }
+        : r,
+    )
+    setRows(next)
+    setEditing(null)
     save.mutate(
       {
         accountCode,
-        items: rows.map((r) => ({
-          customerId: r.customerId,
+        items: next.map((r) => ({
+          partnerId: r.partnerId,
           debitAmount: r.debitAmount,
           creditAmount: r.creditAmount,
         })),
@@ -167,19 +185,20 @@ export function PartnerBalanceEntryPage() {
               <th className="px-3 py-2">{labels.name}</th>
               <th className="w-48 px-3 py-2 text-right">Dư Nợ</th>
               <th className="w-48 px-3 py-2 text-right">Dư Có</th>
+              <th className="w-24 px-3 py-2">Chức năng</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={5} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={5} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={6} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -189,29 +208,31 @@ export function PartnerBalanceEntryPage() {
             )}
             {!isLoading && !isError && pageRows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
                   Không có đối tượng nào. Thêm ở danh mục trước khi nhập số dư.
                 </td>
               </tr>
             )}
             {pageRows.map((r) => (
-              <tr key={r.customerId} className="border-t border-border hover:bg-slate-50">
+              <tr key={r.partnerId} className="border-t border-border hover:bg-slate-50">
                 <td className="px-3 py-1.5 tabular-nums text-slate-700">{accountCode}</td>
-                <td className="px-3 py-1.5 text-slate-700">{r.customerCode}</td>
+                <td className="px-3 py-1.5 text-slate-700">{r.partnerCode}</td>
                 <td className="max-w-[360px] truncate px-3 py-1.5 text-slate-700">
-                  {r.customerName}
+                  {r.partnerName}
                 </td>
-                <td className="px-3 py-1">
-                  <AmountInput
-                    value={r.debitAmount}
-                    onChange={(v) => setAmount(r.customerId, 'debitAmount', v)}
-                  />
+                <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                  {r.debitAmount ? formatCurrency(r.debitAmount) : 0}
                 </td>
-                <td className="px-3 py-1">
-                  <AmountInput
-                    value={r.creditAmount}
-                    onChange={(v) => setAmount(r.customerId, 'creditAmount', v)}
-                  />
+                <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                  {r.creditAmount ? formatCurrency(r.creditAmount) : 0}
+                </td>
+                <td className="px-3 py-1.5">
+                  <button
+                    onClick={() => startEdit(r)}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    Sửa
+                  </button>
                 </td>
               </tr>
             ))}
@@ -224,6 +245,7 @@ export function PartnerBalanceEntryPage() {
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.debit)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.credit)}</td>
+                <td />
               </tr>
             </tfoot>
           )}
@@ -276,19 +298,69 @@ export function PartnerBalanceEntryPage() {
       {/* Footer */}
       <div className="flex items-center gap-2 border-t border-border bg-slate-900 px-4 py-2">
         <button
-          onClick={onSave}
-          disabled={save.isPending || isLoading}
-          className="h-9 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-        >
-          {save.isPending ? 'Đang lưu…' : 'Lưu'}
-        </button>
-        <button
           onClick={close}
           className="h-9 rounded-md bg-white px-5 text-sm font-medium text-slate-800 hover:bg-slate-100"
         >
           Đóng
         </button>
       </div>
+
+      {/* Modal sửa số dư công nợ 1 đối tượng (như MISA) */}
+      <Modal open={!!editing} onClose={cancelEdit} size="xl" title={labels.editTitle}>
+        {editing && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">Số tài khoản</label>
+              <input
+                value={accountCode}
+                disabled
+                className="h-9 w-full rounded-md border border-border bg-slate-50 px-2 text-sm text-slate-500"
+              />
+            </div>
+            <div className="grid grid-cols-[1fr_auto_auto] items-end gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">
+                  {labels.partnerField}
+                </label>
+                <input
+                  value={editing.partnerName}
+                  disabled
+                  className="h-9 w-full rounded-md border border-border bg-slate-50 px-2 text-sm text-slate-500"
+                />
+              </div>
+              <div className="w-48">
+                <label className="mb-1 block text-sm font-medium text-slate-600">Dư Nợ</label>
+                <AmountInput
+                  value={draft.debit}
+                  onChange={(v) => setDraft((d) => ({ ...d, debit: v }))}
+                />
+              </div>
+              <div className="w-48">
+                <label className="mb-1 block text-sm font-medium text-slate-600">Dư Có</label>
+                <AmountInput
+                  value={draft.credit}
+                  onChange={(v) => setDraft((d) => ({ ...d, credit: v }))}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={cancelEdit}
+                className="h-9 rounded-md border border-border px-5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={() => saveEdit(editing.partnerId)}
+                disabled={save.isPending}
+                className="h-9 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+              >
+                {save.isPending ? 'Đang lưu…' : 'Lưu'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

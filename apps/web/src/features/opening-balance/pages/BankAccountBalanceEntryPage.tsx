@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { SearchIcon } from '@/shared/ui/icons'
+import { Modal } from '@/shared/ui/modal'
 import { useToast } from '@/shared/ui/toast'
 import { AmountInput } from '../components/AmountInput'
 import { useBankAccountBalances } from '../api/useBankAccountBalances'
@@ -70,18 +71,31 @@ export function BankAccountBalanceEntryPage() {
     return { debit, credit }
   }, [rows])
 
-  const setAmount = (bankAccountId: string, field: 'debitAmount' | 'creditAmount', value: number) =>
-    setRows((prev) =>
-      prev.map((r) => (r.bankAccountId === bankAccountId ? { ...r, [field]: value } : r)),
-    )
+  // Sửa 1 dòng: mở modal nhập Dư Nợ/Dư Có cho đúng TK ngân hàng đó (draft tách khỏi rows).
+  const [editing, setEditing] = useState<EditRow | null>(null)
+  const [draft, setDraft] = useState<{ debit: number; credit: number }>({ debit: 0, credit: 0 })
 
   const close = () => navigate('/opening-balance/so-du-tai-khoan')
 
-  const onSave = () => {
+  const startEdit = (r: EditRow) => {
+    setEditing(r)
+    setDraft({ debit: r.debitAmount, credit: r.creditAmount })
+  }
+  const cancelEdit = () => setEditing(null)
+
+  // Lưu dòng đang sửa → cập nhật rows rồi ghi cả bảng (backend thay thế dữ liệu cũ của TK).
+  const saveEdit = (bankAccountId: string) => {
+    const next = rows.map((r) =>
+      r.bankAccountId === bankAccountId
+        ? { ...r, debitAmount: draft.debit, creditAmount: draft.credit }
+        : r,
+    )
+    setRows(next)
+    setEditing(null)
     save.mutate(
       {
         accountCode,
-        items: rows.map((r) => ({
+        items: next.map((r) => ({
           bankAccountId: r.bankAccountId,
           debitAmount: r.debitAmount,
           creditAmount: r.creditAmount,
@@ -144,19 +158,20 @@ export function BankAccountBalanceEntryPage() {
               <th className="w-28 px-3 py-2">Số tài khoản</th>
               <th className="w-48 px-3 py-2 text-right">Dư Nợ</th>
               <th className="w-48 px-3 py-2 text-right">Dư Có</th>
+              <th className="w-24 px-3 py-2">Chức năng</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={5} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={5} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={6} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -166,7 +181,7 @@ export function BankAccountBalanceEntryPage() {
             )}
             {!isLoading && !isError && pageRows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
                   Không có tài khoản ngân hàng nào. Thêm ở danh mục trước khi nhập số dư.
                 </td>
               </tr>
@@ -176,17 +191,19 @@ export function BankAccountBalanceEntryPage() {
                 <td className="px-3 py-1.5 tabular-nums text-slate-700">{r.accountNumber}</td>
                 <td className="max-w-[360px] truncate px-3 py-1.5 text-slate-700">{r.bankName}</td>
                 <td className="px-3 py-1.5 tabular-nums text-slate-700">{accountCode}</td>
-                <td className="px-3 py-1">
-                  <AmountInput
-                    value={r.debitAmount}
-                    onChange={(v) => setAmount(r.bankAccountId, 'debitAmount', v)}
-                  />
+                <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                  {r.debitAmount ? formatCurrency(r.debitAmount) : 0}
                 </td>
-                <td className="px-3 py-1">
-                  <AmountInput
-                    value={r.creditAmount}
-                    onChange={(v) => setAmount(r.bankAccountId, 'creditAmount', v)}
-                  />
+                <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                  {r.creditAmount ? formatCurrency(r.creditAmount) : 0}
+                </td>
+                <td className="px-3 py-1.5">
+                  <button
+                    onClick={() => startEdit(r)}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    Sửa
+                  </button>
                 </td>
               </tr>
             ))}
@@ -199,6 +216,7 @@ export function BankAccountBalanceEntryPage() {
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.debit)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.credit)}</td>
+                <td />
               </tr>
             </tfoot>
           )}
@@ -251,19 +269,75 @@ export function BankAccountBalanceEntryPage() {
       {/* Footer */}
       <div className="flex items-center gap-2 border-t border-border bg-slate-900 px-4 py-2">
         <button
-          onClick={onSave}
-          disabled={save.isPending || isLoading}
-          className="h-9 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-        >
-          {save.isPending ? 'Đang lưu…' : 'Lưu'}
-        </button>
-        <button
           onClick={close}
           className="h-9 rounded-md bg-white px-5 text-sm font-medium text-slate-800 hover:bg-slate-100"
         >
           Đóng
         </button>
       </div>
+
+      {/* Modal sửa số dư 1 TK ngân hàng (như MISA) */}
+      <Modal
+        open={!!editing}
+        onClose={cancelEdit}
+        size="md"
+        title="Số dư tài khoản ngân hàng"
+      >
+        {editing && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">Số tài khoản</label>
+              <input
+                value={accountCode}
+                disabled
+                className="h-9 w-full rounded-md border border-border bg-slate-50 px-2 text-sm text-slate-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">
+                Tài khoản ngân hàng
+              </label>
+              <input
+                value={editing.accountNumber}
+                disabled
+                className="h-9 w-full rounded-md border border-border bg-slate-50 px-2 text-sm text-slate-500"
+              />
+              <p className="mt-1 text-sm text-slate-500">{editing.bankName}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Dư Nợ</label>
+                <AmountInput
+                  value={draft.debit}
+                  onChange={(v) => setDraft((d) => ({ ...d, debit: v }))}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Dư Có</label>
+                <AmountInput
+                  value={draft.credit}
+                  onChange={(v) => setDraft((d) => ({ ...d, credit: v }))}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={cancelEdit}
+                className="h-9 rounded-md border border-border px-5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={() => saveEdit(editing.bankAccountId)}
+                disabled={save.isPending}
+                className="h-9 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+              >
+                {save.isPending ? 'Đang lưu…' : 'Lưu'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

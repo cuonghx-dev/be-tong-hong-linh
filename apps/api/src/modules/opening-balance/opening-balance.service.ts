@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Prisma, type AccountOpeningBalance } from '@prisma/client'
+import { PartnerType, Prisma, type AccountOpeningBalance } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { parseAccountBalanceXlsx } from './account-balance-import'
 import { SaveAccountBalancesDto } from './dto/save-account-balances.dto'
@@ -77,27 +77,42 @@ export class OpeningBalanceService {
 
   // ── Số dư công nợ chi tiết theo đối tượng (131 theo KH, 331 theo NCC…) ──────
 
+  // Loại đối tượng theo TK công nợ: 331x → nhà cung cấp, còn lại (131x) → khách hàng.
+  private partnerTypeFor(accountCode: string): PartnerType {
+    return accountCode.startsWith('331') ? PartnerType.SUPPLIER : PartnerType.CUSTOMER
+  }
+
+  // Danh sách đối tượng (KH/NCC) theo loại TK — chuẩn hóa {id, code, name}.
+  private listPartners(partnerType: PartnerType) {
+    const args = {
+      orderBy: { code: 'asc' as const },
+      select: { id: true, code: true, name: true },
+    }
+    return partnerType === PartnerType.SUPPLIER
+      ? this.prisma.supplier.findMany(args)
+      : this.prisma.customer.findMany(args)
+  }
+
   // Danh sách công nợ của 1 TK: mọi đối tượng + số dư (0 nếu chưa nhập).
   async listPartnerBalances(accountCode: string) {
     const code = accountCode.trim()
-    const [account, customers, balances] = await Promise.all([
+    const partnerType = this.partnerTypeFor(code)
+    const [account, partners, balances] = await Promise.all([
       this.prisma.accountOpeningBalance.findUnique({ where: { accountCode: code } }),
-      this.prisma.customer.findMany({
-        orderBy: { code: 'asc' },
-        select: { id: true, code: true, name: true },
-      }),
-      this.prisma.partnerOpeningBalance.findMany({ where: { accountCode: code } }),
+      this.listPartners(partnerType),
+      this.prisma.partnerOpeningBalance.findMany({ where: { accountCode: code, partnerType } }),
     ])
-    const byCustomer = new Map(balances.map((b) => [b.customerId, b]))
+    const byPartner = new Map(balances.map((b) => [b.partnerId, b]))
     return {
       accountCode: code,
       accountName: account?.accountName ?? '',
-      items: customers.map((c) => {
-        const b = byCustomer.get(c.id)
+      partnerType,
+      items: partners.map((p) => {
+        const b = byPartner.get(p.id)
         return {
-          customerId: c.id,
-          customerCode: c.code,
-          customerName: c.name,
+          partnerId: p.id,
+          partnerCode: p.code,
+          partnerName: p.name,
           debitAmount: (b?.debitAmount ?? new Prisma.Decimal(0)).toString(),
           creditAmount: (b?.creditAmount ?? new Prisma.Decimal(0)).toString(),
         }
@@ -109,20 +124,22 @@ export class OpeningBalanceService {
   // của chính TK công nợ trong bảng số dư tài khoản = tổng cộng các dòng chi tiết.
   async savePartnerBalances(dto: SavePartnerBalancesDto) {
     const accountCode = dto.accountCode.trim()
+    const partnerType = this.partnerTypeFor(accountCode)
 
     // Trùng đối tượng trong payload → giữ dòng cuối. Bỏ dòng số dư 0 cả 2 vế.
-    const byCustomer = new Map(
+    const byPartner = new Map(
       dto.items.map((item) => [
-        item.customerId,
+        item.partnerId,
         {
           accountCode,
-          customerId: item.customerId,
+          partnerType,
+          partnerId: item.partnerId,
           debitAmount: new Prisma.Decimal(item.debitAmount),
           creditAmount: new Prisma.Decimal(item.creditAmount),
         },
       ]),
     )
-    const rows = [...byCustomer.values()].filter(
+    const rows = [...byPartner.values()].filter(
       (r) => !r.debitAmount.isZero() || !r.creditAmount.isZero(),
     )
 
@@ -130,7 +147,7 @@ export class OpeningBalanceService {
     const totalCredit = rows.reduce((s, r) => s.add(r.creditAmount), new Prisma.Decimal(0))
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.partnerOpeningBalance.deleteMany({ where: { accountCode } })
+      await tx.partnerOpeningBalance.deleteMany({ where: { accountCode, partnerType } })
       const chunk = 500
       for (let i = 0; i < rows.length; i += chunk) {
         await tx.partnerOpeningBalance.createMany({ data: rows.slice(i, i + chunk) })

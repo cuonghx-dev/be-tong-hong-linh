@@ -473,8 +473,7 @@ model Customer {
   contactEmail       String?      @map("contact_email")
   contactPhone       String?      @map("contact_phone")
 
-  salesVouchers          SalesVoucher[]
-  partnerOpeningBalances PartnerOpeningBalance[]
+  salesVouchers SalesVoucher[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -938,20 +937,21 @@ model AccountOpeningBalance {
   @@map("account_opening_balances")
 }
 
-// Số dư công nợ đầu kỳ chi tiết theo đối tượng (khách hàng/NCC) cho 1 TK công nợ (131, 331…).
+// Số dư công nợ đầu kỳ chi tiết theo đối tượng cho 1 TK công nợ (131 theo KH, 331 theo NCC…).
+// Đa hình theo partnerType (không FK cứng vì đối tượng ở 2 bảng Customer/Supplier).
 // TK công nợ trong AccountOpeningBalance = tổng cộng các dòng ở đây theo cùng accountCode.
 model PartnerOpeningBalance {
-  id           String   @id @default(uuid())
-  accountCode  String   @map("account_code") // Số TK công nợ (vd 131, 1311, 331)
-  customerId   String   @map("customer_id")
-  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  debitAmount  Decimal  @default(0) @map("debit_amount") @db.Decimal(18, 2)
-  creditAmount Decimal  @default(0) @map("credit_amount") @db.Decimal(18, 2)
+  id           String      @id @default(uuid())
+  accountCode  String      @map("account_code") // Số TK công nợ (vd 131, 1311, 331)
+  partnerType  PartnerType @map("partner_type") // CUSTOMER (131) / SUPPLIER (331)
+  partnerId    String      @map("partner_id") // id Customer hoặc Supplier tùy partnerType
+  debitAmount  Decimal     @default(0) @map("debit_amount") @db.Decimal(18, 2)
+  creditAmount Decimal     @default(0) @map("credit_amount") @db.Decimal(18, 2)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([accountCode, customerId])
+  @@unique([accountCode, partnerType, partnerId])
   @@index([accountCode])
   @@map("partner_opening_balances")
 }
