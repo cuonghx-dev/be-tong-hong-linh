@@ -47,7 +47,7 @@ export class BankReportService {
   async bankBook(filter: BankReportFilterDto): Promise<BankBookReportDto> {
     const { from, to } = parseRange(filter)
     const [declared, preMovement, lines, catalogNames] = await Promise.all([
-      this.declaredByAccount(),
+      this.declaredWithUnallocated(),
       this.movementByAccount(Prisma.sql`v.posting_date < ${from}`),
       this.linesInRange(from, to),
       this.catalogBankNames(),
@@ -127,7 +127,7 @@ export class BankReportService {
   async accountBalances(filter: BankBalanceFilterDto): Promise<BankBalanceReportDto> {
     const to = parseDate(filter.toDate)
     const [declared, movement, accounts] = await Promise.all([
-      this.declaredByAccount(),
+      this.declaredWithUnallocated(),
       this.movementByAccount(Prisma.sql`v.posting_date <= ${to}`),
       this.prisma.bankAccount.findMany({
         select: { accountNumber: true, bankName: true, bankBranch: true },
@@ -276,6 +276,34 @@ export class BankReportService {
     `)
   }
 
+  // Số dư khai báo theo TKNH + phần khai báo TK 112 tổng chưa phân bổ chi tiết.
+  // account_opening_balances (tổng 112) và bank_account_opening_balances (chi tiết
+  // theo TKNH) nhập độc lập — phần chênh gán vào key '' ("Chưa chọn TK ngân hàng")
+  // để tổng của bảng kê/sổ tiền gửi luôn khớp bảng kê số dư tiền theo ngày.
+  private async declaredWithUnallocated(): Promise<AccountAmount[]> {
+    const [byAccount, total] = await Promise.all([
+      this.declaredByAccount(),
+      this.declaredTotal(),
+    ])
+    const allocated = byAccount.reduce((sum, r) => sum.add(r.amount), ZERO)
+    const unallocated = total.sub(allocated)
+    if (unallocated.isZero()) return byAccount
+    return [...byAccount, { key: '', bankName: null, amount: unallocated.toString() }]
+  }
+
+  // Tổng số dư khai báo TK 112 — ưu tiên dòng '112'; thiếu mới cộng các dòng con.
+  private async declaredTotal(): Promise<Prisma.Decimal> {
+    const rows = await this.prisma.$queryRaw<{ s: string }[]>(Prisma.sql`
+      SELECT COALESCE(
+        (SELECT debit_amount - credit_amount FROM account_opening_balances
+         WHERE account_code = ${CHART_OF_ACCOUNTS.BANK}),
+        (SELECT COALESCE(SUM(debit_amount - credit_amount), 0) FROM account_opening_balances
+         WHERE account_code LIKE ${BANK_LIKE} AND account_code <> ${CHART_OF_ACCOUNTS.BANK})
+      )::text AS s
+    `)
+    return new Prisma.Decimal(rows[0]?.s ?? 0)
+  }
+
   // Số dư khai báo đầu kỳ theo từng TKNH (1 TKNH có thể có nhiều dòng theo TK 1121/1122…).
   private async declaredByAccount(): Promise<AccountAmount[]> {
     const rows = await this.prisma.$queryRaw<
@@ -327,23 +355,14 @@ export class BankReportService {
   }
 
   // Tổng số dư tiền gửi đầu kỳ = số dư khai báo TK 112 + phát sinh trước `from`.
-  // account_opening_balances lưu cả TK tổng hợp lẫn chi tiết, không cộng dồn
-  // cha-con → ưu tiên dòng '112'; thiếu mới cộng các dòng con '112x'.
   private async openingBankBalance(from: Date): Promise<Prisma.Decimal> {
     const [declared, movement] = await Promise.all([
-      this.prisma.$queryRaw<{ s: string }[]>(Prisma.sql`
-        SELECT COALESCE(
-          (SELECT debit_amount - credit_amount FROM account_opening_balances
-           WHERE account_code = ${CHART_OF_ACCOUNTS.BANK}),
-          (SELECT COALESCE(SUM(debit_amount - credit_amount), 0) FROM account_opening_balances
-           WHERE account_code LIKE ${BANK_LIKE} AND account_code <> ${CHART_OF_ACCOUNTS.BANK})
-        )::text AS s
-      `),
+      this.declaredTotal(),
       this.movementByAccount(Prisma.sql`v.posting_date < ${from}`).then((rows) =>
         rows.reduce((sum, r) => sum.add(r.amount), ZERO),
       ),
     ])
-    return new Prisma.Decimal(declared[0]?.s ?? 0).add(movement)
+    return declared.add(movement)
   }
 }
 
