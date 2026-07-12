@@ -1,4 +1,6 @@
 import {
+  CASH_PAYMENT_DEBIT_ACCOUNT,
+  CASH_RECEIPT_CREDIT_ACCOUNT,
   CashVoucherCategory,
   CashVoucherType,
   CHART_OF_ACCOUNTS,
@@ -40,34 +42,11 @@ interface CashVoucherFormProps {
 
 const today = () => new Date().toISOString().slice(0, 10)
 
-// TK Có mặc định theo loại nghiệp vụ Phiếu thu (§5) — TK Nợ luôn 1111.
-const RECEIPT_CREDIT_ACCOUNT: Partial<Record<CashVoucherCategory, string>> = {
-  [CashVoucherCategory.ReceiptBankWithdraw]: CHART_OF_ACCOUNTS.BANK_DEPOSIT, // 1121
-  [CashVoucherCategory.ReceiptEmployeeAdvance]: CHART_OF_ACCOUNTS.ADVANCE, // 141
-  [CashVoucherCategory.ReceiptCustomer]: CHART_OF_ACCOUNTS.RECEIVABLE, // 131
-  [CashVoucherCategory.Receipt]: '', // Thu khác — tự nhập
-  [CashVoucherCategory.ReceiptLoanRecovery]: CHART_OF_ACCOUNTS.LOAN, // 1283
-}
-
-// TK Nợ mặc định theo loại nghiệp vụ Phiếu chi (§5) — TK Có luôn 1111.
-const PAYMENT_DEBIT_ACCOUNT: Partial<Record<CashVoucherCategory, string>> = {
-  [CashVoucherCategory.PaymentEmployeeAdvance]: CHART_OF_ACCOUNTS.ADVANCE, // 141
-  [CashVoucherCategory.Payment]: '', // Chi khác — tự nhập
-  [CashVoucherCategory.DepositToBank]: CHART_OF_ACCOUNTS.BANK_DEPOSIT, // 1121
-  [CashVoucherCategory.PaymentSupplier]: CHART_OF_ACCOUNTS.PAYABLE, // 331
-  [CashVoucherCategory.PaymentPurchaseWithInvoice]: '', // Chi mua ngoài có HĐ — tự nhập
-  [CashVoucherCategory.PaymentSalaryAdvance]: CHART_OF_ACCOUNTS.SALARY_PAYABLE, // 334
-  [CashVoucherCategory.PaymentSalary]: CHART_OF_ACCOUNTS.SALARY_PAYABLE, // 334
-  [CashVoucherCategory.PaymentToBranch]: CHART_OF_ACCOUNTS.INTERNAL_RECEIVABLE, // 1368
-  [CashVoucherCategory.PaymentLoan]: CHART_OF_ACCOUNTS.LOAN, // 1283
-  [CashVoucherCategory.PaymentCITTax]: CHART_OF_ACCOUNTS.CIT_PAYABLE, // 3334
-}
-
-// Dòng mặc định — định khoản theo loại nghiệp vụ (§8.3).
+// Dòng mặc định — định khoản theo loại nghiệp vụ (§8.3, map dùng chung ở @app/shared).
 function emptyLine(category: CashVoucherCategory, type: CashVoucherType): CashLineFormValues {
   return type === CashVoucherType.Receipt
-    ? { amount: 0, debitAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND, creditAccount: RECEIPT_CREDIT_ACCOUNT[category] ?? '' }
-    : { amount: 0, debitAccount: PAYMENT_DEBIT_ACCOUNT[category] ?? '', creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND }
+    ? { amount: 0, debitAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND, creditAccount: CASH_RECEIPT_CREDIT_ACCOUNT[category] ?? '' }
+    : { amount: 0, debitAccount: CASH_PAYMENT_DEBIT_ACCOUNT[category] ?? '', creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND }
 }
 
 function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): CashVoucherFormValues {

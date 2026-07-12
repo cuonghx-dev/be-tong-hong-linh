@@ -21,6 +21,7 @@ export const CHART_OF_ACCOUNTS = {
   VAT_INPUT: '133', // Thuế GTGT đầu vào
   VAT_INPUT_DEDUCTIBLE: '1331', // Thuế GTGT đầu vào được khấu trừ (mua hàng)
   MATERIAL: '152', // Nguyên liệu, vật liệu
+  TOOL: '153', // Công cụ, dụng cụ
   FINISHED_GOODS: '155', // Thành phẩm (nhập kho từ sản xuất)
   GOODS: '156', // Hàng hóa (nhập kho)
   WIP: '154', // Chi phí SXKD dở dang (kết chuyển thành phẩm)
@@ -35,3 +36,27 @@ export const CHART_OF_ACCOUNTS = {
   FIXED_ASSET_DEPRECIATION: '2141', // Hao mòn TSCD hữu hình
   OTHER_EXPENSE: '811', // Chi phí khác (giá trị còn lại khi ghi giảm TSCD)
 } as const
+
+// ── TK đối ứng ngầm định phiếu thu/chi tiền mặt theo loại nghiệp vụ (§5) ──────
+// Thu: TK Nợ luôn 1111, map này là TK Có. Chi: TK Có luôn 1111, map này là TK Nợ.
+// Loại không có trong map (Thu khác, Chi khác, chi mua ngoài có HĐ…) → tự nhập.
+// Key = giá trị enum CashVoucherCategory (dùng chung FE form + BE import).
+
+export const CASH_RECEIPT_CREDIT_ACCOUNT: Readonly<Record<string, string>> = {
+  SALES_CASH: CHART_OF_ACCOUNTS.REVENUE_GOODS, // 5111 (bán hàng hóa thu tiền ngay)
+  RECEIPT_BANK_WITHDRAW: CHART_OF_ACCOUNTS.BANK_DEPOSIT, // 1121
+  RECEIPT_EMPLOYEE_ADVANCE: CHART_OF_ACCOUNTS.ADVANCE, // 141
+  RECEIPT_CUSTOMER: CHART_OF_ACCOUNTS.RECEIVABLE, // 131
+  RECEIPT_LOAN_RECOVERY: CHART_OF_ACCOUNTS.LOAN, // 1283
+}
+
+export const CASH_PAYMENT_DEBIT_ACCOUNT: Readonly<Record<string, string>> = {
+  PAYMENT_EMPLOYEE_ADVANCE: CHART_OF_ACCOUNTS.ADVANCE, // 141
+  DEPOSIT_TO_BANK: CHART_OF_ACCOUNTS.BANK_DEPOSIT, // 1121
+  PAYMENT_SUPPLIER: CHART_OF_ACCOUNTS.PAYABLE, // 331
+  PAYMENT_SALARY_ADVANCE: CHART_OF_ACCOUNTS.SALARY_PAYABLE, // 334
+  PAYMENT_SALARY: CHART_OF_ACCOUNTS.SALARY_PAYABLE, // 334
+  PAYMENT_TO_BRANCH: CHART_OF_ACCOUNTS.INTERNAL_RECEIVABLE, // 1368
+  PAYMENT_LOAN: CHART_OF_ACCOUNTS.LOAN, // 1283
+  PAYMENT_CIT_TAX: CHART_OF_ACCOUNTS.CIT_PAYABLE, // 3334
+}

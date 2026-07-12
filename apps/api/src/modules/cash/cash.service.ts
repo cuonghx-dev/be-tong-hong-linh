@@ -1,4 +1,9 @@
-import { CHART_OF_ACCOUNTS, type Paginated } from '@app/shared'
+import {
+  CASH_PAYMENT_DEBIT_ACCOUNT,
+  CASH_RECEIPT_CREDIT_ACCOUNT,
+  CHART_OF_ACCOUNTS,
+  type Paginated,
+} from '@app/shared'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { CashVoucherType, Prisma, type CashVoucher, type CashVoucherLine } from '@prisma/client'
@@ -154,13 +159,17 @@ export class CashService {
         totalAmount: new Prisma.Decimal(p.amount),
         branchId: p.branchId,
       })
+      // TK đối ứng ngầm định theo loại nghiệp vụ (§5) — loại không có map để trống.
+      const counter = isReceipt
+        ? (CASH_RECEIPT_CREDIT_ACCOUNT[p.category] ?? '')
+        : (CASH_PAYMENT_DEBIT_ACCOUNT[p.category] ?? '')
       lines.push({
         id: randomUUID(),
         voucherId: id,
         lineNo: 1,
         description: p.description,
-        debitAccount: isReceipt ? CHART_OF_ACCOUNTS.CASH_ON_HAND : '',
-        creditAccount: isReceipt ? '' : CHART_OF_ACCOUNTS.CASH_ON_HAND,
+        debitAccount: isReceipt ? CHART_OF_ACCOUNTS.CASH_ON_HAND : counter,
+        creditAccount: isReceipt ? counter : CHART_OF_ACCOUNTS.CASH_ON_HAND,
         amount: new Prisma.Decimal(p.amount),
       })
     }
