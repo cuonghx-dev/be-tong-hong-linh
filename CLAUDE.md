@@ -38,7 +38,7 @@ Ba workspace, feature-based, đối xứng FE ↔ BE:
 - `apps/api` — NestJS 10 + Prisma (Postgres). 1 module = 1 nghiệp vụ.
 - `packages/shared` (`@app/shared`) — enum/DTO type/constant dùng chung FE ↔ BE.
 
-Tài liệu nền: **`docs/tech.md`** (stack + quy tắc), **`docs/design.md`** (bố cục UI: App shell, Table layout §3, Record page §5). Spec nghiệp vụ gốc ở `docs/misa-specs/` và `docs/specs/`; comment trong code tham chiếu theo `§<số>` của các spec này — đọc spec tương ứng khi sửa 1 nghiệp vụ.
+Tài liệu nền: **`docs/tech.md`** (stack + quy tắc), **`docs/design.md`** (bố cục UI: App shell, Table layout §3, Record page §5). Spec nghiệp vụ gốc ở `docs/misa-specs/`; comment trong code tham chiếu theo `§<số>` của các spec này — đọc spec tương ứng khi sửa 1 nghiệp vụ.
 
 ### Ranh giới feature (quan trọng)
 
@@ -82,7 +82,7 @@ Commit theo Conventional Commits, scope = tên phân hệ (`cash`, `bank`, `purc
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **ke-toan-SME** (2698 symbols, 6194 relationships, 166 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **ke-toan-SME** (3055 symbols, 7360 relationships, 194 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
