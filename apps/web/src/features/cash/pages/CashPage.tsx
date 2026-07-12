@@ -8,12 +8,12 @@ import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
-import { TabPlaceholder } from '@/shared/ui/tab-placeholder'
 import { useToast } from '@/shared/ui/toast'
 import { useCashVouchers } from '../api/useCashVouchers'
 import { useDeleteCashVoucher, useImportCashVouchers } from '../api/useCashVoucherMutations'
 import { CashFilterPopover, type CashFilterValue } from '../components/CashFilterPopover'
 import { CashProcessTab } from '../components/CashProcessTab'
+import { CashReportListTab } from '../components/reports/CashReportListTab'
 import { CATEGORY_LABEL } from '../types'
 
 const PAGE_SIZE = 20
@@ -320,7 +320,7 @@ function formatDate(iso: string): string {
 const TABS: ModuleTab[] = [
   { key: 'process', label: 'Quy trình', render: () => <CashProcessTab /> },
   { key: 'txn', label: 'Thu, chi tiền', render: () => <CashTable /> },
-  { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
+  { key: 'report', label: 'Báo cáo', render: () => <CashReportListTab /> },
 ]
 
 export function CashPage() {

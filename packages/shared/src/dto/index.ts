@@ -1,7 +1,9 @@
 // Type request/response dùng chung.
 
 export * from './cash'
+export * from './cash-report'
 export * from './bank'
+export * from './bank-report'
 export * from './purchase'
 export * from './sales'
 export * from './inventory'

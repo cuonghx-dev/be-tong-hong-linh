@@ -67,3 +67,13 @@ export function lineColumns(category: CashVoucherCategory): LineColumnConfig {
   }
   return { showCostItem: false, showBank: false, showPartner: true }
 }
+
+// Danh mục báo cáo tiền mặt (tab "Báo cáo", theo MISA).
+export type CashReportSlug = 'receipt-journal' | 'payment-journal' | 'cash-book' | 'daily-balance'
+
+export const CASH_REPORTS: { slug: CashReportSlug; name: string }[] = [
+  { slug: 'receipt-journal', name: 'S03a1-DNN: Sổ nhật ký thu tiền' },
+  { slug: 'payment-journal', name: 'S03a2-DNN: Sổ nhật ký chi tiền' },
+  { slug: 'cash-book', name: 'Sổ kế toán chi tiết quỹ tiền mặt' },
+  { slug: 'daily-balance', name: 'Bảng kê số dư tiền theo ngày' },
+]

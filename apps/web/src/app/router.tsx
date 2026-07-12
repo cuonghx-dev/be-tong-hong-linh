@@ -5,6 +5,7 @@ import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { HomePage } from '@/features/dashboard/pages/HomePage'
 import { CashPage } from '@/features/cash/pages/CashPage'
 import { CashVoucherPage } from '@/features/cash/pages/CashVoucherPage'
+import { CashReportPage } from '@/features/cash/pages/CashReportPage'
 import { BankPage } from '@/features/bank/pages/BankPage'
 import { BankVoucherPage } from '@/features/bank/pages/BankVoucherPage'
 import { SalesPage } from '@/features/sales/pages/SalesPage'
@@ -30,6 +31,8 @@ const recordRoutes = [
   { path: '/cash/vouchers/new', element: <CashVoucherPage mode="new" /> },
   { path: '/cash/vouchers/:id', element: <CashVoucherPage mode="view" /> },
   { path: '/cash/vouchers/:id/edit', element: <CashVoucherPage mode="edit" /> },
+  // Xem báo cáo tiền mặt — full-page, đè shell (vào từ tab "Báo cáo").
+  { path: '/cash/reports/:slug', element: <CashReportPage /> },
   { path: '/bank/vouchers/new', element: <BankVoucherPage mode="new" /> },
   { path: '/bank/vouchers/:id', element: <BankVoucherPage mode="view" /> },
   { path: '/bank/vouchers/:id/edit', element: <BankVoucherPage mode="edit" /> },
