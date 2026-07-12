@@ -86,11 +86,12 @@ export function parseBankXlsx(buffer: Buffer): ParsedBankVoucher[] {
         : BankVoucherCategory.PAYMENT)
     const rawDate = r[iDate]
     const parsed = rawDate instanceof Date ? rawDate : new Date(String(rawDate))
+    // Dòng footer ("Cộng"…) có chữ ở cột số chứng từ nhưng không có ngày → bỏ qua,
+    // không được default ngày hiện tại (từng sinh chứng từ rác 8,9 tỷ).
+    if (Number.isNaN(parsed.getTime())) continue
     // SheetJS lệch giờ quanh nửa đêm → làm tròn về UTC-midnight gần nhất.
     const DAY = 86_400_000
-    const date = Number.isNaN(parsed.getTime())
-      ? new Date()
-      : new Date(Math.round(parsed.getTime() / DAY) * DAY)
+    const date = new Date(Math.round(parsed.getTime() / DAY) * DAY)
 
     out.push({
       voucherNo,
