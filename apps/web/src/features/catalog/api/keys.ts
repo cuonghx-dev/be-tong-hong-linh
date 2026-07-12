@@ -9,6 +9,7 @@ import type {
   IncomeExpenseItemFilter,
   PartnerGroupFilter,
   ProductFilter,
+  ProductGroupFilter,
   TransferAccountFilter,
   UnitFilter,
   VoucherTypeFilter,
@@ -32,6 +33,9 @@ export const catalogKeys = {
   partnerGroups: (filter: PartnerGroupFilter) =>
     [...catalogKeys.all, 'partner-groups', filter] as const,
   partnerGroup: (id: string) => [...catalogKeys.all, 'partner-group', id] as const,
+  productGroups: (filter: ProductGroupFilter) =>
+    [...catalogKeys.all, 'product-groups', filter] as const,
+  productGroup: (id: string) => [...catalogKeys.all, 'product-group', id] as const,
   costObjects: (filter: CostObjectFilter) =>
     [...catalogKeys.all, 'cost-objects', filter] as const,
   costObject: (id: string) => [...catalogKeys.all, 'cost-object', id] as const,

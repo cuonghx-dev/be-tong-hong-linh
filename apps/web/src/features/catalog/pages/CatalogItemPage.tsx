@@ -13,6 +13,7 @@ import { EmployeeTable } from '../components/EmployeeTable'
 import { ExpenseItemTable } from '../components/ExpenseItemTable'
 import { IncomeExpenseItemTable } from '../components/IncomeExpenseItemTable'
 import { PartnerGroupTable } from '../components/PartnerGroupTable'
+import { ProductGroupTable } from '../components/ProductGroupTable'
 import { ProductTable } from '../components/ProductTable'
 import { TransferAccountTable } from '../components/TransferAccountTable'
 import { UnitTable } from '../components/UnitTable'
@@ -27,6 +28,7 @@ const CATALOG_VIEWS: Record<string, () => ReactNode> = {
   'nhan-vien': () => <EmployeeTable />,
   kho: () => <WarehouseTable />,
   'nhom-khach-hang-nha-cung-cap': () => <PartnerGroupTable />,
+  'nhom-vat-tu-hang-hoa-dich-vu': () => <ProductGroupTable />,
   'vat-tu-hang-hoa': () => <ProductTable />,
   'ngan-hang': () => <BankTable />,
   'tai-khoan-ngan-hang': () => <BankAccountTable />,

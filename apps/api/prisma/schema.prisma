@@ -690,6 +690,22 @@ model PartnerGroup {
   @@map("partner_groups")
 }
 
+// Nhóm vật tư, hàng hóa, dịch vụ (Danh_sach_nhom_vat_tu_hang_hoa_dich_vu.xlsx).
+// Product.groupCode tham chiếu lỏng (không FK) tới cột code này.
+model ProductGroup {
+  id       String  @id @default(uuid())
+  code     String  @unique // Mã nhóm vật tư, hàng hóa, dịch vụ
+  name     String // Tên nhóm vật tư, hàng hóa, dịch vụ
+  isActive Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@map("product_groups")
+}
+
 // Tài khoản ngân hàng (Danh_sach_tai_khoan_ngan_hang.xlsx).
 // Số tài khoản là khóa tự nhiên (unique). Có thể chứa hậu tố mô tả (vd "030079181540 VAY").
 model BankAccount {

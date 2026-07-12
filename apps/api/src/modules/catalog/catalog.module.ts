@@ -17,6 +17,8 @@ import { IncomeExpenseItemController } from './income-expense-item.controller'
 import { IncomeExpenseItemService } from './income-expense-item.service'
 import { PartnerGroupController } from './partner-group.controller'
 import { PartnerGroupService } from './partner-group.service'
+import { ProductGroupController } from './product-group.controller'
+import { ProductGroupService } from './product-group.service'
 import { ProductController } from './product.controller'
 import { ProductService } from './product.service'
 import { TransferAccountController } from './transfer-account.controller'
@@ -38,6 +40,7 @@ import { WarehouseService } from './warehouse.service'
     ExpenseItemController,
     IncomeExpenseItemController,
     PartnerGroupController,
+    ProductGroupController,
     ProductController,
     TransferAccountController,
     DefaultAccountController,
@@ -54,6 +57,7 @@ import { WarehouseService } from './warehouse.service'
     ExpenseItemService,
     IncomeExpenseItemService,
     PartnerGroupService,
+    ProductGroupService,
     ProductService,
     TransferAccountService,
     DefaultAccountService,
@@ -70,6 +74,7 @@ import { WarehouseService } from './warehouse.service'
     ExpenseItemService,
     IncomeExpenseItemService,
     PartnerGroupService,
+    ProductGroupService,
     ProductService,
     TransferAccountService,
     DefaultAccountService,

@@ -40,6 +40,13 @@ export {
   useUpdatePartnerGroup,
   useDeletePartnerGroup,
 } from './api/usePartnerGroupMutations'
+export { ProductGroupTable } from './components/ProductGroupTable'
+export { useProductGroups, useProductGroup } from './api/useProductGroups'
+export {
+  useCreateProductGroup,
+  useUpdateProductGroup,
+  useDeleteProductGroup,
+} from './api/useProductGroupMutations'
 export { CostObjectTable } from './components/CostObjectTable'
 export { useCostObjects, useCostObject } from './api/useCostObjects'
 export {

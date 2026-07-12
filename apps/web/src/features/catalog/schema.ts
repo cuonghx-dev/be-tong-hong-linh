@@ -73,6 +73,15 @@ export const partnerGroupSchema = z.object({
 
 export type PartnerGroupFormValues = z.infer<typeof partnerGroupSchema>
 
+// Nhóm vật tư, hàng hóa, dịch vụ.
+export const productGroupSchema = z.object({
+  code: z.string().min(1, 'Nhập mã nhóm vật tư, hàng hóa, dịch vụ'),
+  name: z.string().min(1, 'Nhập tên nhóm vật tư, hàng hóa, dịch vụ'),
+  isActive: z.boolean().optional(),
+})
+
+export type ProductGroupFormValues = z.infer<typeof productGroupSchema>
+
 // Ngân hàng.
 export const bankSchema = z.object({
   shortName: z.string().min(1, 'Nhập tên viết tắt'),

@@ -160,6 +160,32 @@ export interface PartnerGroupFilter {
   isActive?: boolean
 }
 
+// ── Nhóm vật tư, hàng hóa, dịch vụ ───────────────────────────────────────────
+
+export interface ProductGroupDto {
+  id: string
+  code: string // Mã nhóm vật tư, hàng hóa, dịch vụ
+  name: string // Tên nhóm vật tư, hàng hóa, dịch vụ
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateProductGroupInput {
+  code: string
+  name: string
+  isActive?: boolean
+}
+
+export type UpdateProductGroupInput = Partial<CreateProductGroupInput>
+
+export interface ProductGroupFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo mã / tên
+  isActive?: boolean
+}
+
 // ── Ngân hàng ────────────────────────────────────────────────────────────────
 
 export interface BankDto {
