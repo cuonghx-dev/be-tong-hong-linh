@@ -50,7 +50,7 @@ export function AddMenu({ label = 'Thêm', actions, onImportExcel, importing }: 
               {a.label}
             </button>
           ))}
-          <div className="my-1 border-t border-border" />
+          {actions.length > 0 && <div className="my-1 border-t border-border" />}
           <button
             onClick={() => {
               close()

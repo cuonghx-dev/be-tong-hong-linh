@@ -1,12 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
+import { AddMenu } from '@/shared/ui/add-menu'
 import { SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { useToast } from '@/shared/ui/toast'
 import { AmountInput } from '../components/AmountInput'
 import { usePartnerBalances } from '../api/usePartnerBalances'
-import { useSavePartnerBalances } from '../api/usePartnerBalanceMutations'
+import {
+  useImportPartnerBalances,
+  useSavePartnerBalances,
+} from '../api/usePartnerBalanceMutations'
 
 const PAGE_SIZES = [20, 50, 100]
 
@@ -51,6 +55,8 @@ export function PartnerBalanceEntryPage() {
 
   const { data, isLoading, isError, refetch } = usePartnerBalances(accountCode)
   const save = useSavePartnerBalances()
+  const importXlsx = useImportPartnerBalances()
+  const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
   const [rows, setRows] = useState<EditRow[]>([])
@@ -100,6 +106,30 @@ export function PartnerBalanceEntryPage() {
   const [draft, setDraft] = useState<{ debit: number; credit: number }>({ debit: 0, credit: 0 })
 
   const close = () => navigate('/opening-balance/so-du-tai-khoan')
+
+  // Nhập khẩu từ file Excel MISA (Danh_sach_cong_no_khach_hang.xlsx…) cho TK đang mở.
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // cho phép chọn lại cùng file
+    if (!file) return
+    importXlsx.mutate(
+      { accountCode, file },
+      {
+        onSuccess: (r) =>
+          toast({
+            variant: 'success',
+            title: 'Nhập khẩu thành công',
+            description: `${r.created} đối tượng mới, bỏ qua ${r.skipped} (tổng ${r.total}).`,
+          }),
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: 'Nhập khẩu thất bại',
+            description: 'Kiểm tra lại file Excel.',
+          }),
+      },
+    )
+  }
 
   const startEdit = (r: EditRow) => {
     setEditing(r)
@@ -157,7 +187,7 @@ export function PartnerBalanceEntryPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="border-b border-border px-4 py-2">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
         <div className="relative w-72">
           <SearchIcon
             size={15}
@@ -171,6 +201,20 @@ export function PartnerBalanceEntryPage() {
               setPage(1)
             }}
             className="h-8 w-full rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={onPickFile}
+        />
+        <div className="ml-auto">
+          <AddMenu
+            actions={[]}
+            onImportExcel={() => fileRef.current?.click()}
+            importing={importXlsx.isPending}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { PartnerType, Prisma, type AccountOpeningBalance } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { parseAccountBalanceXlsx } from './account-balance-import'
+import { parsePartnerBalanceXlsx } from './partner-balance-import'
 import { SaveAccountBalancesDto } from './dto/save-account-balances.dto'
 import { SaveBankAccountBalancesDto } from './dto/save-bank-account-balances.dto'
 import { SavePartnerBalancesDto } from './dto/save-partner-balances.dto'
@@ -160,6 +161,64 @@ export class OpeningBalanceService {
     })
 
     return this.listPartnerBalances(accountCode)
+  }
+
+  // Nhập khẩu số dư công nợ của 1 TK từ file Excel MISA (Danh_sach_cong_no_khach_hang.xlsx…).
+  // Bỏ qua mã không có trong danh mục và đối tượng đã có số dư của TK này (như import số dư TK).
+  async importPartnerBalancesXlsx(accountCode: string, buffer: Buffer) {
+    const code = accountCode.trim()
+    const partnerType = this.partnerTypeFor(code)
+    const parsed = parsePartnerBalanceXlsx(buffer)
+    if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
+
+    const [partners, existing] = await Promise.all([
+      this.listPartners(partnerType),
+      this.prisma.partnerOpeningBalance.findMany({
+        where: { accountCode: code, partnerType },
+        select: { partnerId: true },
+      }),
+    ])
+    const idByCode = new Map(partners.map((p) => [p.code, p.id]))
+    const seen = new Set(existing.map((e) => e.partnerId))
+
+    const rows: Prisma.PartnerOpeningBalanceCreateManyInput[] = []
+    for (const p of parsed) {
+      const partnerId = idByCode.get(p.partnerCode)
+      if (!partnerId || seen.has(partnerId) || p.amount === 0) continue
+      seen.add(partnerId) // chống trùng trong chính file
+      // Số dương: 131 còn phải thu → Dư Nợ, 331 còn phải trả → Dư Có. Số âm đảo vế
+      // (KH trả trước → 131 Dư Có, trả thừa NCC → 331 Dư Nợ).
+      const positiveIsDebit = partnerType === PartnerType.CUSTOMER
+      const isDebit = positiveIsDebit === p.amount > 0
+      const amount = new Prisma.Decimal(p.amount).abs()
+      rows.push({
+        accountCode: code,
+        partnerType,
+        partnerId,
+        debitAmount: isDebit ? amount : new Prisma.Decimal(0),
+        creditAmount: isDebit ? new Prisma.Decimal(0) : amount,
+      })
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const chunk = 500
+      for (let i = 0; i < rows.length; i += chunk) {
+        await tx.partnerOpeningBalance.createMany({ data: rows.slice(i, i + chunk) })
+      }
+      // Đồng bộ số dư TK công nợ = tổng chi tiết sau nhập (gồm cả dòng đã có trước đó).
+      const all = await tx.partnerOpeningBalance.findMany({
+        where: { accountCode: code, partnerType },
+        select: { debitAmount: true, creditAmount: true },
+      })
+      const totalDebit = all.reduce((s, r) => s.add(r.debitAmount), new Prisma.Decimal(0))
+      const totalCredit = all.reduce((s, r) => s.add(r.creditAmount), new Prisma.Decimal(0))
+      await tx.accountOpeningBalance.updateMany({
+        where: { accountCode: code },
+        data: { debitAmount: totalDebit, creditAmount: totalCredit },
+      })
+    })
+
+    return { total: parsed.length, created: rows.length, skipped: parsed.length - rows.length }
   }
 
   // ── Số dư tiền gửi chi tiết theo tài khoản ngân hàng (1121 theo từng TK NH…) ──

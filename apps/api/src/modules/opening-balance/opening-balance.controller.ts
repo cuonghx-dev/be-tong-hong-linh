@@ -59,6 +59,23 @@ export class OpeningBalanceController {
     return this.openingBalance.savePartnerBalances(dto)
   }
 
+  @Post('partners/import')
+  @ApiOperation({ summary: 'Nhập khẩu số dư công nợ của 1 TK từ file Excel (.xlsx)' })
+  @ApiQuery({ name: 'accountCode', description: 'Số TK công nợ (vd 131, 331)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } },
+  })
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 20 * 1024 * 1024 } }))
+  importPartners(
+    @Query('accountCode') accountCode?: string,
+    @UploadedFile() file?: { buffer: Buffer },
+  ) {
+    if (!accountCode?.trim()) throw new BadRequestException('Thiếu số tài khoản')
+    if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
+    return this.openingBalance.importPartnerBalancesXlsx(accountCode, file.buffer)
+  }
+
   @Get('bank-accounts')
   @ApiOperation({ summary: 'Số dư tiền gửi đầu kỳ chi tiết theo tài khoản ngân hàng của 1 TK' })
   @ApiQuery({ name: 'accountCode', description: 'Số TK tiền gửi (vd 1121, 1122)' })
