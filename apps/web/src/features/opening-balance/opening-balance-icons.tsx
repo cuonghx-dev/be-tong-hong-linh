@@ -117,32 +117,6 @@ export const FixedAssetOpeningIcon = (p: IconProps) => (
   </Svg>
 )
 
-export const PrepaidExpenseIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <DollarDoc />
-    <rect x="22" y="28" width="20" height="12" rx="1.5" fill={AMBER} />
-    <rect x="24.5" y="30.5" width="15" height="7" rx="1" fill={AMBER_DARK} opacity=".35" />
-    <circle cx="32" cy="34" r="3" fill="#fff" />
-  </Svg>
-)
-
-export const WipExpenseIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <rect x="10" y="4" width="24" height="36" rx="3" fill={GREEN} />
-    <rect x="14" y="8" width="13" height="7" rx="1" fill={AMBER} />
-    <text x="20.5" y="13.2" textAnchor="middle" fontSize="5.5" fontWeight="700" fill="#fff">
-      CHI
-    </text>
-    <rect x="14" y="19" width="14" height="2.5" rx="1.25" fill="#fff" opacity=".6" />
-    <rect x="14" y="24" width="14" height="2.5" rx="1.25" fill="#fff" opacity=".6" />
-    <circle cx="35" cy="34" r="6.5" fill={AMBER} />
-    <circle cx="35" cy="34" r="4" fill={AMBER_DARK} opacity=".4" />
-    <text x="35" y="36.8" textAnchor="middle" fontSize="8" fontWeight="700" fill="#fff">
-      $
-    </text>
-  </Svg>
-)
-
 // Map slug (opening-balance-items.ts) → icon của thẻ.
 export const OPENING_BALANCE_ICONS: Record<string, ComponentType<IconProps>> = {
   'so-du-tai-khoan': AccountBalanceIcon,
@@ -150,8 +124,5 @@ export const OPENING_BALANCE_ICONS: Record<string, ComponentType<IconProps>> = {
   'cong-no-khach-hang': CustomerDebtIcon,
   'cong-no-nha-cung-cap': SupplierDebtIcon,
   'ton-kho-vat-tu-hang-hoa-ccdc': InventoryOpeningIcon,
-  'ccdc-dang-su-dung-dau-ky': ToolsInUseIcon,
   'tai-san-co-dinh-dau-ky': FixedAssetOpeningIcon,
-  'chi-phi-tra-truoc-dau-ky': PrepaidExpenseIcon,
-  'chi-phi-do-dang': WipExpenseIcon,
 }
