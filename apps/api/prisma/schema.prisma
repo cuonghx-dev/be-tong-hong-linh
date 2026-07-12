@@ -631,6 +631,8 @@ model Product {
   updatedAt DateTime @updatedAt @map("updated_at")
   createdBy String?  @map("created_by")
 
+  openingBalances InventoryOpeningBalance[]
+
   @@index([name])
   @@index([type])
   @@map("products")
@@ -956,6 +958,31 @@ model PartnerOpeningBalance {
   @@map("partner_opening_balances")
 }
 
+// Tài sản cố định đầu kỳ (Danh_sach_tai_san_co_dinh_dau_ky.xlsx) — danh sách khai báo TSCĐ
+// đang dùng trước ngày bắt đầu hạch toán. TK nguyên giá (211x) Dư Nợ / TK khấu hao (214x) Dư Có
+// trong AccountOpeningBalance = tổng cộng các dòng ở đây theo cùng mã TK.
+model FixedAssetOpeningBalance {
+  id                      String   @id @default(uuid())
+  code                    String   @unique @map("code") // Mã tài sản
+  name                    String   @map("name") // Tên tài sản
+  assetType               String   @map("asset_type") // Loại tài sản (Nhà cửa, Máy móc…)
+  department              String   @default("") @map("department") // Đơn vị sử dụng
+  originalCost            Decimal  @default(0) @map("original_cost") @db.Decimal(18, 2) // Nguyên giá
+  depreciableValue        Decimal  @default(0) @map("depreciable_value") @db.Decimal(18, 2) // Giá trị tính KH
+  accumulatedDepreciation Decimal  @default(0) @map("accumulated_depreciation") @db.Decimal(18, 2) // Hao mòn lũy kế
+  acquisitionDate         DateTime @map("acquisition_date") @db.Date // Ngày ghi tăng
+  depreciationDate        DateTime @map("depreciation_date") @db.Date // Ngày bắt đầu tính KH
+  usefulLifeMonths        Decimal  @default(0) @map("useful_life_months") @db.Decimal(10, 2) // Thời gian SD (tháng)
+  remainingMonths         Decimal  @default(0) @map("remaining_months") @db.Decimal(10, 2) // Thời gian SD còn lại (tháng)
+  assetAccount            String   @map("asset_account") // TK nguyên giá (vd 21112)
+  depreciationAccount     String   @map("depreciation_account") // TK khấu hao (vd 2141)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("fixed_asset_opening_balances")
+}
+
 // Số dư tiền gửi đầu kỳ chi tiết theo từng tài khoản ngân hàng cho 1 TK tiền gửi (1121, 1122…).
 // TK tiền gửi trong AccountOpeningBalance = tổng cộng các dòng ở đây theo cùng accountCode.
 model BankAccountOpeningBalance {
@@ -972,4 +999,23 @@ model BankAccountOpeningBalance {
   @@unique([accountCode, bankAccountId])
   @@index([accountCode])
   @@map("bank_account_opening_balances")
+}
+
+// Tồn kho đầu kỳ vật tư, hàng hóa, CCDC (Danh_sach_ton_kho_vthh.xlsx) — mỗi dòng 1 VTHH/1 kho.
+// warehouseCode tham chiếu lỏng tới Warehouse.code (như Product.defaultWarehouseCode).
+// TK kho (152/153/155/156) trong AccountOpeningBalance = tổng Giá trị tồn các dòng ở đây
+// nhóm theo TK kho của từng VTHH (Product.inventoryAccount, thiếu thì suy từ Product.type).
+model InventoryOpeningBalance {
+  id            String  @id @default(uuid())
+  productId     String  @map("product_id")
+  product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseCode String  @map("warehouse_code") // Mã kho
+  quantity      Decimal @default(0) @db.Decimal(18, 2) // Số lượng tồn
+  amount        Decimal @default(0) @db.Decimal(18, 2) // Giá trị tồn
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([productId, warehouseCode])
+  @@map("inventory_opening_balances")
 }

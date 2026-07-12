@@ -1,10 +1,24 @@
 import { Injectable } from '@nestjs/common'
-import { PartnerType, Prisma, type AccountOpeningBalance } from '@prisma/client'
+import { CHART_OF_ACCOUNTS } from '@app/shared'
+import {
+  PartnerType,
+  Prisma,
+  ProductType,
+  type AccountOpeningBalance,
+  type FixedAssetOpeningBalance,
+} from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { parseAccountBalanceXlsx } from './account-balance-import'
+import { parseFixedAssetXlsx } from './fixed-asset-import'
+import { parseInventoryBalanceXlsx } from './inventory-balance-import'
 import { parsePartnerBalanceXlsx } from './partner-balance-import'
 import { SaveAccountBalancesDto } from './dto/save-account-balances.dto'
 import { SaveBankAccountBalancesDto } from './dto/save-bank-account-balances.dto'
+import {
+  SaveFixedAssetBalanceLineDto,
+  SaveFixedAssetBalancesDto,
+} from './dto/save-fixed-asset-balances.dto'
+import { SaveInventoryBalancesDto } from './dto/save-inventory-balances.dto'
 import { SavePartnerBalancesDto } from './dto/save-partner-balances.dto'
 
 @Injectable()
@@ -289,6 +303,367 @@ export class OpeningBalanceService {
     })
 
     return this.listBankAccountBalances(accountCode)
+  }
+
+  // ── Tài sản cố định đầu kỳ (Danh_sach_tai_san_co_dinh_dau_ky.xlsx) ──────────
+
+  // Danh sách TSCĐ đầu kỳ, sắp theo mã tài sản.
+  async listFixedAssetBalances() {
+    const rows = await this.prisma.fixedAssetOpeningBalance.findMany({
+      orderBy: { code: 'asc' },
+    })
+    return rows.map(toFixedAssetBalanceDto)
+  }
+
+  // Lưu cả danh sách: thay thế toàn bộ dữ liệu cũ (như bảng số dư tài khoản), rồi đồng bộ
+  // số dư TK nguyên giá (Dư Nợ) / TK khấu hao (Dư Có) trong bảng số dư tài khoản.
+  async saveFixedAssetBalances(dto: SaveFixedAssetBalancesDto) {
+    // Trùng mã tài sản trong payload → giữ dòng cuối (người dùng sửa sau cùng).
+    const byCode = new Map(
+      dto.items.map((item) => [item.code.trim(), toFixedAssetCreateInput(item)]),
+    )
+    const items = [...byCode.values()]
+
+    await this.prisma.$transaction(async (tx) => {
+      // Nhớ các TK từng bị ảnh hưởng để reset về 0 nếu không còn tài sản nào dùng.
+      const old = await tx.fixedAssetOpeningBalance.findMany({
+        select: { assetAccount: true, depreciationAccount: true },
+      })
+      await tx.fixedAssetOpeningBalance.deleteMany({})
+      const chunk = 500
+      for (let i = 0; i < items.length; i += chunk) {
+        await tx.fixedAssetOpeningBalance.createMany({ data: items.slice(i, i + chunk) })
+      }
+      await syncFixedAssetAccountBalances(tx, items, old)
+    })
+    return this.listFixedAssetBalances()
+  }
+
+  // Nhập khẩu từ file Excel — bỏ qua dòng trùng mã tài sản đã có, rồi đồng bộ số dư TK.
+  async importFixedAssetBalancesXlsx(buffer: Buffer) {
+    const parsed = parseFixedAssetXlsx(buffer)
+    if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
+
+    const existing = await this.prisma.fixedAssetOpeningBalance.findMany({
+      select: { code: true },
+    })
+    const seen = new Set(existing.map((e) => e.code))
+
+    const rows: Prisma.FixedAssetOpeningBalanceCreateManyInput[] = []
+    for (const p of parsed) {
+      if (seen.has(p.code)) continue
+      seen.add(p.code) // chống trùng trong chính file
+      rows.push({
+        code: p.code,
+        name: p.name,
+        assetType: p.assetType,
+        department: p.department,
+        originalCost: new Prisma.Decimal(p.originalCost),
+        depreciableValue: new Prisma.Decimal(p.depreciableValue),
+        accumulatedDepreciation: new Prisma.Decimal(p.accumulatedDepreciation),
+        acquisitionDate: p.acquisitionDate,
+        depreciationDate: p.depreciationDate,
+        usefulLifeMonths: new Prisma.Decimal(p.usefulLifeMonths),
+        remainingMonths: new Prisma.Decimal(p.remainingMonths),
+        assetAccount: p.assetAccount,
+        depreciationAccount: p.depreciationAccount,
+      })
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const chunk = 500
+      for (let i = 0; i < rows.length; i += chunk) {
+        await tx.fixedAssetOpeningBalance.createMany({ data: rows.slice(i, i + chunk) })
+      }
+      // Đồng bộ số dư TK = tổng toàn bộ tài sản sau nhập (gồm cả dòng đã có trước đó).
+      const all = await tx.fixedAssetOpeningBalance.findMany({
+        select: {
+          originalCost: true,
+          accumulatedDepreciation: true,
+          assetAccount: true,
+          depreciationAccount: true,
+        },
+      })
+      await syncFixedAssetAccountBalances(tx, all, [])
+    })
+
+    return { total: parsed.length, created: rows.length, skipped: parsed.length - rows.length }
+  }
+
+  // ── Tồn kho đầu kỳ vật tư, hàng hóa, CCDC (Danh_sach_ton_kho_vthh.xlsx) ─────
+
+  // VTHH có theo dõi tồn kho (mọi tính chất trừ dịch vụ), sắp theo mã hàng.
+  private listStockableProducts() {
+    return this.prisma.product.findMany({
+      where: { type: { not: ProductType.SERVICE } },
+      orderBy: { code: 'asc' },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        type: true,
+        groupCode: true,
+        unit: true,
+        defaultWarehouseCode: true,
+        inventoryAccount: true,
+      },
+    })
+  }
+
+  // TK kho của 1 VTHH: ưu tiên TK Kho khai trong danh mục, thiếu thì suy từ tính chất.
+  private inventoryAccountFor(p: { inventoryAccount: string | null; type: ProductType }) {
+    const declared = p.inventoryAccount?.trim()
+    if (declared) return declared
+    switch (p.type) {
+      case ProductType.MATERIAL:
+        return CHART_OF_ACCOUNTS.MATERIAL // 152
+      case ProductType.TOOL:
+        return CHART_OF_ACCOUNTS.TOOL // 153
+      case ProductType.FINISHED:
+        return CHART_OF_ACCOUNTS.FINISHED_GOODS // 155
+      default:
+        return CHART_OF_ACCOUNTS.GOODS // 156
+    }
+  }
+
+  // Danh sách tồn kho đầu kỳ: mọi VTHH + số tồn (0 nếu chưa nhập; VTHH tồn ở nhiều kho
+  // → mỗi kho 1 dòng). Kèm danh mục kho cho ô chọn Mã kho khi sửa.
+  async listInventoryBalances() {
+    const [products, balances, warehouses] = await Promise.all([
+      this.listStockableProducts(),
+      this.prisma.inventoryOpeningBalance.findMany({ orderBy: { warehouseCode: 'asc' } }),
+      this.prisma.warehouse.findMany({
+        orderBy: { code: 'asc' },
+        select: { code: true, name: true },
+      }),
+    ])
+    const byProduct = new Map<string, typeof balances>()
+    for (const b of balances) {
+      const list = byProduct.get(b.productId) ?? []
+      list.push(b)
+      byProduct.set(b.productId, list)
+    }
+    const items = products.flatMap((p) => {
+      const base = {
+        productId: p.id,
+        productCode: p.code,
+        productName: p.name,
+        groupCode: p.groupCode ?? '',
+        unit: p.unit ?? '',
+      }
+      const rows = byProduct.get(p.id)
+      if (!rows?.length)
+        return [
+          { ...base, warehouseCode: p.defaultWarehouseCode ?? '', quantity: '0', amount: '0' },
+        ]
+      return rows.map((b) => ({
+        ...base,
+        warehouseCode: b.warehouseCode,
+        quantity: b.quantity.toString(),
+        amount: b.amount.toString(),
+      }))
+    })
+    return { items, warehouses }
+  }
+
+  // Lưu cả bảng tồn kho: thay thế toàn bộ dữ liệu cũ, rồi đồng bộ số dư TK kho
+  // (152/153/155/156… Dư Nợ) trong bảng số dư tài khoản = tổng Giá trị tồn theo TK.
+  async saveInventoryBalances(dto: SaveInventoryBalancesDto) {
+    // Trùng VTHH+kho trong payload → giữ dòng cuối. Bỏ dòng 0 cả số lượng lẫn giá trị.
+    const byKey = new Map(
+      dto.items.map((item) => [
+        `${item.productId}|${item.warehouseCode.trim()}`,
+        {
+          productId: item.productId,
+          warehouseCode: item.warehouseCode.trim(),
+          quantity: new Prisma.Decimal(item.quantity),
+          amount: new Prisma.Decimal(item.amount),
+        },
+      ]),
+    )
+    const rows = [...byKey.values()].filter((r) => !r.quantity.isZero() || !r.amount.isZero())
+
+    await this.prisma.$transaction(async (tx) => {
+      // Nhớ các VTHH từng có tồn để reset TK kho về 0 nếu không còn dòng nào dùng.
+      const old = await tx.inventoryOpeningBalance.findMany({ select: { productId: true } })
+      await tx.inventoryOpeningBalance.deleteMany({})
+      const chunk = 500
+      for (let i = 0; i < rows.length; i += chunk) {
+        await tx.inventoryOpeningBalance.createMany({ data: rows.slice(i, i + chunk) })
+      }
+      await this.syncInventoryAccountBalances(
+        tx,
+        rows,
+        old.map((o) => o.productId),
+      )
+    })
+    return this.listInventoryBalances()
+  }
+
+  // Nhập khẩu tồn kho từ file Excel MISA — bỏ qua mã hàng không có trong danh mục và
+  // VTHH+kho đã có số tồn, rồi đồng bộ số dư TK kho.
+  async importInventoryBalancesXlsx(buffer: Buffer) {
+    const parsed = parseInventoryBalanceXlsx(buffer)
+    if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
+
+    const [products, existing] = await Promise.all([
+      this.listStockableProducts(),
+      this.prisma.inventoryOpeningBalance.findMany({
+        select: { productId: true, warehouseCode: true },
+      }),
+    ])
+    const productByCode = new Map(products.map((p) => [p.code, p]))
+    const seen = new Set(existing.map((e) => `${e.productId}|${e.warehouseCode}`))
+
+    const rows: Prisma.InventoryOpeningBalanceCreateManyInput[] = []
+    for (const p of parsed) {
+      const product = productByCode.get(p.productCode)
+      if (!product || (p.quantity === 0 && p.amount === 0)) continue
+      const warehouseCode = p.warehouseCode || product.defaultWarehouseCode || ''
+      const key = `${product.id}|${warehouseCode}`
+      if (seen.has(key)) continue
+      seen.add(key) // chống trùng trong chính file
+      rows.push({
+        productId: product.id,
+        warehouseCode,
+        quantity: new Prisma.Decimal(p.quantity),
+        amount: new Prisma.Decimal(p.amount),
+      })
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const chunk = 500
+      for (let i = 0; i < rows.length; i += chunk) {
+        await tx.inventoryOpeningBalance.createMany({ data: rows.slice(i, i + chunk) })
+      }
+      // Đồng bộ số dư TK kho = tổng toàn bộ dòng tồn sau nhập (gồm cả dòng đã có trước đó).
+      const all = await tx.inventoryOpeningBalance.findMany({
+        select: { productId: true, amount: true },
+      })
+      await this.syncInventoryAccountBalances(tx, all, [])
+    })
+
+    return { total: parsed.length, created: rows.length, skipped: parsed.length - rows.length }
+  }
+
+  // Đồng bộ số dư TK kho trong bảng số dư tài khoản: Dư Nợ = tổng Giá trị tồn nhóm theo
+  // TK kho của từng VTHH. TK cũ không còn dòng tồn nào → reset về 0. Chỉ cập nhật TK đã
+  // tồn tại trong bảng số dư (updateMany — như công nợ/tiền gửi/TSCĐ).
+  private async syncInventoryAccountBalances(
+    tx: Prisma.TransactionClient,
+    rows: { productId: string; amount: Prisma.Decimal }[],
+    oldProductIds: string[],
+  ) {
+    const ids = [...new Set([...rows.map((r) => r.productId), ...oldProductIds])]
+    if (ids.length === 0) return
+    const products = await tx.product.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, type: true, inventoryAccount: true },
+    })
+    const accountById = new Map(products.map((p) => [p.id, this.inventoryAccountFor(p)]))
+
+    const zero = new Prisma.Decimal(0)
+    const totals = new Map<string, Prisma.Decimal>()
+    for (const id of oldProductIds) {
+      const code = accountById.get(id)
+      if (code && !totals.has(code)) totals.set(code, zero)
+    }
+    for (const r of rows) {
+      const code = accountById.get(r.productId)
+      if (!code) continue
+      totals.set(code, (totals.get(code) ?? zero).add(r.amount))
+    }
+    for (const [accountCode, debit] of totals) {
+      await tx.accountOpeningBalance.updateMany({
+        where: { accountCode },
+        data: { debitAmount: debit, creditAmount: zero },
+      })
+    }
+  }
+}
+
+// Dòng tối thiểu để tính tổng theo TK nguyên giá/khấu hao.
+interface FixedAssetAccountAmounts {
+  assetAccount: string
+  depreciationAccount: string
+  originalCost: Prisma.Decimal
+  accumulatedDepreciation: Prisma.Decimal
+}
+
+// Đồng bộ số dư TK trong bảng số dư tài khoản: TK nguyên giá (211x) Dư Nợ = tổng nguyên giá,
+// TK khấu hao (214x) Dư Có = tổng hao mòn lũy kế. TK cũ không còn tài sản nào → reset về 0.
+// Chỉ cập nhật TK đã tồn tại trong bảng số dư (updateMany — như công nợ/tiền gửi).
+async function syncFixedAssetAccountBalances(
+  tx: Prisma.TransactionClient,
+  rows: FixedAssetAccountAmounts[],
+  oldRows: { assetAccount: string; depreciationAccount: string }[],
+) {
+  const zero = new Prisma.Decimal(0)
+  const totals = new Map<string, { debit: Prisma.Decimal; credit: Prisma.Decimal }>()
+  const ensure = (code: string) => {
+    let t = totals.get(code)
+    if (!t) {
+      t = { debit: zero, credit: zero }
+      totals.set(code, t)
+    }
+    return t
+  }
+  for (const r of oldRows) {
+    ensure(r.assetAccount)
+    ensure(r.depreciationAccount)
+  }
+  for (const r of rows) {
+    const asset = ensure(r.assetAccount)
+    asset.debit = asset.debit.add(r.originalCost)
+    const dep = ensure(r.depreciationAccount)
+    dep.credit = dep.credit.add(r.accumulatedDepreciation)
+  }
+  for (const [accountCode, t] of totals) {
+    await tx.accountOpeningBalance.updateMany({
+      where: { accountCode },
+      data: { debitAmount: t.debit, creditAmount: t.credit },
+    })
+  }
+}
+
+function toFixedAssetCreateInput(
+  item: SaveFixedAssetBalanceLineDto,
+): Prisma.FixedAssetOpeningBalanceCreateManyInput & FixedAssetAccountAmounts {
+  return {
+    code: item.code.trim(),
+    name: item.name.trim(),
+    assetType: item.assetType.trim(),
+    department: item.department.trim(),
+    originalCost: new Prisma.Decimal(item.originalCost),
+    depreciableValue: new Prisma.Decimal(item.depreciableValue),
+    accumulatedDepreciation: new Prisma.Decimal(item.accumulatedDepreciation),
+    acquisitionDate: new Date(item.acquisitionDate),
+    depreciationDate: new Date(item.depreciationDate),
+    usefulLifeMonths: new Prisma.Decimal(item.usefulLifeMonths),
+    remainingMonths: new Prisma.Decimal(item.remainingMonths),
+    assetAccount: item.assetAccount.trim(),
+    depreciationAccount: item.depreciationAccount.trim(),
+  }
+}
+
+function toFixedAssetBalanceDto(r: FixedAssetOpeningBalance) {
+  return {
+    id: r.id,
+    code: r.code,
+    name: r.name,
+    assetType: r.assetType,
+    department: r.department,
+    originalCost: r.originalCost.toString(),
+    depreciableValue: r.depreciableValue.toString(),
+    accumulatedDepreciation: r.accumulatedDepreciation.toString(),
+    acquisitionDate: r.acquisitionDate.toISOString(),
+    depreciationDate: r.depreciationDate.toISOString(),
+    usefulLifeMonths: r.usefulLifeMonths.toString(),
+    remainingMonths: r.remainingMonths.toString(),
+    assetAccount: r.assetAccount,
+    depreciationAccount: r.depreciationAccount,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
   }
 }
 

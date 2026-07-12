@@ -6,4 +6,6 @@ export const openingBalanceKeys = {
     [...openingBalanceKeys.all, 'partners', accountCode] as const,
   bankAccounts: (accountCode: string) =>
     [...openingBalanceKeys.all, 'bank-accounts', accountCode] as const,
+  fixedAssets: () => [...openingBalanceKeys.all, 'fixed-assets'] as const,
+  inventory: () => [...openingBalanceKeys.all, 'inventory'] as const,
 }

@@ -24,6 +24,8 @@ import { AccountBalancePage } from '@/features/opening-balance/pages/AccountBala
 import { AccountBalanceEntryPage } from '@/features/opening-balance/pages/AccountBalanceEntryPage'
 import { PartnerBalanceEntryPage } from '@/features/opening-balance/pages/PartnerBalanceEntryPage'
 import { BankAccountBalanceEntryPage } from '@/features/opening-balance/pages/BankAccountBalanceEntryPage'
+import { FixedAssetBalancePage } from '@/features/opening-balance/pages/FixedAssetBalancePage'
+import { InventoryBalancePage } from '@/features/opening-balance/pages/InventoryBalancePage'
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
 import { CatalogItemPage } from '@/features/catalog/pages/CatalogItemPage'
 
@@ -85,6 +87,8 @@ const router = createBrowserRouter([
       { path: 'general', element: <GeneralPage /> },
       { path: 'opening-balance', element: <OpeningBalancePage /> },
       { path: 'opening-balance/so-du-tai-khoan', element: <AccountBalancePage /> },
+      { path: 'opening-balance/tai-san-co-dinh-dau-ky', element: <FixedAssetBalancePage /> },
+      { path: 'opening-balance/ton-kho-vat-tu-hang-hoa-ccdc', element: <InventoryBalancePage /> },
       { path: 'opening-balance/:slug', element: <OpeningBalanceItemPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'catalog/:slug', element: <CatalogItemPage /> },
