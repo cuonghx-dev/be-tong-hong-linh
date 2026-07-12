@@ -1,101 +1,115 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
-import { useConfirm } from '@/shared/ui/confirm-dialog'
-import { ChevronLeftIcon, RefreshIcon } from '@/shared/ui/icons'
+import {
+  ChevronLeftIcon,
+  MinusSquareIcon,
+  PlusSquareIcon,
+  RefreshIcon,
+} from '@/shared/ui/icons'
+import { Modal } from '@/shared/ui/modal'
 import { useToast } from '@/shared/ui/toast'
 import { useAccountBalances } from '../api/useAccountBalances'
 import {
   useImportAccountBalances,
   useSaveAccountBalances,
 } from '../api/useAccountBalanceMutations'
-import { AmountInput } from '../components/AmountInput'
+import { AccountBalanceForm, type BalanceFormValue } from '../components/AccountBalanceForm'
+import { buildTree, toSaveItems, type BalanceRow } from '../tree'
 
-// 1 dòng đang soạn trên bảng (state cục bộ, chưa lưu).
-interface BalanceRow {
-  key: string
-  accountCode: string
-  accountName: string
-  debitAmount: number
-  creditAmount: number
-}
-
-let rowSeq = 0
-const nextKey = () => `row-${++rowSeq}`
-
-// TK cấp 1 (3 số) in đậm; TK con thụt lề theo độ sâu — như danh sách MISA.
-const isTopLevel = (code: string) => code.trim().length <= 3
-
-// Bảng Số dư tài khoản đầu kỳ — cột theo misa-specs/Danh_sach_so_du_tai_khoan.xlsx.
-// Sửa trực tiếp trên bảng, "Cất" lưu cả bảng (thay thế dữ liệu cũ).
+// Bảng Số dư tài khoản đầu kỳ — cây cộng dồn cha-con. "Sửa" mở màn nhập số dư chi tiết (như MISA).
 export function AccountBalancePage() {
-  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useAccountBalances()
+  const navigate = useNavigate()
+  const { data, isLoading, isError, refetch, isFetching } = useAccountBalances()
   const save = useSaveAccountBalances()
   const importXlsx = useImportAccountBalances()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
-  const confirm = useConfirm()
 
   const [rows, setRows] = useState<BalanceRow[]>([])
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [addOpen, setAddOpen] = useState(false)
+
+  // Bấm "Sửa" ở 1 TK → nhảy sang màn "Nhập số dư tài khoản" (chi tiết), focus đúng TK đó.
+  const goEdit = (code: string) =>
+    navigate(`/opening-balance/so-du-tai-khoan/nhap?focus=${encodeURIComponent(code)}`)
 
   // Đồng bộ lại bảng mỗi khi server trả dữ liệu mới (sau load / save / import).
   useEffect(() => {
     if (!data) return
     setRows(
       data.map((r) => ({
-        key: nextKey(),
         accountCode: r.accountCode,
         accountName: r.accountName,
         debitAmount: Number(r.debitAmount),
         creditAmount: Number(r.creditAmount),
       })),
     )
-  }, [data, dataUpdatedAt])
+  }, [data])
 
-  const patchRow = (key: string, patch: Partial<BalanceRow>) => {
-    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)))
-  }
+  const tree = useMemo(() => buildTree(rows), [rows])
 
-  const addRow = () => {
-    setRows((prev) => [
-      ...prev,
-      { key: nextKey(), accountCode: '', accountName: '', debitAmount: 0, creditAmount: 0 },
-    ])
-  }
+  // Trải phẳng cây theo thứ tự số TK, bỏ dòng có tổ tiên đang thu gọn.
+  const visible = useMemo(
+    () =>
+      tree.sorted
+        .map((row) => {
+          const anc = tree.ancestors(row.accountCode)
+          return {
+            row,
+            depth: anc.length,
+            hasChildren: tree.hasChildren(row.accountCode),
+            hidden: anc.some((a) => collapsed.has(a)),
+          }
+        })
+        .filter((r) => !r.hidden),
+    [tree, collapsed],
+  )
 
-  const removeRow = async (row: BalanceRow) => {
-    const ok = await confirm({
-      title: `Xóa dòng TK ${row.accountCode || '(trống)'}?`,
-      description: 'Dòng sẽ mất khi bấm Cất.',
-      confirmText: 'Xóa',
-      destructive: true,
-    })
-    if (ok) setRows((prev) => prev.filter((r) => r.key !== row.key))
-  }
+  // Tổng chỉ cộng TK gốc (không có cha) để không đếm trùng con.
+  const totals = useMemo(() => {
+    let debit = 0
+    let credit = 0
+    for (const c of tree.codes) {
+      if (tree.ancestors(c).length === 0) {
+        const s = tree.rollup(c)
+        debit += s.debit
+        credit += s.credit
+      }
+    }
+    return { debit, credit }
+  }, [tree])
 
-  const onSave = () => {
-    const items = rows
-      .filter((r) => r.accountCode.trim() !== '')
-      .map((r) => ({
-        accountCode: r.accountCode.trim(),
-        accountName: r.accountName.trim(),
-        debitAmount: r.debitAmount,
-        creditAmount: r.creditAmount,
-      }))
+  // Lưu cả bảng sau mỗi thao tác (thêm/sửa/xóa) — backend thay thế toàn bộ dữ liệu cũ.
+  const persist = (next: BalanceRow[], successTitle: string) => {
+    setRows(next)
     save.mutate(
-      { items },
+      { items: toSaveItems(next) },
       {
-        onSuccess: () =>
-          toast({ variant: 'success', title: 'Đã lưu số dư tài khoản' }),
+        onSuccess: () => toast({ variant: 'success', title: successTitle }),
         onError: () =>
           toast({
             variant: 'error',
             title: 'Lưu thất bại',
-            description: 'Kiểm tra lại dữ liệu trên bảng.',
+            description: 'Kiểm tra lại dữ liệu.',
           }),
       },
     )
+  }
+
+  const toggleCollapse = (code: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(code)) next.delete(code)
+      else next.add(code)
+      return next
+    })
+
+  const onSubmitForm = (value: BalanceFormValue) => {
+    setAddOpen(false)
+    persist([...rows, value], 'Đã thêm tài khoản')
   }
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,10 +131,6 @@ export function AccountBalancePage() {
         }),
     })
   }
-
-  // Tổng chỉ cộng TK cấp 1 để không đếm trùng TK con (con là chi tiết của cha).
-  const totalDebit = rows.filter((r) => isTopLevel(r.accountCode)).reduce((s, r) => s + r.debitAmount, 0)
-  const totalCredit = rows.filter((r) => isTopLevel(r.accountCode)).reduce((s, r) => s + r.creditAmount, 0)
 
   return (
     <div className="flex h-full flex-col p-4">
@@ -145,19 +155,13 @@ export function AccountBalancePage() {
             className="hidden"
             onChange={onPickFile}
           />
+
           <div className="ml-auto flex items-center gap-2">
             <AddMenu
-              actions={[{ label: 'Thêm dòng tài khoản', onClick: addRow }]}
+              actions={[{ label: 'Thêm tài khoản', onClick: () => setAddOpen(true) }]}
               onImportExcel={() => fileRef.current?.click()}
               importing={importXlsx.isPending}
             />
-            <button
-              onClick={onSave}
-              disabled={save.isPending}
-              className="h-8 rounded-md bg-primary px-4 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60"
-            >
-              {save.isPending ? 'Đang lưu…' : 'Cất'}
-            </button>
             <button
               onClick={() => refetch()}
               className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
@@ -170,28 +174,29 @@ export function AccountBalancePage() {
 
         {/* Table */}
         <div className="flex-1 overflow-auto">
-          <table className="w-full min-w-[760px] border-collapse text-sm">
+          <table className="w-full min-w-[820px] border-collapse text-sm">
             <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="w-12 px-3 py-2 text-center">STT</th>
-                <th className="w-36 px-3 py-2">Số tài khoản</th>
+                <th className="w-40 px-3 py-2">Số tài khoản</th>
                 <th className="px-3 py-2">Tên tài khoản</th>
                 <th className="w-44 px-3 py-2 text-right">Dư Nợ</th>
                 <th className="w-44 px-3 py-2 text-right">Dư Có</th>
-                <th className="w-16 px-3 py-2" />
+                <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
+                  Chức năng
+                </th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
+                  <td colSpan={5} className="px-3 py-10 text-center text-slate-400">
                     Đang tải…
                   </td>
                 </tr>
               )}
               {isError && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-red-500">
+                  <td colSpan={5} className="px-3 py-10 text-center text-red-500">
                     Lỗi tải dữ liệu.{' '}
                     <button className="underline" onClick={() => refetch()}>
                       Thử lại
@@ -199,70 +204,105 @@ export function AccountBalancePage() {
                   </td>
                 </tr>
               )}
-              {!isLoading && !isError && rows.length === 0 && (
+              {!isLoading && !isError && visible.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
-                    Chưa có số dư tài khoản. Thêm dòng hoặc nhập khẩu từ Excel.
+                  <td colSpan={5} className="px-3 py-10 text-center text-slate-400">
+                    Chưa có số dư tài khoản. Thêm tài khoản hoặc nhập khẩu từ Excel.
                   </td>
                 </tr>
               )}
-              {rows.map((r, i) => {
-                const depth = Math.max(0, r.accountCode.trim().length - 3)
+              {visible.map(({ row: r, depth, hasChildren }) => {
+                const disp = hasChildren
+                  ? tree.rollup(r.accountCode)
+                  : { debit: r.debitAmount, credit: r.creditAmount }
                 return (
-                  <tr key={r.key} className="border-t border-border hover:bg-slate-50">
-                    <td className="px-3 py-1.5 text-center text-slate-500">{i + 1}</td>
+                  <tr
+                    key={r.accountCode}
+                    className="group border-t border-border hover:bg-slate-50"
+                  >
                     <td className="px-3 py-1.5">
-                      <input
-                        value={r.accountCode}
-                        onChange={(e) => patchRow(r.key, { accountCode: e.target.value })}
-                        placeholder="Số TK"
-                        className="h-8 w-full rounded-md border border-border px-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      />
-                    </td>
-                    <td className="px-3 py-1.5">
-                      <input
-                        value={r.accountName}
-                        onChange={(e) => patchRow(r.key, { accountName: e.target.value })}
-                        placeholder="Tên tài khoản"
-                        style={{ paddingLeft: 8 + depth * 16 }}
-                        className={`h-8 w-full rounded-md border border-border pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 ${
-                          isTopLevel(r.accountCode) ? 'font-semibold text-slate-800' : 'text-slate-700'
-                        }`}
-                      />
-                    </td>
-                    <td className="px-3 py-1.5">
-                      <AmountInput
-                        value={r.debitAmount}
-                        onChange={(v) => patchRow(r.key, { debitAmount: v })}
-                      />
-                    </td>
-                    <td className="px-3 py-1.5">
-                      <AmountInput
-                        value={r.creditAmount}
-                        onChange={(v) => patchRow(r.key, { creditAmount: v })}
-                      />
-                    </td>
-                    <td className="px-3 py-1.5 text-center">
-                      <button
-                        onClick={() => removeRow(r)}
-                        className="rounded px-2 py-1 text-xs text-red-500 hover:bg-red-50"
+                      <div
+                        className="flex items-center gap-1"
+                        style={{ paddingLeft: `${depth * 20}px` }}
                       >
-                        Xóa
-                      </button>
+                        {hasChildren ? (
+                          <button
+                            onClick={() => toggleCollapse(r.accountCode)}
+                            className="grid h-4 w-4 shrink-0 place-items-center text-slate-400 hover:text-slate-600"
+                            aria-label={collapsed.has(r.accountCode) ? 'Mở rộng' : 'Thu gọn'}
+                          >
+                            {collapsed.has(r.accountCode) ? (
+                              <PlusSquareIcon size={14} />
+                            ) : (
+                              <MinusSquareIcon size={14} />
+                            )}
+                          </button>
+                        ) : (
+                          <span className="h-4 w-4 shrink-0" />
+                        )}
+                        {hasChildren ? (
+                          // TK tổng hợp: chỉ hiển thị, không cho nhập số dư (số cộng dồn từ con).
+                          <span className="font-semibold tabular-nums text-slate-800">
+                            {r.accountCode}
+                          </span>
+                        ) : (
+                          <button
+                            className="tabular-nums text-primary hover:underline"
+                            onClick={() => goEdit(r.accountCode)}
+                          >
+                            {r.accountCode}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td
+                      className={cn(
+                        'max-w-[320px] truncate px-3 py-1.5 text-slate-700',
+                        hasChildren && 'font-semibold',
+                      )}
+                    >
+                      {r.accountName}
+                    </td>
+                    <td
+                      className={cn(
+                        'px-3 py-1.5 text-right tabular-nums text-slate-700',
+                        hasChildren && 'font-semibold',
+                      )}
+                    >
+                      {disp.debit ? formatCurrency(disp.debit) : 0}
+                    </td>
+                    <td
+                      className={cn(
+                        'px-3 py-1.5 text-right tabular-nums text-slate-700',
+                        hasChildren && 'font-semibold',
+                      )}
+                    >
+                      {disp.credit ? formatCurrency(disp.credit) : 0}
+                    </td>
+                    <td className="sticky right-0 z-10 bg-white px-3 py-1.5 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
+                      {/* TK tổng hợp không có hành động; chỉ TK chi tiết mới "Sửa" số dư. */}
+                      {!hasChildren && (
+                        <button
+                          onClick={() => goEdit(r.accountCode)}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          Sửa
+                        </button>
+                      )}
                     </td>
                   </tr>
                 )
               })}
             </tbody>
-            {rows.length > 0 && (
+            {visible.length > 0 && (
               <tfoot className="sticky bottom-0 border-t border-border bg-slate-50 font-semibold text-slate-800">
                 <tr>
-                  <td colSpan={3} className="px-3 py-2">
-                    Tổng cộng (TK cấp 1)
+                  <td colSpan={2} className="px-3 py-2">
+                    Tổng cộng
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totalDebit)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totalCredit)}</td>
-                  <td />
+                  <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.debit)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.credit)}</td>
+                  <td className="sticky right-0 bg-slate-50" />
                 </tr>
               </tfoot>
             )}
@@ -272,15 +312,31 @@ export function AccountBalancePage() {
         {/* Footer */}
         <div className="flex items-center border-t border-border px-3 py-2 text-sm text-slate-500">
           <span>
-            Tổng số: <b className="text-slate-700">{rows.length}</b> tài khoản
+            Tổng số: <b className="text-slate-700">{tree.codes.length}</b> tài khoản
           </span>
-          {totalDebit !== totalCredit && (
+          {totals.debit !== totals.credit && (
             <span className="ml-4 text-amber-600">
-              Lệch Nợ/Có: {formatCurrency(Math.abs(totalDebit - totalCredit))}
+              Lệch Nợ/Có: {formatCurrency(Math.abs(totals.debit - totals.credit))}
             </span>
           )}
         </div>
       </div>
+
+      {/* Modal thêm tài khoản mới (sửa số dư đi qua màn "Nhập số dư tài khoản"). */}
+      <Modal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        size="lg"
+        title="Thêm số dư tài khoản"
+      >
+        {addOpen && (
+          <AccountBalanceForm
+            existingCodes={tree.codes}
+            onSubmit={onSubmitForm}
+            onCancel={() => setAddOpen(false)}
+          />
+        )}
+      </Modal>
     </div>
   )
 }

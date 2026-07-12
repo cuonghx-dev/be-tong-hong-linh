@@ -19,6 +19,7 @@ import { GeneralVoucherPage } from '@/features/general/pages/GeneralVoucherPage'
 import { OpeningBalancePage } from '@/features/opening-balance/pages/OpeningBalancePage'
 import { OpeningBalanceItemPage } from '@/features/opening-balance/pages/OpeningBalanceItemPage'
 import { AccountBalancePage } from '@/features/opening-balance/pages/AccountBalancePage'
+import { AccountBalanceEntryPage } from '@/features/opening-balance/pages/AccountBalanceEntryPage'
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
 import { CatalogItemPage } from '@/features/catalog/pages/CatalogItemPage'
 
@@ -45,6 +46,8 @@ const recordRoutes = [
   { path: '/general/vouchers/new', element: <GeneralVoucherPage mode="new" /> },
   { path: '/general/vouchers/:id', element: <GeneralVoucherPage mode="view" /> },
   { path: '/general/vouchers/:id/edit', element: <GeneralVoucherPage mode="edit" /> },
+  // Nhập số dư tài khoản chi tiết — full-page, đè shell (vào từ nút "Sửa").
+  { path: '/opening-balance/so-du-tai-khoan/nhap', element: <AccountBalanceEntryPage /> },
 ].map((r) => ({
   path: r.path,
   element: <RequireAuth>{r.element}</RequireAuth>,
