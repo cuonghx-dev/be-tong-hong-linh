@@ -95,13 +95,6 @@ export const SupplierDebtIcon = (p: IconProps) => (
   </Svg>
 )
 
-export const EmployeeDebtIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <ChartDoc />
-    <PersonBadge color={AMBER_DARK} />
-  </Svg>
-)
-
 export const InventoryOpeningIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M6 18L24 8l18 10v22H6z" fill={GREEN} />
@@ -110,17 +103,6 @@ export const InventoryOpeningIcon = (p: IconProps) => (
     <rect x="29.5" y="23" width="7" height="7" rx="1" fill={AMBER} />
     <rect x="26" y="31" width="7" height="7" rx="1" fill={AMBER} />
     <rect x="33.5" y="31" width="7" height="7" rx="1" fill={AMBER_DARK} />
-  </Svg>
-)
-
-export const ToolsInUseIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <DollarDoc />
-    <g transform="rotate(45 36 30)">
-      <rect x="34.2" y="26" width="3.6" height="14" rx="1.8" fill={AMBER_DARK} />
-      <circle cx="36" cy="24" r="5" fill={AMBER} />
-      <circle cx="36" cy="24" r="2" fill="#fff" />
-    </g>
   </Svg>
 )
 
@@ -167,7 +149,6 @@ export const OPENING_BALANCE_ICONS: Record<string, ComponentType<IconProps>> = {
   'so-du-tk-ngan-hang': BankBalanceIcon,
   'cong-no-khach-hang': CustomerDebtIcon,
   'cong-no-nha-cung-cap': SupplierDebtIcon,
-  'cong-no-nhan-vien': EmployeeDebtIcon,
   'ton-kho-vat-tu-hang-hoa-ccdc': InventoryOpeningIcon,
   'ccdc-dang-su-dung-dau-ky': ToolsInUseIcon,
   'tai-san-co-dinh-dau-ky': FixedAssetOpeningIcon,

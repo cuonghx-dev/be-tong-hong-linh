@@ -13,7 +13,7 @@ export function OpeningBalancePage() {
           return (
             <Link
               key={item.slug}
-              to={`/opening-balance/${item.slug}`}
+              to={item.to ?? `/opening-balance/${item.slug}`}
               className="flex flex-col items-center justify-center gap-4 rounded-lg border border-border bg-white px-4 py-10 text-center transition-shadow hover:shadow-md"
             >
               {Icon && <Icon size={56} />}
