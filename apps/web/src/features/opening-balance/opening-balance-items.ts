@@ -12,7 +12,11 @@ export interface OpeningBalanceItem {
 
 export const OPENING_BALANCE_ITEMS: OpeningBalanceItem[] = [
   { slug: 'so-du-tai-khoan', label: 'Số dư tài khoản' },
-  { slug: 'so-du-tk-ngan-hang', label: 'Số dư TK ngân hàng' },
+  {
+    slug: 'so-du-tk-ngan-hang',
+    label: 'Số dư TK ngân hàng',
+    to: `/opening-balance/so-du-tai-khoan/ngan-hang?account=${CHART_OF_ACCOUNTS.BANK_DEPOSIT}`,
+  },
   {
     slug: 'cong-no-khach-hang',
     label: 'Công nợ khách hàng',
