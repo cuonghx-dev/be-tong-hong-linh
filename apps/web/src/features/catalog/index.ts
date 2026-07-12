@@ -1,6 +1,21 @@
 // Public API — phân hệ Danh mục.
 export { CatalogPage } from './pages/CatalogPage'
 export { CatalogItemPage } from './pages/CatalogItemPage'
+export { ProductTable } from './components/ProductTable'
+export { useProducts, useProduct } from './api/useProducts'
+export {
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+  useImportProducts,
+} from './api/useProductMutations'
+export { WarehouseTable } from './components/WarehouseTable'
+export { useWarehouses, useWarehouse } from './api/useWarehouses'
+export {
+  useCreateWarehouse,
+  useUpdateWarehouse,
+  useDeleteWarehouse,
+} from './api/useWarehouseMutations'
 export { EmployeeTable } from './components/EmployeeTable'
 export { useEmployees, useEmployee } from './api/useEmployees'
 export {
@@ -74,3 +89,6 @@ export {
   useUpdateIncomeExpenseItem,
   useDeleteIncomeExpenseItem,
 } from './api/useIncomeExpenseItemMutations'
+export { UnitTable } from './components/UnitTable'
+export { useUnits, useUnit } from './api/useUnits'
+export { useCreateUnit, useUpdateUnit, useDeleteUnit } from './api/useUnitMutations'

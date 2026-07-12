@@ -591,6 +591,69 @@ model GeneralVoucherLine {
 
 // ── Danh mục (05-danh-muc) ───────────────────────────────────────────────────
 
+// Tính chất vật tư hàng hóa (Danh_sach_hang_hoa_dich_vu.xlsx cột "Tính chất").
+enum ProductType {
+  GOODS // Hàng hóa
+  SERVICE // Dịch vụ
+  FINISHED // Thành phẩm
+  MATERIAL // Nguyên vật liệu
+  TOOL // Công cụ dụng cụ
+}
+
+// Vật tư, hàng hóa, dịch vụ (Danh_sach_hang_hoa_dich_vu.xlsx).
+// Danh mục hàng hóa dùng chung: gắn vào dòng chứng từ mua/bán/nhập/xuất kho.
+// groupCode / defaultWarehouseCode tham chiếu lỏng (không FK, như Customer.groupId).
+// Các cột TK ngầm định gợi ý định khoản khi lập chứng từ; giá/tồn tối thiểu là Decimal.
+model Product {
+  id                   String      @id @default(uuid())
+  code                 String      @unique // Mã
+  name                 String // Tên
+  type                 ProductType @default(GOODS) // Tính chất
+  groupCode            String?     @map("group_code") // Nhóm VTHH (mã nhóm)
+  unit                 String? // Đơn vị tính chính
+  description          String? // Mô tả
+  purchaseDescription  String?     @map("purchase_description") // Diễn giải khi mua
+  saleDescription      String?     @map("sale_description") // Diễn giải khi bán
+  defaultWarehouseCode String?     @map("default_warehouse_code") // Mã kho ngầm định
+  defaultWarehouseName String?     @map("default_warehouse_name") // Kho ngầm định
+  inventoryAccount     String?     @map("inventory_account") // TK Kho
+  revenueAccount       String?     @map("revenue_account") // TK Doanh thu
+  discountAccount      String?     @map("discount_account") // TK chiết khấu
+  saleReturnAccount    String?     @map("sale_return_account") // TK Trả lại
+  costAccount          String?     @map("cost_account") // TK chi phí
+  purchasePrice        Decimal?    @map("purchase_price") @db.Decimal(18, 2) // Đơn giá mua gần nhất
+  salePrice            Decimal?    @map("sale_price") @db.Decimal(18, 2) // Đơn giá bán 1
+  minStock             Decimal?    @map("min_stock") @db.Decimal(18, 2) // Số lượng tồn tối thiểu
+  vatRate              String?     @map("vat_rate") // Thuế suất GTGT (10/8/KCT/…)
+  isActive             Boolean     @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@index([type])
+  @@map("products")
+}
+
+// Kho (Danh_sach_kho.xlsx) — danh mục dùng chung phân hệ kho, mua, bán.
+// Product.defaultWarehouseCode và *VoucherLine.warehouseId tham chiếu lỏng (không FK).
+model Warehouse {
+  id       String  @id @default(uuid())
+  code     String  @unique // Mã kho
+  name     String // Tên kho
+  address  String? // Địa chỉ
+  branch   String? // Chi nhánh
+  isActive Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@map("warehouses")
+}
+
 // Nhân viên (Danh_sach_nhan_vien.xlsx) — danh mục dùng chung các phân hệ.
 model Employee {
   id          String  @id @default(uuid())
@@ -821,6 +884,22 @@ model VoucherType {
 
   @@index([code])
   @@map("voucher_types")
+}
+
+// Đơn vị tính (Danh_sach_don_vi_tinh.xlsx).
+// Danh mục đơn vị đo lường vật tư/hàng hóa (VD "Cái", "kg", "Thùng"); tên là khóa tự nhiên (unique).
+model Unit {
+  id          String  @id @default(uuid())
+  name        String  @unique // Đơn vị tính (VD "Cái")
+  description String? // Mô tả
+  isActive    Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@map("units")
 }
 
 // ── Số dư ban đầu (opening-balance) ──────────────────────────────────────────

@@ -1,5 +1,54 @@
-import { AccountNature, CostObjectType, IncomeExpenseType, TransferSide } from '@app/shared'
+import {
+  AccountNature,
+  CostObjectType,
+  IncomeExpenseType,
+  ProductType,
+  TransferSide,
+} from '@app/shared'
 import { z } from 'zod'
+
+// Vật tư, hàng hóa, dịch vụ.
+// Giá/tồn tối thiểu là chuỗi số (Decimal); '' = chưa nhập → gửi undefined.
+const decimalString = z
+  .string()
+  .refine((v) => v === '' || !Number.isNaN(Number(v)), 'Nhập số hợp lệ')
+  .optional()
+
+export const productSchema = z.object({
+  code: z.string().min(1, 'Nhập mã hàng hóa'),
+  name: z.string().min(1, 'Nhập tên hàng hóa'),
+  type: z.nativeEnum(ProductType),
+  groupCode: z.string().optional(),
+  unit: z.string().optional(),
+  description: z.string().optional(),
+  purchaseDescription: z.string().optional(),
+  saleDescription: z.string().optional(),
+  defaultWarehouseCode: z.string().optional(),
+  defaultWarehouseName: z.string().optional(),
+  inventoryAccount: z.string().optional(),
+  revenueAccount: z.string().optional(),
+  discountAccount: z.string().optional(),
+  saleReturnAccount: z.string().optional(),
+  costAccount: z.string().optional(),
+  purchasePrice: decimalString,
+  salePrice: decimalString,
+  minStock: decimalString,
+  vatRate: z.string().optional(),
+  isActive: z.boolean().optional(),
+})
+
+export type ProductFormValues = z.infer<typeof productSchema>
+
+// Kho.
+export const warehouseSchema = z.object({
+  code: z.string().min(1, 'Nhập mã kho'),
+  name: z.string().min(1, 'Nhập tên kho'),
+  address: z.string().optional(),
+  branch: z.string().optional(),
+  isActive: z.boolean().optional(),
+})
+
+export type WarehouseFormValues = z.infer<typeof warehouseSchema>
 
 // Nhân viên.
 export const employeeSchema = z.object({
@@ -124,3 +173,12 @@ export const incomeExpenseItemSchema = z.object({
 })
 
 export type IncomeExpenseItemFormValues = z.infer<typeof incomeExpenseItemSchema>
+
+// Đơn vị tính.
+export const unitSchema = z.object({
+  name: z.string().min(1, 'Nhập đơn vị tính'),
+  description: z.string().optional(),
+  isActive: z.boolean().optional(),
+})
+
+export type UnitFormValues = z.infer<typeof unitSchema>

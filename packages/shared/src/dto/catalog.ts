@@ -1,5 +1,102 @@
 // Type request/response phân hệ Danh mục (05-danh-muc) — dùng chung FE ↔ BE.
-import type { AccountNature, CostObjectType, IncomeExpenseType, TransferSide } from '../enums'
+import type {
+  AccountNature,
+  CostObjectType,
+  IncomeExpenseType,
+  ProductType,
+  TransferSide,
+} from '../enums'
+
+// ── Vật tư, hàng hóa, dịch vụ ────────────────────────────────────────────────
+
+export interface ProductDto {
+  id: string
+  code: string // Mã
+  name: string // Tên
+  type: ProductType // Tính chất
+  groupCode: string | null // Nhóm VTHH (mã nhóm)
+  unit: string | null // Đơn vị tính chính
+  description: string | null // Mô tả
+  purchaseDescription: string | null // Diễn giải khi mua
+  saleDescription: string | null // Diễn giải khi bán
+  defaultWarehouseCode: string | null // Mã kho ngầm định
+  defaultWarehouseName: string | null // Kho ngầm định
+  inventoryAccount: string | null // TK Kho
+  revenueAccount: string | null // TK Doanh thu
+  discountAccount: string | null // TK chiết khấu
+  saleReturnAccount: string | null // TK Trả lại
+  costAccount: string | null // TK chi phí
+  purchasePrice: string | null // Đơn giá mua gần nhất (Decimal → string)
+  salePrice: string | null // Đơn giá bán 1 (Decimal → string)
+  minStock: string | null // Số lượng tồn tối thiểu (Decimal → string)
+  vatRate: string | null // Thuế suất GTGT (10/8/KCT/…)
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateProductInput {
+  code: string
+  name: string
+  type?: ProductType
+  groupCode?: string | null
+  unit?: string | null
+  description?: string | null
+  purchaseDescription?: string | null
+  saleDescription?: string | null
+  defaultWarehouseCode?: string | null
+  defaultWarehouseName?: string | null
+  inventoryAccount?: string | null
+  revenueAccount?: string | null
+  discountAccount?: string | null
+  saleReturnAccount?: string | null
+  costAccount?: string | null
+  purchasePrice?: string | null
+  salePrice?: string | null
+  minStock?: string | null
+  vatRate?: string | null
+  isActive?: boolean
+}
+
+export type UpdateProductInput = Partial<CreateProductInput>
+
+export interface ProductFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo mã / tên / nhóm
+  type?: ProductType
+  isActive?: boolean
+}
+
+// ── Kho ──────────────────────────────────────────────────────────────────────
+
+export interface WarehouseDto {
+  id: string
+  code: string // Mã kho
+  name: string // Tên kho
+  address: string | null // Địa chỉ
+  branch: string | null // Chi nhánh
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateWarehouseInput {
+  code: string
+  name: string
+  address?: string | null
+  branch?: string | null
+  isActive?: boolean
+}
+
+export type UpdateWarehouseInput = Partial<CreateWarehouseInput>
+
+export interface WarehouseFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo mã / tên / địa chỉ / chi nhánh
+  isActive?: boolean
+}
 
 // ── Nhân viên ────────────────────────────────────────────────────────────────
 
@@ -336,5 +433,31 @@ export interface DefaultAccountFilter {
   page?: number
   pageSize?: number
   keyword?: string // Tìm theo loại nghiệp vụ / TK Nợ / TK Có
+  isActive?: boolean
+}
+
+// ── Đơn vị tính ──────────────────────────────────────────────────────────────
+
+export interface UnitDto {
+  id: string
+  name: string // Đơn vị tính (VD "Cái")
+  description: string | null // Mô tả
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateUnitInput {
+  name: string
+  description?: string | null
+  isActive?: boolean
+}
+
+export type UpdateUnitInput = Partial<CreateUnitInput>
+
+export interface UnitFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo tên / mô tả đơn vị tính
   isActive?: boolean
 }

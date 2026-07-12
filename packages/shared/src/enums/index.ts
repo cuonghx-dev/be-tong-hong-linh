@@ -216,6 +216,24 @@ export const TRANSFER_SIDE_LABELS: Record<TransferSide, string> = {
   [TransferSide.Both]: 'Hai bên',
 }
 
+// Tính chất vật tư hàng hóa (Danh_sach_hang_hoa_dich_vu.xlsx cột "Tính chất").
+export enum ProductType {
+  Goods = 'GOODS', // Hàng hóa
+  Service = 'SERVICE', // Dịch vụ
+  Finished = 'FINISHED', // Thành phẩm
+  Material = 'MATERIAL', // Nguyên vật liệu
+  Tool = 'TOOL', // Công cụ dụng cụ
+}
+
+// Nhãn hiển thị tính chất vật tư hàng hóa.
+export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
+  [ProductType.Goods]: 'Hàng hóa',
+  [ProductType.Service]: 'Dịch vụ',
+  [ProductType.Finished]: 'Thành phẩm',
+  [ProductType.Material]: 'Nguyên vật liệu',
+  [ProductType.Tool]: 'Công cụ dụng cụ',
+}
+
 // Tính chất tài khoản (Danh_sach_he_thong_tai_khoan_.xlsx cột "Tính chất").
 export enum AccountNature {
   Debit = 'DEBIT', // Dư Nợ

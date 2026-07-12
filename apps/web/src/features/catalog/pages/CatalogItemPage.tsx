@@ -13,8 +13,11 @@ import { EmployeeTable } from '../components/EmployeeTable'
 import { ExpenseItemTable } from '../components/ExpenseItemTable'
 import { IncomeExpenseItemTable } from '../components/IncomeExpenseItemTable'
 import { PartnerGroupTable } from '../components/PartnerGroupTable'
+import { ProductTable } from '../components/ProductTable'
 import { TransferAccountTable } from '../components/TransferAccountTable'
+import { UnitTable } from '../components/UnitTable'
 import { VoucherTypeTable } from '../components/VoucherTypeTable'
+import { WarehouseTable } from '../components/WarehouseTable'
 import { findCatalogItem } from '../catalog-groups'
 
 // Danh mục đã có sẵn màn hình ở phân hệ khác → render lại tại đây (cùng data).
@@ -22,7 +25,9 @@ const CATALOG_VIEWS: Record<string, () => ReactNode> = {
   'khach-hang': () => <CustomerTable />,
   'nha-cung-cap': () => <SupplierTable />,
   'nhan-vien': () => <EmployeeTable />,
+  kho: () => <WarehouseTable />,
   'nhom-khach-hang-nha-cung-cap': () => <PartnerGroupTable />,
+  'vat-tu-hang-hoa': () => <ProductTable />,
   'ngan-hang': () => <BankTable />,
   'tai-khoan-ngan-hang': () => <BankAccountTable />,
   'doi-tuong-tap-hop-chi-phi': () => <CostObjectTable />,
@@ -32,6 +37,7 @@ const CATALOG_VIEWS: Record<string, () => ReactNode> = {
   'tai-khoan-ngam-dinh': () => <DefaultAccountTable />,
   'loai-chung-tu': () => <VoucherTypeTable />,
   'muc-thu-chi': () => <IncomeExpenseItemTable />,
+  'don-vi-tinh': () => <UnitTable />,
 }
 
 // Trang chi tiết 1 danh mục — render màn hình có sẵn, chưa build thì placeholder.

@@ -8,13 +8,20 @@ import type {
   ExpenseItemFilter,
   IncomeExpenseItemFilter,
   PartnerGroupFilter,
+  ProductFilter,
   TransferAccountFilter,
+  UnitFilter,
   VoucherTypeFilter,
+  WarehouseFilter,
 } from '@app/shared'
 
 // Query keys phân hệ Danh mục.
 export const catalogKeys = {
   all: ['catalog'] as const,
+  products: (filter: ProductFilter) => [...catalogKeys.all, 'products', filter] as const,
+  product: (id: string) => [...catalogKeys.all, 'product', id] as const,
+  warehouses: (filter: WarehouseFilter) => [...catalogKeys.all, 'warehouses', filter] as const,
+  warehouse: (id: string) => [...catalogKeys.all, 'warehouse', id] as const,
   employees: (filter: EmployeeFilter) => [...catalogKeys.all, 'employees', filter] as const,
   employee: (id: string) => [...catalogKeys.all, 'employee', id] as const,
   banks: (filter: BankFilter) => [...catalogKeys.all, 'banks', filter] as const,
@@ -46,4 +53,6 @@ export const catalogKeys = {
     [...catalogKeys.all, 'income-expense-items', filter] as const,
   incomeExpenseItem: (id: string) =>
     [...catalogKeys.all, 'income-expense-item', id] as const,
+  units: (filter: UnitFilter) => [...catalogKeys.all, 'units', filter] as const,
+  unit: (id: string) => [...catalogKeys.all, 'unit', id] as const,
 }

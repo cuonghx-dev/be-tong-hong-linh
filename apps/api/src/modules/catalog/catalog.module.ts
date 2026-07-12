@@ -17,10 +17,16 @@ import { IncomeExpenseItemController } from './income-expense-item.controller'
 import { IncomeExpenseItemService } from './income-expense-item.service'
 import { PartnerGroupController } from './partner-group.controller'
 import { PartnerGroupService } from './partner-group.service'
+import { ProductController } from './product.controller'
+import { ProductService } from './product.service'
 import { TransferAccountController } from './transfer-account.controller'
 import { TransferAccountService } from './transfer-account.service'
+import { UnitController } from './unit.controller'
+import { UnitService } from './unit.service'
 import { VoucherTypeController } from './voucher-type.controller'
 import { VoucherTypeService } from './voucher-type.service'
+import { WarehouseController } from './warehouse.controller'
+import { WarehouseService } from './warehouse.service'
 
 @Module({
   controllers: [
@@ -32,9 +38,12 @@ import { VoucherTypeService } from './voucher-type.service'
     ExpenseItemController,
     IncomeExpenseItemController,
     PartnerGroupController,
+    ProductController,
     TransferAccountController,
     DefaultAccountController,
     VoucherTypeController,
+    WarehouseController,
+    UnitController,
   ],
   providers: [
     AccountService,
@@ -45,9 +54,12 @@ import { VoucherTypeService } from './voucher-type.service'
     ExpenseItemService,
     IncomeExpenseItemService,
     PartnerGroupService,
+    ProductService,
     TransferAccountService,
     DefaultAccountService,
     VoucherTypeService,
+    WarehouseService,
+    UnitService,
   ],
   exports: [
     AccountService,
@@ -58,9 +70,12 @@ import { VoucherTypeService } from './voucher-type.service'
     ExpenseItemService,
     IncomeExpenseItemService,
     PartnerGroupService,
+    ProductService,
     TransferAccountService,
     DefaultAccountService,
     VoucherTypeService,
+    WarehouseService,
+    UnitService,
   ],
 })
 export class CatalogModule {}
