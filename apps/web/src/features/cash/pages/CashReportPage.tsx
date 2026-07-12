@@ -30,6 +30,7 @@ export function CashReportPage() {
     const next = new URLSearchParams(params)
     next.set('from', from)
     next.set('to', to)
+    next.delete('page') // đổi kỳ → về trang 1
     setParams(next, { replace: true })
   }
 
