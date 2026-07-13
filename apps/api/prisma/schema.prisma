@@ -11,7 +11,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// TODO: thêm model theo feature còn lại: catalog, sales, purchase, bank, inventory, report, auth.
+// TODO: thêm model theo feature còn lại: catalog, sales, purchase, bank, inventory, report.
+
+// ── Xác thực & phân quyền (auth) ────────────────────────────────────────────
+
+// Vai trò người dùng. Đồng bộ với UserRole trong packages/shared/src/enums.
+enum UserRole {
+  ADMIN
+  KETOAN
+}
+
+// Người dùng hệ thống. Chưa có đăng ký — tài khoản tạo qua seed (admin) hoặc ADMIN tạo sau này.
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  role         UserRole @default(KETOAN)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
 
 // ── Tiền mặt (01-tien-mat) ──────────────────────────────────────────────────
 

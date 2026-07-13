@@ -1,22 +1,31 @@
+import { isAxiosError } from 'axios'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { ChevronDownIcon, EyeIcon, EyeOffIcon, HelpIcon } from '@/shared/ui/icons'
-import { useAuth } from '../store'
+import { useLogin } from '../api/useLogin'
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const login = useAuth((s) => s.login)
+  const login = useLogin()
   const [showPw, setShowPw] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    login(email || 'demo@ketoan.vn')
-    navigate('/', { replace: true })
+    login.mutate(
+      { email, password },
+      { onSuccess: () => navigate('/', { replace: true }) },
+    )
   }
+
+  const errorMessage = login.isError
+    ? isAxiosError(login.error) && login.error.response?.status === 401
+      ? 'Email hoặc mật khẩu không đúng'
+      : 'Không thể đăng nhập. Vui lòng thử lại.'
+    : null
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-900">
@@ -65,10 +74,12 @@ export function LoginPage() {
 
           <form className="flex flex-col gap-3" onSubmit={onSubmit}>
             <Input
-              placeholder="Số điện thoại/email"
+              type="email"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="username"
+              required
             />
             <div className="relative">
               <Input
@@ -78,6 +89,8 @@ export function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 className="pr-10"
+                required
+                minLength={6}
               />
               <button
                 type="button"
@@ -88,18 +101,24 @@ export function LoginPage() {
                 {showPw ? <EyeOffIcon /> : <EyeIcon />}
               </button>
             </div>
-            <Button type="submit" size="lg" className="mt-1 w-full">
-              Đăng nhập
+            {errorMessage && (
+              <p className="text-sm text-red-600" role="alert">
+                {errorMessage}
+              </p>
+            )}
+            <Button type="submit" size="lg" className="mt-1 w-full" disabled={login.isPending}>
+              {login.isPending ? 'Đang đăng nhập…' : 'Đăng nhập'}
             </Button>
           </form>
 
           <div className="mt-3 flex justify-between text-sm">
-            <a className="text-slate-500 hover:text-primary" href="#">
+            {/* Chưa hỗ trợ — tài khoản do quản trị viên cấp. */}
+            <span className="cursor-not-allowed text-slate-400" title="Sắp có">
               Quên mật khẩu?
-            </a>
-            <a className="text-primary hover:underline" href="#">
+            </span>
+            <span className="cursor-not-allowed text-slate-400" title="Sắp có">
               Đăng ký
-            </a>
+            </span>
           </div>
         </section>
       </div>

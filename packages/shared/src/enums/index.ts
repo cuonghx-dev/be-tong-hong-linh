@@ -247,3 +247,15 @@ export const ACCOUNT_NATURE_LABELS: Record<AccountNature, string> = {
   [AccountNature.Credit]: 'Dư Có',
   [AccountNature.Dual]: 'Lưỡng tính',
 }
+
+// Vai trò người dùng (auth). Đồng bộ với enum UserRole trong schema.prisma.
+export enum UserRole {
+  Admin = 'ADMIN', // Quản trị — toàn quyền, quản lý người dùng
+  KeToan = 'KETOAN', // Kế toán — nghiệp vụ hằng ngày
+}
+
+// Nhãn hiển thị vai trò người dùng.
+export const USER_ROLE_LABELS: Record<UserRole, string> = {
+  [UserRole.Admin]: 'Quản trị',
+  [UserRole.KeToan]: 'Kế toán',
+}

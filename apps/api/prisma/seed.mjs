@@ -2,6 +2,7 @@
 // Nguồn: Ban_hang.xlsx (chứng từ) · Danh_sach_khach_hang.xlsx (KH).
 // Chạy: pnpm --filter @app/api seed   (hoặc: node prisma/seed.mjs)
 import { PrismaClient, PaymentMethod, SalesPaymentMode, SalesVoucherType } from '@prisma/client'
+import { hashSync } from 'bcryptjs'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import xlsx from 'xlsx'
@@ -111,7 +112,25 @@ async function seedDefaultAccounts() {
   console.log(`Tài khoản ngầm định: ${data.length}`)
 }
 
+// Tài khoản quản trị mặc định (auth). Mật khẩu đặt qua env SEED_ADMIN_PASSWORD.
+async function seedUsers() {
+  const email = 'admin@ketoan.vn'
+  const password = process.env.SEED_ADMIN_PASSWORD ?? 'admin123'
+  await prisma.user.upsert({
+    where: { email },
+    update: {},
+    create: {
+      email,
+      passwordHash: hashSync(password, 10),
+      name: 'Quản trị viên',
+      role: 'ADMIN',
+    },
+  })
+  console.log(`Người dùng: ${email} (ADMIN)`)
+}
+
 async function main() {
+  await seedUsers()
   await seedAccounts()
   await seedDefaultAccounts()
 
