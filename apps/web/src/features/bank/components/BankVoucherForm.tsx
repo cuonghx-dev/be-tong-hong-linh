@@ -14,7 +14,9 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, PlusIcon } from '@/shared/ui/icons'
-import { PartnerPicker } from '@/shared/ui/partner-picker'
+import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
+import { QuickAddEmployeeDialog } from '@/shared/ui/quick-add-employee-dialog'
 import {
   Select,
   SelectContent,
@@ -89,6 +91,25 @@ export function BankVoucherForm({
   // Picker "Mã đối tượng" (nguồn tạm: khách hàng + nhà cung cấp).
   const [partnerKw, setPartnerKw] = useState('')
   const { items: partnerItems, loading: partnerLoading } = usePartnerOptions(partnerKw)
+
+  // Tạo nhanh đối tượng / nhân viên (dialog mở từ nút + trên picker).
+  const [partnerDialog, setPartnerDialog] = useState(false)
+  const [employeeDialog, setEmployeeDialog] = useState(false)
+
+  // Chọn đối tượng: điền header + tự điền Lý do/Diễn giải + Đối tượng cho mọi dòng.
+  const selectPartner = (p: PartnerOption) => {
+    setValue('partnerId', p.code)
+    setValue('partnerName', p.name)
+    setValue('partnerType', p.type)
+    if (p.address) setValue('address', p.address)
+    const reason = `${isReceipt ? 'Thu tiền của ' : 'Chi tiền cho '}${p.name}`
+    setValue('reason', reason)
+    ;(watch('lines') ?? []).forEach((_, i) => {
+      setValue(`lines.${i}.description`, reason)
+      setValue(`lines.${i}.partnerId`, p.code)
+      setValue(`lines.${i}.partnerName`, p.name)
+    })
+  }
 
   // Dòng mới kế thừa Diễn giải + Đối tượng/Tên đối tượng từ header (MISA tự điền).
   const newLine = (): BankLineFormValues => ({
@@ -237,21 +258,8 @@ export function BankVoucherForm({
                 loading={partnerLoading}
                 keyword={partnerKw}
                 onKeywordChange={setPartnerKw}
-                onSelect={(p) => {
-                  setValue('partnerId', p.code)
-                  setValue('partnerName', p.name)
-                  setValue('partnerType', p.type)
-                  if (p.address) setValue('address', p.address)
-                  // Lý do/Nội dung: "Thu tiền của <tên>" / "Chi tiền cho <tên>".
-                  const reason = `${isReceipt ? 'Thu tiền của ' : 'Chi tiền cho '}${p.name}`
-                  setValue('reason', reason)
-                  // Tự điền Diễn giải + Đối tượng/Tên đối tượng cho mọi dòng.
-                  ;(watch('lines') ?? []).forEach((_, i) => {
-                    setValue(`lines.${i}.description`, reason)
-                    setValue(`lines.${i}.partnerId`, p.code)
-                    setValue(`lines.${i}.partnerName`, p.name)
-                  })
-                }}
+                onSelect={selectPartner}
+                onAddNew={() => setPartnerDialog(true)}
               />
             </Field>
             <Field label="Tên đối tượng">
@@ -275,7 +283,7 @@ export function BankVoucherForm({
             {isReceipt ? (
               <>
                 <Field label="Nhân viên thu nợ">
-                  <LookupInput {...register('employeeId')} withAdd />
+                  <LookupInput {...register('employeeId')} withAdd onAdd={() => setEmployeeDialog(true)} />
                 </Field>
                 <Field label="Lý do thu">
                   <input {...register('reason')} className={inputCls} />
@@ -287,7 +295,7 @@ export function BankVoucherForm({
                   <input {...register('reason')} className={inputCls} />
                 </Field>
                 <Field label="Nhân viên">
-                  <LookupInput {...register('employeeId')} withAdd />
+                  <LookupInput {...register('employeeId')} withAdd onAdd={() => setEmployeeDialog(true)} />
                 </Field>
                 <Field label="Tài khoản nhận" className="col-span-2">
                   <input {...register('receiverAccountNo')} className={inputCls} />
@@ -445,6 +453,22 @@ export function BankVoucherForm({
           </div>
         )}
       </div>
+
+      <QuickAddPartnerDialog
+        open={partnerDialog}
+        onClose={() => setPartnerDialog(false)}
+        initialCode={partnerKw.trim() || undefined}
+        onCreated={(p) => {
+          setPartnerKw('')
+          selectPartner(p)
+        }}
+      />
+      <QuickAddEmployeeDialog
+        open={employeeDialog}
+        onClose={() => setEmployeeDialog(false)}
+        initialCode={watch('employeeId') || undefined}
+        onCreated={(p) => setValue('employeeId', p.code)}
+      />
     </form>
   )
 }
@@ -478,8 +502,8 @@ function Field({
 // Ô nhập có nút "+" (thêm nhanh) và mũi tên chọn — style theo MISA. Chưa nối lookup.
 const LookupInput = forwardRef<
   HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement> & { withAdd?: boolean }
->(function LookupInput({ withAdd, className, ...props }, ref) {
+  React.InputHTMLAttributes<HTMLInputElement> & { withAdd?: boolean; onAdd?: () => void }
+>(function LookupInput({ withAdd, onAdd, className, ...props }, ref) {
   return (
     <div className="flex">
       <input
@@ -491,6 +515,7 @@ const LookupInput = forwardRef<
         <button
           type="button"
           tabIndex={-1}
+          onClick={onAdd}
           className="grid h-9 w-8 place-items-center border-y border-border bg-slate-50 text-primary hover:bg-slate-100"
           aria-label="Thêm nhanh"
         >

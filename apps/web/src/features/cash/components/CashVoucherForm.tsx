@@ -14,7 +14,7 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon, TrashIcon } from '@/shared/ui/icons'
-import { PartnerPicker } from '@/shared/ui/partner-picker'
+import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
 import {
   Select,
   SelectContent,
@@ -34,6 +34,8 @@ import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
 import { cashVoucherSchema, type CashLineFormValues, type CashVoucherFormValues } from '../schema'
 import { CATEGORY_LABEL, CATEGORY_OPTIONS, defaultReason, lineColumns } from '../types'
 import { AmountInput } from './AmountInput'
+import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
+import { QuickAddEmployeeDialog } from '@/shared/ui/quick-add-employee-dialog'
 
 interface CashVoucherPrefill {
   category?: CashVoucherCategory
@@ -98,6 +100,27 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
   // Picker "Nhân viên" (danh mục Nhân viên đang sử dụng).
   const [employeeKw, setEmployeeKw] = useState('')
   const { items: employeeItems, loading: employeeLoading } = useEmployeeOptions(employeeKw)
+
+  // Tạo nhanh đối tượng / nhân viên (dialog mở từ nút + trên picker).
+  const [partnerDialog, setPartnerDialog] = useState(false)
+  const [employeeDialog, setEmployeeDialog] = useState(false)
+
+  // Chọn đối tượng: điền header + tự điền Lý do/Diễn giải + Đối tượng cho mọi dòng.
+  const selectPartner = (p: PartnerOption) => {
+    setValue('partnerId', p.code)
+    setValue('partnerName', p.name)
+    setValue('partnerType', p.type)
+    if (p.address) setValue('address', p.address)
+    const reason = defaultReason(watch('category'), p.name)
+    setValue('reason', reason)
+    ;(watch('lines') ?? []).forEach((_, i) => {
+      setValue(`lines.${i}.description`, reason)
+      setValue(`lines.${i}.partnerId`, p.code)
+      setValue(`lines.${i}.partnerName`, p.name)
+    })
+  }
+
+  const selectEmployee = (p: PartnerOption) => setValue('employeeId', p.code)
 
   // Nạp dữ liệu khi sửa.
   useEffect(() => {
@@ -230,21 +253,8 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                 loading={partnerLoading}
                 keyword={partnerKw}
                 onKeywordChange={setPartnerKw}
-                onSelect={(p) => {
-                  setValue('partnerId', p.code)
-                  setValue('partnerName', p.name)
-                  setValue('partnerType', p.type)
-                  if (p.address) setValue('address', p.address)
-                  // Lý do nộp/chi theo loại nghiệp vụ, nối tên đối tượng.
-                  const reason = defaultReason(category, p.name)
-                  setValue('reason', reason)
-                  // Tự điền Diễn giải + Đối tượng / Tên đối tượng cho mọi dòng hạch toán.
-                  ;(watch('lines') ?? []).forEach((_, i) => {
-                    setValue(`lines.${i}.description`, reason)
-                    setValue(`lines.${i}.partnerId`, p.code)
-                    setValue(`lines.${i}.partnerName`, p.name)
-                  })
-                }}
+                onSelect={selectPartner}
+                onAddNew={() => setPartnerDialog(true)}
               />
             </Field>
             <Field label="Tên đối tượng">
@@ -259,6 +269,9 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                 <Field label="Địa chỉ">
                   <input {...register('address')} className={inputCls} />
                 </Field>
+                <Field label="Lý do nộp" className="sm:col-span-2">
+                  <input {...register('reason')} className={inputCls} />
+                </Field>
                 <Field label="Nhân viên">
                   <PartnerPicker
                     value={watch('employeeId')}
@@ -267,11 +280,9 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                     keyword={employeeKw}
                     onKeywordChange={setEmployeeKw}
                     placeholder="Mã nhân viên"
-                    onSelect={(p) => setValue('employeeId', p.code)}
+                    onSelect={selectEmployee}
+                    onAddNew={() => setEmployeeDialog(true)}
                   />
-                </Field>
-                <Field label="Lý do nộp">
-                  <input {...register('reason')} className={inputCls} />
                 </Field>
               </>
             ) : (
@@ -282,8 +293,8 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                 <Field label="Địa chỉ">
                   <input {...register('address')} className={inputCls} />
                 </Field>
-                {/* PC: Lý do chi nằm TRÊN Nhân viên (§4) */}
-                <Field label="Lý do chi">
+                {/* PC: Lý do chi nằm TRÊN Nhân viên (§4), trải rộng 2 cột như MISA */}
+                <Field label="Lý do chi" className="sm:col-span-2">
                   <input {...register('reason')} className={inputCls} />
                 </Field>
                 <Field label="Nhân viên">
@@ -294,14 +305,24 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                     keyword={employeeKw}
                     onKeywordChange={setEmployeeKw}
                     placeholder="Mã nhân viên"
-                    onSelect={(p) => setValue('employeeId', p.code)}
+                    onSelect={selectEmployee}
+                    onAddNew={() => setEmployeeDialog(true)}
                   />
                 </Field>
               </>
             )}
 
-            <Field label="Kèm theo (chứng từ gốc)">
-              <input type="number" min={0} {...register('attachmentCount')} className={inputCls} />
+            <Field label="Kèm theo">
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="Số lượng"
+                  {...register('attachmentCount')}
+                  className={cn(inputCls, 'w-32')}
+                />
+                <span className="text-sm text-slate-500">chứng từ gốc</span>
+              </div>
             </Field>
             </div>
 
@@ -330,6 +351,12 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                 {formatCurrency(total)}
               </div>
             </div>
+          </div>
+
+          {/* Tham chiếu — chứng từ nguồn liên quan (placeholder, chưa liên kết) */}
+          <div className="flex items-center gap-1 text-[13px] text-slate-500">
+            <span className="font-semibold text-slate-700">Tham chiếu</span>
+            <span className="text-slate-400">…</span>
           </div>
         </section>
 
@@ -497,6 +524,25 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
           </div>
         )}
       </div>
+
+      <QuickAddPartnerDialog
+        open={partnerDialog}
+        onClose={() => setPartnerDialog(false)}
+        initialCode={partnerKw.trim() || undefined}
+        onCreated={(p) => {
+          setPartnerKw('')
+          selectPartner(p)
+        }}
+      />
+      <QuickAddEmployeeDialog
+        open={employeeDialog}
+        onClose={() => setEmployeeDialog(false)}
+        initialCode={employeeKw.trim() || undefined}
+        onCreated={(p) => {
+          setEmployeeKw('')
+          selectEmployee(p)
+        }}
+      />
     </form>
   )
 }
