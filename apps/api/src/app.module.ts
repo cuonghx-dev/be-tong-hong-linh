@@ -14,6 +14,7 @@ import { GeneralModule } from './modules/general/general.module'
 import { InventoryModule } from './modules/inventory/inventory.module'
 import { OpeningBalanceModule } from './modules/opening-balance/opening-balance.module'
 import { PurchaseModule } from './modules/purchase/purchase.module'
+import { ReportModule } from './modules/report/report.module'
 import { SalesModule } from './modules/sales/sales.module'
 
 @Module({
@@ -36,6 +37,7 @@ import { SalesModule } from './modules/sales/sales.module'
     CatalogModule,
     DashboardModule,
     OpeningBalanceModule,
+    ReportModule,
   ],
   providers: [
     // Guard toàn cục: mọi endpoint yêu cầu đăng nhập (trừ @Public), rồi mới xét @Roles.
