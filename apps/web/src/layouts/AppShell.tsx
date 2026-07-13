@@ -24,9 +24,7 @@ import {
 } from '@/shared/ui/icons'
 
 import logoUrl from '@/assets/logo.png'
-
-// Tên công ty + logo hiển thị ở brand sidebar.
-const COMPANY_NAME = 'CÔNG TY TNHH BÊ TÔNG HỒNG LĨNH'
+import { COMPANY_NAME } from '@/shared/lib/company'
 
 type NavItem = { to: string; label: string; icon: (p: IconProps) => JSX.Element }
 type NavGroup = { title?: string; items: NavItem[] }
