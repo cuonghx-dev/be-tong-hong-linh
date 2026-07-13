@@ -21,6 +21,7 @@ import { GoodsIssueVoucherPage } from '@/features/inventory/pages/GoodsIssueVouc
 import { InventoryReportPage } from '@/features/inventory/pages/InventoryReportPage'
 import { GeneralPage } from '@/features/general/pages/GeneralPage'
 import { GeneralVoucherPage } from '@/features/general/pages/GeneralVoucherPage'
+import { GeneralReportPage } from '@/features/report'
 import { OpeningBalancePage } from '@/features/opening-balance/pages/OpeningBalancePage'
 import { OpeningBalanceItemPage } from '@/features/opening-balance/pages/OpeningBalanceItemPage'
 import { AccountBalancePage } from '@/features/opening-balance/pages/AccountBalancePage'
@@ -65,6 +66,8 @@ const recordRoutes = [
   { path: '/general/vouchers/new', element: <GeneralVoucherPage mode="new" /> },
   { path: '/general/vouchers/:id', element: <GeneralVoucherPage mode="view" /> },
   { path: '/general/vouchers/:id/edit', element: <GeneralVoucherPage mode="edit" /> },
+  // Xem báo cáo Tổng hợp (sổ sách kế toán) — full-page, đè shell (vào từ tab "Báo cáo").
+  { path: '/general/reports/:slug', element: <GeneralReportPage /> },
   // Nhập số dư tài khoản chi tiết — full-page, đè shell (vào từ nút "Sửa").
   { path: '/opening-balance/so-du-tai-khoan/nhap', element: <AccountBalanceEntryPage /> },
   // Nhập số dư công nợ theo đối tượng (131 KH, 331 NCC) — full-page (vào từ cột "Chi tiết số dư").

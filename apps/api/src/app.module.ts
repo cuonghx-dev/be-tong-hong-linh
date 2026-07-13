@@ -10,6 +10,7 @@ import { GeneralModule } from './modules/general/general.module'
 import { InventoryModule } from './modules/inventory/inventory.module'
 import { OpeningBalanceModule } from './modules/opening-balance/opening-balance.module'
 import { PurchaseModule } from './modules/purchase/purchase.module'
+import { ReportModule } from './modules/report/report.module'
 import { SalesModule } from './modules/sales/sales.module'
 
 @Module({
@@ -31,7 +32,8 @@ import { SalesModule } from './modules/sales/sales.module'
     CatalogModule,
     DashboardModule,
     OpeningBalanceModule,
-    // TODO: import feature module: AuthModule, ReportModule.
+    ReportModule,
+    // TODO: import feature module: AuthModule.
   ],
 })
 export class AppModule {}

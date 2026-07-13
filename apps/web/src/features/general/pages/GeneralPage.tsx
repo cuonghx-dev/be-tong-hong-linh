@@ -1,13 +1,13 @@
 import { type GeneralVoucherFilter } from '@app/shared'
 import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { GeneralReportListTab } from '@/features/report'
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
-import { TabPlaceholder } from '@/shared/ui/tab-placeholder'
 import { useToast } from '@/shared/ui/toast'
 import { useGeneralVouchers } from '../api/useGeneralVouchers'
 import {
@@ -292,7 +292,7 @@ const TABS: ModuleTab[] = [
     label: 'Chứng từ nghiệp vụ khác',
     render: () => <GeneralVoucherTable />,
   },
-  { key: 'report', label: 'Báo cáo', render: () => <TabPlaceholder label="Báo cáo" /> },
+  { key: 'report', label: 'Báo cáo', render: () => <GeneralReportListTab /> },
 ]
 
 export function GeneralPage() {
