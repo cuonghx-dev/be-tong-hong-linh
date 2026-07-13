@@ -7,10 +7,12 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
+import { useToast } from '@/shared/ui/toast'
 import { useSalesVoucher } from '../api/useSalesVouchers'
 import { useCreateSalesVoucher, useUpdateSalesVoucher } from '../api/useSalesVoucherMutations'
 import {
@@ -61,6 +63,7 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
   const editing = useSalesVoucher(voucherId ?? null)
   const create = useCreateSalesVoucher()
   const update = useUpdateSalesVoucher()
+  const { toast } = useToast()
 
   const form = useForm<SalesVoucherFormValues>({
     resolver: zodResolver(salesVoucherSchema),
@@ -125,10 +128,18 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
           lotNo: l.lotNo,
         })),
       }
-      if (voucherId) await update.mutateAsync({ id: voucherId, dto })
-      else await create.mutateAsync(dto)
-      if (goNext && !voucherId) reset(defaultValues())
-      else onSaved()
+      try {
+        if (voucherId) await update.mutateAsync({ id: voucherId, dto })
+        else await create.mutateAsync(dto)
+        if (goNext && !voucherId) reset(defaultValues())
+        else onSaved()
+      } catch (e) {
+        toast({
+          variant: 'error',
+          title: 'Lưu chứng từ thất bại',
+          description: getApiErrorMessage(e),
+        })
+      }
     })
 
   const saving = create.isPending || update.isPending

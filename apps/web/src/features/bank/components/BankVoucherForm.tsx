@@ -10,10 +10,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { forwardRef, useEffect, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, PlusIcon } from '@/shared/ui/icons'
 import { PartnerPicker } from '@/shared/ui/partner-picker'
+import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { useBankVoucher } from '../api/useBankVouchers'
 import { useCreateBankVoucher, useUpdateBankVoucher } from '../api/useBankVoucherMutations'
@@ -65,6 +67,7 @@ export function BankVoucherForm({
   const editing = useBankVoucher(voucherId ?? null)
   const create = useCreateBankVoucher()
   const update = useUpdateBankVoucher()
+  const { toast } = useToast()
 
   const form = useForm<BankVoucherFormValues>({
     resolver: zodResolver(bankVoucherSchema),
@@ -136,15 +139,23 @@ export function BankVoucherForm({
           partnerName: l.partnerName,
         })),
       }
-      if (voucherId) {
-        await update.mutateAsync({ id: voucherId, dto })
-      } else {
-        await create.mutateAsync(dto)
-      }
-      if (goNext && !voucherId) {
-        reset(defaultValues(type))
-      } else {
-        onSaved()
+      try {
+        if (voucherId) {
+          await update.mutateAsync({ id: voucherId, dto })
+        } else {
+          await create.mutateAsync(dto)
+        }
+        if (goNext && !voucherId) {
+          reset(defaultValues(type))
+        } else {
+          onSaved()
+        }
+      } catch (e) {
+        toast({
+          variant: 'error',
+          title: 'Lưu chứng từ thất bại',
+          description: getApiErrorMessage(e),
+        })
       }
     })
 

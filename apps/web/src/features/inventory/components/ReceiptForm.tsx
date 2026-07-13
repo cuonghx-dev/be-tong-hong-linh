@@ -2,10 +2,12 @@ import { InventoryReceiptType, type CreateInventoryReceiptInput } from '@app/sha
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
+import { useToast } from '@/shared/ui/toast'
 import { useReceipt } from '../api/useReceipts'
 import { useCreateReceipt, useUpdateReceipt } from '../api/useReceiptMutations'
 import { receiptSchema, type ReceiptFormValues, type ReceiptLineFormValues } from '../schema'
@@ -46,6 +48,7 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
   const editing = useReceipt(receiptId ?? null)
   const create = useCreateReceipt()
   const update = useUpdateReceipt()
+  const { toast } = useToast()
 
   const form = useForm<ReceiptFormValues>({
     resolver: zodResolver(receiptSchema),
@@ -106,10 +109,18 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
           expiryDate: l.expiryDate || undefined,
         })),
       }
-      if (receiptId) await update.mutateAsync({ id: receiptId, dto })
-      else await create.mutateAsync(dto)
-      if (goNext && !receiptId) reset(defaultValues(values.receiptType))
-      else onSaved()
+      try {
+        if (receiptId) await update.mutateAsync({ id: receiptId, dto })
+        else await create.mutateAsync(dto)
+        if (goNext && !receiptId) reset(defaultValues(values.receiptType))
+        else onSaved()
+      } catch (e) {
+        toast({
+          variant: 'error',
+          title: 'Lưu chứng từ thất bại',
+          description: getApiErrorMessage(e),
+        })
+      }
     })
 
   const saving = create.isPending || update.isPending

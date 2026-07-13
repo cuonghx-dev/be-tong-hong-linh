@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { Prisma, type GeneralVoucher, type GeneralVoucherLine } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { BookLockService } from '../book-lock/book-lock.service'
 import { parseGeneralXlsx } from './general-import'
 import { GeneralVoucherFilterDto } from './dto/general-voucher-filter.dto'
 import { CreateGeneralVoucherDto, CreateGeneralVoucherLineDto } from './dto/create-general-voucher.dto'
@@ -12,7 +13,10 @@ type VoucherWithLines = GeneralVoucher & { lines: GeneralVoucherLine[] }
 
 @Injectable()
 export class GeneralService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bookLock: BookLockService,
+  ) {}
 
   async list(filter: GeneralVoucherFilterDto): Promise<Paginated<ReturnType<typeof toVoucherDto>>> {
     const where: Prisma.GeneralVoucherWhereInput = {}
@@ -55,6 +59,7 @@ export class GeneralService {
   }
 
   async create(dto: CreateGeneralVoucherDto) {
+    await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {
       const voucherNo = await nextVoucherNo(tx, new Date(dto.voucherDate))
       const lines = normalizeLines(dto.lines)
@@ -77,6 +82,7 @@ export class GeneralService {
   async update(id: string, dto: UpdateGeneralVoucherDto) {
     const existing = await this.prisma.generalVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate, dto.postingDate)
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const data: Prisma.GeneralVoucherUpdateInput = {
@@ -113,11 +119,13 @@ export class GeneralService {
       select: { voucherNo: true },
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
+    const lockDate = await this.bookLock.getLockDate()
 
     const vouchers: Prisma.GeneralVoucherCreateManyInput[] = []
     const lines: Prisma.GeneralVoucherLineCreateManyInput[] = []
     for (const p of parsed) {
       if (seen.has(p.voucherNo)) continue
+      if (lockDate && p.postingDate <= lockDate) continue // kỳ đã khóa sổ → bỏ qua như dòng trùng
       seen.add(p.voucherNo) // chống trùng trong chính file
       const id = randomUUID()
       vouchers.push({
@@ -156,6 +164,7 @@ export class GeneralService {
   async remove(id: string) {
     const existing = await this.prisma.generalVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
     await this.prisma.generalVoucher.delete({ where: { id } })
     return { id }
   }

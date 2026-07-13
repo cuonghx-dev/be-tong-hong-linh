@@ -10,11 +10,13 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import { useToast } from '@/shared/ui/toast'
 import { useSuppliers } from '../api/useSuppliers'
 import { usePurchaseVoucher } from '../api/usePurchaseVouchers'
 import {
@@ -82,6 +84,7 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
   const editing = usePurchaseVoucher(voucherId ?? null)
   const create = useCreatePurchaseVoucher()
   const update = useUpdatePurchaseVoucher()
+  const { toast } = useToast()
 
   const form = useForm<PurchaseVoucherFormValues>({
     resolver: zodResolver(purchaseVoucherSchema),
@@ -187,12 +190,20 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
           vatAccount: l.vatAccount,
         })),
       }
-      if (voucherId) await update.mutateAsync({ id: voucherId, dto })
-      else await create.mutateAsync(dto)
-      if (goNext && !voucherId) {
-        // Giữ nguyên "Lý do" (loại + nguồn gốc) đang chọn khi cất và thêm tiếp.
-        reset({ ...defaultValues(values.type), origin: values.origin })
-      } else onSaved()
+      try {
+        if (voucherId) await update.mutateAsync({ id: voucherId, dto })
+        else await create.mutateAsync(dto)
+        if (goNext && !voucherId) {
+          // Giữ nguyên "Lý do" (loại + nguồn gốc) đang chọn khi cất và thêm tiếp.
+          reset({ ...defaultValues(values.type), origin: values.origin })
+        } else onSaved()
+      } catch (e) {
+        toast({
+          variant: 'error',
+          title: 'Lưu chứng từ thất bại',
+          description: getApiErrorMessage(e),
+        })
+      }
     })
 
   const saving = create.isPending || update.isPending

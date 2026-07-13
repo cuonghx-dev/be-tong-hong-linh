@@ -1,6 +1,7 @@
 import { SalesPaymentMode, SalesVoucherType, type SalesVoucherFilter } from '@app/shared'
 import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
@@ -244,7 +245,15 @@ export function SalesVoucherTable() {
                             confirmText: 'Xóa',
                             destructive: true,
                           })
-                          if (ok) del.mutate(r.id)
+                          if (ok)
+                            del.mutate(r.id, {
+                              onError: (e) =>
+                                toast({
+                                  variant: 'error',
+                                  title: 'Xóa chứng từ thất bại',
+                                  description: getApiErrorMessage(e),
+                                }),
+                            })
                         },
                       },
                     ]}

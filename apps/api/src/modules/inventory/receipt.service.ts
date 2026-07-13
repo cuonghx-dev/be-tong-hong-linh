@@ -8,6 +8,7 @@ import {
   type InventoryReceiptLine,
 } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { BookLockService } from '../book-lock/book-lock.service'
 import { CreateInventoryReceiptDto, CreateInventoryReceiptLineDto } from './dto/create-receipt.dto'
 import { InventoryReceiptFilterDto } from './dto/receipt-filter.dto'
 import { UpdateInventoryReceiptDto } from './dto/update-receipt.dto'
@@ -17,7 +18,10 @@ type ReceiptWithLines = InventoryReceipt & { lines: InventoryReceiptLine[] }
 
 @Injectable()
 export class ReceiptService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bookLock: BookLockService,
+  ) {}
 
   async list(
     filter: InventoryReceiptFilterDto,
@@ -64,6 +68,7 @@ export class ReceiptService {
   }
 
   async create(dto: CreateInventoryReceiptDto) {
+    await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {
       const voucherNo = await nextVoucherNo(tx)
       const lines = normalizeLines(dto.receiptType, dto.lines)
@@ -94,6 +99,7 @@ export class ReceiptService {
   async update(id: string, dto: UpdateInventoryReceiptDto) {
     const existing = await this.prisma.inventoryReceipt.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy phiếu nhập kho ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate, dto.postingDate)
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const data: Prisma.InventoryReceiptUpdateInput = {
@@ -137,11 +143,13 @@ export class ReceiptService {
       select: { voucherNo: true },
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
+    const lockDate = await this.bookLock.getLockDate()
 
     const receipts: Prisma.InventoryReceiptCreateManyInput[] = []
     const lines: Prisma.InventoryReceiptLineCreateManyInput[] = []
     for (const p of parsed) {
       if (seen.has(p.voucherNo)) continue
+      if (lockDate && p.date <= lockDate) continue // kỳ đã khóa sổ → bỏ qua như dòng trùng
       seen.add(p.voucherNo) // chống trùng trong chính file
 
       const total = new Prisma.Decimal(p.totalAmount)
@@ -185,6 +193,7 @@ export class ReceiptService {
   async remove(id: string) {
     const existing = await this.prisma.inventoryReceipt.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy phiếu nhập kho ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
     await this.prisma.inventoryReceipt.delete({ where: { id } })
     return { id }
   }

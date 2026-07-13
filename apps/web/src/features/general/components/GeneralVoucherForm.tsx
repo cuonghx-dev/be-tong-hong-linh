@@ -2,9 +2,11 @@ import { type CreateGeneralVoucherInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
+import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { useGeneralVoucher } from '../api/useGeneralVouchers'
 import {
@@ -52,6 +54,7 @@ export function GeneralVoucherForm({
   const editing = useGeneralVoucher(voucherId ?? null)
   const create = useCreateGeneralVoucher()
   const update = useUpdateGeneralVoucher()
+  const { toast } = useToast()
 
   const form = useForm<GeneralVoucherFormValues>({
     resolver: zodResolver(generalVoucherSchema),
@@ -105,15 +108,23 @@ export function GeneralVoucherForm({
           partnerName: l.partnerName,
         })),
       }
-      if (voucherId) {
-        await update.mutateAsync({ id: voucherId, dto })
-      } else {
-        await create.mutateAsync(dto)
-      }
-      if (goNext && !voucherId) {
-        reset(defaultValues())
-      } else {
-        onSaved()
+      try {
+        if (voucherId) {
+          await update.mutateAsync({ id: voucherId, dto })
+        } else {
+          await create.mutateAsync(dto)
+        }
+        if (goNext && !voucherId) {
+          reset(defaultValues())
+        } else {
+          onSaved()
+        }
+      } catch (e) {
+        toast({
+          variant: 'error',
+          title: 'Lưu chứng từ thất bại',
+          description: getApiErrorMessage(e),
+        })
       }
     })
 

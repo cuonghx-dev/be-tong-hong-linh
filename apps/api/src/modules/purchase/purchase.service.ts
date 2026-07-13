@@ -8,6 +8,7 @@ import {
   type PurchaseVoucherLine,
 } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { BookLockService } from '../book-lock/book-lock.service'
 import { CreatePurchaseVoucherDto, CreatePurchaseVoucherLineDto } from './dto/create-purchase-voucher.dto'
 import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
 import { parsePurchaseXlsx } from './purchase-import'
@@ -17,7 +18,10 @@ type VoucherWithLines = PurchaseVoucher & { lines: PurchaseVoucherLine[] }
 
 @Injectable()
 export class PurchaseService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bookLock: BookLockService,
+  ) {}
 
   async list(
     filter: PurchaseVoucherFilterDto,
@@ -67,6 +71,7 @@ export class PurchaseService {
   }
 
   async create(dto: CreatePurchaseVoucherDto) {
+    await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {
       const voucherNo = await nextVoucherNo(tx, dto.type, new Date(dto.voucherDate))
       const lines = normalizeLines(dto.type, dto.lines)
@@ -111,6 +116,7 @@ export class PurchaseService {
   async update(id: string, dto: UpdatePurchaseVoucherDto) {
     const existing = await this.prisma.purchaseVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate, dto.postingDate)
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const data: Prisma.PurchaseVoucherUpdateInput = {
@@ -173,11 +179,13 @@ export class PurchaseService {
       select: { voucherNo: true },
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
+    const lockDate = await this.bookLock.getLockDate()
 
     const vouchers: Prisma.PurchaseVoucherCreateManyInput[] = []
     const lines: Prisma.PurchaseVoucherLineCreateManyInput[] = []
     for (const p of parsed) {
       if (seen.has(p.voucherNo)) continue
+      if (lockDate && p.date <= lockDate) continue // kỳ đã khóa sổ → bỏ qua như dòng trùng
       seen.add(p.voucherNo) // chống trùng trong chính file
 
       // Tách tiền hàng / thuế từ số tổng hợp Excel (§10.2, §10.4):
@@ -244,6 +252,7 @@ export class PurchaseService {
   async remove(id: string) {
     const existing = await this.prisma.purchaseVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
     await this.prisma.purchaseVoucher.delete({ where: { id } })
     return { id }
   }

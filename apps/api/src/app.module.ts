@@ -7,6 +7,7 @@ import { RolesGuard } from './common/guards/roles.guard'
 import { DatabaseModule } from './database/database.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { BankModule } from './modules/bank/bank.module'
+import { BookLockModule } from './modules/book-lock/book-lock.module'
 import { CashModule } from './modules/cash/cash.module'
 import { CatalogModule } from './modules/catalog/catalog.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
@@ -28,6 +29,7 @@ import { SalesModule } from './modules/sales/sales.module'
     }),
     DatabaseModule,
     AuthModule,
+    BookLockModule,
     CashModule,
     BankModule,
     PurchaseModule,

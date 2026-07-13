@@ -7,11 +7,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { useCustomers } from '@/features/sales'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import { useToast } from '@/shared/ui/toast'
 import { useGoodsIssue } from '../api/useGoodsIssues'
 import { useCreateGoodsIssue, useUpdateGoodsIssue } from '../api/useGoodsIssueMutations'
 import {
@@ -60,6 +62,7 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
   const editing = useGoodsIssue(voucherId ?? null)
   const create = useCreateGoodsIssue()
   const update = useUpdateGoodsIssue()
+  const { toast } = useToast()
 
   const form = useForm<GoodsIssueFormValues>({
     resolver: zodResolver(goodsIssueSchema),
@@ -138,10 +141,18 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
           expiryDate: l.expiryDate,
         })),
       }
-      if (voucherId) await update.mutateAsync({ id: voucherId, dto })
-      else await create.mutateAsync(dto)
-      if (goNext && !voucherId) reset(defaultValues(values.category))
-      else onSaved()
+      try {
+        if (voucherId) await update.mutateAsync({ id: voucherId, dto })
+        else await create.mutateAsync(dto)
+        if (goNext && !voucherId) reset(defaultValues(values.category))
+        else onSaved()
+      } catch (e) {
+        toast({
+          variant: 'error',
+          title: 'Lưu chứng từ thất bại',
+          description: getApiErrorMessage(e),
+        })
+      }
     })
 
   const saving = create.isPending || update.isPending

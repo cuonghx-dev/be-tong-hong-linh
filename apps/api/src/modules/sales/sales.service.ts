@@ -10,6 +10,7 @@ import {
 } from '@prisma/client'
 import { randomUUID } from 'crypto'
 import { PrismaService } from '../../database/prisma.service'
+import { BookLockService } from '../book-lock/book-lock.service'
 import { CreateSalesVoucherDto, CreateSalesVoucherLineDto } from './dto/create-sales-voucher.dto'
 import { SalesVoucherFilterDto } from './dto/sales-voucher-filter.dto'
 import { parseSalesXlsx } from './sales-import'
@@ -21,7 +22,10 @@ type VoucherWithRelations = SalesVoucher & {
 
 @Injectable()
 export class SalesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bookLock: BookLockService,
+  ) {}
 
   async list(filter: SalesVoucherFilterDto): Promise<Paginated<ReturnType<typeof toVoucherDto>>> {
     const where: Prisma.SalesVoucherWhereInput = {}
@@ -68,6 +72,7 @@ export class SalesService {
   }
 
   async create(dto: CreateSalesVoucherDto) {
+    await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {
       const voucherNo = await nextVoucherNo(tx, new Date(dto.voucherDate))
       const lines = normalizeLines(dto, dto.lines)
@@ -112,6 +117,7 @@ export class SalesService {
   async update(id: string, dto: UpdateSalesVoucherDto) {
     const existing = await this.prisma.salesVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate, dto.postingDate)
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const data: Prisma.SalesVoucherUpdateInput = {
@@ -168,6 +174,7 @@ export class SalesService {
   async remove(id: string) {
     const existing = await this.prisma.salesVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
     await this.prisma.salesVoucher.delete({ where: { id } })
     return { id }
   }
@@ -184,11 +191,13 @@ export class SalesService {
       select: { voucherNo: true },
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
+    const lockDate = await this.bookLock.getLockDate()
 
     const vouchers: Prisma.SalesVoucherCreateManyInput[] = []
     const lines: Prisma.SalesVoucherLineCreateManyInput[] = []
     for (const p of parsed) {
       if (seen.has(p.voucherNo)) continue
+      if (lockDate && p.date <= lockDate) continue // kỳ đã khóa sổ → bỏ qua như dòng trùng
       seen.add(p.voucherNo) // chống trùng trong chính file
 
       const totalGoods = new Prisma.Decimal(p.totalPayment)

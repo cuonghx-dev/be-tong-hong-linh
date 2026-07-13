@@ -8,6 +8,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { CashVoucherType, Prisma, type CashVoucher, type CashVoucherLine } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { BookLockService } from '../book-lock/book-lock.service'
 import { parseCashXlsx } from './cash-import'
 import { CashVoucherFilterDto } from './dto/cash-voucher-filter.dto'
 import { CreateCashVoucherDto, CreateCashVoucherLineDto } from './dto/create-cash-voucher.dto'
@@ -17,7 +18,10 @@ type VoucherWithLines = CashVoucher & { lines: CashVoucherLine[] }
 
 @Injectable()
 export class CashService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bookLock: BookLockService,
+  ) {}
 
   async list(filter: CashVoucherFilterDto): Promise<Paginated<ReturnType<typeof toVoucherDto>>> {
     const where: Prisma.CashVoucherWhereInput = {}
@@ -64,6 +68,7 @@ export class CashService {
   }
 
   async create(dto: CreateCashVoucherDto) {
+    await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {
       const voucherNo = await nextVoucherNo(tx, dto.type, new Date(dto.voucherDate))
       const lines = normalizeLines(dto.type, dto.lines)
@@ -95,6 +100,7 @@ export class CashService {
   async update(id: string, dto: UpdateCashVoucherDto) {
     const existing = await this.prisma.cashVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy phiếu ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate, dto.postingDate)
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const data: Prisma.CashVoucherUpdateInput = {
@@ -139,11 +145,13 @@ export class CashService {
       select: { voucherNo: true },
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
+    const lockDate = await this.bookLock.getLockDate()
 
     const vouchers: Prisma.CashVoucherCreateManyInput[] = []
     const lines: Prisma.CashVoucherLineCreateManyInput[] = []
     for (const p of parsed) {
       if (seen.has(p.voucherNo)) continue
+      if (lockDate && p.date <= lockDate) continue // kỳ đã khóa sổ → bỏ qua như dòng trùng
       seen.add(p.voucherNo) // chống trùng trong chính file
       const id = randomUUID()
       const isReceipt = p.type === CashVoucherType.RECEIPT
@@ -189,6 +197,7 @@ export class CashService {
   async remove(id: string) {
     const existing = await this.prisma.cashVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy phiếu ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
     await this.prisma.cashVoucher.delete({ where: { id } })
     return { id }
   }

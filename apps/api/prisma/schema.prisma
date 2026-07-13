@@ -1041,3 +1041,15 @@ model InventoryOpeningBalance {
   @@unique([productId, warehouseCode])
   @@map("inventory_opening_balances")
 }
+
+// ── Khóa sổ kỳ kế toán (general) ────────────────────────────────────────────
+
+// Khóa sổ kỳ kế toán: 1 dòng duy nhất (id = 1). Chứng từ có ngày hạch toán ≤ lock_date
+// không được thêm/sửa/xóa. Bỏ khóa sổ = xóa dòng.
+model BookLock {
+  id        Int      @id @default(1)
+  lockDate  DateTime @map("lock_date") @db.Date
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("book_locks")
+}

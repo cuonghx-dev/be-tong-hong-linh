@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { Popover } from '@/shared/ui/popover'
 
 // Dashboard tab "Quy trình" dùng chung cho các phân hệ (§2.3 design.md):
 // panel sơ đồ nghiệp vụ (trái) + hàng shortcut danh mục + panel báo cáo (phải).
@@ -10,6 +11,8 @@ export interface ProcessFlowNode {
   onClick?: () => void
   /** Node chưa build → inert + tooltip "đang phát triển". */
   disabled?: boolean
+  /** Có menu → click node mở dropdown các hành động (kiểu MISA) thay vì onClick. */
+  menu?: { label: string; onClick: () => void }[]
 }
 
 export interface ProcessShortcut {
@@ -149,8 +152,41 @@ export function ProcessDashboard({
   )
 }
 
-// Node trong sơ đồ flow: icon + label, click điều hướng (nếu có).
-function FlowNode({ label, icon, onClick, disabled }: ProcessFlowNode) {
+// Node trong sơ đồ flow: icon + label, click điều hướng (nếu có) hoặc mở menu hành động.
+function FlowNode({ label, icon, onClick, disabled, menu }: ProcessFlowNode) {
+  if (menu?.length) {
+    return (
+      <Popover
+        align="left"
+        className="min-w-56 p-0"
+        trigger={({ toggle }) => (
+          <button type="button" onClick={toggle} className="group flex w-28 flex-col items-center gap-2">
+            <span className="transition-transform group-hover:scale-105">{icon}</span>
+            <span className="text-sm text-slate-700 group-hover:text-primary">{label}</span>
+          </button>
+        )}
+      >
+        {(close) => (
+          <ul className="py-1">
+            {menu.map((item) => (
+              <li key={item.label}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    close()
+                    item.onClick()
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 hover:text-primary"
+                >
+                  {item.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Popover>
+    )
+  }
   return (
     <button
       type="button"

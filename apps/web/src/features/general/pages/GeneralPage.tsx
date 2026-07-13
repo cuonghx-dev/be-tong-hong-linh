@@ -3,6 +3,7 @@ import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { GeneralReportListTab } from '@/features/report'
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
@@ -236,7 +237,15 @@ function GeneralVoucherTable() {
                             confirmText: 'Xóa',
                             destructive: true,
                           })
-                          if (ok) del.mutate(r.id)
+                          if (ok)
+                            del.mutate(r.id, {
+                              onError: (e) =>
+                                toast({
+                                  variant: 'error',
+                                  title: 'Xóa chứng từ thất bại',
+                                  description: getApiErrorMessage(e),
+                                }),
+                            })
                         },
                       },
                     ]}

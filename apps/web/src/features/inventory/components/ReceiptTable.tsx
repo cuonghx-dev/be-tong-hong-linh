@@ -1,6 +1,7 @@
 import { InventoryReceiptType, type InventoryReceiptFilter } from '@app/shared'
 import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
@@ -234,7 +235,15 @@ export function ReceiptTable() {
                             confirmText: 'Xóa',
                             destructive: true,
                           })
-                          if (ok) del.mutate(r.id)
+                          if (ok)
+                            del.mutate(r.id, {
+                              onError: (e) =>
+                                toast({
+                                  variant: 'error',
+                                  title: 'Xóa chứng từ thất bại',
+                                  description: getApiErrorMessage(e),
+                                }),
+                            })
                         },
                       },
                     ]}

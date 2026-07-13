@@ -2,6 +2,7 @@ import { CashVoucherCategory, CashVoucherType, type CashVoucherFilter } from '@a
 import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
+import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { AddMenu } from '@/shared/ui/add-menu'
@@ -266,7 +267,15 @@ function CashTable() {
                               confirmText: 'Xóa',
                               destructive: true,
                             })
-                            if (ok) del.mutate(r.id)
+                            if (ok)
+                              del.mutate(r.id, {
+                                onError: (e) =>
+                                  toast({
+                                    variant: 'error',
+                                    title: 'Xóa chứng từ thất bại',
+                                    description: getApiErrorMessage(e),
+                                  }),
+                              })
                           },
                         },
                       ]}
