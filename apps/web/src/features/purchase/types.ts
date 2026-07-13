@@ -5,8 +5,6 @@ import {
   PurchasePaymentStatus,
   PurchaseReceiveStatus,
   PurchaseVoucherType,
-  ReceivableAging,
-  ReceivableStatus,
   SupplierType,
 } from '@app/shared'
 
@@ -91,24 +89,6 @@ export const SUPPLIER_TYPE_LABEL: Record<SupplierType, string> = {
 // Loại nhập kho có cột Kho + TK Kho (§4).
 export function hasWarehouse(type: PurchaseVoucherType): boolean {
   return type === PurchaseVoucherType.Stock
-}
-
-// Nhãn tuổi nợ tab Đối chiếu công nợ (dùng chung enum với công nợ phải thu).
-export const PAYABLE_AGING_LABEL: Record<ReceivableAging, string> = {
-  [ReceivableAging.All]: 'Tất cả',
-  [ReceivableAging.Current]: 'Trong hạn',
-  [ReceivableAging.Days1_30]: 'Quá hạn 1–30 ngày',
-  [ReceivableAging.Days31_60]: 'Quá hạn 31–60 ngày',
-  [ReceivableAging.Days61_90]: 'Quá hạn 61–90 ngày',
-  [ReceivableAging.Over90]: 'Quá hạn trên 90 ngày',
-}
-
-// Nhãn tình trạng nợ phải trả (chiều NCC: Settled = đã trả hết).
-export const PAYABLE_STATUS_LABEL: Record<ReceivableStatus, string> = {
-  [ReceivableStatus.All]: 'Tất cả',
-  [ReceivableStatus.Outstanding]: 'Còn nợ',
-  [ReceivableStatus.Settled]: 'Đã trả hết',
-  [ReceivableStatus.Prepaid]: 'Trả trước',
 }
 
 // Danh mục báo cáo mua hàng (tab "Báo cáo", theo MISA).
