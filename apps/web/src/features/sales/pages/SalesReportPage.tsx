@@ -1,29 +1,42 @@
-import type { CashReportFilter } from '@app/shared'
+import type { SalesReportFilter } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { formatDate, monthRange, REPORT_PRESETS } from '@/shared/lib/report-period'
-import { CashBookReport } from '../components/reports/CashBookReport'
-import { CashJournalReport } from '../components/reports/CashJournalReport'
-import { DailyBalanceReport } from '../components/reports/DailyBalanceReport'
-import { CASH_REPORTS, type CashReportSlug } from '../types'
+import { useCustomers } from '../api/useCustomers'
+import { ReceivableDetailReport } from '../components/reports/ReceivableDetailReport'
+import { ReceivableSummaryReport } from '../components/reports/ReceivableSummaryReport'
+import { SalesByItemReport } from '../components/reports/SalesByItemReport'
+import { SalesDetailReport } from '../components/reports/SalesDetailReport'
+import { reportHasCustomerFilter, SALES_REPORTS, type SalesReportSlug } from '../types'
 
-// Trang xem báo cáo tiền mặt full-page (§5 design.md). Route: /cash/reports/:slug
-export function CashReportPage() {
+const inputClass =
+  'h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+
+// Trang xem báo cáo bán hàng full-page (§5 design.md). Route: /sales/reports/:slug
+// 2 báo cáo công nợ lọc thêm được theo 1 khách hàng.
+export function SalesReportPage() {
   const navigate = useNavigate()
   const { slug } = useParams()
   const [params, setParams] = useSearchParams()
 
-  const report = CASH_REPORTS.find((r) => r.slug === slug)
+  const report = SALES_REPORTS.find((r) => r.slug === slug)
   const defaultRange = monthRange(0)
   const fromDate = params.get('from') ?? defaultRange.from
   const toDate = params.get('to') ?? defaultRange.to
-  const filter: CashReportFilter = { fromDate, toDate }
+  const customerId = params.get('customer') ?? ''
+  const filter: SalesReportFilter = { fromDate, toDate, customerId: customerId || undefined }
+
+  const setParam = (key: string, value: string) => {
+    const next = new URLSearchParams(params)
+    if (value) next.set(key, value)
+    else next.delete(key)
+    setParams(next, { replace: true })
+  }
 
   const setRange = (from: string, to: string) => {
     const next = new URLSearchParams(params)
     next.set('from', from)
     next.set('to', to)
-    next.delete('page') // đổi kỳ → về trang 1
     setParams(next, { replace: true })
   }
 
@@ -36,7 +49,7 @@ export function CashReportPage() {
     <RecordPageShell
       title={report?.name ?? 'Báo cáo'}
       subtitle={`Kỳ ${formatDate(fromDate)} – ${formatDate(toDate)}`}
-      onClose={() => navigate('/cash')}
+      onClose={() => navigate('/sales')}
     >
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}
@@ -50,7 +63,7 @@ export function CashReportPage() {
                 setRange(r.from, r.to)
               }
             }}
-            className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className={inputClass}
           >
             {REPORT_PRESETS.map((p) => (
               <option key={p.key} value={p.key}>
@@ -68,7 +81,7 @@ export function CashReportPage() {
               value={fromDate}
               max={toDate}
               onChange={(e) => e.target.value && setRange(e.target.value, toDate)}
-              className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className={inputClass}
             />
           </label>
           <label className="flex items-center gap-1.5 text-sm text-slate-600">
@@ -78,31 +91,56 @@ export function CashReportPage() {
               value={toDate}
               min={fromDate}
               onChange={(e) => e.target.value && setRange(fromDate, e.target.value)}
-              className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className={inputClass}
             />
           </label>
+          {reportHasCustomerFilter(slug as SalesReportSlug) && (
+            <label className="flex items-center gap-1.5 text-sm text-slate-600">
+              Khách hàng
+              <CustomerSelect value={customerId} onChange={(v) => setParam('customer', v)} />
+            </label>
+          )}
         </div>
 
         {/* Bảng báo cáo — tự cuộn trong khung */}
         <div className="flex-1 overflow-auto rounded-lg border border-border bg-white">
-          {renderReport(slug as CashReportSlug, filter)}
+          {renderReport(slug as SalesReportSlug, filter)}
         </div>
       </div>
     </RecordPageShell>
   )
 }
 
-function renderReport(slug: CashReportSlug, filter: CashReportFilter) {
+function renderReport(slug: SalesReportSlug, filter: SalesReportFilter) {
   switch (slug) {
-    case 'receipt-journal':
-      return <CashJournalReport kind="receipt" filter={filter} />
-    case 'payment-journal':
-      return <CashJournalReport kind="payment" filter={filter} />
-    case 'cash-book':
-      return <CashBookReport filter={filter} />
-    case 'daily-balance':
-      return <DailyBalanceReport filter={filter} />
+    case 'receivable-summary':
+      return <ReceivableSummaryReport filter={filter} />
+    case 'receivable-detail':
+      return <ReceivableDetailReport filter={filter} />
+    case 'by-item':
+      return <SalesByItemReport filter={filter} />
+    case 'detail':
+      return <SalesDetailReport filter={filter} />
     default:
       return <div className="px-3 py-10 text-center text-slate-400">Không tìm thấy báo cáo.</div>
   }
+}
+
+// Select khách hàng từ danh mục (rỗng = tất cả).
+function CustomerSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data } = useCustomers({ page: 1, pageSize: 500 })
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`${inputClass} min-w-56 bg-white`}
+    >
+      <option value="">Tất cả khách hàng</option>
+      {(data?.data ?? []).map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.code} — {c.name}
+        </option>
+      ))}
+    </select>
+  )
 }

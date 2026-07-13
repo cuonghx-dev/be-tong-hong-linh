@@ -11,6 +11,7 @@ import { BankVoucherPage } from '@/features/bank/pages/BankVoucherPage'
 import { BankReportPage } from '@/features/bank/pages/BankReportPage'
 import { SalesPage } from '@/features/sales/pages/SalesPage'
 import { SalesVoucherPage } from '@/features/sales/pages/SalesVoucherPage'
+import { SalesReportPage } from '@/features/sales/pages/SalesReportPage'
 import { PurchasePage } from '@/features/purchase/pages/PurchasePage'
 import { PurchaseReportPage } from '@/features/purchase/pages/PurchaseReportPage'
 import { PurchaseVoucherPage } from '@/features/purchase/pages/PurchaseVoucherPage'
@@ -51,6 +52,8 @@ const recordRoutes = [
   { path: '/sales/vouchers/new', element: <SalesVoucherPage mode="new" /> },
   { path: '/sales/vouchers/:id', element: <SalesVoucherPage mode="view" /> },
   { path: '/sales/vouchers/:id/edit', element: <SalesVoucherPage mode="edit" /> },
+  // Xem báo cáo bán hàng — full-page, đè shell (vào từ tab "Báo cáo").
+  { path: '/sales/reports/:slug', element: <SalesReportPage /> },
   { path: '/inventory/receipts/new', element: <InventoryReceiptPage mode="new" /> },
   { path: '/inventory/receipts/:id', element: <InventoryReceiptPage mode="view" /> },
   { path: '/inventory/receipts/:id/edit', element: <InventoryReceiptPage mode="edit" /> },

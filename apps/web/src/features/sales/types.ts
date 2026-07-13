@@ -46,3 +46,18 @@ export const RECEIVABLE_STATUS_LABEL: Record<ReceivableStatus, string> = {
   [ReceivableStatus.Settled]: 'Đã thu hết',
   [ReceivableStatus.Prepaid]: 'Trả trước',
 }
+
+// Danh mục báo cáo bán hàng (tab "Báo cáo", theo MISA).
+export type SalesReportSlug = 'receivable-summary' | 'receivable-detail' | 'by-item' | 'detail'
+
+export const SALES_REPORTS: { slug: SalesReportSlug; name: string }[] = [
+  { slug: 'receivable-summary', name: 'Tổng hợp công nợ phải thu khách hàng' },
+  { slug: 'receivable-detail', name: 'Chi tiết công nợ phải thu khách hàng' },
+  { slug: 'by-item', name: 'Tổng hợp bán hàng theo mặt hàng' },
+  { slug: 'detail', name: 'Sổ chi tiết bán hàng' },
+]
+
+// Báo cáo hỗ trợ lọc theo 1 khách hàng.
+export function reportHasCustomerFilter(slug: SalesReportSlug): boolean {
+  return slug === 'receivable-summary' || slug === 'receivable-detail'
+}
