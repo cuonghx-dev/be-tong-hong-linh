@@ -16,6 +16,7 @@ import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
 import {
   Select,
   SelectContent,
@@ -118,6 +119,14 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
       })),
     [suppliers.data],
   )
+
+  // Tạo nhanh nhà cung cấp (dialog mở từ nút + trên picker).
+  const [supplierDialog, setSupplierDialog] = useState(false)
+  const selectSupplier = (p: PartnerOption) => {
+    setValue('supplierId', p.code)
+    setValue('supplierName', p.name)
+    if (p.address) setValue('address', p.address)
+  }
 
   // Nạp dữ liệu khi sửa.
   useEffect(() => {
@@ -302,11 +311,8 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
             keyword={supplierKw}
             onKeywordChange={setSupplierKw}
             placeholder="Mã NCC"
-            onSelect={(p) => {
-              setValue('supplierId', p.code)
-              setValue('supplierName', p.name)
-              if (p.address) setValue('address', p.address)
-            }}
+            onSelect={selectSupplier}
+            onAddNew={() => setSupplierDialog(true)}
           />
         </Field>
         <Field label="Tên nhà cung cấp">
@@ -551,6 +557,17 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
           </>
         )}
       </div>
+
+      <QuickAddPartnerDialog
+        open={supplierDialog}
+        onClose={() => setSupplierDialog(false)}
+        kind="supplier"
+        initialCode={supplierKw.trim() || undefined}
+        onCreated={(p) => {
+          setSupplierKw('')
+          selectSupplier(p)
+        }}
+      />
     </form>
   )
 }

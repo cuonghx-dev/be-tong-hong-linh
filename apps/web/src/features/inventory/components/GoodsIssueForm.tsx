@@ -13,6 +13,7 @@ import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
 import {
   Select,
   SelectContent,
@@ -96,6 +97,14 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
       })),
     [customers.data],
   )
+
+  // Tạo nhanh khách hàng (dialog mở từ nút + trên picker).
+  const [customerDialog, setCustomerDialog] = useState(false)
+  const selectCustomer = (p: PartnerOption) => {
+    setValue('customerId', p.code)
+    setValue('customerName', p.name)
+    if (p.address) setValue('address', p.address)
+  }
 
   // Nạp dữ liệu khi sửa.
   useEffect(() => {
@@ -207,11 +216,8 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
               onKeywordChange={setCustomerKw}
               placeholder="Mã KH"
               disabled={readOnly}
-              onSelect={(p) => {
-                setValue('customerId', p.code)
-                setValue('customerName', p.name)
-                if (p.address) setValue('address', p.address)
-              }}
+              onSelect={selectCustomer}
+              onAddNew={readOnly ? undefined : () => setCustomerDialog(true)}
             />
           </Field>
           <Field label="Tên khách hàng">
@@ -407,6 +413,16 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
           </>
         )}
       </div>
+
+      <QuickAddPartnerDialog
+        open={customerDialog}
+        onClose={() => setCustomerDialog(false)}
+        initialCode={customerKw.trim() || undefined}
+        onCreated={(p) => {
+          setCustomerKw('')
+          selectCustomer(p)
+        }}
+      />
     </form>
   )
 }
