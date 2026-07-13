@@ -6,12 +6,11 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { AddMenu } from '@/shared/ui/add-menu'
-import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useCashVouchers } from '../api/useCashVouchers'
-import { useDeleteCashVoucher, useImportCashVouchers } from '../api/useCashVoucherMutations'
+import { useImportCashVouchers, useSetCashVoucherPosted } from '../api/useCashVoucherMutations'
 import { CashFilterPopover, type CashFilterValue } from '../components/CashFilterPopover'
 import { CashProcessTab } from '../components/CashProcessTab'
 import { CashReportListTab } from '../components/reports/CashReportListTab'
@@ -22,11 +21,10 @@ const PAGE_SIZE = 20
 function CashTable() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
-  const del = useDeleteCashVoucher()
+  const setPosted = useSetCashVoucherPosted()
   const importXlsx = useImportCashVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
-  const confirm = useConfirm()
 
   // Điều hướng sang trang chứng từ full-page (§5).
   const openNew = (type: CashVoucherType) => navigate(`/cash/vouchers/new?type=${type}`)
@@ -34,6 +32,9 @@ function CashTable() {
     navigate(`/cash/vouchers/${id}?type=${type}`)
   const openEdit = (id: string, type: CashVoucherType) =>
     navigate(`/cash/vouchers/${id}/edit?type=${type}`)
+  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu phiếu nguồn (số phiếu cấp lại khi Cất).
+  const openDuplicate = (id: string, type: CashVoucherType) =>
+    navigate(`/cash/vouchers/new?type=${type}&duplicateFrom=${id}`)
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -214,13 +215,18 @@ function CashTable() {
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">
                     {formatDate(r.postingDate)}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="whitespace-nowrap px-3 py-2">
                     <button
                       className="text-primary hover:underline"
                       onClick={() => openView(r.id, r.type)}
                     >
                       {r.voucherNo}
                     </button>
+                    {!r.posted && (
+                      <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                        Chưa ghi sổ
+                      </span>
+                    )}
                   </td>
                   <td
                     className="max-w-[220px] truncate px-3 py-2 text-slate-700"
@@ -254,29 +260,23 @@ function CashTable() {
                       onPrimary={() => openView(r.id, r.type)}
                       items={[
                         {
-                          label: 'Sửa',
-                          onClick: () => openEdit(r.id, r.type),
-                        },
-                        {
-                          label: 'Xóa',
-                          danger: true,
-                          onClick: async () => {
-                            const ok = await confirm({
-                              title: `Xóa phiếu ${r.voucherNo}?`,
-                              description: 'Hành động này không thể hoàn tác.',
-                              confirmText: 'Xóa',
-                              destructive: true,
-                            })
-                            if (ok)
-                              del.mutate(r.id, {
+                          label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
+                          onClick: () =>
+                            setPosted.mutate(
+                              { id: r.id, posted: !r.posted },
+                              {
                                 onError: (e) =>
                                   toast({
                                     variant: 'error',
-                                    title: 'Xóa chứng từ thất bại',
+                                    title: r.posted ? 'Bỏ ghi thất bại' : 'Ghi sổ thất bại',
                                     description: getApiErrorMessage(e),
                                   }),
-                              })
-                          },
+                              },
+                            ),
+                        },
+                        {
+                          label: 'Nhân bản',
+                          onClick: () => openDuplicate(r.id, r.type),
                         },
                       ]}
                     />

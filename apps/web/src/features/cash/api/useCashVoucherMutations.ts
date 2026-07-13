@@ -50,6 +50,18 @@ export function useImportCashVouchers() {
   })
 }
 
+// Ghi sổ / bỏ ghi phiếu — ảnh hưởng sổ quỹ + báo cáo → invalidate toàn phân hệ.
+export function useSetCashVoucherPosted() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, posted }: { id: string; posted: boolean }) =>
+      api.patch<CashVoucherDto>(`/cash/vouchers/${id}/posted`, { posted }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: cashKeys.all })
+    },
+  })
+}
+
 export function useDeleteCashVoucher() {
   const qc = useQueryClient()
   return useMutation({

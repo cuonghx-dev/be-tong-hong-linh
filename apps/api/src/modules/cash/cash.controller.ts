@@ -18,6 +18,7 @@ import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CashService } from './cash.service'
 import { CashVoucherFilterDto } from './dto/cash-voucher-filter.dto'
 import { CreateCashVoucherDto } from './dto/create-cash-voucher.dto'
+import { SetCashPostedDto } from './dto/set-cash-posted.dto'
 import { UpdateCashVoucherDto } from './dto/update-cash-voucher.dto'
 
 @ApiTags('cash')
@@ -69,6 +70,12 @@ export class CashController {
   @ApiOperation({ summary: 'Sửa phiếu' })
   update(@Param('id') id: string, @Body() dto: UpdateCashVoucherDto) {
     return this.cash.update(id, dto)
+  }
+
+  @Patch(':id/posted')
+  @ApiOperation({ summary: 'Ghi sổ / bỏ ghi phiếu' })
+  setPosted(@Param('id') id: string, @Body() dto: SetCashPostedDto) {
+    return this.cash.setPosted(id, dto.posted)
   }
 
   @Delete(':id')

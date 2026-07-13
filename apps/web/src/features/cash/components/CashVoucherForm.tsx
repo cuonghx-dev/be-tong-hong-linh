@@ -46,6 +46,8 @@ interface CashVoucherPrefill {
 interface CashVoucherFormProps {
   type: CashVoucherType
   voucherId?: string | null
+  // Tạo mới bằng cách nhân bản phiếu này — điền sẵn dữ liệu, số phiếu cấp lại khi Cất.
+  duplicateFromId?: string | null
   readOnly?: boolean
   prefill?: CashVoucherPrefill
   onSaved: () => void
@@ -79,9 +81,11 @@ function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): Cas
   }
 }
 
-export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, onSaved, onCancel }: CashVoucherFormProps) {
+export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = false, prefill, onSaved, onCancel }: CashVoucherFormProps) {
   const isReceipt = type === CashVoucherType.Receipt
-  const editing = useCashVoucher(voucherId ?? null)
+  // Nạp dữ liệu từ phiếu đang sửa HOẶC phiếu nguồn khi nhân bản.
+  const duplicating = !voucherId && !!duplicateFromId
+  const editing = useCashVoucher(voucherId ?? duplicateFromId ?? null)
   const create = useCreateCashVoucher()
   const update = useUpdateCashVoucher()
   const { toast } = useToast()
@@ -129,8 +133,9 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
     reset({
       type: v.type,
       category: v.category,
-      postingDate: v.postingDate.slice(0, 10),
-      voucherDate: v.voucherDate.slice(0, 10),
+      // Nhân bản → ngày về hôm nay (phiếu mới), sửa → giữ nguyên ngày gốc.
+      postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
+      voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       partnerType: v.partnerType ?? undefined,
       partnerId: v.partnerId ?? undefined,
       partnerName: v.partnerName ?? undefined,
@@ -153,7 +158,7 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
         bankName: l.bankName ?? undefined,
       })),
     })
-  }, [editing.data, reset])
+  }, [editing.data, reset, duplicating])
 
   const category = watch('category')
   const lines = watch('lines')

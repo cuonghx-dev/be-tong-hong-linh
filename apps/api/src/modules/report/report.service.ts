@@ -240,7 +240,7 @@ export class ReportService {
              COALESCE(l.description, v.reason) AS description,
              l.debit_account, l.credit_account, l.amount, l.line_no, 0 AS sub
       FROM cash_voucher_lines l JOIN cash_vouchers v ON v.id = l.voucher_id
-      WHERE v.category <> 'SALES_CASH'
+      WHERE v.category <> 'SALES_CASH' AND v.posted
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no,
              CASE WHEN v.type = 'RECEIPT' THEN 'BANK_RECEIPT' ELSE 'BANK_PAYMENT' END,

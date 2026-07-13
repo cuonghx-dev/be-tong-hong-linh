@@ -24,6 +24,9 @@ export function CashVoucherPage({ mode }: { mode: Mode }) {
         }
       : undefined
 
+  // Nhân bản: tạo mới từ phiếu nguồn (điền sẵn, cấp số phiếu mới khi Cất).
+  const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
+
   const close = () => navigate('/cash')
 
   // Số chứng từ trong tiêu đề (vd "Phiếu thu PT4602/2026") — query dedupe với form.
@@ -48,6 +51,7 @@ export function CashVoucherPage({ mode }: { mode: Mode }) {
       <CashVoucherForm
         type={type}
         voucherId={id ?? null}
+        duplicateFromId={duplicateFromId}
         readOnly={mode === 'view'}
         prefill={prefill}
         onSaved={close}

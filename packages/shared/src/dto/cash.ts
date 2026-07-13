@@ -35,6 +35,7 @@ export interface CashVoucherDto {
   attachmentCount: number
   totalAmount: string // Σ số tiền dòng
   branchId: string | null
+  posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
   lines: CashVoucherLineDto[]
   createdAt: string
   updatedAt: string

@@ -125,7 +125,8 @@ export class CashReportService {
                COALESCE(SUM(l.amount) FILTER (WHERE l.credit_account LIKE ${CASH_LIKE}), 0)::text AS payment
         FROM cash_voucher_lines l
         JOIN cash_vouchers v ON v.id = l.voucher_id
-        WHERE v.posting_date BETWEEN ${from} AND ${to}
+        WHERE v.posted
+          AND v.posting_date BETWEEN ${from} AND ${to}
           AND (l.debit_account LIKE ${CASH_LIKE} OR l.credit_account LIKE ${CASH_LIKE})
         GROUP BY v.posting_date
         ORDER BY v.posting_date
@@ -179,7 +180,8 @@ export class CashReportService {
       CROSS JOIN LATERAL (
         VALUES ('RECEIPT'), ('PAYMENT')
       ) AS k(kind)
-      WHERE v.posting_date BETWEEN ${from} AND ${to}
+      WHERE v.posted
+        AND v.posting_date BETWEEN ${from} AND ${to}
         AND (
           (k.kind = 'RECEIPT' AND l.debit_account LIKE ${CASH_LIKE})
           OR (k.kind = 'PAYMENT' AND l.credit_account LIKE ${CASH_LIKE})
@@ -208,7 +210,8 @@ export class CashReportService {
         ), 0)::text AS s
         FROM cash_voucher_lines l
         JOIN cash_vouchers v ON v.id = l.voucher_id
-        WHERE v.posting_date < ${from}
+        WHERE v.posted
+          AND v.posting_date < ${from}
           AND (l.debit_account LIKE ${CASH_LIKE} OR l.credit_account LIKE ${CASH_LIKE})
       `),
     ])
