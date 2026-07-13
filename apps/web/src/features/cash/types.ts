@@ -22,6 +22,34 @@ export const CATEGORY_LABEL: Record<CashVoucherCategory, string> = {
   [CashVoucherCategory.PurchaseGoodsCash]: 'Mua hàng trong nước không qua kho - Tiền mặt',
 }
 
+// Lý do nộp/chi mặc định theo loại nghiệp vụ (MISA tự điền khi đổi loại/chọn đối tượng).
+// Template kết thúc bằng khoảng trắng → nối thêm tên đối tượng nếu có.
+const CATEGORY_REASON: Record<CashVoucherCategory, string> = {
+  [CashVoucherCategory.SalesCash]: 'Thu tiền bán hàng ',
+  [CashVoucherCategory.ReceiptBankWithdraw]: 'Rút tiền gửi về nhập quỹ',
+  [CashVoucherCategory.ReceiptEmployeeAdvance]: 'Thu hoàn ứng của ',
+  [CashVoucherCategory.ReceiptCustomer]: 'Thu tiền của ',
+  [CashVoucherCategory.Receipt]: 'Thu tiền của ',
+  [CashVoucherCategory.ReceiptLoanRecovery]: 'Thu hồi khoản cho vay từ ',
+  [CashVoucherCategory.PaymentEmployeeAdvance]: 'Tạm ứng cho ',
+  [CashVoucherCategory.Payment]: 'Chi tiền cho ',
+  [CashVoucherCategory.DepositToBank]: 'Gửi tiền vào ngân hàng',
+  [CashVoucherCategory.PaymentSupplier]: 'Trả tiền cho ',
+  [CashVoucherCategory.PaymentPurchaseWithInvoice]: 'Chi tiền mua hàng của ',
+  [CashVoucherCategory.PaymentSalaryAdvance]: 'Tạm ứng tiền lương cho nhân viên ',
+  [CashVoucherCategory.PaymentSalary]: 'Trả lương nhân viên',
+  [CashVoucherCategory.PaymentToBranch]: 'Chuyển tiền cho chi nhánh ',
+  [CashVoucherCategory.PaymentLoan]: 'Chi cho vay ',
+  [CashVoucherCategory.PaymentCITTax]: 'Nộp thuế TNDN tạm tính',
+  [CashVoucherCategory.PurchaseServiceCash]: 'Chi tiền mua dịch vụ của ',
+  [CashVoucherCategory.PurchaseGoodsCash]: 'Chi tiền mua hàng của ',
+}
+
+export function defaultReason(category: CashVoucherCategory, partnerName?: string | null): string {
+  const tpl = CATEGORY_REASON[category]
+  return tpl.endsWith(' ') && partnerName ? tpl + partnerName : tpl
+}
+
 export const PARTNER_TYPE_LABEL: Record<PartnerType, string> = {
   [PartnerType.Customer]: 'Khách hàng',
   [PartnerType.Supplier]: 'Nhà cung cấp',

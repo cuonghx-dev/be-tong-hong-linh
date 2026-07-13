@@ -24,14 +24,15 @@ import {
 } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
-import { useCashVoucher } from '../api/useCashVouchers'
+import { useCashVoucher, useNextCashVoucherNo } from '../api/useCashVouchers'
 import {
   useCreateCashVoucher,
   useUpdateCashVoucher,
 } from '../api/useCashVoucherMutations'
+import { useEmployeeOptions } from '@/shared/api/useEmployeeOptions'
 import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
 import { cashVoucherSchema, type CashLineFormValues, type CashVoucherFormValues } from '../schema'
-import { CATEGORY_LABEL, CATEGORY_OPTIONS, lineColumns } from '../types'
+import { CATEGORY_LABEL, CATEGORY_OPTIONS, defaultReason, lineColumns } from '../types'
 import { AmountInput } from './AmountInput'
 
 interface CashVoucherPrefill {
@@ -61,7 +62,7 @@ function emptyLine(category: CashVoucherCategory, type: CashVoucherType): CashLi
 function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): CashVoucherFormValues {
   const fallback = type === CashVoucherType.Receipt ? CashVoucherCategory.Receipt : CashVoucherCategory.Payment
   const category = prefill?.category ?? fallback
-  const base = type === CashVoucherType.Receipt ? 'Thu tiền của ' : 'Chi tiền cho '
+  const reason = defaultReason(category, prefill?.partnerName)
   return {
     type,
     category,
@@ -70,8 +71,9 @@ function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): Cas
     partnerType: PartnerType.Customer,
     partnerId: prefill?.partnerId,
     partnerName: prefill?.partnerName,
-    reason: prefill?.partnerName ? base + prefill.partnerName : base,
-    lines: [emptyLine(category, type)],
+    reason,
+    // Dòng hạch toán đầu tiên kế thừa Diễn giải từ Lý do nộp/chi (MISA tự điền).
+    lines: [{ ...emptyLine(category, type), description: reason, partnerId: prefill?.partnerId, partnerName: prefill?.partnerName }],
   }
 }
 
@@ -92,6 +94,10 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
   // Picker "Mã đối tượng" (nguồn tạm: khách hàng + nhà cung cấp).
   const [partnerKw, setPartnerKw] = useState('')
   const { items: partnerItems, loading: partnerLoading } = usePartnerOptions(partnerKw)
+
+  // Picker "Nhân viên" (danh mục Nhân viên đang sử dụng).
+  const [employeeKw, setEmployeeKw] = useState('')
+  const { items: employeeItems, loading: employeeLoading } = useEmployeeOptions(employeeKw)
 
   // Nạp dữ liệu khi sửa.
   useEffect(() => {
@@ -129,6 +135,10 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
   const category = watch('category')
   const lines = watch('lines')
   const cols = lineColumns(category)
+
+  // Preview số phiếu kế tiếp khi tạo mới (PT####/YYYY) — số thật vẫn cấp lúc Cất.
+  const voucherDate = watch('voucherDate')
+  const nextNo = useNextCashVoucherNo(type, voucherDate, !voucherId)
 
   // Dòng mới kế thừa Đối tượng/Tên đối tượng từ header (MISA tự điền).
   const newLine = (): CashLineFormValues => ({
@@ -189,6 +199,12 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
               // Đổi loại nghiệp vụ → reset định khoản mặc định dòng đầu.
               setValue('lines.0.debitAccount', emptyLine(next, type).debitAccount)
               setValue('lines.0.creditAccount', emptyLine(next, type).creditAccount)
+              // + cập nhật Lý do nộp/chi và Diễn giải các dòng theo loại mới.
+              const reason = defaultReason(next, watch('partnerName'))
+              setValue('reason', reason)
+              ;(watch('lines') ?? []).forEach((_, i) => {
+                setValue(`lines.${i}.description`, reason)
+              })
             }}
           >
             <SelectTrigger className="h-9 w-auto min-w-[240px] border-slate-300 bg-white transition-colors hover:border-primary/50 focus:ring-primary/30">
@@ -219,8 +235,8 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                   setValue('partnerName', p.name)
                   setValue('partnerType', p.type)
                   if (p.address) setValue('address', p.address)
-                  // Lý do nộp/chi: "Thu tiền của <tên>" / "Chi tiền cho <tên>".
-                  const reason = `${isReceipt ? 'Thu tiền của ' : 'Chi tiền cho '}${p.name}`
+                  // Lý do nộp/chi theo loại nghiệp vụ, nối tên đối tượng.
+                  const reason = defaultReason(category, p.name)
                   setValue('reason', reason)
                   // Tự điền Diễn giải + Đối tượng / Tên đối tượng cho mọi dòng hạch toán.
                   ;(watch('lines') ?? []).forEach((_, i) => {
@@ -244,7 +260,15 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                   <input {...register('address')} className={inputCls} />
                 </Field>
                 <Field label="Nhân viên">
-                  <input {...register('employeeId')} className={inputCls} />
+                  <PartnerPicker
+                    value={watch('employeeId')}
+                    items={employeeItems}
+                    loading={employeeLoading}
+                    keyword={employeeKw}
+                    onKeywordChange={setEmployeeKw}
+                    placeholder="Mã nhân viên"
+                    onSelect={(p) => setValue('employeeId', p.code)}
+                  />
                 </Field>
                 <Field label="Lý do nộp">
                   <input {...register('reason')} className={inputCls} />
@@ -263,7 +287,15 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                   <input {...register('reason')} className={inputCls} />
                 </Field>
                 <Field label="Nhân viên">
-                  <input {...register('employeeId')} className={inputCls} />
+                  <PartnerPicker
+                    value={watch('employeeId')}
+                    items={employeeItems}
+                    loading={employeeLoading}
+                    keyword={employeeKw}
+                    onKeywordChange={setEmployeeKw}
+                    placeholder="Mã nhân viên"
+                    onSelect={(p) => setValue('employeeId', p.code)}
+                  />
                 </Field>
               </>
             )}
@@ -283,8 +315,9 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
               </Field>
               <Field label={`Số phiếu ${isReceipt ? 'thu' : 'chi'}`}>
                 <input
-                  value={editing.data?.voucherNo ?? 'Tự động'}
+                  value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
                   readOnly
+                  title="Số dự kiến — cấp chính thức khi Cất"
                   className={cn(inputCls, 'bg-slate-50 text-slate-500 hover:border-slate-300')}
                 />
               </Field>
