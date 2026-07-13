@@ -8,7 +8,7 @@ import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
-import { useGeneralVoucher } from '../api/useGeneralVouchers'
+import { useGeneralVoucher, useNextGeneralVoucherNo } from '../api/useGeneralVouchers'
 import {
   useCreateGeneralVoucher,
   useUpdateGeneralVoucher,
@@ -62,6 +62,9 @@ export function GeneralVoucherForm({
   })
   const { control, register, handleSubmit, reset, watch, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+
+  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  const nextNo = useNextGeneralVoucherNo(watch('voucherDate'), !voucherId)
 
   // Nạp dữ liệu khi xem/sửa.
   useEffect(() => {
@@ -151,8 +154,9 @@ export function GeneralVoucherForm({
             </Field>
             <Field label="Số chứng từ">
               <input
-                value={editing.data?.voucherNo ?? 'Tự động'}
+                value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
                 readOnly
+                title="Số dự kiến — cấp chính thức khi Cất"
                 className={cn(inputCls, 'bg-slate-50 text-slate-500')}
               />
             </Field>

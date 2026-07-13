@@ -29,6 +29,13 @@ export class GeneralController {
     return this.general.list(filter)
   }
 
+  // Đặt TRƯỚC @Get(':id') để route ':id' không nuốt mất 'next-no'.
+  @Get('next-no')
+  @ApiOperation({ summary: 'Xem trước số chứng từ kế tiếp (chỉ hiển thị, không giữ chỗ)' })
+  nextNo(@Query('voucherDate') voucherDate?: string) {
+    return this.general.previewNextVoucherNo(voucherDate)
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Chi tiết 1 chứng từ' })
   findOne(@Param('id') id: string) {

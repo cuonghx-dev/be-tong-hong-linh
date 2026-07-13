@@ -29,6 +29,13 @@ export class GoodsIssueController {
     return this.issue.list(filter)
   }
 
+  // Đặt TRƯỚC @Get(':id') để route ':id' không nuốt mất 'next-no'.
+  @Get('next-no')
+  @ApiOperation({ summary: 'Xem trước số phiếu xuất kế tiếp (chỉ hiển thị, không giữ chỗ)' })
+  nextNo(@Query('voucherDate') voucherDate?: string) {
+    return this.issue.previewNextVoucherNo(voucherDate)
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Chi tiết 1 phiếu xuất kho' })
   findOne(@Param('id') id: string) {

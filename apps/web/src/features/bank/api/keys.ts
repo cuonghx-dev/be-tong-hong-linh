@@ -5,6 +5,8 @@ export const bankKeys = {
   all: ['bank'] as const,
   vouchers: (filter: BankVoucherFilter) => [...bankKeys.all, 'vouchers', filter] as const,
   voucher: (id: string) => [...bankKeys.all, 'voucher', id] as const,
+  nextNo: (type: string, voucherDate: string) =>
+    [...bankKeys.all, 'next-no', type, voucherDate] as const,
   report: (slug: string, filter: BankReportFilter | BankBalanceFilter) =>
     [...bankKeys.all, 'report', slug, filter] as const,
 }

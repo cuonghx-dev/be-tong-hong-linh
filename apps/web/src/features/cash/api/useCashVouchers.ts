@@ -1,4 +1,4 @@
-import type { CashVoucherDto, CashVoucherFilter, Paginated } from '@app/shared'
+import type { CashVoucherDto, CashVoucherFilter, CashVoucherType, Paginated } from '@app/shared'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/lib/api'
 import { cashKeys } from './keys'
@@ -12,6 +12,19 @@ export function useCashVouchers(filter: CashVoucherFilter) {
         .get<Paginated<CashVoucherDto>>('/cash/vouchers', { params: filter })
         .then((r) => r.data),
     placeholderData: keepPreviousData,
+  })
+}
+
+// Số phiếu kế tiếp (preview hiển thị trên form tạo mới — số thật cấp lúc Cất).
+// Nằm dưới cashKeys.all nên tự refetch sau khi create invalidate (vd "Cất và Thêm").
+export function useNextCashVoucherNo(type: CashVoucherType, voucherDate: string, enabled = true) {
+  return useQuery({
+    queryKey: cashKeys.nextNo(type, voucherDate),
+    queryFn: () =>
+      api
+        .get<{ voucherNo: string }>('/cash/vouchers/next-no', { params: { type, voucherDate } })
+        .then((r) => r.data.voucherNo),
+    enabled,
   })
 }
 

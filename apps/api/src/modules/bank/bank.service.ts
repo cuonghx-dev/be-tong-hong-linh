@@ -63,6 +63,14 @@ export class BankService {
     return toVoucherDto(voucher)
   }
 
+  // Xem trước số chứng từ kế tiếp để hiển thị trên form — KHÔNG giữ chỗ;
+  // số chính thức vẫn cấp lại trong transaction lúc create (tránh trùng khi ghi đồng thời).
+  async previewNextVoucherNo(type: BankVoucherType, voucherDate?: string) {
+    const date = voucherDate ? new Date(voucherDate) : new Date()
+    const voucherNo = await nextVoucherNo(this.prisma, type, date)
+    return { voucherNo }
+  }
+
   async create(dto: CreateBankVoucherDto) {
     await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {

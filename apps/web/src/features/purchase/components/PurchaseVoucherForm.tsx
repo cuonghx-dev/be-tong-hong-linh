@@ -25,7 +25,7 @@ import {
 } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useSuppliers } from '../api/useSuppliers'
-import { usePurchaseVoucher } from '../api/usePurchaseVouchers'
+import { useNextPurchaseVoucherNo, usePurchaseVoucher } from '../api/usePurchaseVouchers'
 import {
   useCreatePurchaseVoucher,
   useUpdatePurchaseVoucher,
@@ -99,6 +99,9 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+
+  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  const nextNo = useNextPurchaseVoucherNo(type, watch('voucherDate'), !voucherId)
 
   // Picker nhà cung cấp: tra cứu theo mã/tên, tự điền tên + địa chỉ.
   const [supplierKw, setSupplierKw] = useState('')
@@ -323,8 +326,9 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
         </Field>
         <Field label="Số chứng từ">
           <input
-            value={editing.data?.voucherNo ?? 'Tự động'}
+            value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
             readOnly
+            title="Số dự kiến — cấp chính thức khi Cất"
             className={cn(inputCls, 'bg-slate-50 text-slate-500')}
           />
         </Field>

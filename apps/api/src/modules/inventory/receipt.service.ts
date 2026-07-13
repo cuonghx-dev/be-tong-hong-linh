@@ -67,6 +67,13 @@ export class ReceiptService {
     return toReceiptDto(receipt)
   }
 
+  // Xem trước số phiếu nhập kế tiếp để hiển thị trên form — KHÔNG giữ chỗ;
+  // số chính thức vẫn cấp lại trong transaction lúc create (tránh trùng khi ghi đồng thời).
+  async previewNextVoucherNo() {
+    const voucherNo = await nextVoucherNo(this.prisma)
+    return { voucherNo }
+  }
+
   async create(dto: CreateInventoryReceiptDto) {
     await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {

@@ -15,6 +15,19 @@ export function useGeneralVouchers(filter: GeneralVoucherFilter) {
   })
 }
 
+// Số chứng từ kế tiếp (preview trên form tạo mới — số thật cấp lúc Cất).
+// Key nằm dưới generalKeys.all nên tự refetch sau khi create invalidate.
+export function useNextGeneralVoucherNo(voucherDate: string, enabled = true) {
+  return useQuery({
+    queryKey: generalKeys.nextNo(voucherDate),
+    queryFn: () =>
+      api
+        .get<{ voucherNo: string }>('/general/vouchers/next-no', { params: { voucherDate } })
+        .then((r) => r.data.voucherNo),
+    enabled,
+  })
+}
+
 // Chi tiết 1 chứng từ (dùng khi mở xem/sửa).
 export function useGeneralVoucher(id: string | null) {
   return useQuery({

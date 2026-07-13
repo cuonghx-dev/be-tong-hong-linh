@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
-import { useSalesVoucher } from '../api/useSalesVouchers'
+import { useNextSalesVoucherNo, useSalesVoucher } from '../api/useSalesVouchers'
 import { useCreateSalesVoucher, useUpdateSalesVoucher } from '../api/useSalesVoucherMutations'
 import {
   salesVoucherSchema,
@@ -78,6 +78,9 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+
+  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  const nextNo = useNextSalesVoucherNo(watch('voucherDate'), !voucherId)
 
   useEffect(() => {
     const v = editing.data
@@ -239,8 +242,9 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
         </Field>
         <Field label="Số chứng từ">
           <input
-            value={editing.data?.voucherNo ?? 'Tự động'}
+            value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
             readOnly
+            title="Số dự kiến — cấp chính thức khi Cất"
             className={cn(inputCls, 'bg-slate-50 text-slate-500')}
           />
         </Field>

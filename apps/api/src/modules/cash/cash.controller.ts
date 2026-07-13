@@ -5,12 +5,14 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   Patch,
   Post,
   Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common'
+import { CashVoucherType } from '@prisma/client'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CashService } from './cash.service'
@@ -27,6 +29,16 @@ export class CashController {
   @ApiOperation({ summary: 'Danh sách phiếu thu/chi (lọc + phân trang)' })
   list(@Query() filter: CashVoucherFilterDto) {
     return this.cash.list(filter)
+  }
+
+  // Đặt TRƯỚC @Get(':id') để route ':id' không nuốt mất 'next-no'.
+  @Get('next-no')
+  @ApiOperation({ summary: 'Xem trước số phiếu kế tiếp (chỉ hiển thị, không giữ chỗ)' })
+  nextNo(
+    @Query('type', new ParseEnumPipe(CashVoucherType)) type: CashVoucherType,
+    @Query('voucherDate') voucherDate?: string,
+  ) {
+    return this.cash.previewNextVoucherNo(type, voucherDate)
   }
 
   @Get(':id')

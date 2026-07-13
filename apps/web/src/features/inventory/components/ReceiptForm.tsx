@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
-import { useReceipt } from '../api/useReceipts'
+import { useNextReceiptNo, useReceipt } from '../api/useReceipts'
 import { useCreateReceipt, useUpdateReceipt } from '../api/useReceiptMutations'
 import { receiptSchema, type ReceiptFormValues, type ReceiptLineFormValues } from '../schema'
 import { RECEIPT_TYPE_OPTIONS, defaultCreditAccount, defaultDebitAccount } from '../types'
@@ -63,6 +63,9 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+
+  // Preview số phiếu kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất (dãy NK chạy toàn cục).
+  const nextNo = useNextReceiptNo(!receiptId)
 
   // Nạp dữ liệu khi xem/sửa.
   useEffect(() => {
@@ -183,8 +186,9 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
           </Field>
           <Field label="Số chứng từ">
             <input
-              value={editing.data?.voucherNo ?? 'Tự động'}
+              value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
               readOnly
+              title="Số dự kiến — cấp chính thức khi Cất"
               className={cn(inputCls, 'bg-slate-50 text-slate-500')}
             />
           </Field>

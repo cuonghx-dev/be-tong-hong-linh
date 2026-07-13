@@ -13,6 +13,19 @@ export function useSalesVouchers(filter: SalesVoucherFilter) {
   })
 }
 
+// Số chứng từ kế tiếp (preview trên form tạo mới — số thật cấp lúc Cất).
+// Key nằm dưới salesKeys.all nên tự refetch sau khi create invalidate.
+export function useNextSalesVoucherNo(voucherDate: string, enabled = true) {
+  return useQuery({
+    queryKey: salesKeys.nextNo(voucherDate),
+    queryFn: () =>
+      api
+        .get<{ voucherNo: string }>('/sales/vouchers/next-no', { params: { voucherDate } })
+        .then((r) => r.data.voucherNo),
+    enabled,
+  })
+}
+
 // Chi tiết 1 chứng từ (dùng khi mở sửa).
 export function useSalesVoucher(id: string | null) {
   return useQuery({

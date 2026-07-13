@@ -15,6 +15,19 @@ export function useGoodsIssues(filter: GoodsIssueFilter) {
   })
 }
 
+// Số phiếu xuất kế tiếp (preview trên form tạo mới — số thật cấp lúc Cất).
+// Key nằm dưới inventoryKeys.all nên tự refetch sau khi create invalidate.
+export function useNextGoodsIssueNo(voucherDate: string, enabled = true) {
+  return useQuery({
+    queryKey: inventoryKeys.issueNextNo(voucherDate),
+    queryFn: () =>
+      api
+        .get<{ voucherNo: string }>('/inventory/issues/next-no', { params: { voucherDate } })
+        .then((r) => r.data.voucherNo),
+    enabled,
+  })
+}
+
 // Chi tiết 1 phiếu (dùng khi mở xem/sửa).
 export function useGoodsIssue(id: string | null) {
   return useQuery({

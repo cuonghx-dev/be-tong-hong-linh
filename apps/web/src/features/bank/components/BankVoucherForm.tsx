@@ -24,7 +24,7 @@ import {
 } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
-import { useBankVoucher } from '../api/useBankVouchers'
+import { useBankVoucher, useNextBankVoucherNo } from '../api/useBankVouchers'
 import { useCreateBankVoucher, useUpdateBankVoucher } from '../api/useBankVoucherMutations'
 import { bankVoucherSchema, type BankLineFormValues, type BankVoucherFormValues } from '../schema'
 import { CATEGORY_LABEL, CATEGORY_OPTIONS, PAYMENT_METHOD_LABEL } from '../types'
@@ -82,6 +82,9 @@ export function BankVoucherForm({
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+
+  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  const nextNo = useNextBankVoucherNo(type, watch('voucherDate'), !voucherId)
 
   // Picker "Mã đối tượng" (nguồn tạm: khách hàng + nhà cung cấp).
   const [partnerKw, setPartnerKw] = useState('')
@@ -307,8 +310,9 @@ export function BankVoucherForm({
             </Field>
             <Field label="Số chứng từ">
               <input
-                value={editing.data?.voucherNo ?? 'Tự động'}
+                value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
                 readOnly
+                title="Số dự kiến — cấp chính thức khi Cất"
                 className={cn(inputCls, 'bg-slate-50 text-slate-500')}
               />
             </Field>

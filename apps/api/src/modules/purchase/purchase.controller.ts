@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   Patch,
   Post,
   Query,
@@ -13,6 +14,7 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { PurchaseVoucherType } from '@prisma/client'
 import { CreatePurchaseVoucherDto } from './dto/create-purchase-voucher.dto'
 import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
 import { UpdatePurchaseVoucherDto } from './dto/update-purchase-voucher.dto'
@@ -27,6 +29,16 @@ export class PurchaseController {
   @ApiOperation({ summary: 'Danh sách chứng từ mua hàng (lọc + phân trang)' })
   list(@Query() filter: PurchaseVoucherFilterDto) {
     return this.purchase.list(filter)
+  }
+
+  // Đặt TRƯỚC @Get(':id') để route ':id' không nuốt mất 'next-no'.
+  @Get('next-no')
+  @ApiOperation({ summary: 'Xem trước số chứng từ kế tiếp (chỉ hiển thị, không giữ chỗ)' })
+  nextNo(
+    @Query('type', new ParseEnumPipe(PurchaseVoucherType)) type: PurchaseVoucherType,
+    @Query('voucherDate') voucherDate?: string,
+  ) {
+    return this.purchase.previewNextVoucherNo(type, voucherDate)
   }
 
   @Get(':id')

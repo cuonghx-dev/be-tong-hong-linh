@@ -1,4 +1,9 @@
-import type { Paginated, PurchaseVoucherDto, PurchaseVoucherFilter } from '@app/shared'
+import type {
+  Paginated,
+  PurchaseVoucherDto,
+  PurchaseVoucherFilter,
+  PurchaseVoucherType,
+} from '@app/shared'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/lib/api'
 import { purchaseKeys } from './keys'
@@ -12,6 +17,23 @@ export function usePurchaseVouchers(filter: PurchaseVoucherFilter) {
         .get<Paginated<PurchaseVoucherDto>>('/purchase/vouchers', { params: filter })
         .then((r) => r.data),
     placeholderData: keepPreviousData,
+  })
+}
+
+// Số chứng từ kế tiếp (preview trên form tạo mới — số thật cấp lúc Cất).
+// Key nằm dưới purchaseKeys.all nên tự refetch sau khi create invalidate.
+export function useNextPurchaseVoucherNo(
+  type: PurchaseVoucherType,
+  voucherDate: string,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: purchaseKeys.nextNo(type, voucherDate),
+    queryFn: () =>
+      api
+        .get<{ voucherNo: string }>('/purchase/vouchers/next-no', { params: { type, voucherDate } })
+        .then((r) => r.data.voucherNo),
+    enabled,
   })
 }
 

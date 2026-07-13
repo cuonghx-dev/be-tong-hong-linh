@@ -29,6 +29,13 @@ export class ReceiptController {
     return this.receipt.list(filter)
   }
 
+  // Đặt TRƯỚC @Get(':id') để route ':id' không nuốt mất 'next-no'.
+  @Get('next-no')
+  @ApiOperation({ summary: 'Xem trước số phiếu nhập kế tiếp (chỉ hiển thị, không giữ chỗ)' })
+  nextNo() {
+    return this.receipt.previewNextVoucherNo()
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Chi tiết 1 phiếu nhập kho' })
   findOne(@Param('id') id: string) {

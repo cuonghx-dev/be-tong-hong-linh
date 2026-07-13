@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   Patch,
   Post,
   Query,
@@ -13,6 +14,7 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { BankVoucherType } from '@prisma/client'
 import { BankService } from './bank.service'
 import { BankVoucherFilterDto } from './dto/bank-voucher-filter.dto'
 import { CreateBankVoucherDto } from './dto/create-bank-voucher.dto'
@@ -27,6 +29,16 @@ export class BankController {
   @ApiOperation({ summary: 'Danh sách chứng từ thu/chi tiền gửi (lọc + phân trang)' })
   list(@Query() filter: BankVoucherFilterDto) {
     return this.bank.list(filter)
+  }
+
+  // Đặt TRƯỚC @Get(':id') để route ':id' không nuốt mất 'next-no'.
+  @Get('next-no')
+  @ApiOperation({ summary: 'Xem trước số chứng từ kế tiếp (chỉ hiển thị, không giữ chỗ)' })
+  nextNo(
+    @Query('type', new ParseEnumPipe(BankVoucherType)) type: BankVoucherType,
+    @Query('voucherDate') voucherDate?: string,
+  ) {
+    return this.bank.previewNextVoucherNo(type, voucherDate)
   }
 
   @Get(':id')

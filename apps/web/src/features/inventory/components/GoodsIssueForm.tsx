@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
-import { useGoodsIssue } from '../api/useGoodsIssues'
+import { useGoodsIssue, useNextGoodsIssueNo } from '../api/useGoodsIssues'
 import { useCreateGoodsIssue, useUpdateGoodsIssue } from '../api/useGoodsIssueMutations'
 import {
   goodsIssueSchema,
@@ -77,6 +77,9 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+
+  // Preview số phiếu kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  const nextNo = useNextGoodsIssueNo(watch('voucherDate'), !voucherId)
 
   // Picker khách hàng: tra cứu theo mã/tên, tự điền tên + địa chỉ.
   const [customerKw, setCustomerKw] = useState('')
