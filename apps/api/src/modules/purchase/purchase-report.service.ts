@@ -3,19 +3,17 @@ import type {
   PurchaseDetailReportDto,
   SupplierPayableDetailGroupDto,
   SupplierPayableDetailReportDto,
-  SupplierPayableSource,
   SupplierPayableSummaryReportDto,
   SupplierPayableSummaryRowDto,
 } from '@app/shared'
-import { CHART_OF_ACCOUNTS } from '@app/shared'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { PurchaseReportFilterDto } from './dto/purchase-report-filter.dto'
+import { PayableService, buildSupplierResolver } from './payable.service'
+import type { RawPayableRow, SupplierKey } from './payable.service'
 
 const ZERO = new Prisma.Decimal(0)
-// Mọi TK con của 331 (3311, 3312…) đều là phải trả nhà cung cấp.
-const PAYABLE_LIKE = `${CHART_OF_ACCOUNTS.PAYABLE}%`
 
 // Dòng hàng chứng từ mua trả về từ SQL (ngày ép ::text → 'yyyy-mm-dd').
 interface RawDetailRow {
@@ -34,28 +32,6 @@ interface RawDetailRow {
   vat_amount: string
 }
 
-// 1 dòng phát sinh công nợ 331: CREDIT = chứng từ mua chưa trả (Có 331),
-// DEBIT = phiếu chi tiền mặt/tiền gửi trả NCC (Nợ 331).
-interface RawPayableRow {
-  voucher_id: string
-  source: SupplierPayableSource
-  kind: 'CREDIT' | 'DEBIT'
-  posting_date: string
-  voucher_no: string
-  description: string | null
-  partner_id: string | null
-  partner_name: string | null
-  amount: string
-}
-
-// Thông tin NCC sau khi quy về 1 khóa gộp (id nếu có, fallback tên).
-interface SupplierKey {
-  key: string
-  supplierId: string | null
-  supplierCode: string | null
-  supplierName: string
-}
-
 // Nhóm số liệu công nợ tích lũy theo NCC.
 interface PayableBucket extends Omit<SupplierKey, 'key'> {
   opening: Prisma.Decimal
@@ -72,7 +48,10 @@ interface PayableBucket extends Omit<SupplierKey, 'key'> {
 // (partner_opening_balances) + phát sinh trước kỳ.
 @Injectable()
 export class PurchaseReportService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly payables: PayableService,
+  ) {}
 
   // ── Sổ chi tiết mua hàng ───────────────────────────────────────────────────
   async detail(filter: PurchaseReportFilterDto): Promise<PurchaseDetailReportDto> {
@@ -287,32 +266,12 @@ export class PurchaseReportService {
     const { from, to } = parseRange(filter)
     const [suppliers, declared, before, inRange] = await Promise.all([
       this.prisma.supplier.findMany({ select: { id: true, code: true, name: true } }),
-      this.prisma.$queryRaw<{ partner_id: string; balance: string }[]>(Prisma.sql`
-        SELECT partner_id, SUM(credit_amount - debit_amount)::text AS balance
-        FROM partner_opening_balances
-        WHERE partner_type = 'SUPPLIER' AND account_code LIKE ${PAYABLE_LIKE}
-        GROUP BY partner_id
-      `),
-      this.payableRows(Prisma.sql`v.posting_date < ${from}`),
-      this.payableRows(Prisma.sql`v.posting_date BETWEEN ${from} AND ${to}`),
+      this.payables.declaredOpenings(),
+      this.payables.payableRows(Prisma.sql`v.posting_date < ${from}`),
+      this.payables.payableRows(Prisma.sql`v.posting_date BETWEEN ${from} AND ${to}`),
     ])
 
-    // Quy chứng từ về 1 NCC: ưu tiên id; chỉ có tên (dữ liệu nhập khẩu) thì match
-    // đúng tên trong danh mục để nhập chung nhóm, không khớp thì nhóm theo tên.
-    const byId = new Map(suppliers.map((s) => [s.id, s]))
-    const byName = new Map(suppliers.map((s) => [normalizeName(s.name), s]))
-    const resolve = (partnerId: string | null, partnerName: string | null): SupplierKey => {
-      const matched =
-        (partnerId && byId.get(partnerId)) ||
-        (partnerName && byName.get(normalizeName(partnerName))) ||
-        null
-      if (matched) {
-        return { key: matched.id, supplierId: matched.id, supplierCode: matched.code, supplierName: matched.name }
-      }
-      const name = partnerName?.trim()
-      if (name) return { key: `name:${normalizeName(name)}`, supplierId: null, supplierCode: null, supplierName: name }
-      return { key: 'unknown', supplierId: null, supplierCode: null, supplierName: 'Không xác định' }
-    }
+    const resolve = buildSupplierResolver(suppliers)
 
     const buckets = new Map<string, PayableBucket>()
     const bucketOf = (k: SupplierKey): PayableBucket => {
@@ -352,61 +311,6 @@ export class PurchaseReportService {
       .filter((b) => !b.opening.isZero() || !b.credit.isZero() || !b.debit.isZero())
       .sort((a, b) => a.supplierName.localeCompare(b.supplierName, 'vi'))
   }
-
-  // Dòng phát sinh 331 từ 3 nguồn (UNION): chứng từ mua UNPAID ghi Có; phiếu chi
-  // tiền mặt / tiền gửi ghi Nợ. Đối tượng ưu tiên theo dòng, fallback header.
-  private async payableRows(dateCond: Prisma.Sql): Promise<RawPayableRow[]> {
-    return this.prisma.$queryRaw<RawPayableRow[]>(Prisma.sql`
-      SELECT v.id AS voucher_id,
-             'PURCHASE' AS source,
-             'CREDIT' AS kind,
-             v.posting_date::text AS posting_date,
-             v.voucher_no,
-             v.description,
-             v.supplier_id AS partner_id,
-             v.supplier_name AS partner_name,
-             (l.amount + l.vat_amount)::text AS amount
-      FROM purchase_voucher_lines l
-      JOIN purchase_vouchers v ON v.id = l.voucher_id
-      WHERE v.payment_mode = 'UNPAID'
-        AND l.payable_account LIKE ${PAYABLE_LIKE}
-        AND ${dateCond}
-      UNION ALL
-      SELECT v.id,
-             'CASH',
-             'DEBIT',
-             v.posting_date::text,
-             v.voucher_no,
-             COALESCE(l.description, v.reason),
-             COALESCE(l.partner_id, v.partner_id),
-             COALESCE(l.partner_name, v.partner_name),
-             l.amount::text
-      FROM cash_voucher_lines l
-      JOIN cash_vouchers v ON v.id = l.voucher_id
-      WHERE l.debit_account LIKE ${PAYABLE_LIKE}
-        AND ${dateCond}
-      UNION ALL
-      SELECT v.id,
-             'BANK',
-             'DEBIT',
-             v.posting_date::text,
-             v.voucher_no,
-             COALESCE(l.description, v.reason),
-             COALESCE(l.partner_id, v.partner_id),
-             COALESCE(l.partner_name, v.partner_name),
-             l.amount::text
-      FROM bank_voucher_lines l
-      JOIN bank_vouchers v ON v.id = l.voucher_id
-      WHERE l.debit_account LIKE ${PAYABLE_LIKE}
-        AND ${dateCond}
-      ORDER BY posting_date, voucher_no
-    `)
-  }
-}
-
-// So tên NCC không phân biệt hoa thường/khoảng trắng thừa (dữ liệu nhập khẩu).
-function normalizeName(name: string): string {
-  return name.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
 // Kỳ báo cáo → Date (cột kiểu DATE, bỏ giờ).

@@ -6,6 +6,8 @@ import type {
   PurchasePaymentStatus,
   PurchaseReceiveStatus,
   PurchaseVoucherType,
+  ReceivableAging,
+  ReceivableStatus,
   SupplierType,
 } from '../enums'
 
@@ -170,5 +172,28 @@ export interface SupplierFilter {
   pageSize?: number
   keyword?: string
   groupId?: string
+}
+
+// ── Đối chiếu công nợ phải trả NCC (view/tổng hợp) ───────────────────────────
+
+export interface SupplierPayableDto {
+  supplierId: string | null // null = NCC chỉ có tên (dữ liệu nhập khẩu)
+  supplierCode: string | null
+  supplierName: string
+  address: string | null
+  taxCode: string | null
+  payableByInvoice: string // Số còn phải trả theo HĐ (dư đầu khai báo + Có 331)
+  prepaidOrDeduction: string // Số trả trước/Giảm trừ khác (Nợ 331 từ phiếu chi)
+  remainingPayable: string // Số còn phải trả (có thể âm)
+}
+
+export interface SupplierPayableFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string
+  account?: string // Mã TK công nợ (vd '331'); rỗng = tất cả
+  aging?: ReceivableAging // Phân tích theo tuổi nợ (dùng chung enum với phải thu)
+  status?: ReceivableStatus // Tình trạng nợ
+  toDate?: string // Đến ngày (YYYY-MM-DD): số dư tính đến ngày này (postingDate ≤ toDate)
 }
 
