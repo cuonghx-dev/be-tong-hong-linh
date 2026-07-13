@@ -74,3 +74,14 @@ export function issueDefaultCreditAccount(category: GoodsIssueCategory): string 
     ? CHART_OF_ACCOUNTS.MATERIAL
     : CHART_OF_ACCOUNTS.GOODS
 }
+
+// ── Báo cáo kho ──────────────────────────────────────────────────────────────
+
+// Danh mục báo cáo kho (tab "Báo cáo", theo MISA).
+// TODO: Tồn kho theo kho, báo cáo sản xuất/đối chiếu (chờ module lệnh sản xuất, sổ cái).
+export type InventoryReportSlug = 'stock-summary' | 'item-ledger'
+
+export const INVENTORY_REPORTS: { slug: InventoryReportSlug; name: string }[] = [
+  { slug: 'stock-summary', name: 'Tổng hợp tồn kho' },
+  { slug: 'item-ledger', name: 'Sổ chi tiết vật tư hàng hóa' },
+]

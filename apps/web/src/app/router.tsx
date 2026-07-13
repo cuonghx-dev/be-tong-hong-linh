@@ -17,6 +17,7 @@ import { PurchaseVoucherPage } from '@/features/purchase/pages/PurchaseVoucherPa
 import { InventoryPage } from '@/features/inventory/pages/InventoryPage'
 import { InventoryReceiptPage } from '@/features/inventory/pages/InventoryReceiptPage'
 import { GoodsIssueVoucherPage } from '@/features/inventory/pages/GoodsIssueVoucherPage'
+import { InventoryReportPage } from '@/features/inventory/pages/InventoryReportPage'
 import { GeneralPage } from '@/features/general/pages/GeneralPage'
 import { GeneralVoucherPage } from '@/features/general/pages/GeneralVoucherPage'
 import { OpeningBalancePage } from '@/features/opening-balance/pages/OpeningBalancePage'
@@ -56,6 +57,8 @@ const recordRoutes = [
   { path: '/inventory/issues/new', element: <GoodsIssueVoucherPage mode="new" /> },
   { path: '/inventory/issues/:id', element: <GoodsIssueVoucherPage mode="view" /> },
   { path: '/inventory/issues/:id/edit', element: <GoodsIssueVoucherPage mode="edit" /> },
+  // Xem báo cáo kho — full-page, đè shell (vào từ tab "Báo cáo").
+  { path: '/inventory/reports/:slug', element: <InventoryReportPage /> },
   { path: '/general/vouchers/new', element: <GeneralVoucherPage mode="new" /> },
   { path: '/general/vouchers/:id', element: <GeneralVoucherPage mode="view" /> },
   { path: '/general/vouchers/:id/edit', element: <GeneralVoucherPage mode="edit" /> },
