@@ -11,7 +11,7 @@ export function SalesDetailReport({ filter }: { filter: SalesReportFilter }) {
 
   return (
     <table className="w-full min-w-[1200px] border-collapse text-sm">
-      <thead className="sticky top-0 z-10">
+      <thead className="sticky top-0 z-20">
         <tr>
           <th className={thClass}>Ngày hạch toán</th>
           <th className={thClass}>Ngày chứng từ</th>

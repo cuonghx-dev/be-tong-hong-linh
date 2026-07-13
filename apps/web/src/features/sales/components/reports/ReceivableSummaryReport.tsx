@@ -12,7 +12,7 @@ export function ReceivableSummaryReport({ filter }: { filter: SalesReportFilter 
 
   return (
     <table className="w-full min-w-[900px] border-collapse text-sm">
-      <thead className="sticky top-0 z-10">
+      <thead className="sticky top-0 z-20">
         <tr>
           <th className={thClass}>Mã khách hàng</th>
           <th className={thClass}>Tên khách hàng</th>

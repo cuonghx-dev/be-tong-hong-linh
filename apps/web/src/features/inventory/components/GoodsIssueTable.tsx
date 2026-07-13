@@ -157,7 +157,7 @@ export function GoodsIssueTable() {
       {/* Table */}
       <div className="flex-1 overflow-auto">
         <table className="w-full min-w-[1100px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
@@ -171,7 +171,7 @@ export function GoodsIssueTable() {
               <th className="px-3 py-2">TT phát hành hóa đơn</th>
               <th className="px-3 py-2">Mã CQT cấp</th>
               <th className="px-3 py-2">Loại chứng từ</th>
-              <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
+              <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
               </th>
             </tr>

@@ -19,7 +19,7 @@ export function PurchaseByItemReport({ filter }: { filter: PurchaseReportFilter 
       </div>
 
       <table className="w-full min-w-[760px] border-collapse text-sm">
-        <thead className="sticky top-0 z-10">
+        <thead className="sticky top-0 z-20">
           <tr>
             <th className={thClass}>STT</th>
             <th className={thClass}>Mặt hàng</th>

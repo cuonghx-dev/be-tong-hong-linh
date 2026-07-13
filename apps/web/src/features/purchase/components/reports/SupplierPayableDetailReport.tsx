@@ -76,7 +76,7 @@ export function SupplierPayableDetailReport({ filter }: { filter: PurchaseReport
       </div>
 
       <table className="w-full min-w-[960px] border-collapse text-sm">
-        <thead className="sticky top-0 z-10">
+        <thead className="sticky top-0 z-20">
           <tr>
             <th className={thClass}>Ngày hạch toán</th>
             <th className={thClass}>Số chứng từ</th>

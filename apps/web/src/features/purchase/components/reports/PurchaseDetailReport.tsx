@@ -30,7 +30,7 @@ export function PurchaseDetailReport({ filter }: { filter: PurchaseReportFilter 
         </div>
 
         <table className="w-full min-w-[1100px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10">
+          <thead className="sticky top-0 z-20">
             <tr>
               <th rowSpan={2} className={thClass}>Ngày hạch toán</th>
               <th colSpan={2} className={`${thClass} text-center`}>Chứng từ</th>

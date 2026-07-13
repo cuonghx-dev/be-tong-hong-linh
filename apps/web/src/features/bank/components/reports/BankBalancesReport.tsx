@@ -11,7 +11,7 @@ export function BankBalancesReport({ filter }: { filter: BankBalanceFilter }) {
 
   return (
     <table className="w-full min-w-[720px] border-collapse text-sm">
-      <thead className="sticky top-0 z-10">
+      <thead className="sticky top-0 z-20">
         <tr>
           <th className={`${thClass} w-12 text-center`}>STT</th>
           <th className={thClass}>Số tài khoản</th>

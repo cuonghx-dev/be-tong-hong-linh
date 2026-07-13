@@ -22,7 +22,7 @@ export function SupplierPayableSummaryReport({ filter }: { filter: PurchaseRepor
       </div>
 
       <table className="w-full min-w-[860px] border-collapse text-sm">
-        <thead className="sticky top-0 z-10">
+        <thead className="sticky top-0 z-20">
           <tr>
             <th className={thClass}>STT</th>
             <th className={thClass}>Mã NCC</th>

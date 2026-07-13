@@ -132,7 +132,7 @@ export function AccountBalanceEntryPage() {
       {/* Table */}
       <div className="flex-1 overflow-auto">
         <table className="w-full min-w-[900px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="w-32 px-3 py-2">Số tài khoản</th>
               <th className="px-3 py-2">Tên tài khoản</th>

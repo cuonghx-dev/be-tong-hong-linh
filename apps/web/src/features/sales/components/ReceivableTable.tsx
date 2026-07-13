@@ -124,7 +124,7 @@ export function ReceivableTable() {
 
       <div className="flex-1 overflow-auto">
         <table className="w-full min-w-[1040px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2">Mã KH</th>
               <th className="px-3 py-2">Tên khách hàng</th>
@@ -133,7 +133,7 @@ export function ReceivableTable() {
               <th className="px-3 py-2 text-right">Còn phải thu</th>
               <th className="px-3 py-2">Địa chỉ</th>
               <th className="px-3 py-2">Mã số thuế</th>
-              <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
+              <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
               </th>
             </tr>

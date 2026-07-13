@@ -65,7 +65,7 @@ export function CashJournalReport({
         </div>
 
         <table className="w-full min-w-[960px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10">
+          <thead className="sticky top-0 z-20">
             <tr>
               <th rowSpan={2} className={thClass}>Ngày, tháng ghi sổ</th>
               <th colSpan={2} className={`${thClass} text-center`}>Chứng từ</th>
