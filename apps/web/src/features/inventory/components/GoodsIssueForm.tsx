@@ -231,8 +231,9 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
           </Field>
           <Field label="Số chứng từ">
             <input
-              value={editing.data?.voucherNo ?? 'Tự động'}
+              value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
               readOnly
+              title="Số dự kiến — cấp chính thức khi Cất"
               className={cn(inputCls, 'bg-slate-50 text-slate-500')}
             />
           </Field>
