@@ -3,6 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { SearchIcon } from '@/shared/ui/icons'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useAccountBalances } from '../api/useAccountBalances'
 import { buildTree, detailBalanceLabel, type BalanceRow } from '../tree'
@@ -218,20 +225,24 @@ export function AccountBalanceEntryPage() {
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value))
+          <Select
+            value={String(pageSize)}
+            onValueChange={(v) => {
+              setPageSize(Number(v))
               setPage(1)
             }}
-            className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
-            {PAGE_SIZES.map((s) => (
-              <option key={s} value={s}>
-                {s} bản ghi trên 1 trang
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-8 w-auto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZES.map((s) => (
+                <SelectItem key={s} value={String(s)}>
+                  {s} bản ghi trên 1 trang
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={current <= 1}

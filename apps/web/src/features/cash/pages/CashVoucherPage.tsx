@@ -1,6 +1,7 @@
 import { CashVoucherCategory, CashVoucherType } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useCashVoucher } from '../api/useCashVouchers'
 import { CashVoucherForm } from '../components/CashVoucherForm'
 
 type Mode = 'new' | 'view' | 'edit'
@@ -25,18 +26,25 @@ export function CashVoucherPage({ mode }: { mode: Mode }) {
 
   const close = () => navigate('/cash')
 
-  const noun = isReceipt ? 'phiếu thu' : 'phiếu chi'
-  const title =
-    mode === 'new'
-      ? isReceipt
-        ? 'Phiếu thu'
-        : 'Phiếu chi'
-      : mode === 'edit'
-        ? `Sửa ${noun}`
-        : `Xem ${noun}`
+  // Số chứng từ trong tiêu đề (vd "Phiếu thu PT4602/2026") — query dedupe với form.
+  const { data: voucher } = useCashVoucher(mode === 'new' ? null : (id ?? null))
+
+  const noun = isReceipt ? 'Phiếu thu' : 'Phiếu chi'
+  const title = [
+    mode === 'edit' ? `Sửa ${noun.toLowerCase()}` : mode === 'view' ? `Xem ${noun.toLowerCase()}` : noun,
+    voucher?.voucherNo,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <RecordPageShell title={title} onClose={close}>
+    <RecordPageShell
+      title={title}
+      onClose={close}
+      // Vùng đầu trang tô nhạt theo màu thương hiệu — liền khối với vùng thông tin chung của form.
+      headerClassName="border-b-0 bg-primary/5"
+      contentClassName="p-0"
+    >
       <CashVoucherForm
         type={type}
         voucherId={id ?? null}

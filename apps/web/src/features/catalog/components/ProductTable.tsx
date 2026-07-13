@@ -9,6 +9,13 @@ import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useProducts } from '../api/useProducts'
 import { useDeleteProduct, useImportProducts } from '../api/useProductMutations'
@@ -94,18 +101,22 @@ export function ProductTable() {
           onChange={onPickFile}
         />
 
-        <select
-          value={type ?? ''}
-          onChange={(e) => setParam(P.type, e.target.value || null)}
-          className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+        <Select
+          value={type ?? 'all'}
+          onValueChange={(v) => setParam(P.type, v === 'all' ? null : v)}
         >
-          <option value="">Tất cả tính chất</option>
-          {Object.values(ProductType).map((t) => (
-            <option key={t} value={t}>
-              {PRODUCT_TYPE_LABELS[t]}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-8 w-auto">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả tính chất</SelectItem>
+            {Object.values(ProductType).map((t) => (
+              <SelectItem key={t} value={t}>
+                {PRODUCT_TYPE_LABELS[t]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="ml-auto flex items-center gap-2">
           <AddMenu

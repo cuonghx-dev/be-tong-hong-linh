@@ -3,6 +3,13 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useProducts, useWarehouses } from '@/features/catalog'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { ItemPicker } from '@/shared/ui/item-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { ItemLedgerReport } from '../components/reports/ItemLedgerReport'
 import { StockSummaryReport } from '../components/reports/StockSummaryReport'
 import { INVENTORY_REPORTS, type InventoryReportSlug } from '../types'
@@ -61,26 +68,30 @@ export function InventoryReportPage() {
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}
         <div className="flex flex-wrap items-center gap-2">
-          <select
+          <Select
             value={activePreset ?? 'custom'}
-            onChange={(e) => {
-              const preset = PRESETS.find((p) => p.key === e.target.value)
+            onValueChange={(v) => {
+              const preset = PRESETS.find((p) => p.key === v)
               if (preset) {
                 const r = preset.range()
                 setRange(r.from, r.to)
               }
             }}
-            className={inputClass}
           >
-            {PRESETS.map((p) => (
-              <option key={p.key} value={p.key}>
-                {p.label}
-              </option>
-            ))}
-            <option value="custom" disabled={!!activePreset}>
-              Tùy chọn
-            </option>
-          </select>
+            <SelectTrigger className="h-8 w-auto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRESETS.map((p) => (
+                <SelectItem key={p.key} value={p.key}>
+                  {p.label}
+                </SelectItem>
+              ))}
+              <SelectItem value="custom" disabled={!!activePreset}>
+                Tùy chọn
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <label className="flex items-center gap-1.5 text-sm text-slate-600">
             Từ ngày
             <input
@@ -172,14 +183,19 @@ function renderReport(
 function WarehouseSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { data } = useWarehouses({ page: 1, pageSize: 200 })
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={`${inputClass} min-w-44 bg-white`}>
-      <option value="">Tất cả kho</option>
-      {(data?.data ?? []).map((w) => (
-        <option key={w.id} value={w.code}>
-          {w.code} — {w.name}
-        </option>
-      ))}
-    </select>
+    <Select value={value || 'all'} onValueChange={(v) => onChange(v === 'all' ? '' : v)}>
+      <SelectTrigger className="h-8 w-auto min-w-44 bg-white">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Tất cả kho</SelectItem>
+        {(data?.data ?? []).map((w) => (
+          <SelectItem key={w.id} value={w.code}>
+            {w.code} — {w.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 

@@ -195,6 +195,19 @@ export const PanelLeftIcon = (p: IconProps) => (
     <path d="M9 4v16" />
   </Svg>
 )
+export const XIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M18 6 6 18M6 6l12 12" />
+  </Svg>
+)
+export const TrashIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 6h18" />
+    <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <path d="M10 11v6M14 11v6" />
+  </Svg>
+)
 export const SparkleIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />

@@ -11,6 +11,13 @@ import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useCostObjects } from '../api/useCostObjects'
 import { useDeleteCostObject, useImportCostObjects } from '../api/useCostObjectMutations'
@@ -93,19 +100,22 @@ export function CostObjectTable() {
           onChange={onPickFile}
         />
 
-        <select
-          value={type ?? ''}
-          onChange={(e) => setParam(P.type, e.target.value || null)}
-          className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          aria-label="Lọc theo loại"
+        <Select
+          value={type ?? 'all'}
+          onValueChange={(v) => setParam(P.type, v === 'all' ? null : v)}
         >
-          <option value="">Tất cả loại</option>
-          {Object.values(CostObjectType).map((t) => (
-            <option key={t} value={t}>
-              {COST_OBJECT_TYPE_LABELS[t]}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-8 w-auto" aria-label="Lọc theo loại">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả loại</SelectItem>
+            {Object.values(CostObjectType).map((t) => (
+              <SelectItem key={t} value={t}>
+                {COST_OBJECT_TYPE_LABELS[t]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="ml-auto flex items-center gap-2">
           <AddMenu

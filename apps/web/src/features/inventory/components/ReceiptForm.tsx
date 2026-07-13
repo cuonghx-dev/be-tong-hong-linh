@@ -7,6 +7,13 @@ import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useReceipt } from '../api/useReceipts'
 import { useCreateReceipt, useUpdateReceipt } from '../api/useReceiptMutations'
@@ -54,7 +61,7 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
     resolver: zodResolver(receiptSchema),
     defaultValues: defaultValues(type),
   })
-  const { control, register, handleSubmit, reset, watch, formState } = form
+  const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
   // Nạp dữ liệu khi xem/sửa.
@@ -135,13 +142,22 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm">
             <span className="text-slate-500">Loại chứng từ</span>
-            <select {...register('receiptType')} disabled={readOnly} className={cn(inputCls, 'w-72')}>
-              {RECEIPT_TYPE_OPTIONS.map((o) => (
-                <option key={o.type} value={o.type}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={currentType}
+              onValueChange={(v) => setValue('receiptType', v as InventoryReceiptType)}
+              disabled={readOnly}
+            >
+              <SelectTrigger className="h-9 w-72 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RECEIPT_TYPE_OPTIONS.map((o) => (
+                  <SelectItem key={o.type} value={o.type}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
         </div>
 

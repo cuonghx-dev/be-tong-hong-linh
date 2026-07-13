@@ -12,6 +12,13 @@ import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useSalesVoucher } from '../api/useSalesVouchers'
 import { useCreateSalesVoucher, useUpdateSalesVoucher } from '../api/useSalesVoucherMutations'
@@ -69,7 +76,7 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
     resolver: zodResolver(salesVoucherSchema),
     defaultValues: defaultValues(),
   })
-  const { control, register, handleSubmit, reset, watch, formState } = form
+  const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
   useEffect(() => {
@@ -150,17 +157,22 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
       {/* Loại nghiệp vụ + trạng thái */}
       <div className="flex flex-wrap items-center gap-2">
         <label className="text-sm font-medium text-slate-600">Loại nghiệp vụ</label>
-        <select
-          {...register('voucherType')}
+        <Select
+          value={watch('voucherType')}
+          onValueChange={(v) => setValue('voucherType', v as SalesVoucherType)}
           disabled={!!voucherId}
-          className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-slate-50"
         >
-          {Object.values(SalesVoucherType).map((t) => (
-            <option key={t} value={t}>
-              {VOUCHER_TYPE_LABEL[t]}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-8 w-auto">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.values(SalesVoucherType).map((t) => (
+              <SelectItem key={t} value={t}>
+                {VOUCHER_TYPE_LABEL[t]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Tùy chọn thanh toán / hóa đơn */}
@@ -174,16 +186,21 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
           Thu tiền ngay
         </label>
         {paymentMode === SalesPaymentMode.PaidNow && (
-          <select
-            {...register('paymentMethod')}
-            className="h-8 rounded-md border border-border px-2 text-sm"
+          <Select
+            value={watch('paymentMethod')}
+            onValueChange={(v) => setValue('paymentMethod', v as PaymentMethod)}
           >
-            {Object.values(PaymentMethod).map((m) => (
-              <option key={m} value={m}>
-                {PAYMENT_METHOD_LABEL[m]}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-8 w-auto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(PaymentMethod).map((m) => (
+                <SelectItem key={m} value={m}>
+                  {PAYMENT_METHOD_LABEL[m]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
         <span className="mx-1 h-4 w-px bg-border" />
         <label className="flex items-center gap-1.5">

@@ -4,6 +4,13 @@ import type {
   SupplierPayableSource,
 } from '@app/shared'
 import { useSearchParams } from 'react-router-dom'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useSuppliers } from '../../api/useSuppliers'
 import { useSupplierPayableDetail } from '../../api/usePurchaseReports'
 import { formatDate, money, periodLabel, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
@@ -40,18 +47,22 @@ export function SupplierPayableDetailReport({ filter }: { filter: PurchaseReport
       <div className="flex items-center gap-2 px-1 pt-3">
         <label className="flex items-center gap-1.5 text-sm text-slate-600">
           Nhà cung cấp
-          <select
-            value={filter.supplierId ?? ''}
-            onChange={(e) => setSupplier(e.target.value)}
-            className="h-8 max-w-[320px] rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          <Select
+            value={filter.supplierId || 'all'}
+            onValueChange={(v) => setSupplier(v === 'all' ? '' : v)}
           >
-            <option value="">Tất cả</option>
-            {(suppliers?.data ?? []).map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.code} — {s.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-8 w-auto max-w-[320px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả</SelectItem>
+              {(suppliers?.data ?? []).map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.code} — {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
       </div>
 

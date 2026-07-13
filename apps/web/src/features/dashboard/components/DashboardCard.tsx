@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/shared/lib/cn'
 import { RefreshIcon } from '@/shared/ui/icons'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 
 // Khung widget Tổng quan: tiêu đề + control bên phải, footer "Số liệu tính đến / Tải lại".
 export function DashboardCard({
@@ -63,20 +70,23 @@ export function PeriodSelect<T extends string | number>({
   onChange: (v: T) => void
 }) {
   return (
-    <select
+    <Select
       value={String(value)}
-      onChange={(e) => {
-        const raw = e.target.value
-        const match = options.find((o) => String(o.value) === raw)
+      onValueChange={(v) => {
+        const match = options.find((o) => String(o.value) === v)
         if (match) onChange(match.value)
       }}
-      className="rounded-md border border-transparent bg-transparent py-1 pl-2 pr-6 text-sm text-slate-600 hover:border-border focus:border-border focus:outline-none"
     >
-      {options.map((o) => (
-        <option key={String(o.value)} value={String(o.value)}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger className="h-auto w-auto gap-1 border-transparent bg-transparent px-2 py-1 text-slate-600 shadow-none hover:border-border">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((o) => (
+          <SelectItem key={String(o.value)} value={String(o.value)}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }

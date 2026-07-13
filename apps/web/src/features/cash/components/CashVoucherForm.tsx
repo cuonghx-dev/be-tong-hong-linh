@@ -13,8 +13,15 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
-import { ChevronDownIcon, PlusIcon } from '@/shared/ui/icons'
+import { PlusIcon, TrashIcon } from '@/shared/ui/icons'
 import { PartnerPicker } from '@/shared/ui/partner-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { useCashVoucher } from '../api/useCashVouchers'
@@ -170,38 +177,36 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
 
   return (
     <form className="flex h-full flex-col">
-      <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto disabled:opacity-90">
-        {/* Loại nghiệp vụ */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <select
-              {...register('category')}
-              onChange={(e) => {
-                const next = e.target.value as CashVoucherCategory
-                setValue('category', next)
-                // Đổi loại nghiệp vụ → reset định khoản mặc định dòng đầu.
-                setValue('lines.0.debitAccount', emptyLine(next, type).debitAccount)
-                setValue('lines.0.creditAccount', emptyLine(next, type).creditAccount)
-              }}
-              className="h-9 min-w-[180px] rounded-md border border-border pl-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
+      <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
+        {/* Vùng thông tin chung — nền primary nhạt liền khối với page header (layout kiểu MISA) */}
+        <section className="space-y-3 bg-primary/5 px-4 pb-4 pt-1">
+          {/* Loại nghiệp vụ */}
+          <Select
+            value={watch('category')}
+            onValueChange={(v) => {
+              const next = v as CashVoucherCategory
+              setValue('category', next)
+              // Đổi loại nghiệp vụ → reset định khoản mặc định dòng đầu.
+              setValue('lines.0.debitAccount', emptyLine(next, type).debitAccount)
+              setValue('lines.0.creditAccount', emptyLine(next, type).creditAccount)
+            }}
+          >
+            <SelectTrigger className="h-9 w-auto min-w-[240px] border-slate-300 bg-white transition-colors hover:border-primary/50 focus:ring-primary/30">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
               {CATEGORY_OPTIONS[type].map((c) => (
-                <option key={c} value={c}>
+                <SelectItem key={c} value={c}>
                   {CATEGORY_LABEL[c]}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-            <ChevronDownIcon
-              size={14}
-              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-          </div>
-        </div>
+            </SelectContent>
+          </Select>
 
-        {/* Thông tin chung: cột trái (đối tượng) | cột phải (ngày) | tổng tiền */}
-        <div className="flex flex-wrap gap-6">
-          {/* Cột trái */}
-          <div className="grid min-w-[520px] flex-1 grid-cols-2 gap-x-6 gap-y-3">
+          {/* Lưới trường (trái) | cột ngày + số phiếu | Tổng tiền (phải) */}
+          <div className="flex flex-wrap gap-x-10 gap-y-3">
+            {/* Cột trái */}
+            <div className="grid min-w-0 flex-1 basis-[520px] grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
             <Field label="Mã đối tượng">
               <PartnerPicker
                 value={watch('partnerId')}
@@ -263,64 +268,66 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
               </>
             )}
 
-            <Field label="Kèm theo (chứng từ gốc)" className="col-span-2">
+            <Field label="Kèm theo (chứng từ gốc)">
               <input type="number" min={0} {...register('attachmentCount')} className={inputCls} />
             </Field>
-          </div>
-
-          {/* Cột phải: ngày + số phiếu */}
-          <div className="w-56 space-y-3">
-            <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
-              <input type="date" {...register('postingDate')} className={inputCls} />
-            </Field>
-            <Field label="Ngày phiếu" error={formState.errors.voucherDate?.message}>
-              <input type="date" {...register('voucherDate')} className={inputCls} />
-            </Field>
-            <Field label={`Số phiếu ${isReceipt ? 'thu' : 'chi'}`}>
-              <input
-                value={editing.data?.voucherNo ?? 'Tự động'}
-                readOnly
-                className={cn(inputCls, 'bg-slate-50 text-slate-500')}
-              />
-            </Field>
-          </div>
-
-          {/* Tổng tiền */}
-          <div className="ml-auto text-right">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Tổng tiền
             </div>
-            <div className="mt-1 text-3xl font-semibold tabular-nums text-slate-800">
-              {formatCurrency(total)}
+
+            {/* Cột phải: ngày + số phiếu */}
+            <div className="w-56 space-y-3">
+              <Field label="Ngày hạch toán" required error={formState.errors.postingDate?.message}>
+                <input type="date" {...register('postingDate')} className={inputCls} />
+              </Field>
+              <Field label="Ngày phiếu" required error={formState.errors.voucherDate?.message}>
+                <input type="date" {...register('voucherDate')} className={inputCls} />
+              </Field>
+              <Field label={`Số phiếu ${isReceipt ? 'thu' : 'chi'}`}>
+                <input
+                  value={editing.data?.voucherNo ?? 'Tự động'}
+                  readOnly
+                  className={cn(inputCls, 'bg-slate-50 text-slate-500 hover:border-slate-300')}
+                />
+              </Field>
+            </div>
+
+            {/* Tổng tiền — góc phải vùng đầu trang, realtime theo dòng hạch toán */}
+            <div className="ml-auto text-right">
+              <div className="text-sm font-semibold text-slate-800">Tổng tiền</div>
+              <div className="mt-1 text-4xl font-bold tabular-nums text-slate-900">
+                {formatCurrency(total)}
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Bảng hạch toán */}
-        <div className="space-y-2">
-          <span className="text-base font-semibold text-slate-700">Hạch toán</span>
-          <div className="overflow-x-auto rounded-md border border-border">
+        {/* Bảng hạch toán — nền trắng */}
+        <section className="space-y-2 px-4 py-4">
+          <h2 className="text-base font-semibold text-slate-800">Hạch toán</h2>
+          <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse text-sm">
-                <thead className="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
+                <thead className="bg-slate-100 text-left text-[13px] text-slate-700">
                   <tr>
-                    <th className="w-8 px-2 py-1.5 text-center">#</th>
-                    <th className="px-2 py-1.5">Diễn giải</th>
-                    <th className="w-24 px-2 py-1.5">TK Nợ</th>
-                    <th className="w-24 px-2 py-1.5">TK Có</th>
-                    <th className="w-36 px-2 py-1.5 text-right">Số tiền</th>
-                    <th className="px-2 py-1.5">Nghiệp vụ</th>
-                    {cols.showPartner && <th className="px-2 py-1.5">Đối tượng</th>}
-                    {cols.showPartner && <th className="px-2 py-1.5">Tên đối tượng</th>}
-                    {cols.showCostItem && <th className="px-2 py-1.5">Khoản mục CP</th>}
-                    {cols.showBank && <th className="px-2 py-1.5">TK ngân hàng</th>}
-                    {cols.showBank && <th className="px-2 py-1.5">Tên ngân hàng</th>}
-                    <th className="w-8 px-2 py-1.5" />
+                    <th className="w-8 px-2 py-2 text-center font-semibold">#</th>
+                    <th className="min-w-[200px] px-2 py-2 font-semibold">Diễn giải</th>
+                    <th className="w-24 px-2 py-2 font-semibold">TK Nợ</th>
+                    <th className="w-24 px-2 py-2 font-semibold">TK Có</th>
+                    <th className="w-36 px-2 py-2 text-right font-semibold">Số tiền</th>
+                    <th className="px-2 py-2 font-semibold">Nghiệp vụ</th>
+                    {cols.showPartner && <th className="px-2 py-2 font-semibold">Đối tượng</th>}
+                    {cols.showPartner && <th className="min-w-[160px] px-2 py-2 font-semibold">Tên đối tượng</th>}
+                    {cols.showCostItem && <th className="px-2 py-2 font-semibold">Khoản mục CP</th>}
+                    {cols.showBank && <th className="px-2 py-2 font-semibold">TK ngân hàng</th>}
+                    {cols.showBank && <th className="px-2 py-2 font-semibold">Tên ngân hàng</th>}
+                    <th className="w-10 px-2 py-2" />
                   </tr>
                 </thead>
                 <tbody>
                   {fields.map((f, i) => (
-                    <tr key={f.id} className="border-t border-border">
-                      <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
+                    <tr
+                      key={f.id}
+                      className="group border-t border-border/70 transition-colors hover:bg-slate-50/60 focus-within:bg-primary/[0.04]"
+                    >
+                      <td className="px-2 py-1 text-center text-xs tabular-nums text-slate-400">{i + 1}</td>
                       <td className="px-2 py-1">
                         <input {...register(`lines.${i}.description`)} className={cellCls} />
                       </td>
@@ -334,8 +341,16 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                         <Controller
                           control={control}
                           name={`lines.${i}.amount`}
-                          render={({ field }) => (
-                            <AmountInput value={field.value} onChange={field.onChange} />
+                          render={({ field, fieldState }) => (
+                            <AmountInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              className={cn(
+                                cellCls,
+                                'text-right font-medium',
+                                fieldState.error && 'border-red-400 focus:border-red-400 focus:ring-red-200',
+                              )}
+                            />
                           )}
                         />
                       </td>
@@ -370,33 +385,32 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
                       <td className="px-2 py-1 text-center">
                         <button
                           type="button"
-                          onClick={() => fields.length > 1 && remove(i)}
-                          className="text-slate-400 hover:text-red-600"
+                          onClick={() => remove(i)}
+                          disabled={fields.length <= 1}
+                          className="grid h-7 w-7 place-items-center rounded-md text-slate-300 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:pointer-events-none disabled:opacity-40"
                           aria-label="Xóa dòng"
                         >
-                          ✕
+                          <TrashIcon size={15} />
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-slate-100 font-medium">
+                <tfoot className="bg-slate-100 font-semibold text-slate-800">
                   <tr className="border-t border-border">
-                    <td className="px-2 py-1.5" colSpan={4} />
-                    <td className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(total)}</td>
+                    <td colSpan={4} />
+                    <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(total)}</td>
                     <td colSpan={Math.max(colSpan - 3, 1)} />
                   </tr>
                 </tfoot>
               </table>
           </div>
 
-          <div className="flex items-center justify-between text-sm text-slate-500">
-            <span>
-              Tổng số: <b className="text-slate-700">{fields.length}</b> bản ghi
-            </span>
-          </div>
+          <p className="text-sm text-slate-600">
+            Tổng số: <b className="font-semibold text-slate-800">{fields.length}</b> bản ghi
+          </p>
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="outline"
@@ -414,22 +428,34 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
               Xóa hết dòng
             </Button>
           </div>
-        </div>
 
-        {typeof formState.errors.lines?.message === 'string' && (
-          <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
-        )}
+          {typeof formState.errors.lines?.message === 'string' && (
+            <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
+          )}
+        </section>
       </fieldset>
 
-      {/* Thanh hành động */}
-      <div className="mt-3 flex items-center border-t border-border pt-3">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+      {/* Thanh hành động — nền tối (cùng tông action bar khai báo số dư đầu kỳ) */}
+      <div className="flex h-14 shrink-0 items-center gap-2 bg-slate-900 px-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
+          onClick={onCancel}
+          disabled={saving}
+        >
           {readOnly ? 'Đóng' : 'Hủy'}
         </Button>
 
         {!readOnly && (
           <div className="ml-auto flex gap-2">
-            <Button type="button" variant="outline" onClick={submit(false)} disabled={saving}>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              onClick={submit(false)}
+              disabled={saving}
+            >
               {saving ? 'Đang cất…' : 'Cất'}
             </Button>
             <Button type="button" onClick={submit(!voucherId)} disabled={saving}>
@@ -444,24 +470,30 @@ export function CashVoucherForm({ type, voucherId, readOnly = false, prefill, on
 
 // ── Local UI bits ─────────────────────────────────────────────────────────
 const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+  'h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm transition-colors hover:border-primary/50 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20'
+// Ô nhập trong bảng: kiểu spreadsheet — viền ẩn, hiện khi hover/focus.
 const cellCls =
-  'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+  'h-8 w-full rounded border border-transparent bg-transparent px-2 text-sm transition-colors hover:border-slate-200 focus:border-primary/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary/20'
 
 function Field({
   label,
+  required,
   error,
   className,
   children,
 }: {
   label: string
+  required?: boolean
   error?: string
   className?: string
   children: React.ReactNode
 }) {
   return (
     <div className={cn('space-y-1', className)}>
-      <label className="text-xs font-medium text-slate-500">{label}</label>
+      <label className="text-[13px] font-semibold text-slate-800">
+        {label}
+        {required && <span className="ml-0.5 text-red-500">*</span>}
+      </label>
       {children}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>

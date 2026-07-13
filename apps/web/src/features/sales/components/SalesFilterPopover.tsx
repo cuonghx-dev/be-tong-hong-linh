@@ -3,6 +3,13 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, FilterIcon } from '@/shared/ui/icons'
 import { Popover } from '@/shared/ui/popover'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { PAYMENT_MODE_LABEL, VOUCHER_TYPE_LABEL } from '../types'
 
 export interface SalesFilterValue {
@@ -41,8 +48,6 @@ interface Props {
   onReset: () => void
 }
 
-const selectCls =
-  'h-9 w-full appearance-none rounded-md border border-border bg-white px-2 pr-7 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 const dateCls =
   'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
@@ -74,57 +79,63 @@ export function SalesFilterPopover({ value, onApply, onReset }: Props) {
       {(close) => (
         <div className="flex flex-col gap-3">
           <Field label="Loại nghiệp vụ">
-            <SelectWrap>
-              <select
-                value={draft.voucherType}
-                onChange={(e) => setDraft({ ...draft, voucherType: e.target.value })}
-                className={selectCls}
-              >
-                <option value="">Tất cả</option>
+            <Select
+              value={draft.voucherType || 'all'}
+              onValueChange={(v) => setDraft({ ...draft, voucherType: v === 'all' ? '' : v })}
+            >
+              <SelectTrigger className="h-9 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
                 {Object.values(SalesVoucherType).map((t) => (
-                  <option key={t} value={t}>
+                  <SelectItem key={t} value={t}>
                     {VOUCHER_TYPE_LABEL[t]}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </SelectWrap>
+              </SelectContent>
+            </Select>
           </Field>
 
           <Field label="Tình trạng thu tiền">
-            <SelectWrap>
-              <select
-                value={draft.paymentMode}
-                onChange={(e) => setDraft({ ...draft, paymentMode: e.target.value })}
-                className={selectCls}
-              >
-                <option value="">Tất cả</option>
+            <Select
+              value={draft.paymentMode || 'all'}
+              onValueChange={(v) => setDraft({ ...draft, paymentMode: v === 'all' ? '' : v })}
+            >
+              <SelectTrigger className="h-9 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
                 {Object.values(SalesPaymentMode).map((m) => (
-                  <option key={m} value={m}>
+                  <SelectItem key={m} value={m}>
                     {PAYMENT_MODE_LABEL[m]}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </SelectWrap>
+              </SelectContent>
+            </Select>
           </Field>
 
           <div className="grid grid-cols-3 gap-2">
             <Field label="Thời gian">
-              <SelectWrap>
-                <select
-                  value={preset}
-                  onChange={(e) => {
-                    const p = e.target.value as Preset
-                    setPreset(p)
-                    if (p !== 'custom') setDraft({ ...draft, ...presetRange(p) })
-                  }}
-                  className={selectCls}
-                >
-                  <option value="year">Đầu năm đến hiện tại</option>
-                  <option value="month">Tháng này</option>
-                  <option value="quarter">Quý này</option>
-                  <option value="custom">Tùy chọn</option>
-                </select>
-              </SelectWrap>
+              <Select
+                value={preset}
+                onValueChange={(v) => {
+                  const p = v as Preset
+                  setPreset(p)
+                  if (p !== 'custom') setDraft({ ...draft, ...presetRange(p) })
+                }}
+              >
+                <SelectTrigger className="h-9 bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="year">Đầu năm đến hiện tại</SelectItem>
+                  <SelectItem value="month">Tháng này</SelectItem>
+                  <SelectItem value="quarter">Quý này</SelectItem>
+                  <SelectItem value="custom">Tùy chọn</SelectItem>
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Từ ngày">
               <input
@@ -190,14 +201,3 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function SelectWrap({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative">
-      {children}
-      <ChevronDownIcon
-        size={14}
-        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
-      />
-    </div>
-  )
-}

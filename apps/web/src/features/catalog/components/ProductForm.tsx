@@ -4,6 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/shared/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useProduct } from '../api/useProducts'
 import { useCreateProduct, useUpdateProduct } from '../api/useProductMutations'
 import { productSchema, type ProductFormValues } from '../schema'
@@ -30,7 +37,7 @@ export function ProductForm({ productId, readOnly = false, onSaved, onCancel }: 
   const create = useCreateProduct()
   const update = useUpdateProduct()
 
-  const { register, handleSubmit, reset, formState } = useForm<ProductFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: DEFAULTS,
   })
@@ -108,13 +115,21 @@ export function ProductForm({ productId, readOnly = false, onSaved, onCancel }: 
             <input {...register('name')} className={inputCls} />
           </Field>
           <Field label="Tính chất" error={formState.errors.type?.message}>
-            <select {...register('type')} className={inputCls}>
-              {Object.values(ProductType).map((t) => (
-                <option key={t} value={t}>
-                  {PRODUCT_TYPE_LABELS[t]}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={watch('type')}
+              onValueChange={(v) => setValue('type', v as ProductType)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(ProductType).map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {PRODUCT_TYPE_LABELS[t]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field label="Nhóm VTHH">
             <input {...register('groupCode')} className={inputCls} />

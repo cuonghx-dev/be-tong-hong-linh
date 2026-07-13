@@ -7,6 +7,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/shared/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useCostObject } from '../api/useCostObjects'
 import { useCreateCostObject, useUpdateCostObject } from '../api/useCostObjectMutations'
 import { costObjectSchema, type CostObjectFormValues } from '../schema'
@@ -30,7 +37,7 @@ export function CostObjectForm({ costObjectId, readOnly = false, onSaved, onCanc
   const create = useCreateCostObject()
   const update = useUpdateCostObject()
 
-  const { register, handleSubmit, reset, formState } = useForm<CostObjectFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<CostObjectFormValues>({
     resolver: zodResolver(costObjectSchema),
     defaultValues: DEFAULTS,
   })
@@ -69,13 +76,21 @@ export function CostObjectForm({ costObjectId, readOnly = false, onSaved, onCanc
             <input {...register('name')} className={inputCls} />
           </Field>
           <Field label="Loại" required error={formState.errors.type?.message}>
-            <select {...register('type')} className={inputCls}>
-              {Object.values(CostObjectType).map((t) => (
-                <option key={t} value={t}>
-                  {COST_OBJECT_TYPE_LABELS[t]}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={watch('type')}
+              onValueChange={(v) => setValue('type', v as CostObjectType)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(CostObjectType).map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {COST_OBJECT_TYPE_LABELS[t]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         </div>
         <Field label="Diễn giải">

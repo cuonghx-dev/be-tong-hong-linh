@@ -3,6 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/shared/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useExpenseItem, useExpenseItems } from '../api/useExpenseItems'
 import { useCreateExpenseItem, useUpdateExpenseItem } from '../api/useExpenseItemMutations'
 import { expenseItemSchema, type ExpenseItemFormValues } from '../schema'
@@ -46,7 +53,7 @@ export function ExpenseItemForm({ itemId, readOnly = false, onSaved, onCancel }:
     return items.filter((i) => !excluded.has(i.id))
   }, [all.data, itemId])
 
-  const { register, handleSubmit, reset, formState } = useForm<ExpenseItemFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<ExpenseItemFormValues>({
     resolver: zodResolver(expenseItemSchema),
     defaultValues: DEFAULTS,
   })
@@ -86,14 +93,22 @@ export function ExpenseItemForm({ itemId, readOnly = false, onSaved, onCancel }:
           </Field>
         </div>
         <Field label="Thuộc khoản mục">
-          <select {...register('parentId')} className={inputCls}>
-            <option value="">— Khoản mục gốc —</option>
-            {parentOptions.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.code} — {i.name}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={watch('parentId') || 'root'}
+            onValueChange={(v) => setValue('parentId', v === 'root' ? '' : v)}
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="root">— Khoản mục gốc —</SelectItem>
+              {parentOptions.map((i) => (
+                <SelectItem key={i.id} value={i.id}>
+                  {i.code} — {i.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
         <Field label="Diễn giải">
           <textarea {...register('description')} rows={2} className={textareaCls} />

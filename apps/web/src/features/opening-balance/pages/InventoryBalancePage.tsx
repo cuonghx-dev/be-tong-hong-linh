@@ -4,6 +4,13 @@ import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
 import { ChevronLeftIcon, RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { AmountInput } from '../components/AmountInput'
 import { useInventoryBalances } from '../api/useInventoryBalances'
@@ -300,20 +307,24 @@ export function InventoryBalancePage() {
             Tổng số: <b className="text-slate-700">{filtered.length}</b> bản ghi
           </span>
           <div className="ml-auto flex items-center gap-2">
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value))
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v) => {
+                setPageSize(Number(v))
                 setPage(1)
               }}
-              className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
-              {PAGE_SIZES.map((s) => (
-                <option key={s} value={s}>
-                  {s} bản ghi trên 1 trang
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-8 w-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZES.map((s) => (
+                  <SelectItem key={s} value={String(s)}>
+                    {s} bản ghi trên 1 trang
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={current <= 1}
@@ -350,18 +361,24 @@ export function InventoryBalancePage() {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-600">Kho</label>
-              <select
-                value={draft.warehouseCode}
-                onChange={(e) => setDraft((d) => ({ ...d, warehouseCode: e.target.value }))}
-                className="h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              <Select
+                value={draft.warehouseCode || 'none'}
+                onValueChange={(v) =>
+                  setDraft((d) => ({ ...d, warehouseCode: v === 'none' ? '' : v }))
+                }
               >
-                <option value="">— Chưa chọn kho —</option>
-                {data?.warehouses.map((w) => (
-                  <option key={w.code} value={w.code}>
-                    {w.code} — {w.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Chưa chọn kho —</SelectItem>
+                  {data?.warehouses.map((w) => (
+                    <SelectItem key={w.code} value={w.code}>
+                      {w.code} — {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

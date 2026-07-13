@@ -15,6 +15,13 @@ import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, PlusIcon } from '@/shared/ui/icons'
 import { PartnerPicker } from '@/shared/ui/partner-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { useBankVoucher } from '../api/useBankVouchers'
@@ -166,22 +173,21 @@ export function BankVoucherForm({
       <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto disabled:opacity-90">
         {/* Loại nghiệp vụ + (thu) số UNC chi nhánh / (chi) phương thức TT */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <select
-              {...register('category')}
-              className="h-9 min-w-[180px] rounded-md border border-border pl-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
+          <Select
+            value={watch('category')}
+            onValueChange={(v) => setValue('category', v as BankVoucherCategory)}
+          >
+            <SelectTrigger className="h-9 w-auto min-w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
               {CATEGORY_OPTIONS[type].map((c) => (
-                <option key={c} value={c}>
+                <SelectItem key={c} value={c}>
                   {CATEGORY_LABEL[c]}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-            <ChevronDownIcon
-              size={14}
-              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-          </div>
+            </SelectContent>
+          </Select>
 
           {isReceipt ? (
             <input
@@ -193,16 +199,21 @@ export function BankVoucherForm({
             <>
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-slate-600">Phương thức TT</label>
-                <select
-                  {...register('paymentMethod')}
-                  className="h-9 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                <Select
+                  value={watch('paymentMethod')}
+                  onValueChange={(v) => setValue('paymentMethod', v as BankPaymentMethod)}
                 >
-                  {Object.values(BankPaymentMethod).map((m) => (
-                    <option key={m} value={m}>
-                      {PAYMENT_METHOD_LABEL[m]}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-9 w-auto">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(BankPaymentMethod).map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {PAYMENT_METHOD_LABEL[m]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <label className="flex items-center gap-1.5 text-sm text-slate-600">
                 <input type="checkbox" {...register('isBatchTransfer')} />

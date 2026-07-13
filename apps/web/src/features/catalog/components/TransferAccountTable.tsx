@@ -7,6 +7,13 @@ import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useTransferAccounts } from '../api/useTransferAccounts'
 import {
@@ -93,19 +100,22 @@ export function TransferAccountTable() {
           onChange={onPickFile}
         />
 
-        <select
-          value={side ?? ''}
-          onChange={(e) => setParam(P.side, e.target.value || null)}
-          className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          aria-label="Lọc theo bên kết chuyển"
+        <Select
+          value={side ?? 'all'}
+          onValueChange={(v) => setParam(P.side, v === 'all' ? null : v)}
         >
-          <option value="">Tất cả bên</option>
-          {Object.values(TransferSide).map((s) => (
-            <option key={s} value={s}>
-              {TRANSFER_SIDE_LABELS[s]}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-8 w-auto" aria-label="Lọc theo bên kết chuyển">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả bên</SelectItem>
+            {Object.values(TransferSide).map((s) => (
+              <SelectItem key={s} value={s}>
+                {TRANSFER_SIDE_LABELS[s]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="ml-auto flex items-center gap-2">
           <AddMenu

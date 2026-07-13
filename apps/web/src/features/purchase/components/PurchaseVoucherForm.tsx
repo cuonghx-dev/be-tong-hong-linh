@@ -16,6 +16,13 @@ import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useSuppliers } from '../api/useSuppliers'
 import { usePurchaseVoucher } from '../api/usePurchaseVouchers'
@@ -220,22 +227,26 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
         ) : (
           <label className="flex items-center gap-2 text-sm">
             <span className="text-slate-500">Lý do</span>
-            <select
+            <Select
               value={reasonKey(currentOrigin, currentType)}
               disabled={readOnly}
-              onChange={(e) => {
-                const { origin, type: t } = parseReasonKey(e.target.value)
+              onValueChange={(v) => {
+                const { origin, type: t } = parseReasonKey(v)
                 setValue('origin', origin)
                 setValue('type', t)
               }}
-              className={cn(inputCls, 'w-64')}
             >
-              {PURCHASE_REASON_OPTIONS.map((opt) => (
-                <option key={reasonKey(opt.origin, opt.type)} value={reasonKey(opt.origin, opt.type)}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-9 w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PURCHASE_REASON_OPTIONS.map((opt) => (
+                  <SelectItem key={reasonKey(opt.origin, opt.type)} value={reasonKey(opt.origin, opt.type)}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
         )}
         <input
@@ -256,13 +267,21 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
           Thanh toán ngay
         </label>
         {paymentMode === PurchasePaymentMode.Immediate && (
-          <select {...register('paymentMethod')} className="h-8 rounded-md border border-border px-2 text-sm">
-            {Object.values(PaymentMethod).map((m) => (
-              <option key={m} value={m}>
-                {PAYMENT_METHOD_LABEL[m]}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={watch('paymentMethod')}
+            onValueChange={(v) => setValue('paymentMethod', v as PaymentMethod)}
+          >
+            <SelectTrigger className="h-8 w-auto bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(PaymentMethod).map((m) => (
+                <SelectItem key={m} value={m}>
+                  {PAYMENT_METHOD_LABEL[m]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
         <label className="ml-auto flex items-center gap-1.5 text-sm">
           <input type="checkbox" {...register('receiveWithInvoice')} />

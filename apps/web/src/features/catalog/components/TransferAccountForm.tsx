@@ -3,6 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/shared/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useTransferAccount } from '../api/useTransferAccounts'
 import {
   useCreateTransferAccount,
@@ -36,7 +43,7 @@ export function TransferAccountForm({
   const create = useCreateTransferAccount()
   const update = useUpdateTransferAccount()
 
-  const { register, handleSubmit, reset, formState } = useForm<TransferAccountFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<TransferAccountFormValues>({
     resolver: zodResolver(transferAccountSchema),
     defaultValues: DEFAULTS,
   })
@@ -85,13 +92,21 @@ export function TransferAccountForm({
             <input {...register('toAccount')} className={inputCls} />
           </Field>
           <Field label="Bên kết chuyển" required error={formState.errors.side?.message}>
-            <select {...register('side')} className={inputCls}>
-              {Object.values(TransferSide).map((s) => (
-                <option key={s} value={s}>
-                  {TRANSFER_SIDE_LABELS[s]}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={watch('side')}
+              onValueChange={(v) => setValue('side', v as TransferSide)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(TransferSide).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {TRANSFER_SIDE_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         </div>
         <Field label="Diễn giải">

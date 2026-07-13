@@ -2,6 +2,13 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAccounts } from '@/features/catalog'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { formatDate, monthRange, REPORT_PRESETS } from '@/shared/lib/report-period'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { AccountLedgerReport } from '../components/reports/AccountLedgerReport'
 import { GeneralJournalReport } from '../components/reports/GeneralJournalReport'
 import { GENERAL_REPORTS, type GeneralReportSlug } from '../types'
@@ -52,26 +59,30 @@ export function GeneralReportPage() {
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}
         <div className="flex flex-wrap items-center gap-2">
-          <select
+          <Select
             value={activePreset ?? 'custom'}
-            onChange={(e) => {
-              const preset = REPORT_PRESETS.find((p) => p.key === e.target.value)
+            onValueChange={(v) => {
+              const preset = REPORT_PRESETS.find((p) => p.key === v)
               if (preset) {
                 const r = preset.range()
                 setRange(r.from, r.to)
               }
             }}
-            className={inputClass}
           >
-            {REPORT_PRESETS.map((p) => (
-              <option key={p.key} value={p.key}>
-                {p.label}
-              </option>
-            ))}
-            <option value="custom" disabled={!!activePreset}>
-              Tùy chọn
-            </option>
-          </select>
+            <SelectTrigger className="h-8 w-auto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REPORT_PRESETS.map((p) => (
+                <SelectItem key={p.key} value={p.key}>
+                  {p.label}
+                </SelectItem>
+              ))}
+              <SelectItem value="custom" disabled={!!activePreset}>
+                Tùy chọn
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <label className="flex items-center gap-1.5 text-sm text-slate-600">
             Từ ngày
             <input
@@ -133,17 +144,18 @@ function renderReport(
 function AccountSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { data } = useAccounts({ page: 1, pageSize: 500 })
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`${inputClass} min-w-56 bg-white`}
-    >
-      <option value="">Tất cả tài khoản</option>
-      {(data?.data ?? []).map((a) => (
-        <option key={a.id} value={a.number}>
-          {a.number} — {a.name}
-        </option>
-      ))}
-    </select>
+    <Select value={value || 'all'} onValueChange={(v) => onChange(v === 'all' ? '' : v)}>
+      <SelectTrigger className="h-8 w-auto min-w-56 bg-white">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Tất cả tài khoản</SelectItem>
+        {(data?.data ?? []).map((a) => (
+          <SelectItem key={a.id} value={a.number}>
+            {a.number} — {a.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }

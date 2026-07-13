@@ -1,5 +1,12 @@
 import { useState } from 'react'
 import { CHART_OF_ACCOUNTS, type SaveFixedAssetOpeningBalanceLineInput } from '@app/shared'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { AmountInput } from './AmountInput'
 
 // Giá trị 1 dòng TSCĐ đang soạn trong form (trùng payload lưu).
@@ -115,17 +122,18 @@ export function FixedAssetForm({ initial, existingCodes, onSubmit, onCancel }: P
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={label}>Loại tài sản</label>
-          <select
-            value={value.assetType}
-            onChange={(e) => changeType(e.target.value)}
-            className={field}
-          >
-            {ASSET_TYPES.map((t) => (
-              <option key={t.label} value={t.label}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+          <Select value={value.assetType} onValueChange={changeType}>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ASSET_TYPES.map((t) => (
+                <SelectItem key={t.label} value={t.label}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className={label}>Đơn vị sử dụng</label>

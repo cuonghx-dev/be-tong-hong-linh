@@ -3,6 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/shared/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useAccount, useAccounts } from '../api/useAccounts'
 import { useCreateAccount, useUpdateAccount } from '../api/useAccountMutations'
 import { accountSchema, type AccountFormValues } from '../schema'
@@ -47,7 +54,7 @@ export function AccountForm({ itemId, readOnly = false, onSaved, onCancel }: Pro
     return items.filter((i) => !excluded.has(i.id))
   }, [all.data, itemId])
 
-  const { register, handleSubmit, reset, formState } = useForm<AccountFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<AccountFormValues>({
     resolver: zodResolver(accountSchema),
     defaultValues: DEFAULTS,
   })
@@ -87,13 +94,21 @@ export function AccountForm({ itemId, readOnly = false, onSaved, onCancel }: Pro
             <input {...register('number')} className={inputCls} placeholder="VD: 1111" />
           </Field>
           <Field label="Tính chất" required error={formState.errors.nature?.message}>
-            <select {...register('nature')} className={inputCls}>
-              {Object.values(AccountNature).map((n) => (
-                <option key={n} value={n}>
-                  {ACCOUNT_NATURE_LABELS[n]}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={watch('nature')}
+              onValueChange={(v) => setValue('nature', v as AccountNature)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(AccountNature).map((n) => (
+                  <SelectItem key={n} value={n}>
+                    {ACCOUNT_NATURE_LABELS[n]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         </div>
         <Field label="Tên tài khoản" required error={formState.errors.name?.message}>
@@ -103,14 +118,22 @@ export function AccountForm({ itemId, readOnly = false, onSaved, onCancel }: Pro
           <input {...register('nameEn')} className={inputCls} />
         </Field>
         <Field label="Thuộc tài khoản">
-          <select {...register('parentId')} className={inputCls}>
-            <option value="">— Tài khoản gốc —</option>
-            {parentOptions.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.number} — {i.name}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={watch('parentId') || 'root'}
+            onValueChange={(v) => setValue('parentId', v === 'root' ? '' : v)}
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="root">— Tài khoản gốc —</SelectItem>
+              {parentOptions.map((i) => (
+                <SelectItem key={i.id} value={i.id}>
+                  {i.number} — {i.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
         <Field label="Diễn giải">
           <textarea {...register('description')} rows={2} className={textareaCls} />

@@ -13,6 +13,13 @@ import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useGoodsIssue } from '../api/useGoodsIssues'
 import { useCreateGoodsIssue, useUpdateGoodsIssue } from '../api/useGoodsIssueMutations'
@@ -167,18 +174,22 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm">
             <span className="text-slate-500">Lý do xuất</span>
-            <select
+            <Select
               value={currentCategory}
               disabled={readOnly}
-              onChange={(e) => setValue('category', e.target.value as GoodsIssueCategory)}
-              className={cn(inputCls, 'w-64')}
+              onValueChange={(v) => setValue('category', v as GoodsIssueCategory)}
             >
-              {GOODS_ISSUE_CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt.category} value={opt.category}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-9 w-64 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GOODS_ISSUE_CATEGORY_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.category} value={opt.category}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
         </div>
 

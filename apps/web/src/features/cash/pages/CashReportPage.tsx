@@ -2,6 +2,13 @@ import type { CashReportFilter } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { formatDate, monthRange, REPORT_PRESETS } from '@/shared/lib/report-period'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { CashBookReport } from '../components/reports/CashBookReport'
 import { CashJournalReport } from '../components/reports/CashJournalReport'
 import { DailyBalanceReport } from '../components/reports/DailyBalanceReport'
@@ -41,26 +48,30 @@ export function CashReportPage() {
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}
         <div className="flex flex-wrap items-center gap-2">
-          <select
+          <Select
             value={activePreset ?? 'custom'}
-            onChange={(e) => {
-              const preset = REPORT_PRESETS.find((p) => p.key === e.target.value)
+            onValueChange={(v) => {
+              const preset = REPORT_PRESETS.find((p) => p.key === v)
               if (preset) {
                 const r = preset.range()
                 setRange(r.from, r.to)
               }
             }}
-            className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
-            {REPORT_PRESETS.map((p) => (
-              <option key={p.key} value={p.key}>
-                {p.label}
-              </option>
-            ))}
-            <option value="custom" disabled={!!activePreset}>
-              Tùy chọn
-            </option>
-          </select>
+            <SelectTrigger className="h-8 w-auto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REPORT_PRESETS.map((p) => (
+                <SelectItem key={p.key} value={p.key}>
+                  {p.label}
+                </SelectItem>
+              ))}
+              <SelectItem value="custom" disabled={!!activePreset}>
+                Tùy chọn
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <label className="flex items-center gap-1.5 text-sm text-slate-600">
             Từ ngày
             <input

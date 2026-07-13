@@ -8,6 +8,13 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/shared/ui/button'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
+import {
   useCreateIncomeExpenseItem,
   useUpdateIncomeExpenseItem,
 } from '../api/useIncomeExpenseItemMutations'
@@ -34,7 +41,7 @@ export function IncomeExpenseItemForm({ itemId, readOnly = false, onSaved, onCan
   const create = useCreateIncomeExpenseItem()
   const update = useUpdateIncomeExpenseItem()
 
-  const { register, handleSubmit, reset, formState } = useForm<IncomeExpenseItemFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<IncomeExpenseItemFormValues>({
     resolver: zodResolver(incomeExpenseItemSchema),
     defaultValues: DEFAULTS,
   })
@@ -75,13 +82,21 @@ export function IncomeExpenseItemForm({ itemId, readOnly = false, onSaved, onCan
             <input {...register('name')} className={inputCls} />
           </Field>
           <Field label="Loại" required error={formState.errors.type?.message}>
-            <select {...register('type')} className={inputCls}>
-              {Object.values(IncomeExpenseType).map((t) => (
-                <option key={t} value={t}>
-                  {INCOME_EXPENSE_TYPE_LABELS[t]}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={watch('type')}
+              onValueChange={(v) => setValue('type', v as IncomeExpenseType)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(IncomeExpenseType).map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {INCOME_EXPENSE_TYPE_LABELS[t]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         </div>
 
