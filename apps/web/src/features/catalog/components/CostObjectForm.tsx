@@ -116,7 +116,7 @@ export function CostObjectForm({ costObjectId, readOnly = false, onSaved, onCanc
               Hủy
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
           </>
         )}

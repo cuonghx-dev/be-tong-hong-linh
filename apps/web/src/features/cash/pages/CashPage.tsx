@@ -32,7 +32,7 @@ function CashTable() {
     navigate(`/cash/vouchers/${id}?type=${type}`)
   const openEdit = (id: string, type: CashVoucherType) =>
     navigate(`/cash/vouchers/${id}/edit?type=${type}`)
-  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu phiếu nguồn (số phiếu cấp lại khi Cất).
+  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu phiếu nguồn (số phiếu cấp lại khi Lưu).
   const openDuplicate = (id: string, type: CashVoucherType) =>
     navigate(`/cash/vouchers/new?type=${type}&duplicateFrom=${id}`)
 

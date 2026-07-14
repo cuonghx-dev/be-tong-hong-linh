@@ -82,7 +82,7 @@ export function BankForm({ bankId, readOnly = false, onSaved, onCancel }: Props)
               Hủy
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
           </>
         )}

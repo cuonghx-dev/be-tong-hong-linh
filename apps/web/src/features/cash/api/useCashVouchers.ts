@@ -15,8 +15,8 @@ export function useCashVouchers(filter: CashVoucherFilter) {
   })
 }
 
-// Số phiếu kế tiếp (preview hiển thị trên form tạo mới — số thật cấp lúc Cất).
-// Nằm dưới cashKeys.all nên tự refetch sau khi create invalidate (vd "Cất và Thêm").
+// Số phiếu kế tiếp (preview hiển thị trên form tạo mới — số thật cấp lúc Lưu).
+// Nằm dưới cashKeys.all nên tự refetch sau khi create invalidate (vd "Lưu và Thêm").
 export function useNextCashVoucherNo(type: CashVoucherType, voucherDate: string, enabled = true) {
   return useQuery({
     queryKey: cashKeys.nextNo(type, voucherDate),

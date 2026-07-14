@@ -64,7 +64,7 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
-  // Preview số phiếu kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất (dãy NK chạy toàn cục).
+  // Preview số phiếu kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu (dãy NK chạy toàn cục).
   const nextNo = useNextReceiptNo(!receiptId)
 
   // Nạp dữ liệu khi xem/sửa.
@@ -188,7 +188,7 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
             <input
               value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
               readOnly
-              title="Số dự kiến — cấp chính thức khi Cất"
+              title="Số dự kiến — cấp chính thức khi Lưu"
               className={cn(inputCls, 'bg-slate-50 text-slate-500')}
             />
           </Field>
@@ -342,11 +342,11 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
               Hủy
             </Button>
             <Button type="button" onClick={submit(false)} disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
             {!receiptId && (
               <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-                Cất và Thêm
+                Lưu và Thêm
               </Button>
             )}
           </>

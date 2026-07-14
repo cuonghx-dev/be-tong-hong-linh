@@ -120,7 +120,7 @@ export function AccountBalanceForm({ initial, isParent, existingCodes, onSubmit,
           type="submit"
           className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-white hover:bg-primary/90"
         >
-          Cất
+          Lưu
         </button>
       </div>
     </form>

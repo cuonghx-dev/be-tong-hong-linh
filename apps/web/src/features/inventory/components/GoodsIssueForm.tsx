@@ -79,7 +79,7 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
-  // Preview số phiếu kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  // Preview số phiếu kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
   const nextNo = useNextGoodsIssueNo(watch('voucherDate'), !voucherId)
 
   // Picker khách hàng: tra cứu theo mã/tên, tự điền tên + địa chỉ.
@@ -239,7 +239,7 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
             <input
               value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
               readOnly
-              title="Số dự kiến — cấp chính thức khi Cất"
+              title="Số dự kiến — cấp chính thức khi Lưu"
               className={cn(inputCls, 'bg-slate-50 text-slate-500')}
             />
           </Field>
@@ -403,11 +403,11 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
               Hủy
             </Button>
             <Button type="button" onClick={submit(false)} disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
             {!voucherId && (
               <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-                Cất và Thêm
+                Lưu và Thêm
               </Button>
             )}
           </>

@@ -79,7 +79,7 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
-  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
   const nextNo = useNextSalesVoucherNo(watch('voucherDate'), !voucherId)
 
   useEffect(() => {
@@ -244,7 +244,7 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
           <input
             value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
             readOnly
-            title="Số dự kiến — cấp chính thức khi Cất"
+            title="Số dự kiến — cấp chính thức khi Lưu"
             className={cn(inputCls, 'bg-slate-50 text-slate-500')}
           />
         </Field>
@@ -382,11 +382,11 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
               Hủy
             </Button>
             <Button type="button" onClick={submit(false)} disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
             {!voucherId && (
               <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-                Cất và Thêm
+                Lưu và Thêm
               </Button>
             )}
           </>

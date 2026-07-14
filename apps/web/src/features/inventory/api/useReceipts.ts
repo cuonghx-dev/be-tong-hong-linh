@@ -15,7 +15,7 @@ export function useReceipts(filter: InventoryReceiptFilter) {
   })
 }
 
-// Số phiếu nhập kế tiếp (preview trên form tạo mới — số thật cấp lúc Cất).
+// Số phiếu nhập kế tiếp (preview trên form tạo mới — số thật cấp lúc Lưu).
 // Key nằm dưới inventoryKeys.all nên tự refetch sau khi create invalidate.
 // Dãy số nhập kho chạy toàn cục (không theo năm) → không cần tham số ngày.
 export function useNextReceiptNo(enabled = true) {

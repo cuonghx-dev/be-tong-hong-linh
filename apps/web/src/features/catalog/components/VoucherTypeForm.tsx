@@ -80,7 +80,7 @@ export function VoucherTypeForm({ voucherTypeId, readOnly = false, onSaved, onCa
               Hủy
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
           </>
         )}

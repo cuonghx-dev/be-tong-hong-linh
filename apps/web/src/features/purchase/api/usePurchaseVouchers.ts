@@ -20,7 +20,7 @@ export function usePurchaseVouchers(filter: PurchaseVoucherFilter) {
   })
 }
 
-// Số chứng từ kế tiếp (preview trên form tạo mới — số thật cấp lúc Cất).
+// Số chứng từ kế tiếp (preview trên form tạo mới — số thật cấp lúc Lưu).
 // Key nằm dưới purchaseKeys.all nên tự refetch sau khi create invalidate.
 export function useNextPurchaseVoucherNo(
   type: PurchaseVoucherType,

@@ -30,7 +30,7 @@ function BankTable() {
   const openNew = (type: BankVoucherType) => navigate(`/bank/vouchers/new?type=${type}`)
   const openView = (id: string, type: BankVoucherType) =>
     navigate(`/bank/vouchers/${id}?type=${type}`)
-  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu chứng từ nguồn (số chứng từ cấp lại khi Cất).
+  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu chứng từ nguồn (số chứng từ cấp lại khi Lưu).
   const openDuplicate = (id: string, type: BankVoucherType) =>
     navigate(`/bank/vouchers/new?type=${type}&duplicateFrom=${id}`)
 

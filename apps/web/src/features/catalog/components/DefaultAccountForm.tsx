@@ -97,7 +97,7 @@ export function DefaultAccountForm({ defaultAccountId, readOnly = false, onSaved
               Hủy
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
           </>
         )}

@@ -142,11 +142,11 @@ export function CustomerForm({ customerId, readOnly = false, onSaved, onCancel }
               Hủy
             </Button>
             <Button type="button" onClick={submit(false)} disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
             {!customerId && (
               <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-                Cất và Thêm
+                Lưu và Thêm
               </Button>
             )}
           </>

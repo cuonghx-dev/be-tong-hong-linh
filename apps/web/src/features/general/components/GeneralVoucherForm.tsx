@@ -63,7 +63,7 @@ export function GeneralVoucherForm({
   const { control, register, handleSubmit, reset, watch, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
-  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
   const nextNo = useNextGeneralVoucherNo(watch('voucherDate'), !voucherId)
 
   // Nạp dữ liệu khi xem/sửa.
@@ -156,7 +156,7 @@ export function GeneralVoucherForm({
               <input
                 value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
                 readOnly
-                title="Số dự kiến — cấp chính thức khi Cất"
+                title="Số dự kiến — cấp chính thức khi Lưu"
                 className={cn(inputCls, 'bg-slate-50 text-slate-500')}
               />
             </Field>
@@ -276,10 +276,10 @@ export function GeneralVoucherForm({
         {!readOnly && (
           <div className="ml-auto flex gap-2">
             <Button type="button" variant="outline" onClick={submit(false)} disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
             <Button type="button" onClick={submit(!voucherId)} disabled={saving}>
-              {voucherId ? 'Cất' : 'Cất và Thêm'}
+              {voucherId ? 'Lưu' : 'Lưu và Thêm'}
             </Button>
           </div>
         )}

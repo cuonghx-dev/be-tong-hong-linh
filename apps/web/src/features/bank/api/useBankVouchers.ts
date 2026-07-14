@@ -15,7 +15,7 @@ export function useBankVouchers(filter: BankVoucherFilter) {
   })
 }
 
-// Số chứng từ kế tiếp (preview trên form tạo mới — số thật cấp lúc Cất).
+// Số chứng từ kế tiếp (preview trên form tạo mới — số thật cấp lúc Lưu).
 // Key nằm dưới bankKeys.all nên tự refetch sau khi create invalidate.
 export function useNextBankVoucherNo(type: BankVoucherType, voucherDate: string, enabled = true) {
   return useQuery({

@@ -124,7 +124,7 @@ export function IncomeExpenseItemForm({ itemId, readOnly = false, onSaved, onCan
               Hủy
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
           </>
         )}

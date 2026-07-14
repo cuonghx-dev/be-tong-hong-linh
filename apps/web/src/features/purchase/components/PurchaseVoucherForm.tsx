@@ -101,7 +101,7 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
-  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
   const nextNo = useNextPurchaseVoucherNo(type, watch('voucherDate'), !voucherId)
 
   // Picker nhà cung cấp: tra cứu theo mã/tên, tự điền tên + địa chỉ.
@@ -213,7 +213,7 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
         if (voucherId) await update.mutateAsync({ id: voucherId, dto })
         else await create.mutateAsync(dto)
         if (goNext && !voucherId) {
-          // Giữ nguyên "Lý do" (loại + nguồn gốc) đang chọn khi cất và thêm tiếp.
+          // Giữ nguyên "Lý do" (loại + nguồn gốc) đang chọn khi lưu và thêm tiếp.
           reset({ ...defaultValues(values.type), origin: values.origin })
         } else onSaved()
       } catch (e) {
@@ -334,7 +334,7 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
           <input
             value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
             readOnly
-            title="Số dự kiến — cấp chính thức khi Cất"
+            title="Số dự kiến — cấp chính thức khi Lưu"
             className={cn(inputCls, 'bg-slate-50 text-slate-500')}
           />
         </Field>
@@ -547,11 +547,11 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
               Hủy
             </Button>
             <Button type="button" onClick={submit(false)} disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
+              {saving ? 'Đang lưu…' : 'Lưu'}
             </Button>
             {!voucherId && (
               <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-                Cất và Thêm
+                Lưu và Thêm
               </Button>
             )}
           </>
