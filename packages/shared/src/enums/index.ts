@@ -259,3 +259,18 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.Admin]: 'Quản trị',
   [UserRole.KeToan]: 'Kế toán',
 }
+
+// Cấp tổ chức (Danh_sach_co_cau_to_chuc.xlsx cột "Cấp tổ chức").
+// Đồng bộ với enum OrgUnitLevel trong schema.prisma.
+export enum OrgUnitLevel {
+  Company = 'COMPANY', // Tổng công ty/Công ty
+  Branch = 'BRANCH', // Chi nhánh
+  Department = 'DEPARTMENT', // Phòng ban
+}
+
+// Nhãn hiển thị cấp tổ chức.
+export const ORG_UNIT_LEVEL_LABELS: Record<OrgUnitLevel, string> = {
+  [OrgUnitLevel.Company]: 'Tổng công ty/Công ty',
+  [OrgUnitLevel.Branch]: 'Chi nhánh',
+  [OrgUnitLevel.Department]: 'Phòng ban',
+}

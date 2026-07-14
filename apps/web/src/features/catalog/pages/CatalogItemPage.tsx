@@ -12,6 +12,7 @@ import { DefaultAccountTable } from '../components/DefaultAccountTable'
 import { EmployeeTable } from '../components/EmployeeTable'
 import { ExpenseItemTable } from '../components/ExpenseItemTable'
 import { IncomeExpenseItemTable } from '../components/IncomeExpenseItemTable'
+import { OrganizationUnitTable } from '../components/OrganizationUnitTable'
 import { PartnerGroupTable } from '../components/PartnerGroupTable'
 import { ProductGroupTable } from '../components/ProductGroupTable'
 import { ProductTable } from '../components/ProductTable'
@@ -40,6 +41,7 @@ const CATALOG_VIEWS: Record<string, () => ReactNode> = {
   'loai-chung-tu': () => <VoucherTypeTable />,
   'muc-thu-chi': () => <IncomeExpenseItemTable />,
   'don-vi-tinh': () => <UnitTable />,
+  'co-cau-to-chuc': () => <OrganizationUnitTable />,
 }
 
 // Trang chi tiết 1 danh mục — render màn hình có sẵn, chưa build thì placeholder.

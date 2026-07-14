@@ -15,6 +15,8 @@ import { ExpenseItemController } from './expense-item.controller'
 import { ExpenseItemService } from './expense-item.service'
 import { IncomeExpenseItemController } from './income-expense-item.controller'
 import { IncomeExpenseItemService } from './income-expense-item.service'
+import { OrganizationUnitController } from './organization-unit.controller'
+import { OrganizationUnitService } from './organization-unit.service'
 import { PartnerGroupController } from './partner-group.controller'
 import { PartnerGroupService } from './partner-group.service'
 import { ProductGroupController } from './product-group.controller'
@@ -39,6 +41,7 @@ import { WarehouseService } from './warehouse.service'
     EmployeeController,
     ExpenseItemController,
     IncomeExpenseItemController,
+    OrganizationUnitController,
     PartnerGroupController,
     ProductGroupController,
     ProductController,
@@ -56,6 +59,7 @@ import { WarehouseService } from './warehouse.service'
     EmployeeService,
     ExpenseItemService,
     IncomeExpenseItemService,
+    OrganizationUnitService,
     PartnerGroupService,
     ProductGroupService,
     ProductService,
@@ -73,6 +77,7 @@ import { WarehouseService } from './warehouse.service'
     EmployeeService,
     ExpenseItemService,
     IncomeExpenseItemService,
+    OrganizationUnitService,
     PartnerGroupService,
     ProductGroupService,
     ProductService,

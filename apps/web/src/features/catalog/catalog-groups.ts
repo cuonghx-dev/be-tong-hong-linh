@@ -59,6 +59,10 @@ export const CATALOG_COLUMNS: CatalogGroup[][] = [
       ],
     },
     {
+      title: 'Chi nhánh, phòng ban',
+      items: [{ slug: 'co-cau-to-chuc', label: 'Cơ cấu tổ chức' }],
+    },
+    {
       title: 'Khác',
       items: [
         { slug: 'muc-thu-chi', label: 'Mục thu/chi' },

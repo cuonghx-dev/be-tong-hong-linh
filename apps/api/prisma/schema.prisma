@@ -1057,3 +1057,31 @@ model BookLock {
 
   @@map("book_locks")
 }
+
+// ── Cơ cấu tổ chức (catalog) ────────────────────────────────────────────────
+
+// Cấp tổ chức. Đồng bộ với OrgUnitLevel trong packages/shared/src/enums.
+enum OrgUnitLevel {
+  COMPANY // Tổng công ty/Công ty
+  BRANCH // Chi nhánh
+  DEPARTMENT // Phòng ban
+}
+
+// Cơ cấu tổ chức — chi nhánh, phòng ban (Danh_sach_co_cau_to_chuc.xlsx).
+model OrganizationUnit {
+  id       String       @id @default(uuid())
+  code     String       @unique // Mã đơn vị
+  name     String // Tên đơn vị
+  address  String? // Địa chỉ
+  level    OrgUnitLevel @default(DEPARTMENT) // Cấp tổ chức
+  parentId String?      @map("parent_id") // Thuộc đơn vị (id cha) — null = đơn vị gốc
+  isActive Boolean      @default(true) @map("is_active") // Trạng thái: Đang sử dụng
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  @@index([name])
+  @@index([parentId])
+  @@map("organization_units")
+}

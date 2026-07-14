@@ -2,6 +2,7 @@ import {
   AccountNature,
   CostObjectType,
   IncomeExpenseType,
+  OrgUnitLevel,
   ProductType,
   TransferSide,
 } from '@app/shared'
@@ -191,3 +192,15 @@ export const unitSchema = z.object({
 })
 
 export type UnitFormValues = z.infer<typeof unitSchema>
+
+// Cơ cấu tổ chức (chi nhánh, phòng ban).
+export const organizationUnitSchema = z.object({
+  code: z.string().min(1, 'Nhập mã đơn vị'),
+  name: z.string().min(1, 'Nhập tên đơn vị'),
+  address: z.string().optional(),
+  level: z.nativeEnum(OrgUnitLevel),
+  parentId: z.string().optional(), // '' = đơn vị gốc
+  isActive: z.boolean().optional(),
+})
+
+export type OrganizationUnitFormValues = z.infer<typeof organizationUnitSchema>

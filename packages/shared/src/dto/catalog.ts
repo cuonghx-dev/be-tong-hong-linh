@@ -3,6 +3,7 @@ import type {
   AccountNature,
   CostObjectType,
   IncomeExpenseType,
+  OrgUnitLevel,
   ProductType,
   TransferSide,
 } from '../enums'
@@ -485,5 +486,38 @@ export interface UnitFilter {
   page?: number
   pageSize?: number
   keyword?: string // Tìm theo tên / mô tả đơn vị tính
+  isActive?: boolean
+}
+
+// ── Cơ cấu tổ chức (chi nhánh, phòng ban) ────────────────────────────────────
+
+export interface OrganizationUnitDto {
+  id: string
+  code: string // Mã đơn vị
+  name: string // Tên đơn vị
+  address: string | null // Địa chỉ
+  level: OrgUnitLevel // Cấp tổ chức
+  parentId: string | null // Thuộc đơn vị (id cha) — null = đơn vị gốc
+  isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateOrganizationUnitInput {
+  code: string
+  name: string
+  address?: string | null
+  level: OrgUnitLevel
+  parentId?: string // '' = đơn vị gốc
+  isActive?: boolean
+}
+
+export type UpdateOrganizationUnitInput = Partial<CreateOrganizationUnitInput>
+
+export interface OrganizationUnitFilter {
+  page?: number
+  pageSize?: number
+  keyword?: string // Tìm theo mã / tên / địa chỉ
+  level?: OrgUnitLevel
   isActive?: boolean
 }
