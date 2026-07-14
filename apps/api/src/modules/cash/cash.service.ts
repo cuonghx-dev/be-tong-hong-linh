@@ -45,7 +45,10 @@ export class CashService {
       this.prisma.cashVoucher.findMany({
         where,
         include: { lines: { orderBy: { lineNo: 'asc' } } },
-        orderBy: [{ postingDate: 'desc' }, { createdAt: 'desc' }],
+        // voucherNo (unique) làm tiebreaker: createdAt trùng nhau hàng loạt với dữ liệu
+        // nhập Excel → thiếu nó thứ tự các dòng hòa không ổn định, UPDATE (vd. bỏ ghi/
+        // ghi sổ) làm bảng xáo hàng sau mỗi refetch.
+        orderBy: [{ postingDate: 'desc' }, { createdAt: 'desc' }, { voucherNo: 'desc' }],
         skip: (filter.page - 1) * filter.pageSize,
         take: filter.pageSize,
       }),
