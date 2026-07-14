@@ -7,7 +7,7 @@ import {
   type CreateBankVoucherInput,
 } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { forwardRef, useEffect, useState } from 'react'
+import { forwardRef, useEffect, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
 import { getApiErrorMessage } from '@/shared/lib/api'
@@ -35,9 +35,11 @@ import { AmountInput } from './AmountInput'
 interface BankVoucherFormProps {
   type: BankVoucherType
   voucherId?: string | null
-  // Tạo mới bằng cách nhân bản chứng từ này — điền sẵn dữ liệu, số chứng từ cấp lại khi Cất.
+  // Tạo mới bằng cách nhân bản chứng từ này — điền sẵn dữ liệu, số chứng từ cấp lại khi Lưu.
   duplicateFromId?: string | null
   readOnly?: boolean
+  // Nút hành động thêm ở thanh đáy khi xem (vd. Sửa nhanh / Ghi sổ) — page truyền vào.
+  actions?: ReactNode
   onSaved: () => void
   onCancel: () => void
 }
@@ -72,6 +74,7 @@ export function BankVoucherForm({
   voucherId,
   duplicateFromId,
   readOnly = false,
+  actions,
   onSaved,
   onCancel,
 }: BankVoucherFormProps) {
@@ -90,7 +93,7 @@ export function BankVoucherForm({
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
-  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất.
+  // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
   const nextNo = useNextBankVoucherNo(type, watch('voucherDate'), !voucherId)
 
   // Picker "Mã đối tượng" (nguồn tạm: khách hàng + nhà cung cấp).
@@ -200,7 +203,7 @@ export function BankVoucherForm({
 
   return (
     <form className="flex h-full flex-col">
-      <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto disabled:opacity-90">
+      <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto p-4 disabled:opacity-90">
         {/* Loại nghiệp vụ + (thu) số UNC chi nhánh / (chi) phương thức TT */}
         <div className="flex flex-wrap items-center gap-3">
           <Select
@@ -326,7 +329,7 @@ export function BankVoucherForm({
               <input
                 value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
                 readOnly
-                title="Số dự kiến — cấp chính thức khi Cất"
+                title="Số dự kiến — cấp chính thức khi Lưu"
                 className={cn(inputCls, 'bg-slate-50 text-slate-500')}
               />
             </Field>
@@ -442,19 +445,42 @@ export function BankVoucherForm({
         )}
       </fieldset>
 
-      {/* Thanh hành động */}
-      <div className="mt-3 flex items-center border-t border-border pt-3">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+      {/* Thanh hành động — nền tối (đồng bộ với CashVoucherForm) */}
+      <div className="flex h-14 shrink-0 items-center gap-2 bg-slate-900 px-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
+          onClick={onCancel}
+          disabled={saving}
+        >
           {readOnly ? 'Đóng' : 'Hủy'}
         </Button>
 
+        {readOnly && actions && <div className="ml-auto flex gap-2">{actions}</div>}
+
         {!readOnly && (
           <div className="ml-auto flex gap-2">
-            <Button type="button" variant="outline" onClick={submit(false)} disabled={saving}>
-              {saving ? 'Đang cất…' : 'Cất'}
-            </Button>
+            {/* Sửa chứng từ đã có: chỉ 1 nút Lưu. Tạo mới: Lưu + nút gộp theo loại. */}
+            {!voucherId && (
+              <Button
+                type="button"
+                variant="outline"
+                className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                onClick={submit(false)}
+                disabled={saving}
+              >
+                {saving ? 'Đang lưu…' : 'Lưu'}
+              </Button>
+            )}
             <Button type="button" onClick={submit(!voucherId)} disabled={saving}>
-              {isReceipt ? 'Cất và In' : voucherId ? 'Cất' : 'Cất và Thêm'}
+              {voucherId
+                ? saving
+                  ? 'Đang lưu…'
+                  : 'Lưu'
+                : isReceipt
+                  ? 'Lưu và In'
+                  : 'Lưu và Thêm'}
             </Button>
           </div>
         )}

@@ -8,7 +8,7 @@ import {
   type CreateCashVoucherInput,
 } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
@@ -46,10 +46,12 @@ interface CashVoucherPrefill {
 interface CashVoucherFormProps {
   type: CashVoucherType
   voucherId?: string | null
-  // Tạo mới bằng cách nhân bản phiếu này — điền sẵn dữ liệu, số phiếu cấp lại khi Cất.
+  // Tạo mới bằng cách nhân bản phiếu này — điền sẵn dữ liệu, số phiếu cấp lại khi Lưu.
   duplicateFromId?: string | null
   readOnly?: boolean
   prefill?: CashVoucherPrefill
+  // Nút hành động thêm ở thanh đáy khi xem (vd. Sửa nhanh / Ghi sổ) — page truyền vào.
+  actions?: ReactNode
   onSaved: () => void
   onCancel: () => void
 }
@@ -81,7 +83,7 @@ function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): Cas
   }
 }
 
-export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = false, prefill, onSaved, onCancel }: CashVoucherFormProps) {
+export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = false, prefill, actions, onSaved, onCancel }: CashVoucherFormProps) {
   const isReceipt = type === CashVoucherType.Receipt
   // Nạp dữ liệu từ phiếu đang sửa HOẶC phiếu nguồn khi nhân bản.
   const duplicating = !voucherId && !!duplicateFromId
@@ -164,7 +166,7 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
   const lines = watch('lines')
   const cols = lineColumns(category)
 
-  // Preview số phiếu kế tiếp khi tạo mới (PT####/YYYY) — số thật vẫn cấp lúc Cất.
+  // Preview số phiếu kế tiếp khi tạo mới (PT####/YYYY) — số thật vẫn cấp lúc Lưu.
   const voucherDate = watch('voucherDate')
   const nextNo = useNextCashVoucherNo(type, voucherDate, !voucherId)
 
@@ -343,7 +345,7 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
                 <input
                   value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
                   readOnly
-                  title="Số dự kiến — cấp chính thức khi Cất"
+                  title="Số dự kiến — cấp chính thức khi Lưu"
                   className={cn(inputCls, 'bg-slate-50 text-slate-500 hover:border-slate-300')}
                 />
               </Field>
@@ -512,19 +514,30 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
           {readOnly ? 'Đóng' : 'Hủy'}
         </Button>
 
+        {readOnly && actions && <div className="ml-auto flex gap-2">{actions}</div>}
+
         {!readOnly && (
           <div className="ml-auto flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
-              onClick={submit(false)}
-              disabled={saving}
-            >
-              {saving ? 'Đang cất…' : 'Cất'}
-            </Button>
+            {/* Sửa phiếu đã có: chỉ 1 nút Lưu. Tạo mới: Lưu + nút gộp theo loại. */}
+            {!voucherId && (
+              <Button
+                type="button"
+                variant="outline"
+                className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                onClick={submit(false)}
+                disabled={saving}
+              >
+                {saving ? 'Đang lưu…' : 'Lưu'}
+              </Button>
+            )}
             <Button type="button" onClick={submit(!voucherId)} disabled={saving}>
-              {isReceipt ? 'Cất và Thêm' : voucherId ? 'Cất' : 'Cất và In'}
+              {voucherId
+                ? saving
+                  ? 'Đang lưu…'
+                  : 'Lưu'
+                : isReceipt
+                  ? 'Lưu và Thêm'
+                  : 'Lưu và In'}
             </Button>
           </div>
         )}

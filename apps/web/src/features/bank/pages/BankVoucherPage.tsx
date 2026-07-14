@@ -11,6 +11,9 @@ import { BankVoucherForm } from '../components/BankVoucherForm'
 
 type Mode = 'new' | 'view' | 'edit'
 
+// Kiểu nút outline trắng trên thanh action nền tối (đồng bộ nút Hủy/Đóng của form).
+const DARK_BAR_BTN = 'border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white'
+
 // Trang chứng từ tiền gửi full-page (§5 design.md). Route: /bank/vouchers/{new|:id|:id/edit}
 export function BankVoucherPage({ mode }: { mode: Mode }) {
   const navigate = useNavigate()
@@ -21,7 +24,7 @@ export function BankVoucherPage({ mode }: { mode: Mode }) {
   const { toast } = useToast()
   const setPosted = useSetBankVoucherPosted()
 
-  // Nhân bản: tạo mới từ chứng từ nguồn (điền sẵn, cấp số chứng từ mới khi Cất).
+  // Nhân bản: tạo mới từ chứng từ nguồn (điền sẵn, cấp số chứng từ mới khi Lưu).
   const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
 
   const close = () => navigate('/bank')
@@ -57,7 +60,8 @@ export function BankVoucherPage({ mode }: { mode: Mode }) {
   }
 
   return (
-    <RecordPageShell title={title} onClose={close}>
+    // p-0 để form tự quản padding — action bar tối dính đáy, tràn hết bề ngang (đồng bộ cash).
+    <RecordPageShell title={title} onClose={close} contentClassName="p-0">
       <BankVoucherForm
         type={type}
         voucherId={id ?? null}
@@ -65,37 +69,38 @@ export function BankVoucherPage({ mode }: { mode: Mode }) {
         readOnly={mode === 'view'}
         onSaved={close}
         onCancel={close}
+        // Sửa nhanh + Ghi sổ/Bỏ ghi nằm trong thanh action đáy (nền tối) — chỉ ở chế độ xem.
+        actions={
+          mode === 'view' && id && voucher ? (
+            <>
+              <Button type="button" variant="outline" onClick={quickEdit} className={DARK_BAR_BTN}>
+                <PlusSquareIcon size={16} /> Sửa nhanh
+              </Button>
+              {voucher.posted ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={togglePosted}
+                  disabled={setPosted.isPending}
+                  className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                >
+                  <TrashIcon size={16} /> {setPosted.isPending ? 'Đang bỏ ghi…' : 'Bỏ ghi'}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={togglePosted}
+                  disabled={setPosted.isPending}
+                  className={DARK_BAR_BTN}
+                >
+                  <BookIcon size={16} /> {setPosted.isPending ? 'Đang ghi sổ…' : 'Ghi sổ'}
+                </Button>
+              )}
+            </>
+          ) : undefined
+        }
       />
-
-      {/* Action nổi góc dưới phải — chỉ ở chế độ xem chứng từ đã lưu */}
-      {mode === 'view' && id && voucher && (
-        <div className="fixed bottom-6 right-6 z-20 flex gap-2">
-          <Button type="button" variant="outline" onClick={quickEdit} className="shadow-md">
-            <PlusSquareIcon size={16} /> Sửa nhanh
-          </Button>
-          {voucher.posted ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={togglePosted}
-              disabled={setPosted.isPending}
-              className="border-red-200 text-red-600 shadow-md hover:bg-red-50"
-            >
-              <TrashIcon size={16} /> {setPosted.isPending ? 'Đang bỏ ghi…' : 'Bỏ ghi'}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={togglePosted}
-              disabled={setPosted.isPending}
-              className="shadow-md"
-            >
-              <BookIcon size={16} /> {setPosted.isPending ? 'Đang ghi sổ…' : 'Ghi sổ'}
-            </Button>
-          )}
-        </div>
-      )}
     </RecordPageShell>
   )
 }
