@@ -1,6 +1,11 @@
 import { CashVoucherCategory, CashVoucherType } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { getApiErrorMessage } from '@/shared/lib/api'
+import { Button } from '@/shared/ui/button'
+import { BookIcon, PlusSquareIcon, TrashIcon } from '@/shared/ui/icons'
+import { useToast } from '@/shared/ui/toast'
+import { useSetCashVoucherPosted } from '../api/useCashVoucherMutations'
 import { useCashVoucher } from '../api/useCashVouchers'
 import { CashVoucherForm } from '../components/CashVoucherForm'
 
@@ -31,6 +36,25 @@ export function CashVoucherPage({ mode }: { mode: Mode }) {
 
   // Số chứng từ trong tiêu đề (vd "Phiếu thu PT4602/2026") — query dedupe với form.
   const { data: voucher } = useCashVoucher(mode === 'new' ? null : (id ?? null))
+  const { toast } = useToast()
+  const setPosted = useSetCashVoucherPosted()
+
+  // Sửa nhanh: chuyển sang mode edit tại chỗ. Bỏ ghi/Ghi sổ: toggle trạng thái ghi sổ (đảo lại được).
+  const quickEdit = () => id && navigate(`/cash/vouchers/${id}/edit?type=${type}`)
+  const togglePosted = () => {
+    if (!id || !voucher) return
+    setPosted.mutate(
+      { id, posted: !voucher.posted },
+      {
+        onError: (e) =>
+          toast({
+            variant: 'error',
+            title: voucher.posted ? 'Bỏ ghi thất bại' : 'Ghi sổ thất bại',
+            description: getApiErrorMessage(e),
+          }),
+      },
+    )
+  }
 
   const noun = isReceipt ? 'Phiếu thu' : 'Phiếu chi'
   const title = [
@@ -57,6 +81,36 @@ export function CashVoucherPage({ mode }: { mode: Mode }) {
         onSaved={close}
         onCancel={close}
       />
+
+      {/* Action nổi góc dưới phải — chỉ ở chế độ xem chứng từ đã lưu */}
+      {mode === 'view' && id && voucher && (
+        <div className="fixed bottom-6 right-6 z-20 flex gap-2">
+          <Button type="button" variant="outline" onClick={quickEdit} className="shadow-md">
+            <PlusSquareIcon size={16} /> Sửa nhanh
+          </Button>
+          {voucher.posted ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={togglePosted}
+              disabled={setPosted.isPending}
+              className="border-red-200 text-red-600 shadow-md hover:bg-red-50"
+            >
+              <TrashIcon size={16} /> {setPosted.isPending ? 'Đang bỏ ghi…' : 'Bỏ ghi'}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={togglePosted}
+              disabled={setPosted.isPending}
+              className="shadow-md"
+            >
+              <BookIcon size={16} /> {setPosted.isPending ? 'Đang ghi sổ…' : 'Ghi sổ'}
+            </Button>
+          )}
+        </div>
+      )}
     </RecordPageShell>
   )
 }
