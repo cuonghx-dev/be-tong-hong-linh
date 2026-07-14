@@ -35,6 +35,8 @@ import { AmountInput } from './AmountInput'
 interface BankVoucherFormProps {
   type: BankVoucherType
   voucherId?: string | null
+  // Tạo mới bằng cách nhân bản chứng từ này — điền sẵn dữ liệu, số chứng từ cấp lại khi Cất.
+  duplicateFromId?: string | null
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
@@ -68,12 +70,15 @@ function defaultValues(type: BankVoucherType): BankVoucherFormValues {
 export function BankVoucherForm({
   type,
   voucherId,
+  duplicateFromId,
   readOnly = false,
   onSaved,
   onCancel,
 }: BankVoucherFormProps) {
   const isReceipt = type === BankVoucherType.Receipt
-  const editing = useBankVoucher(voucherId ?? null)
+  // Nạp dữ liệu từ chứng từ đang sửa HOẶC chứng từ nguồn khi nhân bản.
+  const duplicating = !voucherId && !!duplicateFromId
+  const editing = useBankVoucher(voucherId ?? duplicateFromId ?? null)
   const create = useCreateBankVoucher()
   const update = useUpdateBankVoucher()
   const { toast } = useToast()
@@ -129,8 +134,9 @@ export function BankVoucherForm({
       paymentMethod: v.paymentMethod ?? undefined,
       isBatchTransfer: v.isBatchTransfer,
       internalRef: v.internalRef ?? undefined,
-      postingDate: v.postingDate.slice(0, 10),
-      voucherDate: v.voucherDate.slice(0, 10),
+      // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
+      postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
+      voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       bankAccountNo: v.bankAccountNo ?? '',
       bankName: v.bankName ?? undefined,
       receiverAccountNo: v.receiverAccountNo ?? undefined,
@@ -152,7 +158,7 @@ export function BankVoucherForm({
         partnerName: l.partnerName ?? undefined,
       })),
     })
-  }, [editing.data, reset])
+  }, [editing.data, reset, duplicating])
 
   const lines = watch('lines')
   const total = lines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0

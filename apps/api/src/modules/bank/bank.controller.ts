@@ -18,6 +18,7 @@ import { BankVoucherType } from '@prisma/client'
 import { BankService } from './bank.service'
 import { BankVoucherFilterDto } from './dto/bank-voucher-filter.dto'
 import { CreateBankVoucherDto } from './dto/create-bank-voucher.dto'
+import { SetBankPostedDto } from './dto/set-bank-posted.dto'
 import { UpdateBankVoucherDto } from './dto/update-bank-voucher.dto'
 
 @ApiTags('bank')
@@ -63,6 +64,12 @@ export class BankController {
   import(@UploadedFile() file?: { buffer: Buffer }) {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.bank.importXlsx(file.buffer)
+  }
+
+  @Patch(':id/posted')
+  @ApiOperation({ summary: 'Ghi sổ / bỏ ghi chứng từ (đổi cờ posted)' })
+  setPosted(@Param('id') id: string, @Body() dto: SetBankPostedDto) {
+    return this.bank.setPosted(id, dto.posted)
   }
 
   @Patch(':id')

@@ -247,6 +247,7 @@ export class ReportService {
              COALESCE(l.description, v.reason),
              l.debit_account, l.credit_account, l.amount, l.line_no, 0
       FROM bank_voucher_lines l JOIN bank_vouchers v ON v.id = l.voucher_id
+      WHERE v.posted
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no, 'GENERAL',
              COALESCE(l.description, v.description),

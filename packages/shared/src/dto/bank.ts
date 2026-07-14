@@ -37,6 +37,7 @@ export interface BankVoucherDto {
   attachmentCount: number
   totalAmount: string // Σ số tiền dòng
   branchId: string | null
+  posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
   lines: BankVoucherLineDto[]
   createdAt: string
   updatedAt: string

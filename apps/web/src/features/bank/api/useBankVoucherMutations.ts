@@ -50,6 +50,18 @@ export function useImportBankVouchers() {
   })
 }
 
+// Ghi sổ / bỏ ghi chứng từ — ảnh hưởng sổ tiền gửi + báo cáo → invalidate toàn phân hệ.
+export function useSetBankVoucherPosted() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, posted }: { id: string; posted: boolean }) =>
+      api.patch<BankVoucherDto>(`/bank/vouchers/${id}/posted`, { posted }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+    },
+  })
+}
+
 export function useDeleteBankVoucher() {
   const qc = useQueryClient()
   return useMutation({

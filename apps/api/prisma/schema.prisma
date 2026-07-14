@@ -172,6 +172,8 @@ model BankVoucher {
   attachmentCount   Int                 @default(0) @map("attachment_count")
   totalAmount       Decimal             @default(0) @map("total_amount") @db.Decimal(18, 2)
   branchId          String?             @map("branch_id")
+  // Đã ghi sổ (ảnh hưởng sổ sách). Bỏ ghi → còn là nháp, loại khỏi sổ/báo cáo.
+  posted            Boolean             @default(true)
   lines             BankVoucherLine[]
 
   createdAt DateTime @default(now()) @map("created_at")

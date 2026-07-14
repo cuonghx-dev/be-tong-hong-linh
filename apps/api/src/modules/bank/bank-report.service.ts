@@ -175,7 +175,7 @@ export class BankReportService {
                  CASE WHEN l.credit_account LIKE ${BANK_LIKE} THEN l.amount ELSE 0 END AS payment
           FROM bank_voucher_lines l
           JOIN bank_vouchers v ON v.id = l.voucher_id
-          WHERE v.posting_date BETWEEN ${from} AND ${to}
+          WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to}
             AND (l.debit_account LIKE ${BANK_LIKE} OR l.credit_account LIKE ${BANK_LIKE})
           UNION ALL
           SELECT v.posting_date::text,
@@ -183,7 +183,7 @@ export class BankReportService {
                  CASE WHEN l.credit_account LIKE ${BANK_LIKE} THEN l.amount ELSE 0 END
           FROM cash_voucher_lines l
           JOIN cash_vouchers v ON v.id = l.voucher_id
-          WHERE v.posting_date BETWEEN ${from} AND ${to}
+          WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to}
             AND (l.debit_account LIKE ${BANK_LIKE} OR l.credit_account LIKE ${BANK_LIKE})
         ) t
         GROUP BY t.d
@@ -243,7 +243,7 @@ export class BankReportService {
       CROSS JOIN LATERAL (
         VALUES ('RECEIPT'), ('PAYMENT')
       ) AS k(kind)
-      WHERE v.posting_date BETWEEN ${from} AND ${to}
+      WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to}
         AND (
           (k.kind = 'RECEIPT' AND l.debit_account LIKE ${BANK_LIKE})
           OR (k.kind = 'PAYMENT' AND l.credit_account LIKE ${BANK_LIKE})
@@ -267,7 +267,7 @@ export class BankReportService {
       CROSS JOIN LATERAL (
         VALUES ('RECEIPT'), ('PAYMENT')
       ) AS k(kind)
-      WHERE v.posting_date BETWEEN ${from} AND ${to}
+      WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to}
         AND (
           (k.kind = 'RECEIPT' AND l.debit_account LIKE ${BANK_LIKE})
           OR (k.kind = 'PAYMENT' AND l.credit_account LIKE ${BANK_LIKE})
@@ -332,13 +332,13 @@ export class BankReportService {
         ${delta(Prisma.sql`COALESCE(v.bank_account_no, '')`)}
         FROM bank_voucher_lines l
         JOIN bank_vouchers v ON v.id = l.voucher_id
-        WHERE ${dateCond}
+        WHERE v.posted AND ${dateCond}
           AND (l.debit_account LIKE ${BANK_LIKE} OR l.credit_account LIKE ${BANK_LIKE})
         UNION ALL
         ${delta(Prisma.sql`COALESCE(l.bank_account_no, '')`)}
         FROM cash_voucher_lines l
         JOIN cash_vouchers v ON v.id = l.voucher_id
-        WHERE ${dateCond}
+        WHERE v.posted AND ${dateCond}
           AND (l.debit_account LIKE ${BANK_LIKE} OR l.credit_account LIKE ${BANK_LIKE})
       ) t
       GROUP BY t.bank_account_no

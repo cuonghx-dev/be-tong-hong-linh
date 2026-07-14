@@ -6,12 +6,11 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { AddMenu } from '@/shared/ui/add-menu'
-import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useBankVouchers } from '../api/useBankVouchers'
-import { useDeleteBankVoucher, useImportBankVouchers } from '../api/useBankVoucherMutations'
+import { useImportBankVouchers, useSetBankVoucherPosted } from '../api/useBankVoucherMutations'
 import { BankFilterPopover, type BankFilterValue } from '../components/BankFilterPopover'
 import { BankProcessTab } from '../components/BankProcessTab'
 import { BankReportListTab } from '../components/reports/BankReportListTab'
@@ -22,18 +21,18 @@ const PAGE_SIZE = 20
 function BankTable() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
-  const del = useDeleteBankVoucher()
+  const setPosted = useSetBankVoucherPosted()
   const importXlsx = useImportBankVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
-  const confirm = useConfirm()
 
   // Điều hướng sang trang chứng từ full-page (§5).
   const openNew = (type: BankVoucherType) => navigate(`/bank/vouchers/new?type=${type}`)
   const openView = (id: string, type: BankVoucherType) =>
     navigate(`/bank/vouchers/${id}?type=${type}`)
-  const openEdit = (id: string, type: BankVoucherType) =>
-    navigate(`/bank/vouchers/${id}/edit?type=${type}`)
+  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu chứng từ nguồn (số chứng từ cấp lại khi Cất).
+  const openDuplicate = (id: string, type: BankVoucherType) =>
+    navigate(`/bank/vouchers/new?type=${type}&duplicateFrom=${id}`)
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -221,6 +220,11 @@ function BankTable() {
                     >
                       {r.voucherNo}
                     </button>
+                    {!r.posted && (
+                      <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                        Chưa ghi sổ
+                      </span>
+                    )}
                   </td>
                   <td className="max-w-[220px] truncate px-3 py-2 text-slate-700">
                     {r.lines[0]?.description || r.reason}
@@ -244,29 +248,23 @@ function BankTable() {
                       onPrimary={() => openView(r.id, r.type)}
                       items={[
                         {
-                          label: 'Sửa',
-                          onClick: () => openEdit(r.id, r.type),
-                        },
-                        {
-                          label: 'Xóa',
-                          danger: true,
-                          onClick: async () => {
-                            const ok = await confirm({
-                              title: `Xóa chứng từ ${r.voucherNo}?`,
-                              description: 'Hành động này không thể hoàn tác.',
-                              confirmText: 'Xóa',
-                              destructive: true,
-                            })
-                            if (ok)
-                              del.mutate(r.id, {
+                          label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
+                          onClick: () =>
+                            setPosted.mutate(
+                              { id: r.id, posted: !r.posted },
+                              {
                                 onError: (e) =>
                                   toast({
                                     variant: 'error',
-                                    title: 'Xóa chứng từ thất bại',
+                                    title: r.posted ? 'Bỏ ghi thất bại' : 'Ghi sổ thất bại',
                                     description: getApiErrorMessage(e),
                                   }),
-                              })
-                          },
+                              },
+                            ),
+                        },
+                        {
+                          label: 'Nhân bản',
+                          onClick: () => openDuplicate(r.id, r.type),
                         },
                       ]}
                     />
