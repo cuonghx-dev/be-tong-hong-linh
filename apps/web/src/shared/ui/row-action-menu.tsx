@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/shared/lib/cn'
 import { ChevronDownIcon } from '@/shared/ui/icons'
 
@@ -70,7 +71,10 @@ export function RowActionMenu({ primaryLabel = 'Xem', onPrimary, items }: Props)
         <ChevronDownIcon size={14} />
       </button>
 
-      {open && (
+      {/* Portal ra body: cell sticky của bảng tạo stacking context riêng → menu
+          để trong td sẽ bị cell các hàng dưới đè lên, z-index không cứu được. */}
+      {open &&
+        createPortal(
         <div
           ref={menuRef}
           style={{ position: 'fixed', top: pos.top, right: pos.right }}
@@ -92,7 +96,8 @@ export function RowActionMenu({ primaryLabel = 'Xem', onPrimary, items }: Props)
               {it.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
