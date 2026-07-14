@@ -29,6 +29,7 @@ export function CashVoucherPage({ mode }: { mode: Mode }) {
           category: (sp.get('category') as CashVoucherCategory) ?? undefined,
           partnerId: sp.get('partnerId') ?? undefined,
           partnerName: sp.get('partnerName') ?? undefined,
+          amount: sp.get('amount') ? Number(sp.get('amount')) : undefined,
         }
       : undefined
 

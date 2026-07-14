@@ -276,7 +276,7 @@ export class ReportService {
         (l.stock_account, l.payable_account, l.amount, 1),
         (l.vat_account, l.payable_account, l.vat_amount, 2)
       ) AS e(debit_account, credit_account, amount, sub)
-      WHERE e.debit_account IS NOT NULL AND e.amount <> 0
+      WHERE v.posted AND e.debit_account IS NOT NULL AND e.amount <> 0
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no, 'SALES',
              COALESCE(l.item_name, v.description),

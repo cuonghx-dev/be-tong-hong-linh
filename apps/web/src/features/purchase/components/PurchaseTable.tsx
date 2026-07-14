@@ -1,17 +1,22 @@
-import { PurchaseVoucherType, type PurchaseVoucherFilter } from '@app/shared'
+import {
+  CashVoucherCategory,
+  CashVoucherType,
+  PurchaseVoucherType,
+  type PurchaseVoucherDto,
+  type PurchaseVoucherFilter,
+} from '@app/shared'
 import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
-import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { usePurchaseVouchers } from '../api/usePurchaseVouchers'
 import {
-  useDeletePurchaseVoucher,
   useImportPurchaseVouchers,
+  useSetPurchaseVoucherPosted,
 } from '../api/usePurchaseVoucherMutations'
 import { PAYMENT_STATUS_LABEL, RECEIVE_STATUS_LABEL, purchaseReasonLabel } from '../types'
 import {
@@ -29,18 +34,29 @@ function formatDate(iso: string): string {
 export function PurchaseTable() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
-  const del = useDeletePurchaseVoucher()
+  const setPosted = useSetPurchaseVoucherPosted()
   const importXlsx = useImportPurchaseVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
-  const confirm = useConfirm()
 
   // Điều hướng sang trang chứng từ full-page (§5).
   const openNew = (type: PurchaseVoucherType) => navigate(`/purchase/vouchers/new?type=${type}`)
   const openView = (id: string, type: PurchaseVoucherType) =>
     navigate(`/purchase/vouchers/${id}?type=${type}`)
-  const openEdit = (id: string, type: PurchaseVoucherType) =>
-    navigate(`/purchase/vouchers/${id}/edit?type=${type}`)
+  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu chứng từ nguồn (số chứng từ cấp lại khi Lưu).
+  const openDuplicate = (id: string, type: PurchaseVoucherType) =>
+    navigate(`/purchase/vouchers/new?type=${type}&duplicateFrom=${id}`)
+  // Trả tiền NCC: mở phiếu chi tiền mặt điền sẵn NCC + số tiền (định khoản Nợ 331/Có 111).
+  const openPay = (r: PurchaseVoucherDto) => {
+    const q = new URLSearchParams({
+      type: CashVoucherType.Payment,
+      category: CashVoucherCategory.PaymentSupplier,
+      amount: r.totalPayment,
+    })
+    if (r.supplierId) q.set('partnerId', r.supplierId)
+    if (r.supplierName) q.set('partnerName', r.supplierName)
+    navigate(`/cash/vouchers/new?${q.toString()}`)
+  }
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -236,6 +252,11 @@ export function PurchaseTable() {
                   >
                     {r.voucherNo}
                   </button>
+                  {!r.posted && (
+                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                      Chưa ghi sổ
+                    </span>
+                  )}
                 </td>
                 <td className="max-w-[180px] truncate px-3 py-2 text-slate-700">
                   {r.supplierName}
@@ -254,32 +275,31 @@ export function PurchaseTable() {
                 <td className="px-3 py-2 text-slate-600">{purchaseReasonLabel(r.origin, r.type)}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
-                    onPrimary={() => openView(r.id, r.type)}
+                    primaryLabel="Trả tiền"
+                    onPrimary={() => openPay(r)}
                     items={[
                       {
-                        label: 'Sửa',
-                        onClick: () => openEdit(r.id, r.type),
+                        label: 'Xem',
+                        onClick: () => openView(r.id, r.type),
                       },
                       {
-                        label: 'Xóa',
-                        danger: true,
-                        onClick: async () => {
-                          const ok = await confirm({
-                            title: `Xóa chứng từ ${r.voucherNo}?`,
-                            description: 'Hành động này không thể hoàn tác.',
-                            confirmText: 'Xóa',
-                            destructive: true,
-                          })
-                          if (ok)
-                            del.mutate(r.id, {
+                        label: 'Nhân bản',
+                        onClick: () => openDuplicate(r.id, r.type),
+                      },
+                      {
+                        label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
+                        onClick: () =>
+                          setPosted.mutate(
+                            { id: r.id, posted: !r.posted },
+                            {
                               onError: (e) =>
                                 toast({
                                   variant: 'error',
-                                  title: 'Xóa chứng từ thất bại',
+                                  title: r.posted ? 'Bỏ ghi thất bại' : 'Ghi sổ thất bại',
                                   description: getApiErrorMessage(e),
                                 }),
-                            })
-                        },
+                            },
+                          ),
                       },
                     ]}
                   />

@@ -257,6 +257,20 @@ export class PurchaseService {
     return { total: parsed.length, created: vouchers.length, skipped: parsed.length - vouchers.length }
   }
 
+  // Ghi sổ / bỏ ghi: chỉ đổi cờ posted (không đụng dòng hàng tiền). Bỏ ghi =
+  // đưa về nháp → loại khỏi sổ mua hàng + báo cáo. Kỳ đã khóa sổ thì không cho đổi.
+  async setPosted(id: string, posted: boolean) {
+    const existing = await this.prisma.purchaseVoucher.findUnique({ where: { id } })
+    if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
+    const updated = await this.prisma.purchaseVoucher.update({
+      where: { id },
+      data: { posted },
+      include: { lines: { orderBy: { lineNo: 'asc' } } },
+    })
+    return toVoucherDto(updated)
+  }
+
   async remove(id: string) {
     const existing = await this.prisma.purchaseVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
@@ -385,6 +399,7 @@ function toVoucherDto(v: VoucherWithLines) {
     totalPayment: v.totalPayment.toString(),
     purchaseCost: v.purchaseCost.toString(),
     stockValue: v.stockValue.toString(),
+    posted: v.posted,
     einvoiceLookupCode: v.einvoiceLookupCode,
     einvoiceLookupUrl: v.einvoiceLookupUrl,
     receiveStatus: v.receiveStatus,

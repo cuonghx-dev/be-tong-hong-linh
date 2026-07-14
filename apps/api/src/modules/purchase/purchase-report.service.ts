@@ -93,7 +93,7 @@ export class PurchaseReportService {
              l.vat_amount::text AS vat_amount
       FROM purchase_voucher_lines l
       JOIN purchase_vouchers v ON v.id = l.voucher_id
-      WHERE v.posting_date BETWEEN ${from} AND ${to}
+      WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to}
       ORDER BY v.posting_date, v.voucher_no, l.line_no
     `)
 
@@ -144,7 +144,7 @@ export class PurchaseReportService {
              SUM(l.vat_amount)::text AS vat_amount
       FROM purchase_voucher_lines l
       JOIN purchase_vouchers v ON v.id = l.voucher_id
-      WHERE v.posting_date BETWEEN ${from} AND ${to}
+      WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to}
       GROUP BY l.item_id, l.item_name, l.unit
       ORDER BY l.item_name NULLS LAST
     `)
@@ -368,7 +368,7 @@ export class PurchaseReportService {
              (l.amount + l.vat_amount)::text AS amount
       FROM purchase_voucher_lines l
       JOIN purchase_vouchers v ON v.id = l.voucher_id
-      WHERE v.payment_mode = 'UNPAID'
+      WHERE v.posted AND v.payment_mode = 'UNPAID'
         AND l.payable_account LIKE ${PAYABLE_LIKE}
         AND ${dateCond}
       UNION ALL

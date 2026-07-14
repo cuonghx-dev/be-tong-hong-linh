@@ -61,6 +61,7 @@ export interface PurchaseVoucherDto {
   einvoiceLookupUrl: string | null // Đường dẫn tra cứu HĐĐT
   receiveStatus: PurchaseReceiveStatus
   paymentStatus: PurchasePaymentStatus
+  posted: boolean // Đã ghi sổ / bỏ ghi (loại khỏi sổ sách, không xóa dữ liệu)
   branchId: string | null
   lines: PurchaseVoucherLineDto[]
   createdAt: string

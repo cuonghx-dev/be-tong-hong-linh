@@ -17,6 +17,7 @@ import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { PurchaseVoucherType } from '@prisma/client'
 import { CreatePurchaseVoucherDto } from './dto/create-purchase-voucher.dto'
 import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
+import { SetPurchasePostedDto } from './dto/set-purchase-posted.dto'
 import { UpdatePurchaseVoucherDto } from './dto/update-purchase-voucher.dto'
 import { PurchaseService } from './purchase.service'
 
@@ -63,6 +64,12 @@ export class PurchaseController {
   import(@UploadedFile() file?: { buffer: Buffer }) {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.purchase.importXlsx(file.buffer)
+  }
+
+  @Patch(':id/posted')
+  @ApiOperation({ summary: 'Ghi sổ / bỏ ghi chứng từ mua hàng (đổi cờ posted)' })
+  setPosted(@Param('id') id: string, @Body() dto: SetPurchasePostedDto) {
+    return this.purchase.setPosted(id, dto.posted)
   }
 
   @Patch(':id')

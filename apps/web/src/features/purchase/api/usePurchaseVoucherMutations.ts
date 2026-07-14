@@ -54,6 +54,18 @@ export function useUpdatePurchaseVoucher() {
   })
 }
 
+// Ghi sổ / bỏ ghi (đổi cờ posted — đảo lại được).
+export function useSetPurchaseVoucherPosted() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, posted }: { id: string; posted: boolean }) =>
+      api.patch<PurchaseVoucherDto>(`/purchase/vouchers/${id}/posted`, { posted }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: purchaseKeys.all })
+    },
+  })
+}
+
 export function useDeletePurchaseVoucher() {
   const qc = useQueryClient()
   return useMutation({

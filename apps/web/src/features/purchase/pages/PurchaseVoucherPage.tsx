@@ -1,6 +1,12 @@
 import { PurchaseVoucherType } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { getApiErrorMessage } from '@/shared/lib/api'
+import { Button } from '@/shared/ui/button'
+import { BookIcon, PlusSquareIcon, TrashIcon } from '@/shared/ui/icons'
+import { useToast } from '@/shared/ui/toast'
+import { useSetPurchaseVoucherPosted } from '../api/usePurchaseVoucherMutations'
+import { usePurchaseVoucher } from '../api/usePurchaseVouchers'
 import { PurchaseVoucherForm } from '../components/PurchaseVoucherForm'
 import { VOUCHER_TYPE_LABEL } from '../types'
 
@@ -13,7 +19,31 @@ export function PurchaseVoucherPage({ mode }: { mode: Mode }) {
   const [sp] = useSearchParams()
   const type = (sp.get('type') as PurchaseVoucherType) ?? PurchaseVoucherType.Stock
 
+  // Nhân bản: tạo mới từ chứng từ nguồn (điền sẵn, cấp số chứng từ mới khi Lưu).
+  const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
+
   const close = () => navigate('/purchase')
+
+  const { data: voucher } = usePurchaseVoucher(mode === 'new' ? null : (id ?? null))
+  const { toast } = useToast()
+  const setPosted = useSetPurchaseVoucherPosted()
+
+  // Sửa nhanh: chuyển sang mode edit tại chỗ. Bỏ ghi/Ghi sổ: toggle trạng thái ghi sổ (đảo lại được).
+  const quickEdit = () => id && navigate(`/purchase/vouchers/${id}/edit?type=${type}`)
+  const togglePosted = () => {
+    if (!id || !voucher) return
+    setPosted.mutate(
+      { id, posted: !voucher.posted },
+      {
+        onError: (e) =>
+          toast({
+            variant: 'error',
+            title: voucher.posted ? 'Bỏ ghi thất bại' : 'Ghi sổ thất bại',
+            description: getApiErrorMessage(e),
+          }),
+      },
+    )
+  }
 
   const title =
     mode === 'new'
@@ -27,9 +57,40 @@ export function PurchaseVoucherPage({ mode }: { mode: Mode }) {
       <PurchaseVoucherForm
         type={type}
         voucherId={id ?? null}
+        duplicateFromId={duplicateFromId}
         readOnly={mode === 'view'}
         onSaved={close}
         onCancel={close}
+        // Sửa nhanh + Ghi sổ/Bỏ ghi ở footer — chỉ ở chế độ xem.
+        actions={
+          mode === 'view' && id && voucher ? (
+            <>
+              <Button type="button" variant="outline" onClick={quickEdit}>
+                <PlusSquareIcon size={16} /> Sửa nhanh
+              </Button>
+              {voucher.posted ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={togglePosted}
+                  disabled={setPosted.isPending}
+                  className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  <TrashIcon size={16} /> {setPosted.isPending ? 'Đang bỏ ghi…' : 'Bỏ ghi'}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={togglePosted}
+                  disabled={setPosted.isPending}
+                >
+                  <BookIcon size={16} /> {setPosted.isPending ? 'Đang ghi sổ…' : 'Ghi sổ'}
+                </Button>
+              )}
+            </>
+          ) : undefined
+        }
       />
     </RecordPageShell>
   )

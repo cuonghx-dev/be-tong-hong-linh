@@ -306,6 +306,8 @@ model PurchaseVoucher {
   einvoiceLookupUrl  String?               @map("einvoice_lookup_url")
   receiveStatus      PurchaseReceiveStatus @default(NOT_RECEIVED) @map("receive_status")
   paymentStatus      PurchasePaymentStatus @default(UNPAID) @map("payment_status")
+  // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
+  posted             Boolean               @default(true)
   branchId           String?               @map("branch_id")
   lines              PurchaseVoucherLine[]
 

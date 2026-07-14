@@ -8,7 +8,7 @@ import {
   type CreatePurchaseVoucherInput,
 } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
@@ -49,7 +49,11 @@ import { MoneyInput } from './MoneyInput'
 interface Props {
   type: PurchaseVoucherType
   voucherId?: string | null
+  // Tạo mới bằng cách nhân bản chứng từ này — điền sẵn dữ liệu, số chứng từ cấp lại khi Lưu.
+  duplicateFromId?: string | null
   readOnly?: boolean
+  // Nút hành động thêm ở footer khi xem (vd. Sửa nhanh / Bỏ ghi) — page truyền vào.
+  actions?: ReactNode
   onSaved: () => void
   onCancel: () => void
 }
@@ -88,8 +92,18 @@ function defaultValues(type: PurchaseVoucherType): PurchaseVoucherFormValues {
   }
 }
 
-export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved, onCancel }: Props) {
-  const editing = usePurchaseVoucher(voucherId ?? null)
+export function PurchaseVoucherForm({
+  type,
+  voucherId,
+  duplicateFromId,
+  readOnly = false,
+  actions,
+  onSaved,
+  onCancel,
+}: Props) {
+  // Nạp dữ liệu từ chứng từ đang sửa HOẶC chứng từ nguồn khi nhân bản.
+  const duplicating = !voucherId && !!duplicateFromId
+  const editing = usePurchaseVoucher(voucherId ?? duplicateFromId ?? null)
   const create = useCreatePurchaseVoucher()
   const update = useUpdatePurchaseVoucher()
   const { toast } = useToast()
@@ -139,8 +153,9 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
       paymentMethod: v.paymentMethod ?? undefined,
       receiveWithInvoice: v.receiveWithInvoice,
       invoiceNo: v.invoiceNo ?? undefined,
-      postingDate: v.postingDate.slice(0, 10),
-      voucherDate: v.voucherDate.slice(0, 10),
+      // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
+      postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
+      voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       supplierId: v.supplierId ?? undefined,
       supplierName: v.supplierName ?? undefined,
       deliverer: v.deliverer ?? undefined,
@@ -169,7 +184,7 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
         vatAccount: l.vatAccount,
       })),
     })
-  }, [editing.data, reset])
+  }, [editing.data, reset, duplicating])
 
   const lines = watch('lines')
   const purchaseCost = watch('purchaseCost') ?? 0
@@ -538,9 +553,12 @@ export function PurchaseVoucherForm({ type, voucherId, readOnly = false, onSaved
       {/* Nút hành động — footer cố định */}
       <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-border pt-3">
         {readOnly ? (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Đóng
-          </Button>
+          <>
+            {actions}
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Đóng
+            </Button>
+          </>
         ) : (
           <>
             <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>

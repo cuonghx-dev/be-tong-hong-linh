@@ -41,6 +41,8 @@ interface CashVoucherPrefill {
   category?: CashVoucherCategory
   partnerId?: string
   partnerName?: string
+  // Số tiền điền sẵn cho dòng hạch toán đầu (vd. "Trả tiền" từ chứng từ mua hàng).
+  amount?: number
 }
 
 interface CashVoucherFormProps {
@@ -79,7 +81,7 @@ function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): Cas
     partnerName: prefill?.partnerName,
     reason,
     // Dòng hạch toán đầu tiên kế thừa Diễn giải từ Lý do nộp/chi (MISA tự điền).
-    lines: [{ ...emptyLine(category, type), description: reason, partnerId: prefill?.partnerId, partnerName: prefill?.partnerName }],
+    lines: [{ ...emptyLine(category, type), amount: prefill?.amount ?? 0, description: reason, partnerId: prefill?.partnerId, partnerName: prefill?.partnerName }],
   }
 }
 
