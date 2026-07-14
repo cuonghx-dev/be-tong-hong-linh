@@ -65,4 +65,9 @@ export class CreateSupplierDto {
   @IsOptional()
   @IsString()
   invoiceRisk?: string
+
+  @ApiPropertyOptional({ description: 'Ngừng sử dụng = false (ẩn khỏi picker chứng từ)' })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean
 }

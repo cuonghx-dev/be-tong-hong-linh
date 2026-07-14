@@ -144,6 +144,7 @@ export interface SupplierDto {
   isInternal: boolean // Đối tượng nội bộ
   debtAmount: string // Số tiền nợ
   invoiceRisk: string | null // Rủi ro về hóa đơn
+  isActive: boolean // Ngừng sử dụng = false (ẩn khỏi picker, giữ dữ liệu cũ)
   createdAt: string
   updatedAt: string
 }
@@ -162,6 +163,7 @@ export interface CreateSupplierInput {
   employeeId?: string | null
   isInternal?: boolean
   invoiceRisk?: string | null
+  isActive?: boolean
 }
 
 export type UpdateSupplierInput = Partial<CreateSupplierInput>
@@ -171,5 +173,6 @@ export interface SupplierFilter {
   pageSize?: number
   keyword?: string
   groupId?: string
+  isActive?: boolean // true = chỉ NCC đang sử dụng (picker chứng từ)
 }
 

@@ -14,6 +14,7 @@ export class SupplierService {
   async list(filter: SupplierFilterDto): Promise<Paginated<ReturnType<typeof toSupplierDto>>> {
     const where: Prisma.SupplierWhereInput = {}
     if (filter.groupId) where.groupId = filter.groupId
+    if (filter.isActive !== undefined) where.isActive = filter.isActive
     if (filter.keyword) {
       where.OR = [
         { code: { contains: filter.keyword, mode: 'insensitive' } },
@@ -61,6 +62,7 @@ export class SupplierService {
         employeeId: dto.employeeId ?? null,
         isInternal: dto.isInternal ?? false,
         invoiceRisk: dto.invoiceRisk ?? null,
+        isActive: dto.isActive ?? true,
       },
     })
     return toSupplierDto(created)
@@ -87,6 +89,7 @@ export class SupplierService {
         employeeId: dto.employeeId ?? undefined,
         isInternal: dto.isInternal ?? undefined,
         invoiceRisk: dto.invoiceRisk ?? undefined,
+        isActive: dto.isActive ?? undefined,
       },
     })
     return toSupplierDto(updated)
@@ -164,6 +167,7 @@ function toSupplierDto(s: Supplier) {
     isInternal: s.isInternal,
     debtAmount: s.debtAmount.toString(),
     invoiceRisk: s.invoiceRisk,
+    isActive: s.isActive,
     createdAt: s.createdAt.toISOString(),
     updatedAt: s.updatedAt.toISOString(),
   }

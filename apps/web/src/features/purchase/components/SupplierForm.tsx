@@ -10,6 +10,8 @@ import { SUPPLIER_TYPE_LABEL } from '../types'
 
 interface Props {
   supplierId?: string | null
+  // Nhân bản: điền sẵn dữ liệu từ NCC nguồn, để trống mã (mã phải duy nhất), Lưu tạo bản ghi mới.
+  duplicateFromId?: string | null
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
@@ -23,8 +25,15 @@ const DEFAULTS: SupplierFormValues = {
   isInternal: false,
 }
 
-export function SupplierForm({ supplierId, readOnly = false, onSaved, onCancel }: Props) {
-  const editing = useSupplier(supplierId ?? null)
+export function SupplierForm({
+  supplierId,
+  duplicateFromId,
+  readOnly = false,
+  onSaved,
+  onCancel,
+}: Props) {
+  const duplicating = !supplierId && !!duplicateFromId
+  const editing = useSupplier(supplierId ?? duplicateFromId ?? null)
   const create = useCreateSupplier()
   const update = useUpdateSupplier()
 
@@ -37,7 +46,8 @@ export function SupplierForm({ supplierId, readOnly = false, onSaved, onCancel }
     const s = editing.data
     if (!s) return
     reset({
-      code: s.code,
+      // Nhân bản → mã để trống cho người dùng tự nhập (mã duy nhất).
+      code: duplicating ? '' : s.code,
       name: s.name,
       type: s.type,
       isCustomer: s.isCustomer,
@@ -51,7 +61,7 @@ export function SupplierForm({ supplierId, readOnly = false, onSaved, onCancel }
       isInternal: s.isInternal,
       invoiceRisk: s.invoiceRisk ?? undefined,
     })
-  }, [editing.data, reset])
+  }, [editing.data, reset, duplicating])
 
   const submit = handleSubmit(async (values) => {
     const dto: CreateSupplierInput = values

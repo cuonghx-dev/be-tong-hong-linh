@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
-import { Type } from 'class-transformer'
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator'
+import { Transform, Type } from 'class-transformer'
+import { IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator'
 
 export class SupplierFilterDto {
   @ApiPropertyOptional({ default: 1 })
@@ -27,4 +27,10 @@ export class SupplierFilterDto {
   @IsOptional()
   @IsString()
   groupId?: string
+
+  @ApiPropertyOptional({ description: 'true = chỉ NCC đang sử dụng (picker chứng từ)' })
+  @IsOptional()
+  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
+  @IsBoolean()
+  isActive?: boolean
 }

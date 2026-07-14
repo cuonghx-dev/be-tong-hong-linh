@@ -51,6 +51,8 @@ interface Props {
   voucherId?: string | null
   // Tạo mới bằng cách nhân bản chứng từ này — điền sẵn dữ liệu, số chứng từ cấp lại khi Lưu.
   duplicateFromId?: string | null
+  // Điền sẵn NCC khi lập chứng từ từ danh mục NCC (nút "Lập CT mua hàng").
+  initialSupplier?: { code: string; name: string; address?: string } | null
   readOnly?: boolean
   // Nút hành động thêm ở footer khi xem (vd. Sửa nhanh / Bỏ ghi) — page truyền vào.
   actions?: ReactNode
@@ -96,6 +98,7 @@ export function PurchaseVoucherForm({
   type,
   voucherId,
   duplicateFromId,
+  initialSupplier,
   readOnly = false,
   actions,
   onSaved,
@@ -110,7 +113,17 @@ export function PurchaseVoucherForm({
 
   const form = useForm<PurchaseVoucherFormValues>({
     resolver: zodResolver(purchaseVoucherSchema),
-    defaultValues: defaultValues(type),
+    defaultValues: {
+      ...defaultValues(type),
+      // Lập CT từ danh mục NCC: điền sẵn nhà cung cấp (bị đè khi sửa/nhân bản).
+      ...(initialSupplier
+        ? {
+            supplierId: initialSupplier.code,
+            supplierName: initialSupplier.name,
+            address: initialSupplier.address,
+          }
+        : {}),
+    },
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
@@ -120,7 +133,13 @@ export function PurchaseVoucherForm({
 
   // Picker nhà cung cấp: tra cứu theo mã/tên, tự điền tên + địa chỉ.
   const [supplierKw, setSupplierKw] = useState('')
-  const suppliers = useSuppliers({ page: 1, pageSize: 20, keyword: supplierKw.trim() || undefined })
+  // Chỉ NCC đang sử dụng — NCC "ngừng sử dụng" không được chọn cho chứng từ mới.
+  const suppliers = useSuppliers({
+    page: 1,
+    pageSize: 20,
+    keyword: supplierKw.trim() || undefined,
+    isActive: true,
+  })
   const supplierItems = useMemo<PartnerOption[]>(
     () =>
       (suppliers.data?.data ?? []).map((s) => ({

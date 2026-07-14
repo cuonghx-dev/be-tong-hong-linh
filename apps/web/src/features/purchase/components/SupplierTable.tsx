@@ -1,6 +1,6 @@
 import type { SupplierFilter } from '@app/shared'
 import { useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { AddMenu } from '@/shared/ui/add-menu'
@@ -10,7 +10,11 @@ import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useSuppliers } from '../api/useSuppliers'
-import { useDeleteSupplier, useImportSuppliers } from '../api/useSupplierMutations'
+import {
+  useDeleteSupplier,
+  useImportSuppliers,
+  useUpdateSupplier,
+} from '../api/useSupplierMutations'
 import { SupplierForm } from './SupplierForm'
 
 const PAGE_SIZE = 20
@@ -19,9 +23,15 @@ const PAGE_SIZE = 20
 const P = { page: 'sp_page', q: 'sp_q' }
 
 export function SupplierTable() {
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const [formState, setFormState] = useState<{ supplierId?: string; readOnly?: boolean } | null>(null)
+  const [formState, setFormState] = useState<{
+    supplierId?: string
+    duplicateFromId?: string
+    readOnly?: boolean
+  } | null>(null)
   const del = useDeleteSupplier()
+  const upd = useUpdateSupplier()
   const importXlsx = useImportSuppliers()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -171,7 +181,24 @@ export function SupplierTable() {
                       {r.code}
                     </button>
                   </td>
-                  <td className="max-w-[220px] truncate px-3 py-2 text-slate-700">{r.name}</td>
+                  <td className="max-w-[220px] px-3 py-2">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          'min-w-0 truncate',
+                          r.isActive ? 'text-slate-700' : 'text-slate-400',
+                        )}
+                        title={r.name}
+                      >
+                        {r.name}
+                      </span>
+                      {!r.isActive && (
+                        <span className="shrink-0 whitespace-nowrap rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+                          Ngừng sử dụng
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="max-w-[220px] truncate px-3 py-2 text-slate-600">{r.address}</td>
                   <td
                     className={cn(
@@ -184,12 +211,25 @@ export function SupplierTable() {
                   <td className="px-3 py-2 text-slate-600">{r.taxCode}</td>
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
-                      primaryLabel="Sửa"
-                      onPrimary={() => setFormState({ supplierId: r.id, readOnly: true })}
+                      primaryLabel="Lập CT mua hàng"
+                      onPrimary={() => {
+                        // Điền sẵn NCC vào chứng từ mua hàng mới qua query params.
+                        const q = new URLSearchParams({ supplier: r.code, supplierName: r.name })
+                        if (r.address) q.set('supplierAddress', r.address)
+                        navigate(`/purchase/vouchers/new?${q.toString()}`)
+                      }}
                       items={[
+                        {
+                          label: 'Xem',
+                          onClick: () => setFormState({ supplierId: r.id, readOnly: true }),
+                        },
                         {
                           label: 'Sửa',
                           onClick: () => setFormState({ supplierId: r.id }),
+                        },
+                        {
+                          label: 'Nhân bản',
+                          onClick: () => setFormState({ duplicateFromId: r.id }),
                         },
                         {
                           label: 'Xóa',
@@ -203,6 +243,10 @@ export function SupplierTable() {
                             })
                             if (ok) del.mutate(r.id)
                           },
+                        },
+                        {
+                          label: r.isActive ? 'Ngừng sử dụng' : 'Sử dụng',
+                          onClick: () => upd.mutate({ id: r.id, dto: { isActive: !r.isActive } }),
                         },
                       ]}
                     />
@@ -253,13 +297,16 @@ export function SupplierTable() {
             ? 'Xem nhà cung cấp'
             : formState?.supplierId
               ? 'Sửa nhà cung cấp'
-              : 'Thông tin nhà cung cấp'
+              : formState?.duplicateFromId
+                ? 'Nhân bản nhà cung cấp'
+                : 'Thông tin nhà cung cấp'
         }
       >
         {formState && (
           <SupplierForm
-            key={formState.supplierId ?? 'new'}
+            key={formState.supplierId ?? formState.duplicateFromId ?? 'new'}
             supplierId={formState.supplierId ?? null}
+            duplicateFromId={formState.duplicateFromId ?? null}
             readOnly={formState.readOnly}
             onSaved={closeForm}
             onCancel={closeForm}

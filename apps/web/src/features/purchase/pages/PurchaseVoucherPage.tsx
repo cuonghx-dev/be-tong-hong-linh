@@ -22,6 +22,16 @@ export function PurchaseVoucherPage({ mode }: { mode: Mode }) {
   // Nhân bản: tạo mới từ chứng từ nguồn (điền sẵn, cấp số chứng từ mới khi Lưu).
   const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
 
+  // Lập CT từ danh mục NCC: điền sẵn nhà cung cấp qua query params.
+  const supplierCode = mode === 'new' ? sp.get('supplier') : null
+  const initialSupplier = supplierCode
+    ? {
+        code: supplierCode,
+        name: sp.get('supplierName') ?? '',
+        address: sp.get('supplierAddress') ?? undefined,
+      }
+    : null
+
   const close = () => navigate('/purchase')
 
   const { data: voucher } = usePurchaseVoucher(mode === 'new' ? null : (id ?? null))
@@ -58,6 +68,7 @@ export function PurchaseVoucherPage({ mode }: { mode: Mode }) {
         type={type}
         voucherId={id ?? null}
         duplicateFromId={duplicateFromId}
+        initialSupplier={initialSupplier}
         readOnly={mode === 'view'}
         onSaved={close}
         onCancel={close}
