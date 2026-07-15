@@ -40,6 +40,7 @@ export class ReceivableService {
           where: {
             customerId: { in: customers.map((c) => c.id) },
             paymentMode: SalesPaymentMode.UNPAID,
+            posted: true, // bỏ ghi = loại khỏi công nợ
             voucherDate: { lte: asOf },
           },
           select: { customerId: true, voucherDate: true, dueDate: true, totalAmount: true },

@@ -94,7 +94,7 @@ export class SalesReportService {
              l.vat_amount::text AS vat_amount
       FROM sales_voucher_lines l
       JOIN sales_vouchers v ON v.id = l.voucher_id
-      WHERE v.posting_date BETWEEN ${from} AND ${to}
+      WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to}
       ORDER BY v.posting_date, v.voucher_no, l.line_no
     `)
 
@@ -160,7 +160,7 @@ export class SalesReportService {
       FROM sales_voucher_lines l
       JOIN sales_vouchers v ON v.id = l.voucher_id
       LEFT JOIN products p ON p.id = l.item_id
-      WHERE v.posting_date BETWEEN ${from} AND ${to}
+      WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to}
       GROUP BY l.item_id, p.code, l.item_name, l.unit
       ORDER BY l.item_name NULLS LAST
     `)
@@ -394,7 +394,7 @@ export class SalesReportService {
              (l.amount + l.vat_amount)::text AS amount
       FROM sales_voucher_lines l
       JOIN sales_vouchers v ON v.id = l.voucher_id
-      WHERE v.payment_mode = 'UNPAID'
+      WHERE v.posted AND v.payment_mode = 'UNPAID'
         AND l.debt_account LIKE ${RECEIVABLE_LIKE}
         AND ${dateCond}
       UNION ALL

@@ -286,7 +286,7 @@ export class ReportService {
         (l.debt_account, l.revenue_account, l.amount, 1),
         (l.debt_account, l.vat_account, l.vat_amount, 2)
       ) AS e(debit_account, credit_account, amount, sub)
-      WHERE e.amount <> 0
+      WHERE v.posted AND e.amount <> 0
     `
   }
 }

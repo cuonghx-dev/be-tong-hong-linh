@@ -129,7 +129,7 @@ export class CustomerService {
     if (ids.length === 0) return new Map()
     const grouped = await this.prisma.salesVoucher.groupBy({
       by: ['customerId'],
-      where: { customerId: { in: ids }, paymentMode: SalesPaymentMode.UNPAID },
+      where: { customerId: { in: ids }, paymentMode: SalesPaymentMode.UNPAID, posted: true },
       _sum: { totalAmount: true },
     })
     return new Map(

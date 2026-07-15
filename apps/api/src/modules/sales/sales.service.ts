@@ -179,6 +179,20 @@ export class SalesService {
     return toVoucherDto(updated)
   }
 
+  // Ghi sổ / bỏ ghi: chỉ đổi cờ posted (không đụng dòng hàng tiền). Bỏ ghi =
+  // đưa về nháp → loại khỏi sổ bán hàng + báo cáo + công nợ. Kỳ đã khóa sổ thì không cho đổi.
+  async setPosted(id: string, posted: boolean) {
+    const existing = await this.prisma.salesVoucher.findUnique({ where: { id } })
+    if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
+    const updated = await this.prisma.salesVoucher.update({
+      where: { id },
+      data: { posted },
+      include: { lines: { orderBy: { lineNo: 'asc' } } },
+    })
+    return toVoucherDto(updated)
+  }
+
   async remove(id: string) {
     const existing = await this.prisma.salesVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
@@ -361,6 +375,7 @@ function toVoucherDto(v: VoucherWithRelations) {
     einvoiceLookupCode: v.einvoiceLookupCode,
     einvoiceLookupUrl: v.einvoiceLookupUrl,
     receiptId: v.receiptId,
+    posted: v.posted,
     branchId: v.branchId,
     lines: v.lines.map((l) => ({
       id: l.id,

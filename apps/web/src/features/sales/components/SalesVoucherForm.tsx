@@ -32,6 +32,8 @@ import { AmountInput } from './AmountInput'
 
 interface SalesVoucherFormProps {
   voucherId?: string | null
+  // Nhân bản: id chứng từ nguồn — nạp sẵn dữ liệu, lưu thành chứng từ mới.
+  duplicateFromId?: string | null
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
@@ -66,8 +68,16 @@ function lineVat(l: SalesLineFormValues): number {
   return Math.round((lineAmount(l) * (l.vatRate || 0)) / 100)
 }
 
-export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCancel }: SalesVoucherFormProps) {
-  const editing = useSalesVoucher(voucherId ?? null)
+export function SalesVoucherForm({
+  voucherId,
+  duplicateFromId,
+  readOnly = false,
+  onSaved,
+  onCancel,
+}: SalesVoucherFormProps) {
+  // Nạp dữ liệu từ chứng từ đang sửa HOẶC chứng từ nguồn khi nhân bản.
+  const duplicating = !voucherId && !!duplicateFromId
+  const editing = useSalesVoucher(voucherId ?? duplicateFromId ?? null)
   const create = useCreateSalesVoucher()
   const update = useUpdateSalesVoucher()
   const { toast } = useToast()
@@ -92,8 +102,9 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
       withInvoice: v.withInvoice,
       isInventoryIssue: v.isInventoryIssue,
       isPosInvoice: v.isPosInvoice,
-      postingDate: v.postingDate.slice(0, 10),
-      voucherDate: v.voucherDate.slice(0, 10),
+      // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
+      postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
+      voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       customerId: v.customerId ?? undefined,
       customerName: v.customerName ?? undefined,
       taxCode: v.taxCode ?? undefined,
@@ -115,7 +126,7 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
         lotNo: l.lotNo ?? undefined,
       })),
     })
-  }, [editing.data, reset])
+  }, [editing.data, reset, duplicating])
 
   const paymentMode = watch('paymentMode')
   const lines = watch('lines')
@@ -242,7 +253,7 @@ export function SalesVoucherForm({ voucherId, readOnly = false, onSaved, onCance
         </Field>
         <Field label="Số chứng từ">
           <input
-            value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
+            value={voucherId ? (editing.data?.voucherNo ?? '…') : (nextNo.data ?? 'Tự động')}
             readOnly
             title="Số dự kiến — cấp chính thức khi Lưu"
             className={cn(inputCls, 'bg-slate-50 text-slate-500')}

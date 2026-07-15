@@ -58,6 +58,7 @@ export interface SalesVoucherDto {
   einvoiceLookupCode: string | null // Mã tra cứu HĐĐT
   einvoiceLookupUrl: string | null // Đường dẫn tra cứu HĐĐT
   receiptId: string | null // Phiếu thu (thu ngay)
+  posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
   branchId: string | null
   lines: SalesVoucherLineDto[]
   createdAt: string

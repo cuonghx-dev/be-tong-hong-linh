@@ -15,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CreateSalesVoucherDto } from './dto/create-sales-voucher.dto'
 import { SalesVoucherFilterDto } from './dto/sales-voucher-filter.dto'
+import { SetSalesPostedDto } from './dto/set-sales-posted.dto'
 import { UpdateSalesVoucherDto } from './dto/update-sales-voucher.dto'
 import { SalesService } from './sales.service'
 
@@ -58,6 +59,12 @@ export class SalesController {
   import(@UploadedFile() file?: { buffer: Buffer }) {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.sales.importXlsx(file.buffer)
+  }
+
+  @Patch(':id/posted')
+  @ApiOperation({ summary: 'Ghi sổ / bỏ ghi chứng từ bán hàng (đổi cờ posted)' })
+  setPosted(@Param('id') id: string, @Body() dto: SetSalesPostedDto) {
+    return this.sales.setPosted(id, dto.posted)
   }
 
   @Patch(':id')

@@ -10,7 +10,11 @@ import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useSalesVouchers } from '../api/useSalesVouchers'
-import { useDeleteSalesVoucher, useImportSalesVouchers } from '../api/useSalesVoucherMutations'
+import {
+  useDeleteSalesVoucher,
+  useImportSalesVouchers,
+  useSetSalesVoucherPosted,
+} from '../api/useSalesVoucherMutations'
 import { PAYMENT_MODE_LABEL } from '../types'
 import { SalesFilterPopover, type SalesFilterValue } from './SalesFilterPopover'
 
@@ -20,6 +24,7 @@ export function SalesVoucherTable() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const del = useDeleteSalesVoucher()
+  const setPosted = useSetSalesVoucherPosted()
   const importXlsx = useImportSalesVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -29,6 +34,8 @@ export function SalesVoucherTable() {
   const openNew = () => navigate('/sales/vouchers/new')
   const openView = (id: string) => navigate(`/sales/vouchers/${id}`)
   const openEdit = (id: string) => navigate(`/sales/vouchers/${id}/edit`)
+  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu chứng từ nguồn (số chứng từ cấp lại khi Lưu).
+  const openDuplicate = (id: string) => navigate(`/sales/vouchers/new?duplicateFrom=${id}`)
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -207,6 +214,11 @@ export function SalesVoucherTable() {
                   >
                     {r.voucherNo}
                   </button>
+                  {!r.posted && (
+                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                      Chưa ghi sổ
+                    </span>
+                  )}
                 </td>
                 <td
                   className="max-w-[220px] truncate px-3 py-2 text-slate-700"
@@ -235,6 +247,22 @@ export function SalesVoucherTable() {
                     onPrimary={() => openView(r.id)}
                     items={[
                       { label: 'Sửa', onClick: () => openEdit(r.id) },
+                      { label: 'Nhân bản', onClick: () => openDuplicate(r.id) },
+                      {
+                        label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
+                        onClick: () =>
+                          setPosted.mutate(
+                            { id: r.id, posted: !r.posted },
+                            {
+                              onError: (e) =>
+                                toast({
+                                  variant: 'error',
+                                  title: r.posted ? 'Bỏ ghi thất bại' : 'Ghi sổ thất bại',
+                                  description: getApiErrorMessage(e),
+                                }),
+                            },
+                          ),
+                      },
                       {
                         label: 'Xóa',
                         danger: true,

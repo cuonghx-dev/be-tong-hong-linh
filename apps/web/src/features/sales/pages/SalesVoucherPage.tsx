@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { SalesVoucherForm } from '../components/SalesVoucherForm'
 
@@ -8,6 +8,9 @@ type Mode = 'new' | 'view' | 'edit'
 export function SalesVoucherPage({ mode }: { mode: Mode }) {
   const navigate = useNavigate()
   const { id } = useParams()
+  const [sp] = useSearchParams()
+  // Nhân bản: tạo mới nhưng nạp sẵn dữ liệu từ chứng từ nguồn.
+  const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
 
   const close = () => navigate('/sales')
 
@@ -22,6 +25,7 @@ export function SalesVoucherPage({ mode }: { mode: Mode }) {
     <RecordPageShell title={title} onClose={close}>
       <SalesVoucherForm
         voucherId={id ?? null}
+        duplicateFromId={duplicateFromId}
         readOnly={mode === 'view'}
         onSaved={close}
         onCancel={close}

@@ -543,6 +543,8 @@ model SalesVoucher {
   einvoiceLookupCode String?            @map("einvoice_lookup_code")
   einvoiceLookupUrl  String?            @map("einvoice_lookup_url")
   receiptId          String?            @map("receipt_id")
+  // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
+  posted             Boolean            @default(true)
   branchId           String?            @map("branch_id")
   lines              SalesVoucherLine[]
 
