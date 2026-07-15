@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { HelpIcon, SettingsIcon } from '@/shared/ui/icons'
 
@@ -9,9 +10,16 @@ export interface ModuleTab {
 }
 
 // Khung "tabs trên + content dưới" cho mỗi phân hệ (§2 design.md).
+// Tab đang mở lưu ở URL `?tab=` (share link, back/forward) — không dùng state cục bộ.
 export function ModuleContent({ tabs, defaultTab }: { tabs: ModuleTab[]; defaultTab?: string }) {
-  const [active, setActive] = useState(defaultTab ?? tabs[0]?.key)
-  const current = tabs.find((t) => t.key === active) ?? tabs[0]
+  const [params, setParams] = useSearchParams()
+  const requested = params.get('tab') ?? defaultTab ?? tabs[0]?.key
+  // `?tab=` không hợp lệ → rơi về tab đầu (active luôn khớp tab đang render).
+  const current = tabs.find((t) => t.key === requested) ?? tabs[0]
+  const active = current?.key
+
+  // Đổi tab: chỉ giữ `tab`, bỏ các param còn lại (page/q/from/to… thuộc tab cũ).
+  const setActive = (key: string) => setParams({ tab: key })
 
   return (
     <div className="flex h-full flex-col">
