@@ -162,7 +162,7 @@ function CashTable() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[1040px] border-collapse text-sm">
+        <table className="w-full min-w-[1120px] border-collapse text-sm">
           <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="w-10 px-3 py-2 text-center">
@@ -174,7 +174,7 @@ function CashTable() {
               <th className="px-3 py-2 text-right">Số tiền</th>
               <th className="px-3 py-2">Đối tượng</th>
               <th className="px-3 py-2">Lý do thu/chi</th>
-              <th className="px-3 py-2">Loại chứng từ</th>
+              <th className="min-w-[180px] px-3 py-2">Loại chứng từ</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức năng
               </th>
@@ -223,16 +223,18 @@ function CashTable() {
                       {r.voucherNo}
                     </button>
                     {!r.posted && (
-                      <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                      <span className="mt-0.5 block w-fit rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
                         Chưa ghi sổ
                       </span>
                     )}
                   </td>
                   <td
-                    className="max-w-[220px] truncate px-3 py-2 text-slate-700"
+                    className="min-w-[220px] max-w-[340px] px-3 py-2 text-slate-700"
                     title={r.lines[0]?.description || r.reason || ''}
                   >
-                    {r.lines[0]?.description || r.reason}
+                    <div className="line-clamp-2 break-words">
+                      {r.lines[0]?.description || r.reason}
+                    </div>
                   </td>
                   <td
                     className={cn(
@@ -243,18 +245,20 @@ function CashTable() {
                     {formatCurrency(signed)}
                   </td>
                   <td
-                    className="max-w-[160px] truncate px-3 py-2 text-slate-600"
+                    className="min-w-[140px] max-w-[220px] px-3 py-2 text-slate-600"
                     title={r.partnerName || ''}
                   >
-                    {r.partnerName}
+                    <div className="line-clamp-2 break-words">{r.partnerName}</div>
                   </td>
                   <td
-                    className="max-w-[200px] truncate px-3 py-2 text-slate-600"
+                    className="min-w-[180px] max-w-[280px] px-3 py-2 text-slate-600"
                     title={r.reason || ''}
                   >
-                    {r.reason}
+                    <div className="line-clamp-2 break-words">{r.reason}</div>
                   </td>
-                  <td className="px-3 py-2 text-slate-600">{CATEGORY_LABEL[r.category]}</td>
+                  <td className="min-w-[180px] px-3 py-2 text-slate-600">
+                    {CATEGORY_LABEL[r.category]}
+                  </td>
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
                       onPrimary={() => openView(r.id, r.type)}
