@@ -26,13 +26,13 @@ export function ReceivableDetailReport({ filter }: { filter: SalesReportFilter }
     <table className="w-full min-w-[1000px] border-collapse text-sm">
       <thead className="sticky top-0 z-20">
         <tr>
-          <th className={thClass}>Ngày hạch toán</th>
-          <th className={thClass}>Số chứng từ</th>
-          <th className={thClass}>Loại chứng từ</th>
-          <th className={thClass}>Diễn giải</th>
-          <th className={thClass}>Phát sinh Nợ</th>
-          <th className={thClass}>Phát sinh Có</th>
-          <th className={thClass}>Dư Nợ</th>
+          <th className={thClass}>Ngày hạch&nbsp;toán</th>
+          <th className={thClass}>Số chứng&nbsp;từ</th>
+          <th className={thClass}>Loại chứng&nbsp;từ</th>
+          <th className={thClass}>Diễn&nbsp;giải</th>
+          <th className={thClass}>Phát&nbsp;sinh Nợ</th>
+          <th className={thClass}>Phát&nbsp;sinh Có</th>
+          <th className={thClass}>Dư&nbsp;Nợ</th>
         </tr>
       </thead>
       <tbody>

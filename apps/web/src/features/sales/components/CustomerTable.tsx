@@ -115,14 +115,14 @@ export function CustomerTable() {
         <table className="w-full min-w-[900px] border-collapse text-sm">
           <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-3 py-2">Mã khách hàng</th>
-              <th className="px-3 py-2">Tên khách hàng</th>
-              <th className="px-3 py-2">Địa chỉ</th>
-              <th className="px-3 py-2 text-right">Công nợ</th>
-              <th className="px-3 py-2">Mã số thuế/CCCD chủ hộ</th>
-              <th className="px-3 py-2">Điện thoại</th>
+              <th className="px-3 py-2">Mã khách&nbsp;hàng</th>
+              <th className="px-3 py-2">Tên khách&nbsp;hàng</th>
+              <th className="px-3 py-2">Địa&nbsp;chỉ</th>
+              <th className="px-3 py-2 text-right">Công&nbsp;nợ</th>
+              <th className="px-3 py-2">Mã&nbsp;số thuế/CCCD chủ&nbsp;hộ</th>
+              <th className="px-3 py-2">Điện&nbsp;thoại</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

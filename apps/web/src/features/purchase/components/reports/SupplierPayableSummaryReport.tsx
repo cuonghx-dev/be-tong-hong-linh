@@ -26,11 +26,11 @@ export function SupplierPayableSummaryReport({ filter }: { filter: PurchaseRepor
           <tr>
             <th className={thClass}>STT</th>
             <th className={thClass}>Mã NCC</th>
-            <th className={thClass}>Tên nhà cung cấp</th>
-            <th className={`${thClass} text-right`}>Số dư đầu kỳ</th>
-            <th className={`${thClass} text-right`}>Phát sinh Có</th>
-            <th className={`${thClass} text-right`}>Phát sinh Nợ</th>
-            <th className={`${thClass} text-right`}>Số dư cuối kỳ</th>
+            <th className={thClass}>Tên nhà cung&nbsp;cấp</th>
+            <th className={`${thClass} text-right`}>Số&nbsp;dư đầu&nbsp;kỳ</th>
+            <th className={`${thClass} text-right`}>Phát&nbsp;sinh Có</th>
+            <th className={`${thClass} text-right`}>Phát&nbsp;sinh Nợ</th>
+            <th className={`${thClass} text-right`}>Số&nbsp;dư cuối&nbsp;kỳ</th>
           </tr>
         </thead>
         <tbody>

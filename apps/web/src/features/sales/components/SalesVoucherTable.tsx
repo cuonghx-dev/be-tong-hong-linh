@@ -168,16 +168,16 @@ export function SalesVoucherTable() {
         <table className="w-full min-w-[1000px] border-collapse text-sm">
           <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-3 py-2">Ngày hạch toán</th>
-              <th className="px-3 py-2">Số chứng từ</th>
-              <th className="px-3 py-2">Số hóa đơn</th>
-              <th className="px-3 py-2">Khách hàng</th>
-              <th className="px-3 py-2 text-right">Tổng tiền thanh toán</th>
-              <th className="px-3 py-2">TT lập hóa đơn</th>
-              <th className="px-3 py-2">TT thanh toán</th>
-              <th className="px-3 py-2">TT xuất hàng</th>
+              <th className="px-3 py-2">Ngày hạch&nbsp;toán</th>
+              <th className="px-3 py-2">Số chứng&nbsp;từ</th>
+              <th className="px-3 py-2">Số hóa&nbsp;đơn</th>
+              <th className="px-3 py-2">Khách&nbsp;hàng</th>
+              <th className="px-3 py-2 text-right">Tổng&nbsp;tiền thanh&nbsp;toán</th>
+              <th className="px-3 py-2">TT lập hóa&nbsp;đơn</th>
+              <th className="px-3 py-2">TT thanh&nbsp;toán</th>
+              <th className="px-3 py-2">TT xuất&nbsp;hàng</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

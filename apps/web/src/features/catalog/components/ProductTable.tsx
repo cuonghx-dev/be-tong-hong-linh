@@ -158,14 +158,14 @@ export function ProductTable() {
               </th>
               <th className="px-3 py-2">Mã</th>
               <th className="px-3 py-2">Tên</th>
-              <th className="px-3 py-2">Tính chất</th>
+              <th className="px-3 py-2">Tính&nbsp;chất</th>
               <th className="px-3 py-2">Nhóm</th>
               <th className="px-3 py-2">ĐVT</th>
-              <th className="px-3 py-2 text-right">Đơn giá mua</th>
-              <th className="px-3 py-2 text-right">Đơn giá bán</th>
-              <th className="px-3 py-2">Trạng thái</th>
+              <th className="px-3 py-2 text-right">Đơn&nbsp;giá mua</th>
+              <th className="px-3 py-2 text-right">Đơn&nbsp;giá bán</th>
+              <th className="px-3 py-2">Trạng&nbsp;thái</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

@@ -67,9 +67,9 @@ export function CashJournalReport({
         <table className="w-full min-w-[960px] border-collapse text-sm">
           <thead className="sticky top-0 z-20">
             <tr>
-              <th rowSpan={2} className={thClass}>Ngày, tháng ghi sổ</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Chứng từ</th>
-              <th rowSpan={2} className={thClass}>Diễn giải</th>
+              <th rowSpan={2} className={thClass}>Ngày, tháng ghi&nbsp;sổ</th>
+              <th colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</th>
+              <th rowSpan={2} className={thClass}>Diễn&nbsp;giải</th>
               <th rowSpan={2} className={thClass}>Ghi {isReceipt ? 'nợ' : 'có'} TK 111</th>
               <th colSpan={Math.max(accounts.length, 1)} className={`${thClass} text-center`}>
                 Ghi {side.toLowerCase()} các TK
@@ -79,14 +79,14 @@ export function CashJournalReport({
               </th>
             </tr>
             <tr>
-              <th className={thClass}>Số hiệu</th>
-              <th className={thClass}>Ngày tháng</th>
+              <th className={thClass}>Số&nbsp;hiệu</th>
+              <th className={thClass}>Ngày&nbsp;tháng</th>
               {accounts.map((acc) => (
                 <th key={acc} className={`${thClass} text-right`}>{acc}</th>
               ))}
               {accounts.length === 0 && <th className={thClass} />}
-              <th className={`${thClass} text-right`}>Số tiền</th>
-              <th className={`${thClass} text-right`}>Số hiệu</th>
+              <th className={`${thClass} text-right`}>Số&nbsp;tiền</th>
+              <th className={`${thClass} text-right`}>Số&nbsp;hiệu</th>
             </tr>
           </thead>
           <tbody>

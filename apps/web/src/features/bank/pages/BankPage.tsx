@@ -160,17 +160,17 @@ function BankTable() {
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
-              <th className="px-3 py-2">Ngày hạch toán</th>
-              <th className="px-3 py-2">Ngày chứng từ</th>
-              <th className="px-3 py-2">Số chứng từ</th>
-              <th className="px-3 py-2">Diễn giải</th>
-              <th className="px-3 py-2 text-right">Số tiền</th>
-              <th className="px-3 py-2">Đối tượng</th>
-              <th className="px-3 py-2">Số tài khoản NH</th>
-              <th className="px-3 py-2">Lý do thu/chi</th>
-              <th className="px-3 py-2">Loại chứng từ</th>
+              <th className="px-3 py-2">Ngày hạch&nbsp;toán</th>
+              <th className="px-3 py-2">Ngày chứng&nbsp;từ</th>
+              <th className="px-3 py-2">Số chứng&nbsp;từ</th>
+              <th className="px-3 py-2">Diễn&nbsp;giải</th>
+              <th className="px-3 py-2 text-right">Số&nbsp;tiền</th>
+              <th className="px-3 py-2">Đối&nbsp;tượng</th>
+              <th className="px-3 py-2">Số tài&nbsp;khoản NH</th>
+              <th className="px-3 py-2">Lý&nbsp;do thu/chi</th>
+              <th className="px-3 py-2">Loại chứng&nbsp;từ</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

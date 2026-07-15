@@ -120,15 +120,15 @@ export function EmployeeTable() {
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
-              <th className="px-3 py-2">Mã nhân viên</th>
-              <th className="px-3 py-2">Tên nhân viên</th>
-              <th className="px-3 py-2">Chức danh</th>
-              <th className="px-3 py-2">Đơn vị</th>
-              <th className="px-3 py-2">Số tài khoản</th>
-              <th className="px-3 py-2">Tên ngân hàng</th>
-              <th className="px-3 py-2">Trạng thái</th>
+              <th className="px-3 py-2">Mã nhân&nbsp;viên</th>
+              <th className="px-3 py-2">Tên nhân&nbsp;viên</th>
+              <th className="px-3 py-2">Chức&nbsp;danh</th>
+              <th className="px-3 py-2">Đơn&nbsp;vị</th>
+              <th className="px-3 py-2">Số tài&nbsp;khoản</th>
+              <th className="px-3 py-2">Tên ngân&nbsp;hàng</th>
+              <th className="px-3 py-2">Trạng&nbsp;thái</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

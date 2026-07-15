@@ -14,12 +14,12 @@ export function CashBookReport({ filter }: { filter: CashReportFilter }) {
     <table className="w-full min-w-[1000px] border-collapse text-sm">
       <thead className="sticky top-0 z-20">
         <tr>
-          <th className={thClass}>Ngày hạch toán</th>
-          <th className={thClass}>Ngày chứng từ</th>
-          <th className={thClass}>Số phiếu thu</th>
-          <th className={thClass}>Số phiếu chi</th>
-          <th className={thClass}>Diễn giải</th>
-          <th className={thClass}>TK đối ứng</th>
+          <th className={thClass}>Ngày hạch&nbsp;toán</th>
+          <th className={thClass}>Ngày chứng&nbsp;từ</th>
+          <th className={thClass}>Số phiếu&nbsp;thu</th>
+          <th className={thClass}>Số phiếu&nbsp;chi</th>
+          <th className={thClass}>Diễn&nbsp;giải</th>
+          <th className={thClass}>TK đối&nbsp;ứng</th>
           <th className={thClass}>Thu</th>
           <th className={thClass}>Chi</th>
           <th className={thClass}>Tồn</th>

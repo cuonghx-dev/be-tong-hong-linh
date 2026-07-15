@@ -19,20 +19,20 @@ export function StockSummaryReport({ filter }: { filter: StockSummaryFilter }) {
             <th rowSpan={2} className={thClass}>Mã VTHH</th>
             <th rowSpan={2} className={thClass}>Tên VTHH</th>
             <th rowSpan={2} className={thClass}>ĐVT</th>
-            <th colSpan={2} className={thClass}>Tồn đầu kỳ</th>
-            <th colSpan={2} className={thClass}>Nhập trong kỳ</th>
-            <th colSpan={2} className={thClass}>Xuất trong kỳ</th>
-            <th colSpan={2} className={thClass}>Tồn cuối kỳ</th>
+            <th colSpan={2} className={thClass}>Tồn đầu&nbsp;kỳ</th>
+            <th colSpan={2} className={thClass}>Nhập trong&nbsp;kỳ</th>
+            <th colSpan={2} className={thClass}>Xuất trong&nbsp;kỳ</th>
+            <th colSpan={2} className={thClass}>Tồn cuối&nbsp;kỳ</th>
           </tr>
           <tr>
             <th className={thClass}>SL</th>
-            <th className={thClass}>Giá trị</th>
+            <th className={thClass}>Giá&nbsp;trị</th>
             <th className={thClass}>SL</th>
-            <th className={thClass}>Giá trị</th>
+            <th className={thClass}>Giá&nbsp;trị</th>
             <th className={thClass}>SL</th>
-            <th className={thClass}>Giá trị</th>
+            <th className={thClass}>Giá&nbsp;trị</th>
             <th className={thClass}>SL</th>
-            <th className={thClass}>Giá trị</th>
+            <th className={thClass}>Giá&nbsp;trị</th>
           </tr>
         </thead>
         <tbody>

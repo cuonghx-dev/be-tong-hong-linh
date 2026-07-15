@@ -14,12 +14,12 @@ export function ReceivableSummaryReport({ filter }: { filter: SalesReportFilter 
     <table className="w-full min-w-[900px] border-collapse text-sm">
       <thead className="sticky top-0 z-20">
         <tr>
-          <th className={thClass}>Mã khách hàng</th>
-          <th className={thClass}>Tên khách hàng</th>
-          <th className={thClass}>Dư Nợ đầu kỳ</th>
-          <th className={thClass}>Phát sinh Nợ</th>
-          <th className={thClass}>Phát sinh Có</th>
-          <th className={thClass}>Dư Nợ cuối kỳ</th>
+          <th className={thClass}>Mã khách&nbsp;hàng</th>
+          <th className={thClass}>Tên khách&nbsp;hàng</th>
+          <th className={thClass}>Dư&nbsp;Nợ đầu&nbsp;kỳ</th>
+          <th className={thClass}>Phát&nbsp;sinh Nợ</th>
+          <th className={thClass}>Phát&nbsp;sinh Có</th>
+          <th className={thClass}>Dư&nbsp;Nợ cuối&nbsp;kỳ</th>
         </tr>
       </thead>
       <tbody>

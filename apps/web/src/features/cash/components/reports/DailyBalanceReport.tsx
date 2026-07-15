@@ -14,10 +14,10 @@ export function DailyBalanceReport({ filter }: { filter: CashReportFilter }) {
       <thead className="sticky top-0 z-20">
         <tr>
           <th className={thClass}>Ngày</th>
-          <th className={thClass}>Tồn đầu ngày</th>
+          <th className={thClass}>Tồn đầu&nbsp;ngày</th>
           <th className={thClass}>Thu</th>
           <th className={thClass}>Chi</th>
-          <th className={thClass}>Tồn cuối ngày</th>
+          <th className={thClass}>Tồn cuối&nbsp;ngày</th>
         </tr>
       </thead>
       <tbody>

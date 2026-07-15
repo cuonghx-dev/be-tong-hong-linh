@@ -32,22 +32,22 @@ export function PurchaseDetailReport({ filter }: { filter: PurchaseReportFilter 
         <table className="w-full min-w-[1100px] border-collapse text-sm">
           <thead className="sticky top-0 z-20">
             <tr>
-              <th rowSpan={2} className={thClass}>Ngày hạch toán</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Chứng từ</th>
-              <th rowSpan={2} className={thClass}>Số hóa đơn</th>
-              <th rowSpan={2} className={thClass}>Nhà cung cấp</th>
-              <th rowSpan={2} className={thClass}>Diễn giải</th>
-              <th rowSpan={2} className={thClass}>Mặt hàng</th>
+              <th rowSpan={2} className={thClass}>Ngày hạch&nbsp;toán</th>
+              <th colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</th>
+              <th rowSpan={2} className={thClass}>Số hóa&nbsp;đơn</th>
+              <th rowSpan={2} className={thClass}>Nhà cung&nbsp;cấp</th>
+              <th rowSpan={2} className={thClass}>Diễn&nbsp;giải</th>
+              <th rowSpan={2} className={thClass}>Mặt&nbsp;hàng</th>
               <th rowSpan={2} className={thClass}>ĐVT</th>
-              <th rowSpan={2} className={`${thClass} text-right`}>Số lượng</th>
-              <th rowSpan={2} className={`${thClass} text-right`}>Đơn giá</th>
-              <th rowSpan={2} className={`${thClass} text-right`}>Thành tiền</th>
-              <th rowSpan={2} className={`${thClass} text-right`}>Thuế GTGT</th>
-              <th rowSpan={2} className={`${thClass} text-right`}>Tổng thanh toán</th>
+              <th rowSpan={2} className={`${thClass} text-right`}>Số&nbsp;lượng</th>
+              <th rowSpan={2} className={`${thClass} text-right`}>Đơn&nbsp;giá</th>
+              <th rowSpan={2} className={`${thClass} text-right`}>Thành&nbsp;tiền</th>
+              <th rowSpan={2} className={`${thClass} text-right`}>Thuế&nbsp;GTGT</th>
+              <th rowSpan={2} className={`${thClass} text-right`}>Tổng thanh&nbsp;toán</th>
             </tr>
             <tr>
-              <th className={thClass}>Số hiệu</th>
-              <th className={thClass}>Ngày tháng</th>
+              <th className={thClass}>Số&nbsp;hiệu</th>
+              <th className={thClass}>Ngày&nbsp;tháng</th>
             </tr>
           </thead>
           <tbody>

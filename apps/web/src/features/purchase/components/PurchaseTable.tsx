@@ -198,17 +198,17 @@ export function PurchaseTable() {
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
-              <th className="px-3 py-2">Ngày hạch toán</th>
-              <th className="px-3 py-2">Số chứng từ</th>
-              <th className="px-3 py-2">Nhà cung cấp</th>
-              <th className="px-3 py-2 text-right">Tổng tiền thanh toán</th>
-              <th className="px-3 py-2 text-right">Chi phí mua hàng</th>
-              <th className="px-3 py-2 text-right">Giá trị nhập kho</th>
-              <th className="px-3 py-2">TT nhận hóa đơn</th>
-              <th className="px-3 py-2">TT thanh toán</th>
-              <th className="px-3 py-2">Loại chứng từ</th>
+              <th className="px-3 py-2">Ngày hạch&nbsp;toán</th>
+              <th className="px-3 py-2">Số chứng&nbsp;từ</th>
+              <th className="px-3 py-2">Nhà cung&nbsp;cấp</th>
+              <th className="px-3 py-2 text-right">Tổng&nbsp;tiền thanh&nbsp;toán</th>
+              <th className="px-3 py-2 text-right">Chi&nbsp;phí mua&nbsp;hàng</th>
+              <th className="px-3 py-2 text-right">Giá&nbsp;trị nhập&nbsp;kho</th>
+              <th className="px-3 py-2">TT nhận hóa&nbsp;đơn</th>
+              <th className="px-3 py-2">TT thanh&nbsp;toán</th>
+              <th className="px-3 py-2">Loại chứng&nbsp;từ</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

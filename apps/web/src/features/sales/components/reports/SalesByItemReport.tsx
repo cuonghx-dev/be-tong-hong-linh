@@ -16,11 +16,11 @@ export function SalesByItemReport({ filter }: { filter: SalesReportFilter }) {
           <th className={thClass}>Mã hàng</th>
           <th className={thClass}>Tên hàng</th>
           <th className={thClass}>ĐVT</th>
-          <th className={thClass}>Số lượng</th>
-          <th className={thClass}>Chiết khấu</th>
-          <th className={thClass}>Doanh thu</th>
-          <th className={thClass}>Thuế GTGT</th>
-          <th className={thClass}>Tổng cộng</th>
+          <th className={thClass}>Số&nbsp;lượng</th>
+          <th className={thClass}>Chiết&nbsp;khấu</th>
+          <th className={thClass}>Doanh&nbsp;thu</th>
+          <th className={thClass}>Thuế&nbsp;GTGT</th>
+          <th className={thClass}>Tổng&nbsp;cộng</th>
         </tr>
       </thead>
       <tbody>

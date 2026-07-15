@@ -169,17 +169,17 @@ export function GoodsIssueTable() {
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
-              <th className="px-3 py-2">Ngày hạch toán</th>
-              <th className="px-3 py-2">Số chứng từ</th>
-              <th className="px-3 py-2">Diễn giải</th>
-              <th className="px-3 py-2 text-right">Tổng tiền</th>
-              <th className="px-3 py-2">Người nhận</th>
-              <th className="px-3 py-2">Đã lập CT bán hàng</th>
-              <th className="px-3 py-2">TT phát hành hóa đơn</th>
+              <th className="px-3 py-2">Ngày hạch&nbsp;toán</th>
+              <th className="px-3 py-2">Số chứng&nbsp;từ</th>
+              <th className="px-3 py-2">Diễn&nbsp;giải</th>
+              <th className="px-3 py-2 text-right">Tổng&nbsp;tiền</th>
+              <th className="px-3 py-2">Người&nbsp;nhận</th>
+              <th className="px-3 py-2">Đã lập CT bán&nbsp;hàng</th>
+              <th className="px-3 py-2">TT phát&nbsp;hành hóa&nbsp;đơn</th>
               <th className="px-3 py-2">Mã CQT cấp</th>
-              <th className="px-3 py-2">Loại chứng từ</th>
+              <th className="px-3 py-2">Loại chứng&nbsp;từ</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

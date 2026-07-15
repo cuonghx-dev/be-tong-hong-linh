@@ -33,15 +33,15 @@ export function GeneralJournalReport({ filter }: { filter: GeneralJournalFilter 
         <table className="w-full min-w-[960px] border-collapse text-sm">
           <thead className="sticky top-0 z-20">
             <tr>
-              <th rowSpan={2} className={thClass}>Ngày, tháng ghi sổ</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Chứng từ</th>
-              <th rowSpan={2} className={thClass}>Diễn giải</th>
-              <th rowSpan={2} className={thClass}>Số hiệu TK</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Số phát sinh</th>
+              <th rowSpan={2} className={thClass}>Ngày, tháng ghi&nbsp;sổ</th>
+              <th colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</th>
+              <th rowSpan={2} className={thClass}>Diễn&nbsp;giải</th>
+              <th rowSpan={2} className={thClass}>Số&nbsp;hiệu TK</th>
+              <th colSpan={2} className={`${thClass} text-center`}>Số phát&nbsp;sinh</th>
             </tr>
             <tr>
-              <th className={thClass}>Số hiệu</th>
-              <th className={thClass}>Ngày tháng</th>
+              <th className={thClass}>Số&nbsp;hiệu</th>
+              <th className={thClass}>Ngày&nbsp;tháng</th>
               <th className={`${thClass} text-right`}>Nợ</th>
               <th className={`${thClass} text-right`}>Có</th>
             </tr>

@@ -169,13 +169,13 @@ export function OrganizationUnitTable() {
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
-              <th className="px-3 py-2">Mã đơn vị</th>
-              <th className="px-3 py-2">Tên đơn vị</th>
-              <th className="px-3 py-2">Địa chỉ</th>
-              <th className="px-3 py-2">Cấp tổ chức</th>
-              <th className="px-3 py-2">Trạng thái</th>
+              <th className="px-3 py-2">Mã đơn&nbsp;vị</th>
+              <th className="px-3 py-2">Tên đơn&nbsp;vị</th>
+              <th className="px-3 py-2">Địa&nbsp;chỉ</th>
+              <th className="px-3 py-2">Cấp tổ&nbsp;chức</th>
+              <th className="px-3 py-2">Trạng&nbsp;thái</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

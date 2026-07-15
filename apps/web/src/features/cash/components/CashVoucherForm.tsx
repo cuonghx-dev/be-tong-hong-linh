@@ -377,16 +377,16 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
                 <thead className="bg-slate-100 text-left text-[13px] text-slate-700">
                   <tr>
                     <th className="w-8 px-2 py-2 text-center font-semibold">#</th>
-                    <th className="min-w-[200px] px-2 py-2 font-semibold">Diễn giải</th>
+                    <th className="min-w-[200px] px-2 py-2 font-semibold">Diễn&nbsp;giải</th>
                     <th className="w-24 px-2 py-2 font-semibold">TK Nợ</th>
                     <th className="w-24 px-2 py-2 font-semibold">TK Có</th>
-                    <th className="w-36 px-2 py-2 text-right font-semibold">Số tiền</th>
-                    <th className="px-2 py-2 font-semibold">Nghiệp vụ</th>
-                    {cols.showPartner && <th className="px-2 py-2 font-semibold">Đối tượng</th>}
-                    {cols.showPartner && <th className="min-w-[160px] px-2 py-2 font-semibold">Tên đối tượng</th>}
-                    {cols.showCostItem && <th className="px-2 py-2 font-semibold">Khoản mục CP</th>}
-                    {cols.showBank && <th className="px-2 py-2 font-semibold">TK ngân hàng</th>}
-                    {cols.showBank && <th className="px-2 py-2 font-semibold">Tên ngân hàng</th>}
+                    <th className="w-36 px-2 py-2 text-right font-semibold">Số&nbsp;tiền</th>
+                    <th className="px-2 py-2 font-semibold">Nghiệp&nbsp;vụ</th>
+                    {cols.showPartner && <th className="px-2 py-2 font-semibold">Đối&nbsp;tượng</th>}
+                    {cols.showPartner && <th className="min-w-[160px] px-2 py-2 font-semibold">Tên đối&nbsp;tượng</th>}
+                    {cols.showCostItem && <th className="px-2 py-2 font-semibold">Khoản&nbsp;mục CP</th>}
+                    {cols.showBank && <th className="px-2 py-2 font-semibold">TK ngân&nbsp;hàng</th>}
+                    {cols.showBank && <th className="px-2 py-2 font-semibold">Tên ngân&nbsp;hàng</th>}
                     <th className="w-10 px-2 py-2" />
                   </tr>
                 </thead>

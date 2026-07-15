@@ -22,16 +22,16 @@ export function AccountLedgerReport({ filter }: { filter: AccountLedgerFilter })
         <table className="w-full min-w-[1080px] border-collapse text-sm">
           <thead className="sticky top-0 z-20">
             <tr>
-              <th rowSpan={2} className={thClass}>Ngày, tháng ghi sổ</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Chứng từ</th>
-              <th rowSpan={2} className={thClass}>Diễn giải</th>
-              <th rowSpan={2} className={thClass}>TK đối ứng</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Số phát sinh</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Số dư</th>
+              <th rowSpan={2} className={thClass}>Ngày, tháng ghi&nbsp;sổ</th>
+              <th colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</th>
+              <th rowSpan={2} className={thClass}>Diễn&nbsp;giải</th>
+              <th rowSpan={2} className={thClass}>TK đối&nbsp;ứng</th>
+              <th colSpan={2} className={`${thClass} text-center`}>Số phát&nbsp;sinh</th>
+              <th colSpan={2} className={`${thClass} text-center`}>Số&nbsp;dư</th>
             </tr>
             <tr>
-              <th className={thClass}>Số hiệu</th>
-              <th className={thClass}>Ngày tháng</th>
+              <th className={thClass}>Số&nbsp;hiệu</th>
+              <th className={thClass}>Ngày&nbsp;tháng</th>
               <th className={`${thClass} text-right`}>Nợ</th>
               <th className={`${thClass} text-right`}>Có</th>
               <th className={`${thClass} text-right`}>Nợ</th>

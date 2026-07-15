@@ -134,12 +134,12 @@ export function PartnerPicker({
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-3 py-1.5">Đối tượng</th>
-                  <th className="px-3 py-1.5">Tên đối tượng</th>
-                  <th className="px-3 py-1.5">Mã số thuế</th>
-                  <th className="px-3 py-1.5">Địa chỉ</th>
-                  <th className="px-3 py-1.5">Điện thoại</th>
-                  <th className="px-3 py-1.5">Loại đối tượng</th>
+                  <th className="px-3 py-1.5">Đối&nbsp;tượng</th>
+                  <th className="px-3 py-1.5">Tên đối&nbsp;tượng</th>
+                  <th className="px-3 py-1.5">Mã&nbsp;số thuế</th>
+                  <th className="px-3 py-1.5">Địa&nbsp;chỉ</th>
+                  <th className="px-3 py-1.5">Điện&nbsp;thoại</th>
+                  <th className="px-3 py-1.5">Loại đối&nbsp;tượng</th>
                 </tr>
               </thead>
               <tbody>

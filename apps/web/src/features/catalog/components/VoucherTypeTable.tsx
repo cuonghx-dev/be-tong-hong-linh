@@ -123,11 +123,11 @@ export function VoucherTypeTable() {
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
-              <th className="px-3 py-2">Mã loại chứng từ</th>
-              <th className="px-3 py-2">Tên loại chứng từ</th>
-              <th className="px-3 py-2">Trạng thái</th>
+              <th className="px-3 py-2">Mã loại chứng&nbsp;từ</th>
+              <th className="px-3 py-2">Tên loại chứng&nbsp;từ</th>
+              <th className="px-3 py-2">Trạng&nbsp;thái</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

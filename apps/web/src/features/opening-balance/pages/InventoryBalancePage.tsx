@@ -221,8 +221,8 @@ export function InventoryBalancePage() {
                 <th className="w-28 px-3 py-2">Nhóm VTHH</th>
                 <th className="w-24 px-3 py-2">ĐVT</th>
                 <th className="w-44 px-3 py-2">Mã kho</th>
-                <th className="w-36 px-3 py-2 text-right">Số lượng tồn</th>
-                <th className="w-40 px-3 py-2 text-right">Giá trị tồn</th>
+                <th className="w-36 px-3 py-2 text-right">Số&nbsp;lượng tồn</th>
+                <th className="w-40 px-3 py-2 text-right">Giá&nbsp;trị tồn</th>
                 <th className="w-24 px-3 py-2">Chức năng</th>
               </tr>
             </thead>

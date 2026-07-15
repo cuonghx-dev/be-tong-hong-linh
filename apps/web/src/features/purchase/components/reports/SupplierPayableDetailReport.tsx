@@ -78,13 +78,13 @@ export function SupplierPayableDetailReport({ filter }: { filter: PurchaseReport
       <table className="w-full min-w-[960px] border-collapse text-sm">
         <thead className="sticky top-0 z-20">
           <tr>
-            <th className={thClass}>Ngày hạch toán</th>
-            <th className={thClass}>Số chứng từ</th>
-            <th className={thClass}>Loại chứng từ</th>
-            <th className={thClass}>Diễn giải</th>
-            <th className={`${thClass} text-right`}>Phát sinh Nợ</th>
-            <th className={`${thClass} text-right`}>Phát sinh Có</th>
-            <th className={`${thClass} text-right`}>Số dư</th>
+            <th className={thClass}>Ngày hạch&nbsp;toán</th>
+            <th className={thClass}>Số chứng&nbsp;từ</th>
+            <th className={thClass}>Loại chứng&nbsp;từ</th>
+            <th className={thClass}>Diễn&nbsp;giải</th>
+            <th className={`${thClass} text-right`}>Phát&nbsp;sinh Nợ</th>
+            <th className={`${thClass} text-right`}>Phát&nbsp;sinh Có</th>
+            <th className={`${thClass} text-right`}>Số&nbsp;dư</th>
           </tr>
         </thead>
         <tbody>

@@ -43,23 +43,23 @@ export function ItemLedgerReport({ filter }: { filter: ItemLedgerFilter }) {
       <table className="w-full min-w-[1100px] border-collapse text-sm">
         <thead>
           <tr>
-            <th rowSpan={2} className={thClass}>Ngày hạch toán</th>
-            <th rowSpan={2} className={thClass}>Ngày chứng từ</th>
-            <th rowSpan={2} className={thClass}>Số chứng từ</th>
-            <th rowSpan={2} className={thClass}>Diễn giải</th>
-            <th rowSpan={2} className={thClass}>TK đối ứng</th>
-            <th rowSpan={2} className={thClass}>Đơn giá</th>
+            <th rowSpan={2} className={thClass}>Ngày hạch&nbsp;toán</th>
+            <th rowSpan={2} className={thClass}>Ngày chứng&nbsp;từ</th>
+            <th rowSpan={2} className={thClass}>Số chứng&nbsp;từ</th>
+            <th rowSpan={2} className={thClass}>Diễn&nbsp;giải</th>
+            <th rowSpan={2} className={thClass}>TK đối&nbsp;ứng</th>
+            <th rowSpan={2} className={thClass}>Đơn&nbsp;giá</th>
             <th colSpan={2} className={thClass}>Nhập</th>
             <th colSpan={2} className={thClass}>Xuất</th>
             <th colSpan={2} className={thClass}>Tồn</th>
           </tr>
           <tr>
             <th className={thClass}>SL</th>
-            <th className={thClass}>Giá trị</th>
+            <th className={thClass}>Giá&nbsp;trị</th>
             <th className={thClass}>SL</th>
-            <th className={thClass}>Giá trị</th>
+            <th className={thClass}>Giá&nbsp;trị</th>
             <th className={thClass}>SL</th>
-            <th className={thClass}>Giá trị</th>
+            <th className={thClass}>Giá&nbsp;trị</th>
           </tr>
         </thead>
         <tbody>

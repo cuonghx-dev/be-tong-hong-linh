@@ -132,12 +132,12 @@ export function SupplierTable() {
                 <input type="checkbox" />
               </th>
               <th className="px-3 py-2">Mã NCC</th>
-              <th className="px-3 py-2">Tên nhà cung cấp</th>
-              <th className="px-3 py-2">Địa chỉ</th>
-              <th className="px-3 py-2 text-right">Số tiền nợ</th>
-              <th className="px-3 py-2">Mã số thuế/CCCD</th>
+              <th className="px-3 py-2">Tên nhà cung&nbsp;cấp</th>
+              <th className="px-3 py-2">Địa&nbsp;chỉ</th>
+              <th className="px-3 py-2 text-right">Số&nbsp;tiền nợ</th>
+              <th className="px-3 py-2">Mã&nbsp;số thuế/CCCD</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

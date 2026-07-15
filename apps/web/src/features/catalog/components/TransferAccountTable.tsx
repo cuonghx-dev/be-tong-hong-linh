@@ -155,15 +155,15 @@ export function TransferAccountTable() {
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
-              <th className="px-3 py-2">Thứ tự</th>
-              <th className="px-3 py-2">Mã kết chuyển</th>
-              <th className="px-3 py-2">Kết chuyển từ</th>
-              <th className="px-3 py-2">Kết chuyển đến</th>
+              <th className="px-3 py-2">Thứ&nbsp;tự</th>
+              <th className="px-3 py-2">Mã kết&nbsp;chuyển</th>
+              <th className="px-3 py-2">Kết&nbsp;chuyển từ</th>
+              <th className="px-3 py-2">Kết&nbsp;chuyển đến</th>
               <th className="px-3 py-2">Bên</th>
-              <th className="px-3 py-2">Diễn giải</th>
-              <th className="px-3 py-2">Trạng thái</th>
+              <th className="px-3 py-2">Diễn&nbsp;giải</th>
+              <th className="px-3 py-2">Trạng&nbsp;thái</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

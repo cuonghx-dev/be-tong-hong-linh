@@ -22,12 +22,12 @@ export function PurchaseByItemReport({ filter }: { filter: PurchaseReportFilter 
         <thead className="sticky top-0 z-20">
           <tr>
             <th className={thClass}>STT</th>
-            <th className={thClass}>Mặt hàng</th>
+            <th className={thClass}>Mặt&nbsp;hàng</th>
             <th className={thClass}>ĐVT</th>
-            <th className={`${thClass} text-right`}>Số lượng</th>
-            <th className={`${thClass} text-right`}>Tiền hàng</th>
-            <th className={`${thClass} text-right`}>Thuế GTGT</th>
-            <th className={`${thClass} text-right`}>Tổng thanh toán</th>
+            <th className={`${thClass} text-right`}>Số&nbsp;lượng</th>
+            <th className={`${thClass} text-right`}>Tiền&nbsp;hàng</th>
+            <th className={`${thClass} text-right`}>Thuế&nbsp;GTGT</th>
+            <th className={`${thClass} text-right`}>Tổng thanh&nbsp;toán</th>
           </tr>
         </thead>
         <tbody>

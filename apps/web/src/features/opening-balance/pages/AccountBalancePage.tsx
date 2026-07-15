@@ -188,12 +188,12 @@ export function AccountBalancePage() {
           <table className="w-full min-w-[820px] border-collapse text-sm">
             <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="w-40 px-3 py-2">Số tài khoản</th>
-                <th className="px-3 py-2">Tên tài khoản</th>
-                <th className="w-44 px-3 py-2 text-right">Dư Nợ</th>
-                <th className="w-44 px-3 py-2 text-right">Dư Có</th>
+                <th className="w-40 px-3 py-2">Số tài&nbsp;khoản</th>
+                <th className="px-3 py-2">Tên tài&nbsp;khoản</th>
+                <th className="w-44 px-3 py-2 text-right">Dư&nbsp;Nợ</th>
+                <th className="w-44 px-3 py-2 text-right">Dư&nbsp;Có</th>
                 <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                  Chức năng
+                  Chức&nbsp;năng
                 </th>
               </tr>
             </thead>

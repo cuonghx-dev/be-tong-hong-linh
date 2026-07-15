@@ -416,10 +416,10 @@ export function PurchaseVoucherForm({
                 <th className="w-20 px-2 py-1.5">TK Kho</th>
                 <th className="w-16 px-2 py-1.5">ĐVT</th>
                 <th className="w-20 px-2 py-1.5 text-right">SL</th>
-                <th className="w-28 px-2 py-1.5 text-right">Đơn giá</th>
-                <th className="w-32 px-2 py-1.5 text-right">Thành tiền</th>
+                <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
+                <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
                 <th className="w-16 px-2 py-1.5 text-right">% GTGT</th>
-                <th className="w-28 px-2 py-1.5 text-right">Tiền thuế</th>
+                <th className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế</th>
                 <th className="w-20 px-2 py-1.5">TK CN</th>
                 <th className="w-20 px-2 py-1.5">TK thuế</th>
                 <th className="w-8 px-2 py-1.5" />

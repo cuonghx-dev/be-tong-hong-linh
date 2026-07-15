@@ -354,12 +354,12 @@ export function BankVoucherForm({
                 <thead className="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="w-8 px-2 py-1.5 text-center">#</th>
-                    <th className="px-2 py-1.5">Diễn giải</th>
+                    <th className="px-2 py-1.5">Diễn&nbsp;giải</th>
                     <th className="w-24 px-2 py-1.5">TK Nợ</th>
                     <th className="w-24 px-2 py-1.5">TK Có</th>
-                    <th className="w-36 px-2 py-1.5 text-right">Số tiền</th>
-                    <th className="px-2 py-1.5">Đối tượng</th>
-                    <th className="px-2 py-1.5">Tên đối tượng</th>
+                    <th className="w-36 px-2 py-1.5 text-right">Số&nbsp;tiền</th>
+                    <th className="px-2 py-1.5">Đối&nbsp;tượng</th>
+                    <th className="px-2 py-1.5">Tên đối&nbsp;tượng</th>
                     <th className="w-8 px-2 py-1.5" />
                   </tr>
                 </thead>

@@ -155,13 +155,13 @@ export function CostObjectTable() {
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
-              <th className="px-3 py-2">Mã đối tượng THCP</th>
-              <th className="px-3 py-2">Tên đối tượng THCP</th>
+              <th className="px-3 py-2">Mã đối&nbsp;tượng THCP</th>
+              <th className="px-3 py-2">Tên đối&nbsp;tượng THCP</th>
               <th className="px-3 py-2">Loại</th>
-              <th className="px-3 py-2">Diễn giải</th>
-              <th className="px-3 py-2">Trạng thái</th>
+              <th className="px-3 py-2">Diễn&nbsp;giải</th>
+              <th className="px-3 py-2">Trạng&nbsp;thái</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

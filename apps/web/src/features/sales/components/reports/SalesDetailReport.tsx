@@ -13,18 +13,18 @@ export function SalesDetailReport({ filter }: { filter: SalesReportFilter }) {
     <table className="w-full min-w-[1200px] border-collapse text-sm">
       <thead className="sticky top-0 z-20">
         <tr>
-          <th className={thClass}>Ngày hạch toán</th>
-          <th className={thClass}>Ngày chứng từ</th>
-          <th className={thClass}>Số chứng từ</th>
-          <th className={thClass}>Khách hàng</th>
-          <th className={thClass}>Mặt hàng</th>
+          <th className={thClass}>Ngày hạch&nbsp;toán</th>
+          <th className={thClass}>Ngày chứng&nbsp;từ</th>
+          <th className={thClass}>Số chứng&nbsp;từ</th>
+          <th className={thClass}>Khách&nbsp;hàng</th>
+          <th className={thClass}>Mặt&nbsp;hàng</th>
           <th className={thClass}>ĐVT</th>
-          <th className={thClass}>Số lượng</th>
-          <th className={thClass}>Đơn giá</th>
-          <th className={thClass}>Chiết khấu</th>
-          <th className={thClass}>Doanh thu</th>
-          <th className={thClass}>Thuế GTGT</th>
-          <th className={thClass}>Tổng thanh toán</th>
+          <th className={thClass}>Số&nbsp;lượng</th>
+          <th className={thClass}>Đơn&nbsp;giá</th>
+          <th className={thClass}>Chiết&nbsp;khấu</th>
+          <th className={thClass}>Doanh&nbsp;thu</th>
+          <th className={thClass}>Thuế&nbsp;GTGT</th>
+          <th className={thClass}>Tổng thanh&nbsp;toán</th>
         </tr>
       </thead>
       <tbody>

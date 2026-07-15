@@ -127,14 +127,14 @@ export function ReceivableTable() {
           <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2">Mã KH</th>
-              <th className="px-3 py-2">Tên khách hàng</th>
-              <th className="px-3 py-2 text-right">Còn phải thu theo HĐ</th>
-              <th className="px-3 py-2 text-right">Thu trước / Giảm trừ</th>
-              <th className="px-3 py-2 text-right">Còn phải thu</th>
-              <th className="px-3 py-2">Địa chỉ</th>
-              <th className="px-3 py-2">Mã số thuế</th>
+              <th className="px-3 py-2">Tên khách&nbsp;hàng</th>
+              <th className="px-3 py-2 text-right">Còn phải&nbsp;thu theo&nbsp;HĐ</th>
+              <th className="px-3 py-2 text-right">Thu&nbsp;trước / Giảm&nbsp;trừ</th>
+              <th className="px-3 py-2 text-right">Còn phải&nbsp;thu</th>
+              <th className="px-3 py-2">Địa&nbsp;chỉ</th>
+              <th className="px-3 py-2">Mã&nbsp;số thuế</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

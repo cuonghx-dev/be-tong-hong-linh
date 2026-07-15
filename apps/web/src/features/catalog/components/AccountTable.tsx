@@ -170,13 +170,13 @@ export function AccountTable() {
         <table className="w-full min-w-[820px] border-collapse text-sm">
           <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-3 py-2">Số tài khoản</th>
-              <th className="px-3 py-2">Tên tài khoản</th>
-              <th className="px-3 py-2">Tính chất</th>
-              <th className="px-3 py-2">Tên tiếng Anh</th>
-              <th className="px-3 py-2">Trạng thái</th>
+              <th className="px-3 py-2">Số tài&nbsp;khoản</th>
+              <th className="px-3 py-2">Tên tài&nbsp;khoản</th>
+              <th className="px-3 py-2">Tính&nbsp;chất</th>
+              <th className="px-3 py-2">Tên tiếng&nbsp;Anh</th>
+              <th className="px-3 py-2">Trạng&nbsp;thái</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
-                Chức năng
+                Chức&nbsp;năng
               </th>
             </tr>
           </thead>

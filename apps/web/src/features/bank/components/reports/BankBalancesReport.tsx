@@ -14,10 +14,10 @@ export function BankBalancesReport({ filter }: { filter: BankBalanceFilter }) {
       <thead className="sticky top-0 z-20">
         <tr>
           <th className={`${thClass} w-12 text-center`}>STT</th>
-          <th className={thClass}>Số tài khoản</th>
-          <th className={thClass}>Ngân hàng</th>
-          <th className={thClass}>Chi nhánh</th>
-          <th className={thClass}>Số dư</th>
+          <th className={thClass}>Số tài&nbsp;khoản</th>
+          <th className={thClass}>Ngân&nbsp;hàng</th>
+          <th className={thClass}>Chi&nbsp;nhánh</th>
+          <th className={thClass}>Số&nbsp;dư</th>
         </tr>
       </thead>
       <tbody>

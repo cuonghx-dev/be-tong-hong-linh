@@ -43,14 +43,14 @@ function BankBookSection({ section: s }: { section: BankBookSectionDto }) {
       <table className="w-full min-w-[1000px] border-collapse text-sm">
         <thead>
           <tr>
-            <th className={thClass}>Ngày hạch toán</th>
-            <th className={thClass}>Ngày chứng từ</th>
-            <th className={thClass}>Số chứng từ</th>
-            <th className={thClass}>Diễn giải</th>
-            <th className={thClass}>TK đối ứng</th>
-            <th className={thClass}>Thu (gửi vào)</th>
-            <th className={thClass}>Chi (rút ra)</th>
-            <th className={thClass}>Số dư</th>
+            <th className={thClass}>Ngày hạch&nbsp;toán</th>
+            <th className={thClass}>Ngày chứng&nbsp;từ</th>
+            <th className={thClass}>Số chứng&nbsp;từ</th>
+            <th className={thClass}>Diễn&nbsp;giải</th>
+            <th className={thClass}>TK đối&nbsp;ứng</th>
+            <th className={thClass}>Thu (gửi&nbsp;vào)</th>
+            <th className={thClass}>Chi (rút&nbsp;ra)</th>
+            <th className={thClass}>Số&nbsp;dư</th>
           </tr>
         </thead>
         <tbody>
