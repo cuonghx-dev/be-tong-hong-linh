@@ -221,20 +221,30 @@ export function GoodsIssueTable() {
                     {r.voucherNo}
                   </button>
                   {!r.posted && (
-                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                    <span className="mt-0.5 block w-fit rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
                       Chưa ghi sổ
                     </span>
                   )}
                 </td>
-                <td className="max-w-[280px] truncate px-3 py-2 text-slate-700">{r.description}</td>
+                <td
+                  className="min-w-[220px] max-w-[340px] px-3 py-2 text-slate-700"
+                  title={r.description || ''}
+                >
+                  <div className="line-clamp-2 break-words">{r.description}</div>
+                </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-700">
                   {formatCurrency(Number(r.totalAmount))}
                 </td>
-                <td className="max-w-[160px] truncate px-3 py-2 text-slate-600">{r.receiver}</td>
+                <td
+                  className="min-w-[140px] max-w-[220px] px-3 py-2 text-slate-600"
+                  title={r.receiver || ''}
+                >
+                  <div className="line-clamp-2 break-words">{r.receiver}</div>
+                </td>
                 <td className="px-3 py-2 text-slate-600">{r.salesDocStatus}</td>
                 <td className="px-3 py-2 text-slate-600">{r.invoiceIssueStatus}</td>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{r.taxAuthorityCode}</td>
-                <td className="px-3 py-2 text-slate-600">
+                <td className="min-w-[160px] px-3 py-2 text-slate-600">
                   {GOODS_ISSUE_CATEGORY_LABEL[r.category]}
                 </td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">

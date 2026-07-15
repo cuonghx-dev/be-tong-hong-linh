@@ -219,17 +219,17 @@ export function SalesVoucherTable() {
                     {r.voucherNo}
                   </button>
                   {!r.posted && (
-                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                    <span className="mt-0.5 block w-fit rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
                       Chưa ghi sổ
                     </span>
                   )}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{r.invoiceNo}</td>
                 <td
-                  className="max-w-[220px] truncate px-3 py-2 text-slate-700"
+                  className="min-w-[180px] max-w-[300px] px-3 py-2 text-slate-700"
                   title={r.customerName || ''}
                 >
-                  {r.customerName}
+                  <div className="line-clamp-2 break-words">{r.customerName}</div>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-800">
                   {formatCurrency(Number(r.totalAmount))}

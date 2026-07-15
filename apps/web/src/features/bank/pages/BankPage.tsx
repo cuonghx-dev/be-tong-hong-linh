@@ -221,13 +221,18 @@ function BankTable() {
                       {r.voucherNo}
                     </button>
                     {!r.posted && (
-                      <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                      <span className="mt-0.5 block w-fit rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
                         Chưa ghi sổ
                       </span>
                     )}
                   </td>
-                  <td className="max-w-[220px] truncate px-3 py-2 text-slate-700">
-                    {r.lines[0]?.description || r.reason}
+                  <td
+                    className="min-w-[220px] max-w-[340px] px-3 py-2 text-slate-700"
+                    title={r.lines[0]?.description || r.reason || ''}
+                  >
+                    <div className="line-clamp-2 break-words">
+                      {r.lines[0]?.description || r.reason}
+                    </div>
                   </td>
                   <td
                     className={cn(
@@ -237,12 +242,22 @@ function BankTable() {
                   >
                     {formatCurrency(signed)}
                   </td>
-                  <td className="max-w-[160px] truncate px-3 py-2 text-slate-600">
-                    {r.partnerName}
+                  <td
+                    className="min-w-[140px] max-w-[220px] px-3 py-2 text-slate-600"
+                    title={r.partnerName || ''}
+                  >
+                    <div className="line-clamp-2 break-words">{r.partnerName}</div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">{r.bankAccountNo}</td>
-                  <td className="max-w-[160px] truncate px-3 py-2 text-slate-600">{r.reason}</td>
-                  <td className="px-3 py-2 text-slate-600">{VOUCHER_TYPE_LABEL[r.type]}</td>
+                  <td
+                    className="min-w-[100px] max-w-[160px] px-3 py-2 text-slate-600"
+                    title={r.reason || ''}
+                  >
+                    <div className="line-clamp-2 break-words">{r.reason}</div>
+                  </td>
+                  <td className="min-w-[140px] px-3 py-2 text-slate-600">
+                    {VOUCHER_TYPE_LABEL[r.type]}
+                  </td>
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
                       onPrimary={() => openView(r.id, r.type)}

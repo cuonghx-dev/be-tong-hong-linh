@@ -253,13 +253,16 @@ export function PurchaseTable() {
                     {r.voucherNo}
                   </button>
                   {!r.posted && (
-                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                    <span className="mt-0.5 block w-fit rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
                       Chưa ghi sổ
                     </span>
                   )}
                 </td>
-                <td className="max-w-[180px] truncate px-3 py-2 text-slate-700">
-                  {r.supplierName}
+                <td
+                  className="min-w-[180px] max-w-[280px] px-3 py-2 text-slate-700"
+                  title={r.supplierName || ''}
+                >
+                  <div className="line-clamp-2 break-words">{r.supplierName}</div>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-700">
                   {formatCurrency(Number(r.totalPayment))}
@@ -272,7 +275,9 @@ export function PurchaseTable() {
                 </td>
                 <td className="px-3 py-2 text-slate-600">{RECEIVE_STATUS_LABEL[r.receiveStatus]}</td>
                 <td className="px-3 py-2 text-slate-600">{PAYMENT_STATUS_LABEL[r.paymentStatus]}</td>
-                <td className="px-3 py-2 text-slate-600">{purchaseReasonLabel(r.origin, r.type)}</td>
+                <td className="min-w-[160px] px-3 py-2 text-slate-600">
+                  {purchaseReasonLabel(r.origin, r.type)}
+                </td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
                     primaryLabel="Trả tiền"
