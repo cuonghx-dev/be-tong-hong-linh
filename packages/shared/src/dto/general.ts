@@ -21,6 +21,7 @@ export interface GeneralVoucherDto {
   description: string | null // Diễn giải
   totalAmount: string // Σ số tiền dòng
   branchId: string | null
+  posted: boolean // Đã ghi sổ — bỏ ghi thì loại khỏi sổ/báo cáo
   lines: GeneralVoucherLineDto[]
   createdAt: string
   updatedAt: string

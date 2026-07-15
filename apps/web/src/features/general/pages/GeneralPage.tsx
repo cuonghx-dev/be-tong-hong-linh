@@ -14,6 +14,7 @@ import { useGeneralVouchers } from '../api/useGeneralVouchers'
 import {
   useDeleteGeneralVoucher,
   useImportGeneralVouchers,
+  useSetGeneralVoucherPosted,
 } from '../api/useGeneralVoucherMutations'
 import { GeneralFilterPopover, type GeneralFilterValue } from '../components/GeneralFilterPopover'
 import { GeneralProcessTab } from '../components/GeneralProcessTab'
@@ -25,6 +26,7 @@ function GeneralVoucherTable() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const del = useDeleteGeneralVoucher()
+  const setPosted = useSetGeneralVoucherPosted()
   const importXlsx = useImportGeneralVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -34,6 +36,8 @@ function GeneralVoucherTable() {
   const openNew = () => navigate('/general/vouchers/new')
   const openView = (id: string) => navigate(`/general/vouchers/${id}`)
   const openEdit = (id: string) => navigate(`/general/vouchers/${id}/edit`)
+  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu chứng từ nguồn (số chứng từ cấp lại khi Lưu).
+  const openDuplicate = (id: string) => navigate(`/general/vouchers/new?duplicateFrom=${id}`)
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -206,6 +210,11 @@ function GeneralVoucherTable() {
                   <button className="text-primary hover:underline" onClick={() => openView(r.id)}>
                     {r.voucherNo}
                   </button>
+                  {!r.posted && (
+                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                      Chưa ghi sổ
+                    </span>
+                  )}
                 </td>
                 <td
                   className="max-w-[320px] truncate px-3 py-2 text-slate-700"
@@ -227,6 +236,22 @@ function GeneralVoucherTable() {
                         label: 'Sửa',
                         onClick: () => openEdit(r.id),
                       },
+                      {
+                        label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
+                        onClick: () =>
+                          setPosted.mutate(
+                            { id: r.id, posted: !r.posted },
+                            {
+                              onError: (e) =>
+                                toast({
+                                  variant: 'error',
+                                  title: r.posted ? 'Bỏ ghi thất bại' : 'Ghi sổ thất bại',
+                                  description: getApiErrorMessage(e),
+                                }),
+                            },
+                          ),
+                      },
+                      { label: 'Nhân bản', onClick: () => openDuplicate(r.id) },
                       {
                         label: 'Xóa',
                         danger: true,

@@ -17,6 +17,7 @@ import { GeneralService } from './general.service'
 import { GeneralVoucherFilterDto } from './dto/general-voucher-filter.dto'
 import { CreateGeneralVoucherDto } from './dto/create-general-voucher.dto'
 import { UpdateGeneralVoucherDto } from './dto/update-general-voucher.dto'
+import { SetGeneralPostedDto } from './dto/set-general-posted.dto'
 
 @ApiTags('general')
 @Controller('general/vouchers')
@@ -58,6 +59,12 @@ export class GeneralController {
   import(@UploadedFile() file?: { buffer: Buffer }) {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.general.importXlsx(file.buffer)
+  }
+
+  @Patch(':id/posted')
+  @ApiOperation({ summary: 'Ghi sổ / bỏ ghi chứng từ nghiệp vụ khác (đổi cờ posted)' })
+  setPosted(@Param('id') id: string, @Body() dto: SetGeneralPostedDto) {
+    return this.general.setPosted(id, dto.posted)
   }
 
   @Patch(':id')

@@ -54,6 +54,20 @@ export function useImportGeneralVouchers() {
   })
 }
 
+// Ghi sổ / bỏ ghi (đổi cờ posted — đảo lại được).
+export function useSetGeneralVoucherPosted() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, posted }: { id: string; posted: boolean }) =>
+      api
+        .patch<GeneralVoucherDto>(`/general/vouchers/${id}/posted`, { posted })
+        .then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: generalKeys.all })
+    },
+  })
+}
+
 export function useDeleteGeneralVoucher() {
   const qc = useQueryClient()
   return useMutation({

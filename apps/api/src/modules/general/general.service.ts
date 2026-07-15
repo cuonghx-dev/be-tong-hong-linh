@@ -169,6 +169,19 @@ export class GeneralService {
     return { total: parsed.length, created: vouchers.length, skipped: parsed.length - vouchers.length }
   }
 
+  // Ghi sổ / bỏ ghi — đổi cờ posted, không đụng dữ liệu chứng từ.
+  async setPosted(id: string, posted: boolean) {
+    const existing = await this.prisma.generalVoucher.findUnique({ where: { id } })
+    if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
+    const updated = await this.prisma.generalVoucher.update({
+      where: { id },
+      data: { posted },
+      include: { lines: { orderBy: { lineNo: 'asc' } } },
+    })
+    return toVoucherDto(updated)
+  }
+
   async remove(id: string) {
     const existing = await this.prisma.generalVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
@@ -230,6 +243,7 @@ function toVoucherDto(v: VoucherWithLines) {
     description: v.description,
     totalAmount: v.totalAmount.toString(),
     branchId: v.branchId,
+    posted: v.posted,
     lines: v.lines.map((l) => ({
       id: l.id,
       lineNo: l.lineNo,

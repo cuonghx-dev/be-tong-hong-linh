@@ -22,6 +22,8 @@ import { AmountInput } from './AmountInput'
 
 interface GeneralVoucherFormProps {
   voucherId?: string | null
+  // Nhân bản: id chứng từ nguồn — nạp sẵn dữ liệu, lưu thành chứng từ mới.
+  duplicateFromId?: string | null
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
@@ -47,11 +49,14 @@ function defaultValues(): GeneralVoucherFormValues {
 
 export function GeneralVoucherForm({
   voucherId,
+  duplicateFromId,
   readOnly = false,
   onSaved,
   onCancel,
 }: GeneralVoucherFormProps) {
-  const editing = useGeneralVoucher(voucherId ?? null)
+  // Nạp dữ liệu từ chứng từ đang sửa HOẶC chứng từ nguồn khi nhân bản.
+  const duplicating = !voucherId && !!duplicateFromId
+  const editing = useGeneralVoucher(voucherId ?? duplicateFromId ?? null)
   const create = useCreateGeneralVoucher()
   const update = useUpdateGeneralVoucher()
   const { toast } = useToast()
@@ -71,8 +76,9 @@ export function GeneralVoucherForm({
     const v = editing.data
     if (!v) return
     reset({
-      postingDate: v.postingDate.slice(0, 10),
-      voucherDate: v.voucherDate.slice(0, 10),
+      // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
+      postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
+      voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       description: v.description ?? undefined,
       branchId: v.branchId ?? undefined,
       lines: v.lines.map((l) => ({
@@ -84,7 +90,7 @@ export function GeneralVoucherForm({
         partnerName: l.partnerName ?? undefined,
       })),
     })
-  }, [editing.data, reset])
+  }, [editing.data, reset, duplicating])
 
   const lines = watch('lines')
   const total = lines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
@@ -154,7 +160,7 @@ export function GeneralVoucherForm({
             </Field>
             <Field label="Số chứng từ">
               <input
-                value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
+                value={voucherId ? (editing.data?.voucherNo ?? '…') : (nextNo.data ?? 'Tự động')}
                 readOnly
                 title="Số dự kiến — cấp chính thức khi Lưu"
                 className={cn(inputCls, 'bg-slate-50 text-slate-500')}
