@@ -371,6 +371,8 @@ model InventoryReceipt {
   attachmentCount Int                    @default(0) @map("attachment_count")
   totalAmount     Decimal                @default(0) @map("total_amount") @db.Decimal(18, 2)
   branchName      String?                @map("branch_name")
+  // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
+  posted          Boolean                @default(true)
   lines           InventoryReceiptLine[]
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -431,6 +433,8 @@ model GoodsIssueVoucher {
   salesDocStatus     String?            @map("sales_doc_status")
   invoiceIssueStatus String?            @map("invoice_issue_status")
   taxAuthorityCode   String?            @map("tax_authority_code")
+  // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
+  posted             Boolean            @default(true)
   lines              GoodsIssueLine[]
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -492,6 +496,9 @@ model Customer {
   type               CustomerType @default(ORG)
   isSupplier         Boolean      @default(false) @map("is_supplier")
   isInternal         Boolean      @default(false) @map("is_internal")
+  isActive           Boolean      @default(true) @map("is_active")
+  // Nhắc nợ tự động (chỉ có tác dụng khi KH còn công nợ).
+  debtReminderOn     Boolean      @default(true) @map("debt_reminder_on")
   taxCode            String?      @map("tax_code")
   budgetRelationCode String?      @map("budget_relation_code")
   phone              String?
@@ -517,6 +524,7 @@ model Customer {
 model SalesVoucher {
   id                 String             @id @default(uuid())
   voucherNo          String             @unique @map("voucher_no")
+  invoiceNo          String?            @map("invoice_no")
   voucherType        SalesVoucherType   @map("voucher_type")
   paymentMode        SalesPaymentMode   @default(UNPAID) @map("payment_mode")
   paymentMethod      PaymentMethod?     @map("payment_method")
@@ -594,6 +602,7 @@ model GeneralVoucher {
   description String?
   totalAmount Decimal              @default(0) @map("total_amount") @db.Decimal(18, 2)
   branchId    String?              @map("branch_id")
+  posted      Boolean              @default(true)
   lines       GeneralVoucherLine[]
 
   createdAt DateTime @default(now()) @map("created_at")

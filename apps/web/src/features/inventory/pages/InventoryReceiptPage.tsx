@@ -12,6 +12,8 @@ export function InventoryReceiptPage({ mode }: { mode: Mode }) {
   const { id } = useParams()
   const [sp] = useSearchParams()
   const type = (sp.get('type') as InventoryReceiptType) ?? InventoryReceiptType.Purchase
+  // Nhân bản: tạo mới nhưng nạp sẵn dữ liệu từ phiếu nguồn.
+  const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
 
   const close = () => navigate('/inventory')
 
@@ -27,6 +29,7 @@ export function InventoryReceiptPage({ mode }: { mode: Mode }) {
       <ReceiptForm
         type={type}
         receiptId={id ?? null}
+        duplicateFromId={duplicateFromId}
         readOnly={mode === 'view'}
         onSaved={close}
         onCancel={close}

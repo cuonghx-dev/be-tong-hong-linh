@@ -138,6 +138,20 @@ export class GoodsIssueService {
     return toIssueDto(updated)
   }
 
+  // Ghi sổ / bỏ ghi: chỉ đổi cờ posted (không đụng dòng hàng tiền). Bỏ ghi =
+  // đưa về nháp → loại khỏi sổ cái + báo cáo tồn kho. Kỳ đã khóa sổ thì không cho đổi.
+  async setPosted(id: string, posted: boolean) {
+    const existing = await this.prisma.goodsIssueVoucher.findUnique({ where: { id } })
+    if (!existing) throw new NotFoundException(`Không tìm thấy phiếu xuất kho ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
+    const updated = await this.prisma.goodsIssueVoucher.update({
+      where: { id },
+      data: { posted },
+      include: { lines: { orderBy: { lineNo: 'asc' } } },
+    })
+    return toIssueDto(updated)
+  }
+
   // Nhập khẩu phiếu xuất kho từ file Excel (mức tổng hợp). Bỏ qua số chứng từ trùng.
   async importXlsx(buffer: Buffer) {
     const parsed = parseGoodsIssueXlsx(buffer)
@@ -291,6 +305,7 @@ function toIssueDto(v: IssueWithLines) {
     salesDocStatus: v.salesDocStatus,
     invoiceIssueStatus: v.invoiceIssueStatus,
     taxAuthorityCode: v.taxAuthorityCode,
+    posted: v.posted,
     lines: v.lines.map((l) => ({
       id: l.id,
       lineNo: l.lineNo,

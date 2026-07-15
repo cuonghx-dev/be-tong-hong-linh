@@ -54,6 +54,18 @@ export function useUpdateGoodsIssue() {
   })
 }
 
+// Ghi sổ / bỏ ghi phiếu xuất kho — bỏ ghi loại phiếu khỏi sổ sách + tồn kho.
+export function useSetGoodsIssuePosted() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, posted }: { id: string; posted: boolean }) =>
+      api.patch<GoodsIssueDto>(`/inventory/issues/${id}/posted`, { posted }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
+    },
+  })
+}
+
 export function useDeleteGoodsIssue() {
   const qc = useQueryClient()
   return useMutation({

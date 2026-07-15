@@ -15,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CreateGoodsIssueDto } from './dto/create-goods-issue.dto'
 import { GoodsIssueFilterDto } from './dto/goods-issue-filter.dto'
+import { SetGoodsIssuePostedDto } from './dto/set-goods-issue-posted.dto'
 import { UpdateGoodsIssueDto } from './dto/update-goods-issue.dto'
 import { GoodsIssueService } from './goods-issue.service'
 
@@ -58,6 +59,12 @@ export class GoodsIssueController {
   import(@UploadedFile() file?: { buffer: Buffer }) {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.issue.importXlsx(file.buffer)
+  }
+
+  @Patch(':id/posted')
+  @ApiOperation({ summary: 'Ghi sổ / bỏ ghi phiếu xuất kho (đổi cờ posted)' })
+  setPosted(@Param('id') id: string, @Body() dto: SetGoodsIssuePostedDto) {
+    return this.issue.setPosted(id, dto.posted)
   }
 
   @Patch(':id')

@@ -9,7 +9,11 @@ import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useReceipts } from '../api/useReceipts'
-import { useDeleteReceipt, useImportReceipts } from '../api/useReceiptMutations'
+import {
+  useDeleteReceipt,
+  useImportReceipts,
+  useSetReceiptPosted,
+} from '../api/useReceiptMutations'
 import { RECEIPT_TYPE_LABEL, RECEIPT_TYPE_OPTIONS } from '../types'
 import { ReceiptFilterPopover, type ReceiptFilterValue } from './ReceiptFilterPopover'
 
@@ -24,6 +28,7 @@ export function ReceiptTable() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const del = useDeleteReceipt()
+  const setPosted = useSetReceiptPosted()
   const importXlsx = useImportReceipts()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -34,6 +39,8 @@ export function ReceiptTable() {
     navigate(`/inventory/receipts/new?type=${type}`)
   const openView = (id: string) => navigate(`/inventory/receipts/${id}`)
   const openEdit = (id: string) => navigate(`/inventory/receipts/${id}/edit`)
+  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu phiếu nguồn (số chứng từ cấp lại khi Lưu).
+  const openDuplicate = (id: string) => navigate(`/inventory/receipts/new?duplicateFrom=${id}`)
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -211,6 +218,11 @@ export function ReceiptTable() {
                   >
                     {r.voucherNo}
                   </button>
+                  {!r.posted && (
+                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                      Chưa ghi sổ
+                    </span>
+                  )}
                 </td>
                 <td className="max-w-[320px] truncate px-3 py-2 text-slate-700">
                   {r.description}
@@ -225,6 +237,22 @@ export function ReceiptTable() {
                     onPrimary={() => openView(r.id)}
                     items={[
                       { label: 'Sửa', onClick: () => openEdit(r.id) },
+                      { label: 'Nhân bản', onClick: () => openDuplicate(r.id) },
+                      {
+                        label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
+                        onClick: () =>
+                          setPosted.mutate(
+                            { id: r.id, posted: !r.posted },
+                            {
+                              onError: (e) =>
+                                toast({
+                                  variant: 'error',
+                                  title: r.posted ? 'Bỏ ghi thất bại' : 'Ghi sổ thất bại',
+                                  description: getApiErrorMessage(e),
+                                }),
+                            },
+                          ),
+                      },
                       {
                         label: 'Xóa',
                         danger: true,

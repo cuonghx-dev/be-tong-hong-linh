@@ -54,6 +54,20 @@ export function useUpdateReceipt() {
   })
 }
 
+// Ghi sổ / bỏ ghi (đổi cờ posted — đảo lại được).
+export function useSetReceiptPosted() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, posted }: { id: string; posted: boolean }) =>
+      api
+        .patch<InventoryReceiptDto>(`/inventory/receipts/${id}/posted`, { posted })
+        .then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
+    },
+  })
+}
+
 export function useDeleteReceipt() {
   const qc = useQueryClient()
   return useMutation({

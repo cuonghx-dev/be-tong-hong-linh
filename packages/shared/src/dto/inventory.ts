@@ -36,6 +36,7 @@ export interface InventoryReceiptDto {
   attachmentCount: number // Kèm theo (chứng từ gốc)
   totalAmount: string // Tổng tiền
   branchName: string | null // Chi nhánh
+  posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
   lines: InventoryReceiptLineDto[]
   createdAt: string
   updatedAt: string
@@ -122,6 +123,7 @@ export interface GoodsIssueDto {
   salesDocStatus: string | null // Đã lập CT bán hàng (từ nhập khẩu)
   invoiceIssueStatus: string | null // TT phát hành hóa đơn (từ nhập khẩu)
   taxAuthorityCode: string | null // Mã CQT cấp (từ nhập khẩu)
+  posted: boolean // Đã ghi sổ (false = bỏ ghi / nháp)
   lines: GoodsIssueLineDto[]
   createdAt: string
   updatedAt: string

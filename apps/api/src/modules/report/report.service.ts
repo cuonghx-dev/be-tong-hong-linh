@@ -253,12 +253,13 @@ export class ReportService {
              COALESCE(l.description, v.description),
              l.debit_account, l.credit_account, l.amount, l.line_no, 0
       FROM general_voucher_lines l JOIN general_vouchers v ON v.id = l.voucher_id
+      WHERE v.posted
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no, 'INVENTORY_RECEIPT',
              COALESCE(l.item_name, v.description),
              l.debit_account, l.credit_account, l.amount, l.line_no, 0
       FROM inventory_receipt_lines l JOIN inventory_receipts v ON v.id = l.receipt_id
-      WHERE l.debit_account IS NOT NULL AND l.credit_account IS NOT NULL
+      WHERE v.posted AND l.debit_account IS NOT NULL AND l.credit_account IS NOT NULL
         AND NOT (v.receipt_type = 'PURCHASE' AND EXISTS (
           SELECT 1 FROM purchase_vouchers p WHERE p.voucher_no = v.voucher_no
         ))
@@ -267,6 +268,7 @@ export class ReportService {
              COALESCE(l.item_name, v.description),
              l.debit_account, l.credit_account, l.amount, l.line_no, 0
       FROM goods_issue_lines l JOIN goods_issue_vouchers v ON v.id = l.voucher_id
+      WHERE v.posted
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no, 'PURCHASE',
              COALESCE(l.item_name, v.description),

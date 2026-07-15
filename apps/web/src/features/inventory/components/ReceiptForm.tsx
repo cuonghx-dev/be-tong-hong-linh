@@ -24,6 +24,8 @@ import { MoneyInput } from './MoneyInput'
 interface Props {
   type: InventoryReceiptType
   receiptId?: string | null
+  // Nhân bản: id phiếu nguồn — nạp sẵn dữ liệu, lưu thành phiếu mới.
+  duplicateFromId?: string | null
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
@@ -51,8 +53,17 @@ function defaultValues(type: InventoryReceiptType): ReceiptFormValues {
   }
 }
 
-export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCancel }: Props) {
-  const editing = useReceipt(receiptId ?? null)
+export function ReceiptForm({
+  type,
+  receiptId,
+  duplicateFromId,
+  readOnly = false,
+  onSaved,
+  onCancel,
+}: Props) {
+  // Nạp dữ liệu từ phiếu đang sửa HOẶC phiếu nguồn khi nhân bản.
+  const duplicating = !receiptId && !!duplicateFromId
+  const editing = useReceipt(receiptId ?? duplicateFromId ?? null)
   const create = useCreateReceipt()
   const update = useUpdateReceipt()
   const { toast } = useToast()
@@ -73,8 +84,9 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
     if (!v) return
     reset({
       receiptType: v.receiptType,
-      postingDate: v.postingDate.slice(0, 10),
-      voucherDate: v.voucherDate.slice(0, 10),
+      // Nhân bản → ngày về hôm nay (phiếu mới), sửa → giữ nguyên ngày gốc.
+      postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
+      voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       partnerId: v.partnerId ?? undefined,
       partnerName: v.partnerName ?? undefined,
       address: v.address ?? undefined,
@@ -96,7 +108,7 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
         expiryDate: l.expiryDate ?? undefined,
       })),
     })
-  }, [editing.data, reset])
+  }, [editing.data, reset, duplicating])
 
   const lines = watch('lines')
   const currentType = watch('receiptType')
@@ -186,7 +198,7 @@ export function ReceiptForm({ type, receiptId, readOnly = false, onSaved, onCanc
           </Field>
           <Field label="Số chứng từ">
             <input
-              value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
+              value={receiptId ? (editing.data?.voucherNo ?? '…') : (nextNo.data ?? 'Tự động')}
               readOnly
               title="Số dự kiến — cấp chính thức khi Lưu"
               className={cn(inputCls, 'bg-slate-50 text-slate-500')}

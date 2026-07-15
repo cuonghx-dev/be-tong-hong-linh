@@ -9,7 +9,11 @@ import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useGoodsIssues } from '../api/useGoodsIssues'
-import { useDeleteGoodsIssue, useImportGoodsIssues } from '../api/useGoodsIssueMutations'
+import {
+  useDeleteGoodsIssue,
+  useImportGoodsIssues,
+  useSetGoodsIssuePosted,
+} from '../api/useGoodsIssueMutations'
 import { GOODS_ISSUE_CATEGORY_LABEL } from '../types'
 import {
   GoodsIssueFilterPopover,
@@ -27,6 +31,7 @@ export function GoodsIssueTable() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const del = useDeleteGoodsIssue()
+  const setPosted = useSetGoodsIssuePosted()
   const importXlsx = useImportGoodsIssues()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -37,6 +42,8 @@ export function GoodsIssueTable() {
     navigate(`/inventory/issues/new?category=${category}`)
   const openView = (id: string) => navigate(`/inventory/issues/${id}`)
   const openEdit = (id: string) => navigate(`/inventory/issues/${id}/edit`)
+  // Nhân bản: mở form tạo mới, điền sẵn dữ liệu phiếu nguồn (số phiếu cấp lại khi Lưu).
+  const openDuplicate = (id: string) => navigate(`/inventory/issues/new?duplicateFrom=${id}`)
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -213,6 +220,11 @@ export function GoodsIssueTable() {
                   <button className="text-primary hover:underline" onClick={() => openView(r.id)}>
                     {r.voucherNo}
                   </button>
+                  {!r.posted && (
+                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                      Chưa ghi sổ
+                    </span>
+                  )}
                 </td>
                 <td className="max-w-[280px] truncate px-3 py-2 text-slate-700">{r.description}</td>
                 <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-700">
@@ -230,6 +242,22 @@ export function GoodsIssueTable() {
                     onPrimary={() => openView(r.id)}
                     items={[
                       { label: 'Sửa', onClick: () => openEdit(r.id) },
+                      {
+                        label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
+                        onClick: () =>
+                          setPosted.mutate(
+                            { id: r.id, posted: !r.posted },
+                            {
+                              onError: (e) =>
+                                toast({
+                                  variant: 'error',
+                                  title: r.posted ? 'Bỏ ghi thất bại' : 'Ghi sổ thất bại',
+                                  description: getApiErrorMessage(e),
+                                }),
+                            },
+                          ),
+                      },
+                      { label: 'Nhân bản', onClick: () => openDuplicate(r.id) },
                       {
                         label: 'Xóa',
                         danger: true,

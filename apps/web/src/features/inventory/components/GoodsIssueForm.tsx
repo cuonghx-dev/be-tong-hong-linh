@@ -40,6 +40,8 @@ import { MoneyInput } from './MoneyInput'
 interface Props {
   category: GoodsIssueCategory
   voucherId?: string | null
+  // Nhân bản: id phiếu nguồn — nạp sẵn dữ liệu, lưu thành phiếu mới.
+  duplicateFromId?: string | null
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
@@ -66,8 +68,17 @@ function defaultValues(category: GoodsIssueCategory): GoodsIssueFormValues {
   }
 }
 
-export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved, onCancel }: Props) {
-  const editing = useGoodsIssue(voucherId ?? null)
+export function GoodsIssueForm({
+  category,
+  voucherId,
+  duplicateFromId,
+  readOnly = false,
+  onSaved,
+  onCancel,
+}: Props) {
+  // Nạp dữ liệu từ phiếu đang sửa HOẶC phiếu nguồn khi nhân bản.
+  const duplicating = !voucherId && !!duplicateFromId
+  const editing = useGoodsIssue(voucherId ?? duplicateFromId ?? null)
   const create = useCreateGoodsIssue()
   const update = useUpdateGoodsIssue()
   const { toast } = useToast()
@@ -106,14 +117,15 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
     if (p.address) setValue('address', p.address)
   }
 
-  // Nạp dữ liệu khi sửa.
+  // Nạp dữ liệu khi sửa hoặc nhân bản.
   useEffect(() => {
     const v = editing.data
     if (!v) return
     reset({
       category: v.category,
-      postingDate: v.postingDate.slice(0, 10),
-      voucherDate: v.voucherDate.slice(0, 10),
+      // Nhân bản → ngày về hôm nay (phiếu mới), sửa → giữ nguyên ngày gốc.
+      postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
+      voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       customerId: v.customerId ?? undefined,
       customerName: v.customerName ?? undefined,
       receiver: v.receiver ?? undefined,
@@ -135,7 +147,7 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
         expiryDate: l.expiryDate ?? undefined,
       })),
     })
-  }, [editing.data, reset])
+  }, [editing.data, duplicating, reset])
 
   const lines = watch('lines')
   const currentCategory = watch('category')
@@ -237,7 +249,7 @@ export function GoodsIssueForm({ category, voucherId, readOnly = false, onSaved,
           </Field>
           <Field label="Số chứng từ">
             <input
-              value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
+              value={voucherId ? (editing.data?.voucherNo ?? '…') : (nextNo.data ?? 'Tự động')}
               readOnly
               title="Số dự kiến — cấp chính thức khi Lưu"
               className={cn(inputCls, 'bg-slate-50 text-slate-500')}

@@ -249,12 +249,12 @@ export class InventoryReportService {
         SELECT l.item_id AS item_code, l.quantity AS qty, l.amount AS amount
         FROM inventory_receipt_lines l
         JOIN inventory_receipts v ON v.id = l.receipt_id
-        WHERE ${dateCond} ${cond}
+        WHERE v.posted AND ${dateCond} ${cond}
         UNION ALL
         SELECT l.item_id, -l.quantity, -l.amount
         FROM goods_issue_lines l
         JOIN goods_issue_vouchers v ON v.id = l.voucher_id
-        WHERE ${dateCond} ${cond}
+        WHERE ${dateCond} AND v.posted ${cond}
       ) t
       GROUP BY t.item_code
     `)
@@ -275,12 +275,12 @@ export class InventoryReportService {
                0 AS out_qty, 0 AS out_amount
         FROM inventory_receipt_lines l
         JOIN inventory_receipts v ON v.id = l.receipt_id
-        WHERE v.posting_date BETWEEN ${from} AND ${to} ${cond}
+        WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to} ${cond}
         UNION ALL
         SELECT l.item_id, 0, 0, l.quantity, l.amount
         FROM goods_issue_lines l
         JOIN goods_issue_vouchers v ON v.id = l.voucher_id
-        WHERE v.posting_date BETWEEN ${from} AND ${to} ${cond}
+        WHERE v.posting_date BETWEEN ${from} AND ${to} AND v.posted ${cond}
       ) t
       GROUP BY t.item_code
     `)
@@ -321,7 +321,7 @@ export class InventoryReportService {
              l.line_no
       FROM inventory_receipt_lines l
       JOIN inventory_receipts v ON v.id = l.receipt_id
-      WHERE v.posting_date BETWEEN ${from} AND ${to} ${cond}
+      WHERE v.posted AND v.posting_date BETWEEN ${from} AND ${to} ${cond}
       UNION ALL
       SELECT v.id,
              'ISSUE',
@@ -336,7 +336,7 @@ export class InventoryReportService {
              l.line_no
       FROM goods_issue_lines l
       JOIN goods_issue_vouchers v ON v.id = l.voucher_id
-      WHERE v.posting_date BETWEEN ${from} AND ${to} ${cond}
+      WHERE v.posting_date BETWEEN ${from} AND ${to} AND v.posted ${cond}
       ORDER BY posting_date, voucher_no, line_no
     `)
   }

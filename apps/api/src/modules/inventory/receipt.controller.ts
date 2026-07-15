@@ -15,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CreateInventoryReceiptDto } from './dto/create-receipt.dto'
 import { InventoryReceiptFilterDto } from './dto/receipt-filter.dto'
+import { SetReceiptPostedDto } from './dto/set-receipt-posted.dto'
 import { UpdateInventoryReceiptDto } from './dto/update-receipt.dto'
 import { ReceiptService } from './receipt.service'
 
@@ -58,6 +59,12 @@ export class ReceiptController {
   import(@UploadedFile() file?: { buffer: Buffer }) {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.receipt.importXlsx(file.buffer)
+  }
+
+  @Patch(':id/posted')
+  @ApiOperation({ summary: 'Ghi sổ / bỏ ghi phiếu nhập kho (đổi cờ posted)' })
+  setPosted(@Param('id') id: string, @Body() dto: SetReceiptPostedDto) {
+    return this.receipt.setPosted(id, dto.posted)
   }
 
   @Patch(':id')

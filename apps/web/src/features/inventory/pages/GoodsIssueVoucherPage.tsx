@@ -11,6 +11,8 @@ export function GoodsIssueVoucherPage({ mode }: { mode: Mode }) {
   const { id } = useParams()
   const [sp] = useSearchParams()
   const category = (sp.get('category') as GoodsIssueCategory) ?? GoodsIssueCategory.Sales
+  // Nhân bản: tạo mới nhưng nạp sẵn dữ liệu từ phiếu nguồn.
+  const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
 
   const close = () => navigate('/inventory')
 
@@ -26,6 +28,7 @@ export function GoodsIssueVoucherPage({ mode }: { mode: Mode }) {
       <GoodsIssueForm
         category={category}
         voucherId={id ?? null}
+        duplicateFromId={duplicateFromId}
         readOnly={mode === 'view'}
         onSaved={close}
         onCancel={close}

@@ -197,6 +197,20 @@ export class ReceiptService {
     return { total: parsed.length, created: receipts.length, skipped: parsed.length - receipts.length }
   }
 
+  // Ghi sổ / bỏ ghi: chỉ đổi cờ posted (không đụng dòng hàng tiền). Bỏ ghi =
+  // đưa về nháp → loại khỏi nhật ký chung + báo cáo tồn kho. Kỳ đã khóa sổ thì không cho đổi.
+  async setPosted(id: string, posted: boolean) {
+    const existing = await this.prisma.inventoryReceipt.findUnique({ where: { id } })
+    if (!existing) throw new NotFoundException(`Không tìm thấy phiếu nhập kho ${id}`)
+    await this.bookLock.assertUnlocked(existing.postingDate)
+    const updated = await this.prisma.inventoryReceipt.update({
+      where: { id },
+      data: { posted },
+      include: { lines: { orderBy: { lineNo: 'asc' } } },
+    })
+    return toReceiptDto(updated)
+  }
+
   async remove(id: string) {
     const existing = await this.prisma.inventoryReceipt.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy phiếu nhập kho ${id}`)
@@ -296,6 +310,7 @@ function toReceiptDto(r: ReceiptWithLines) {
     attachmentCount: r.attachmentCount,
     totalAmount: r.totalAmount.toString(),
     branchName: r.branchName,
+    posted: r.posted,
     lines: r.lines.map((l) => ({
       id: l.id,
       lineNo: l.lineNo,
