@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx'
 
 export interface ParsedSales {
   voucherNo: string
+  invoiceNo: string | null
   type: SalesVoucherType
   date: Date
   customerName: string | null
@@ -16,6 +17,7 @@ export interface ParsedSales {
 // Tên cột cần tìm trong header (mẫu Ban_hang.xlsx).
 const COL = {
   voucherNo: 'Số chứng từ',
+  invoiceNo: 'Số hóa đơn',
   date: 'Ngày hạch toán',
   customer: 'Khách hàng',
   totalPayment: 'Tổng tiền thanh toán',
@@ -58,6 +60,7 @@ export function parseSalesXlsx(buffer: Buffer): ParsedSales[] {
   const idx = (name: string) => header.indexOf(name)
 
   const iNo = idx(COL.voucherNo)
+  const iInvoiceNo = idx(COL.invoiceNo)
   const iDate = idx(COL.date)
   const iCustomer = idx(COL.customer)
   const iPayment = idx(COL.totalPayment)
@@ -85,6 +88,7 @@ export function parseSalesXlsx(buffer: Buffer): ParsedSales[] {
 
     out.push({
       voucherNo,
+      invoiceNo: iInvoiceNo >= 0 ? toStr(r[iInvoiceNo]) : null,
       type: typeFromVoucherNo(voucherNo),
       date,
       customerName: iCustomer >= 0 ? toStr(r[iCustomer]) : null,

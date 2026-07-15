@@ -34,6 +34,8 @@ interface SalesVoucherFormProps {
   voucherId?: string | null
   // Nhân bản: id chứng từ nguồn — nạp sẵn dữ liệu, lưu thành chứng từ mới.
   duplicateFromId?: string | null
+  // Điền sẵn KH khi lập chứng từ từ danh mục khách hàng (nút "Lập CT bán hàng").
+  initialCustomer?: { code: string; name: string; address?: string } | null
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
@@ -71,6 +73,7 @@ function lineVat(l: SalesLineFormValues): number {
 export function SalesVoucherForm({
   voucherId,
   duplicateFromId,
+  initialCustomer,
   readOnly = false,
   onSaved,
   onCancel,
@@ -84,7 +87,17 @@ export function SalesVoucherForm({
 
   const form = useForm<SalesVoucherFormValues>({
     resolver: zodResolver(salesVoucherSchema),
-    defaultValues: defaultValues(),
+    defaultValues: {
+      ...defaultValues(),
+      // Lập CT từ danh mục KH: điền sẵn khách hàng (bị đè khi sửa/nhân bản).
+      ...(initialCustomer
+        ? {
+            customerId: initialCustomer.code,
+            customerName: initialCustomer.name,
+            address: initialCustomer.address,
+          }
+        : {}),
+    },
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
@@ -102,6 +115,8 @@ export function SalesVoucherForm({
       withInvoice: v.withInvoice,
       isInventoryIssue: v.isInventoryIssue,
       isPosInvoice: v.isPosInvoice,
+      // Nhân bản → không mang theo số hóa đơn (hóa đơn gắn với chứng từ gốc).
+      invoiceNo: duplicating ? undefined : (v.invoiceNo ?? undefined),
       // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
       postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
@@ -129,6 +144,7 @@ export function SalesVoucherForm({
   }, [editing.data, reset, duplicating])
 
   const paymentMode = watch('paymentMode')
+  const withInvoice = watch('withInvoice')
   const lines = watch('lines')
   const totalGoods = lines?.reduce((s, l) => s + lineAmount(l), 0) ?? 0
   const totalVat = lines?.reduce((s, l) => s + lineVat(l), 0) ?? 0
@@ -265,6 +281,12 @@ export function SalesVoucherForm({
         <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
           <input type="date" {...register('voucherDate')} className={inputCls} />
         </Field>
+        {/* Thông tin hóa đơn — chỉ khi lập kèm hóa đơn */}
+        {withInvoice && (
+          <Field label="Số hóa đơn">
+            <input {...register('invoiceNo')} className={inputCls} />
+          </Field>
+        )}
       </div>
 
       {/* Bảng hàng tiền */}

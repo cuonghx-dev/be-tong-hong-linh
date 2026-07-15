@@ -106,6 +106,11 @@ export class CreateSalesVoucherDto {
   @IsBoolean()
   isPosInvoice?: boolean
 
+  @ApiPropertyOptional({ description: 'Số hóa đơn' })
+  @IsOptional()
+  @IsString()
+  invoiceNo?: string
+
   @ApiProperty({ description: 'Ngày hạch toán (ISO)' })
   @IsDateString()
   postingDate!: string

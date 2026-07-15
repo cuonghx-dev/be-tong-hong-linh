@@ -40,6 +40,7 @@ export class SalesService {
     if (filter.keyword) {
       where.OR = [
         { voucherNo: { contains: filter.keyword, mode: 'insensitive' } },
+        { invoiceNo: { contains: filter.keyword, mode: 'insensitive' } },
         { customerName: { contains: filter.keyword, mode: 'insensitive' } },
         { description: { contains: filter.keyword, mode: 'insensitive' } },
       ]
@@ -89,6 +90,7 @@ export class SalesService {
       const voucher = await tx.salesVoucher.create({
         data: {
           voucherNo,
+          invoiceNo: dto.invoiceNo ?? null,
           voucherType: dto.voucherType,
           paymentMode: dto.paymentMode,
           paymentMethod: dto.paymentMethod ?? null,
@@ -129,6 +131,7 @@ export class SalesService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const data: Prisma.SalesVoucherUpdateInput = {
+        invoiceNo: dto.invoiceNo ?? undefined,
         paymentMode: dto.paymentMode ?? undefined,
         paymentMethod: dto.paymentMethod ?? undefined,
         isInventoryIssue: dto.isInventoryIssue ?? undefined,
@@ -228,6 +231,7 @@ export class SalesService {
       vouchers.push({
         id,
         voucherNo: p.voucherNo,
+        invoiceNo: p.invoiceNo,
         voucherType: p.type,
         paymentMode: p.paymentMode,
         isInventoryIssue: p.isInventoryIssue,
@@ -350,6 +354,7 @@ function toVoucherDto(v: VoucherWithRelations) {
   return {
     id: v.id,
     voucherNo: v.voucherNo,
+    invoiceNo: v.invoiceNo,
     voucherType: v.voucherType,
     paymentMode: v.paymentMode,
     paymentMethod: v.paymentMethod,

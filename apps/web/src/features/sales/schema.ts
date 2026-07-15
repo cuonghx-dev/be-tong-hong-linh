@@ -23,6 +23,7 @@ export const salesVoucherSchema = z.object({
   isInventoryIssue: z.boolean().optional(),
   withInvoice: z.boolean().optional(),
   isPosInvoice: z.boolean().optional(),
+  invoiceNo: z.string().optional(),
   postingDate: z.string().min(1, 'Chọn ngày hạch toán'),
   voucherDate: z.string().min(1, 'Chọn ngày chứng từ'),
   customerId: z.string().optional(),

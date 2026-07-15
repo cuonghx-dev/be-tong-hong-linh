@@ -33,6 +33,7 @@ export interface SalesVoucherLineDto {
 export interface SalesVoucherDto {
   id: string
   voucherNo: string // vd BH2167/2026
+  invoiceNo: string | null // Số hóa đơn
   voucherType: SalesVoucherType
   paymentMode: SalesPaymentMode // Chưa thu / Thu ngay
   paymentMethod: PaymentMethod | null // Khi thu ngay
@@ -83,6 +84,7 @@ export interface CreateSalesVoucherLineInput {
 // Payload tạo chứng từ bán hàng.
 export interface CreateSalesVoucherInput {
   voucherType: SalesVoucherType
+  invoiceNo?: string | null
   paymentMode: SalesPaymentMode
   paymentMethod?: PaymentMethod | null
   isInventoryIssue?: boolean
@@ -131,6 +133,8 @@ export interface CustomerDto {
   type: CustomerType // Tổ chức / Cá nhân
   isSupplier: boolean // Là nhà cung cấp (đối tượng dùng chung)
   isInternal: boolean // Đối tượng nội bộ
+  isActive: boolean // Còn theo dõi (Ngừng sử dụng = false)
+  debtReminderOn: boolean // Nhắc nợ tự động (khi còn công nợ)
   taxCode: string | null // MST/CCCD chủ hộ
   budgetRelationCode: string | null // Mã số ĐVQHNS
   phone: string | null
@@ -152,6 +156,8 @@ export interface CreateCustomerInput {
   type?: CustomerType
   isSupplier?: boolean
   isInternal?: boolean
+  isActive?: boolean
+  debtReminderOn?: boolean
   taxCode?: string | null
   budgetRelationCode?: string | null
   phone?: string | null

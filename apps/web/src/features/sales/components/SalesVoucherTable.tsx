@@ -1,5 +1,5 @@
 import { SalesPaymentMode, SalesVoucherType, type SalesVoucherFilter } from '@app/shared'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
@@ -16,6 +16,7 @@ import {
   useSetSalesVoucherPosted,
 } from '../api/useSalesVoucherMutations'
 import { PAYMENT_MODE_LABEL } from '../types'
+import { IssueInvoiceDialog } from './IssueInvoiceDialog'
 import { SalesFilterPopover, type SalesFilterValue } from './SalesFilterPopover'
 
 const PAGE_SIZE = 20
@@ -29,6 +30,8 @@ export function SalesVoucherTable() {
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const confirm = useConfirm()
+  // Chứng từ đang phát hành hóa đơn (chưa có số HĐ) — null = đóng dialog.
+  const [issueFor, setIssueFor] = useState<{ id: string; voucherNo: string } | null>(null)
 
   // Điều hướng sang trang chứng từ full-page (§5).
   const openNew = () => navigate('/sales/vouchers/new')
@@ -167,6 +170,7 @@ export function SalesVoucherTable() {
             <tr>
               <th className="px-3 py-2">Ngày hạch toán</th>
               <th className="px-3 py-2">Số chứng từ</th>
+              <th className="px-3 py-2">Số hóa đơn</th>
               <th className="px-3 py-2">Khách hàng</th>
               <th className="px-3 py-2 text-right">Tổng tiền thanh toán</th>
               <th className="px-3 py-2">TT lập hóa đơn</th>
@@ -180,14 +184,14 @@ export function SalesVoucherTable() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={9} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={9} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -197,7 +201,7 @@ export function SalesVoucherTable() {
             )}
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={9} className="px-3 py-10 text-center text-slate-400">
                   Chưa có chứng từ bán hàng nào.
                 </td>
               </tr>
@@ -220,6 +224,7 @@ export function SalesVoucherTable() {
                     </span>
                   )}
                 </td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{r.invoiceNo}</td>
                 <td
                   className="max-w-[220px] truncate px-3 py-2 text-slate-700"
                   title={r.customerName || ''}
@@ -243,11 +248,17 @@ export function SalesVoucherTable() {
                   <Badge on={r.isInventoryIssue} onLabel="Đã xuất" offLabel="Chưa xuất" />
                 </td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
+                  {/* Chưa có số hóa đơn → hành động chính là Phát hành hóa đơn, Xem lùi vào menu */}
                   <RowActionMenu
-                    onPrimary={() => openView(r.id)}
+                    primaryLabel={r.invoiceNo ? 'Xem' : 'Phát hành hóa đơn'}
+                    onPrimary={() =>
+                      r.invoiceNo
+                        ? openView(r.id)
+                        : setIssueFor({ id: r.id, voucherNo: r.voucherNo })
+                    }
                     items={[
+                      ...(r.invoiceNo ? [] : [{ label: 'Xem', onClick: () => openView(r.id) }]),
                       { label: 'Sửa', onClick: () => openEdit(r.id) },
-                      { label: 'Nhân bản', onClick: () => openDuplicate(r.id) },
                       {
                         label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
                         onClick: () =>
@@ -262,6 +273,17 @@ export function SalesVoucherTable() {
                                 }),
                             },
                           ),
+                      },
+                      { label: 'Nhân bản', onClick: () => openDuplicate(r.id) },
+                      {
+                        label: 'Gửi CT qua email',
+                        onClick: () => {
+                          const subject = `Chứng từ bán hàng ${r.voucherNo}`
+                          const body = `Kính gửi ${r.customerName ?? 'Quý khách'},\n\nGửi kèm chứng từ bán hàng ${r.voucherNo} ngày ${formatDate(r.postingDate)}, tổng tiền ${formatCurrency(Number(r.totalAmount))} đ.`
+                          window.open(
+                            `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+                          )
+                        },
                       },
                       {
                         label: 'Xóa',
@@ -322,6 +344,7 @@ export function SalesVoucherTable() {
         </div>
       </div>
 
+      <IssueInvoiceDialog voucher={issueFor} onClose={() => setIssueFor(null)} />
     </div>
   )
 }
