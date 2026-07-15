@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { useAuth } from '@/features/auth/store'
+import { useUiStore } from '@/shared/lib/ui-store'
 import {
   BankIcon,
   BellIcon,
@@ -181,10 +181,11 @@ function Header() {
 }
 
 export function AppShell() {
-  const [collapsed, setCollapsed] = useState(false)
+  const collapsed = useUiStore((s) => s.sidebarCollapsed)
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar)
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-800">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+      <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto">
