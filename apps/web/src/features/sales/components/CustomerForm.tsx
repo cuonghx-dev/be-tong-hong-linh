@@ -10,6 +10,8 @@ import { CUSTOMER_TYPE_LABEL } from '../types'
 
 interface CustomerFormProps {
   customerId?: string | null
+  // Nhân bản: điền sẵn dữ liệu từ KH nguồn, để trống mã (mã phải duy nhất), Lưu tạo bản ghi mới.
+  duplicateFromId?: string | null
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
@@ -19,8 +21,15 @@ function defaultValues(): CustomerFormValues {
   return { code: '', name: '', type: CustomerType.Organization, isSupplier: false, isInternal: false }
 }
 
-export function CustomerForm({ customerId, readOnly = false, onSaved, onCancel }: CustomerFormProps) {
-  const editing = useCustomer(customerId ?? null)
+export function CustomerForm({
+  customerId,
+  duplicateFromId,
+  readOnly = false,
+  onSaved,
+  onCancel,
+}: CustomerFormProps) {
+  const duplicating = !customerId && !!duplicateFromId
+  const editing = useCustomer(customerId ?? duplicateFromId ?? null)
   const create = useCreateCustomer()
   const update = useUpdateCustomer()
 
@@ -34,7 +43,8 @@ export function CustomerForm({ customerId, readOnly = false, onSaved, onCancel }
     const c = editing.data
     if (!c) return
     reset({
-      code: c.code,
+      // Nhân bản → mã để trống cho người dùng tự nhập (mã duy nhất).
+      code: duplicating ? '' : c.code,
       name: c.name,
       type: c.type,
       isSupplier: c.isSupplier,
@@ -50,7 +60,7 @@ export function CustomerForm({ customerId, readOnly = false, onSaved, onCancel }
       contactEmail: c.contactEmail ?? undefined,
       contactPhone: c.contactPhone ?? undefined,
     })
-  }, [editing.data, reset])
+  }, [editing.data, reset, duplicating])
 
   const submit = (addAnother: boolean) =>
     handleSubmit(async (values) => {

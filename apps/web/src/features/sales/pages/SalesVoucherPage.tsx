@@ -12,6 +12,16 @@ export function SalesVoucherPage({ mode }: { mode: Mode }) {
   // Nhân bản: tạo mới nhưng nạp sẵn dữ liệu từ chứng từ nguồn.
   const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
 
+  // Lập CT từ danh mục KH: điền sẵn khách hàng qua query params.
+  const customerCode = mode === 'new' ? sp.get('customer') : null
+  const initialCustomer = customerCode
+    ? {
+        code: customerCode,
+        name: sp.get('customerName') ?? '',
+        address: sp.get('customerAddress') ?? undefined,
+      }
+    : null
+
   const close = () => navigate('/sales')
 
   const title =
@@ -26,6 +36,7 @@ export function SalesVoucherPage({ mode }: { mode: Mode }) {
       <SalesVoucherForm
         voucherId={id ?? null}
         duplicateFromId={duplicateFromId}
+        initialCustomer={initialCustomer}
         readOnly={mode === 'view'}
         onSaved={close}
         onCancel={close}

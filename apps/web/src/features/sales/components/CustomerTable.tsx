@@ -1,6 +1,7 @@
-import type { CustomerFilter } from '@app/shared'
+import { CashVoucherCategory, CashVoucherType, type CustomerFilter } from '@app/shared'
 import { useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
@@ -9,15 +10,25 @@ import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useCustomers } from '../api/useCustomers'
-import { useDeleteCustomer, useImportCustomers } from '../api/useCustomerMutations'
+import {
+  useDeleteCustomer,
+  useImportCustomers,
+  useUpdateCustomer,
+} from '../api/useCustomerMutations'
 import { CustomerForm } from './CustomerForm'
 
 const PAGE_SIZE = 20
 
 export function CustomerTable() {
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const [form, setForm] = useState<{ customerId?: string; readOnly?: boolean } | null>(null)
+  const [form, setForm] = useState<{
+    customerId?: string
+    duplicateFromId?: string
+    readOnly?: boolean
+  } | null>(null)
   const del = useDeleteCustomer()
+  const upd = useUpdateCustomer()
   const importXlsx = useImportCustomers()
   const fileRef = useRef<HTMLInputElement>(null)
   const confirm = useConfirm()
@@ -140,7 +151,21 @@ export function CustomerTable() {
                 </td>
               </tr>
             )}
-            {rows.map((r) => (
+            {rows.map((r) => {
+              const hasDebt = Number(r.receivable) > 0
+              // Lập CT từ danh mục KH: điền sẵn khách hàng vào chứng từ bán hàng mới.
+              const createVoucher = () => {
+                const q = new URLSearchParams({ customer: r.code, customerName: r.name })
+                if (r.address) q.set('customerAddress', r.address)
+                navigate(`/sales/vouchers/new?${q.toString()}`)
+              }
+              // Thu tiền: mở phiếu thu tiền mặt, loại "Thu tiền khách hàng" (Có 131), điền sẵn KH.
+              const collectDebt = () =>
+                navigate(
+                  `/cash/vouchers/new?type=${CashVoucherType.Receipt}&category=${CashVoucherCategory.ReceiptCustomer}` +
+                    `&partnerId=${r.id}&partnerName=${encodeURIComponent(r.name)}`,
+                )
+              return (
               <tr key={r.id} className="group border-t border-border hover:bg-slate-50">
                 <td className="px-3 py-2">
                   <button
@@ -150,8 +175,23 @@ export function CustomerTable() {
                     {r.code}
                   </button>
                 </td>
-                <td className="max-w-[220px] truncate px-3 py-2 text-slate-700" title={r.name}>
-                  {r.name}
+                <td className="max-w-[220px] px-3 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'min-w-0 truncate',
+                        r.isActive ? 'text-slate-700' : 'text-slate-400',
+                      )}
+                      title={r.name}
+                    >
+                      {r.name}
+                    </span>
+                    {!r.isActive && (
+                      <span className="shrink-0 whitespace-nowrap rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+                        Ngừng sử dụng
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td
                   className="max-w-[260px] truncate px-3 py-2 text-slate-600"
@@ -165,10 +205,35 @@ export function CustomerTable() {
                 <td className="px-3 py-2 text-slate-600">{r.taxCode}</td>
                 <td className="px-3 py-2 text-slate-600">{r.phone}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
+                  {/* Còn công nợ → nút chính "Thu tiền" + thêm Lập CT bán hàng, nhắc nợ vào menu. */}
                   <RowActionMenu
-                    onPrimary={() => setForm({ customerId: r.id, readOnly: true })}
+                    primaryLabel={hasDebt ? 'Thu tiền' : 'Lập CT bán hàng'}
+                    onPrimary={hasDebt ? collectDebt : createVoucher}
                     items={[
+                      ...(hasDebt ? [{ label: 'Lập CT bán hàng', onClick: createVoucher }] : []),
                       { label: 'Sửa', onClick: () => setForm({ customerId: r.id }) },
+                      {
+                        label: 'Xem',
+                        onClick: () => setForm({ customerId: r.id, readOnly: true }),
+                      },
+                      {
+                        label: 'Nhân bản',
+                        onClick: () => setForm({ duplicateFromId: r.id }),
+                      },
+                      ...(hasDebt
+                        ? [
+                            {
+                              label: r.debtReminderOn
+                                ? 'Tắt nhắc nợ tự động'
+                                : 'Bật nhắc nợ tự động',
+                              onClick: () =>
+                                upd.mutate({
+                                  id: r.id,
+                                  dto: { debtReminderOn: !r.debtReminderOn },
+                                }),
+                            },
+                          ]
+                        : []),
                       {
                         label: 'Xóa',
                         danger: true,
@@ -182,11 +247,16 @@ export function CustomerTable() {
                           if (ok) del.mutate(r.id)
                         },
                       },
+                      {
+                        label: r.isActive ? 'Ngừng sử dụng' : 'Sử dụng',
+                        onClick: () => upd.mutate({ id: r.id, dto: { isActive: !r.isActive } }),
+                      },
                     ]}
                   />
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -225,13 +295,16 @@ export function CustomerTable() {
             ? 'Xem khách hàng'
             : form?.customerId
               ? 'Sửa khách hàng'
-              : 'Thông tin khách hàng'
+              : form?.duplicateFromId
+                ? 'Nhân bản khách hàng'
+                : 'Thông tin khách hàng'
         }
       >
         {form && (
           <CustomerForm
-            key={form.customerId ?? 'new'}
+            key={form.customerId ?? form.duplicateFromId ?? 'new'}
             customerId={form.customerId ?? null}
+            duplicateFromId={form.duplicateFromId ?? null}
             readOnly={form.readOnly}
             onSaved={() => setForm(null)}
             onCancel={() => setForm(null)}

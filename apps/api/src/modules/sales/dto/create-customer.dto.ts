@@ -26,6 +26,16 @@ export class CreateCustomerDto {
   @IsBoolean()
   isInternal?: boolean
 
+  @ApiPropertyOptional({ description: 'Còn theo dõi (false = Ngừng sử dụng)' })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean
+
+  @ApiPropertyOptional({ description: 'Nhắc nợ tự động (khi còn công nợ)' })
+  @IsOptional()
+  @IsBoolean()
+  debtReminderOn?: boolean
+
   @ApiPropertyOptional({ description: 'MST/CCCD chủ hộ' })
   @IsOptional()
   @IsString()
