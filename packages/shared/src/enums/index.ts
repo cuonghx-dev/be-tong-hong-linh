@@ -252,12 +252,16 @@ export const ACCOUNT_NATURE_LABELS: Record<AccountNature, string> = {
 export enum UserRole {
   Admin = 'ADMIN', // Quản trị — toàn quyền, quản lý người dùng
   KeToan = 'KETOAN', // Kế toán — nghiệp vụ hằng ngày
+  ThuQuy = 'THUQUY', // Thủ quỹ/Thủ kho — xem + ghi sổ cash/bank/kho, không sửa chứng từ
+  Viewer = 'VIEWER', // Giám đốc — chỉ xem danh sách + báo cáo
 }
 
 // Nhãn hiển thị vai trò người dùng.
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.Admin]: 'Quản trị',
   [UserRole.KeToan]: 'Kế toán',
+  [UserRole.ThuQuy]: 'Thủ quỹ',
+  [UserRole.Viewer]: 'Giám đốc',
 }
 
 // Cấp tổ chức (Danh_sach_co_cau_to_chuc.xlsx cột "Cấp tổ chức").

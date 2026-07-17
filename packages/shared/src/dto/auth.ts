@@ -21,3 +21,31 @@ export interface RefreshResponse {
   accessToken: string
   refreshToken: string
 }
+
+// ── Quản lý người dùng (chỉ Admin) ──────────────────────────────────────────
+
+// 1 dòng danh sách GET /users — không bao giờ trả passwordHash.
+export interface UserListItem {
+  id: string
+  email: string
+  name: string
+  role: UserRole
+  isActive: boolean
+  createdAt: string
+}
+
+// Body POST /users.
+export interface CreateUserInput {
+  email: string
+  name: string
+  role: UserRole
+  password: string
+}
+
+// Body PATCH /users/:id — mọi field tùy chọn; password chỉ gửi khi đổi mật khẩu.
+export interface UpdateUserInput {
+  name?: string
+  role?: UserRole
+  isActive?: boolean
+  password?: string
+}

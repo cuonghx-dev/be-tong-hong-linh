@@ -1,3 +1,5 @@
+export * from './permissions'
+
 // Mã tài khoản kế toán (TT 133/200) — bổ sung dần theo nghiệp vụ.
 
 export const CHART_OF_ACCOUNTS = {

@@ -17,8 +17,10 @@ import { CreateProductDto } from './dto/create-product.dto'
 import { ProductFilterDto } from './dto/product-filter.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductService } from './product.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/products')
 export class ProductController {
   constructor(private readonly products: ProductService) {}

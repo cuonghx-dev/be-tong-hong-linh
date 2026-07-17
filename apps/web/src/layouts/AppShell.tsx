@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import type { PermissionDomain } from '@app/shared'
 import { cn } from '@/shared/lib/cn'
-import { useAuth } from '@/features/auth/store'
+import { useAuth, useCan } from '@/features/auth'
 import { useUiStore } from '@/shared/lib/ui-store'
 import {
   BankIcon,
@@ -26,35 +27,48 @@ import {
 import logoUrl from '@/assets/logo.png'
 import { COMPANY_NAME } from '@/shared/lib/company'
 
-type NavItem = { to: string; label: string; icon: (p: IconProps) => JSX.Element }
+type NavItem = {
+  to: string
+  label: string
+  icon: (p: IconProps) => JSX.Element
+  domain: PermissionDomain
+}
 type NavGroup = { title?: string; items: NavItem[] }
 
 // Nhóm menu theo design.md §1.2 (mỗi nhóm: tiêu đề + list item).
+// Mỗi item gắn domain phân quyền — chỉ hiện khi vai trò có quyền `<domain>:read`.
 const NAV_GROUPS: NavGroup[] = [
   {
-    items: [{ to: '/', label: 'Tổng quan', icon: HomeIcon }],
+    items: [{ to: '/', label: 'Tổng quan', icon: HomeIcon, domain: 'dashboard' }],
   },
   {
     title: 'Nghiệp vụ',
     items: [
-      { to: '/cash', label: 'Tiền mặt', icon: WalletIcon },
-      { to: '/bank', label: 'Tiền gửi', icon: BankIcon },
-      { to: '/purchase', label: 'Mua hàng', icon: ReceiptIcon },
-      { to: '/sales', label: 'Bán hàng', icon: CartIcon },
-      { to: '/inventory', label: 'Kho', icon: PackageIcon },
-      { to: '/general', label: 'Tổng hợp', icon: SigmaIcon },
+      { to: '/cash', label: 'Tiền mặt', icon: WalletIcon, domain: 'cash' },
+      { to: '/bank', label: 'Tiền gửi', icon: BankIcon, domain: 'bank' },
+      { to: '/purchase', label: 'Mua hàng', icon: ReceiptIcon, domain: 'purchase' },
+      { to: '/sales', label: 'Bán hàng', icon: CartIcon, domain: 'sales' },
+      { to: '/inventory', label: 'Kho', icon: PackageIcon, domain: 'inventory' },
+      { to: '/general', label: 'Tổng hợp', icon: SigmaIcon, domain: 'general' },
     ],
   },
   {
     title: 'Thiết lập',
     items: [
-      { to: '/opening-balance', label: 'Số dư ban đầu', icon: BookIcon },
-      { to: '/catalog', label: 'Danh mục', icon: LayersIcon },
+      { to: '/opening-balance', label: 'Số dư ban đầu', icon: BookIcon, domain: 'openingBalance' },
+      { to: '/catalog', label: 'Danh mục', icon: LayersIcon, domain: 'catalog' },
+      { to: '/settings/users', label: 'Người dùng', icon: UserIcon, domain: 'users' },
     ],
   },
 ]
 
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  const can = useCan()
+  // Lọc menu theo quyền đọc từng domain; nhóm rỗng thì bỏ hẳn.
+  const groups = NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((it) => can(`${it.domain}:read`)),
+  })).filter((g) => g.items.length > 0)
   return (
     <aside
       className={cn(
@@ -72,7 +86,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
 
       {/* Nav — theo nhóm; khi thu gọn thay tiêu đề nhóm bằng đường kẻ */}
       <nav className="flex-1 overflow-y-auto px-2 py-2">
-        {NAV_GROUPS.map((group, gi) => (
+        {groups.map((group, gi) => (
           <div key={group.title ?? gi} className={cn(gi > 0 && 'mt-2')}>
             {gi > 0 &&
               (collapsed ? (

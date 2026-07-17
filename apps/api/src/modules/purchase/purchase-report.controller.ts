@@ -2,8 +2,10 @@ import { Controller, Get, Query } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { PurchaseReportFilterDto } from './dto/purchase-report-filter.dto'
 import { PurchaseReportService } from './purchase-report.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('purchase')
+@Domain('purchase')
 @Controller('purchase/reports')
 export class PurchaseReportController {
   constructor(private readonly report: PurchaseReportService) {}

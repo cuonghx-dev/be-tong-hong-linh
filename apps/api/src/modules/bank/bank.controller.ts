@@ -20,8 +20,10 @@ import { BankVoucherFilterDto } from './dto/bank-voucher-filter.dto'
 import { CreateBankVoucherDto } from './dto/create-bank-voucher.dto'
 import { SetBankPostedDto } from './dto/set-bank-posted.dto'
 import { UpdateBankVoucherDto } from './dto/update-bank-voucher.dto'
+import { Action, Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('bank')
+@Domain('bank')
 @Controller('bank/vouchers')
 export class BankController {
   constructor(private readonly bank: BankService) {}
@@ -65,6 +67,8 @@ export class BankController {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.bank.importXlsx(file.buffer)
   }
+
+  @Action('post')
 
   @Patch(':id/posted')
   @ApiOperation({ summary: 'Ghi sổ / bỏ ghi chứng từ (đổi cờ posted)' })

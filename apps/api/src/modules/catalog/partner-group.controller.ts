@@ -17,8 +17,10 @@ import { CreatePartnerGroupDto } from './dto/create-partner-group.dto'
 import { PartnerGroupFilterDto } from './dto/partner-group-filter.dto'
 import { UpdatePartnerGroupDto } from './dto/update-partner-group.dto'
 import { PartnerGroupService } from './partner-group.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/partner-groups')
 export class PartnerGroupController {
   constructor(private readonly groups: PartnerGroupService) {}

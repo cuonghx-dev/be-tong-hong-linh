@@ -2,8 +2,10 @@ import { Controller, Get, Query } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { AccountLedgerFilterDto, GeneralJournalFilterDto } from './dto/report-filter.dto'
 import { ReportService } from './report.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('reports')
+@Domain('report')
 @Controller('reports')
 export class ReportController {
   constructor(private readonly report: ReportService) {}

@@ -1,4 +1,7 @@
 import { type ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
+import { useCan } from '@/features/auth'
+import { domainFromPath } from '@/shared/lib/domain-from-path'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, ExcelIcon, PlusIcon } from '@/shared/ui/icons'
 import { Popover } from '@/shared/ui/popover'
@@ -23,6 +26,10 @@ interface AddMenuProps {
 // Nút "＋ Thêm ▾" dùng chung cho mọi bảng danh sách (design.md §3.2).
 // Gộp các thao tác tạo mới + "Nhập Excel" vào 1 menu — thay cho nút Excel riêng lẻ.
 export function AddMenu({ label = 'Thêm', actions, onImportExcel, importing }: AddMenuProps) {
+  const can = useCan()
+  const domain = domainFromPath(useLocation().pathname)
+  // Vai trò chỉ xem (viewer, thủ quỹ) → ẩn hẳn nút Thêm của phân hệ đó.
+  if (domain && !can(`${domain}:write`)) return null
   return (
     <Popover
       align="right"

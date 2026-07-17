@@ -17,8 +17,10 @@ import { CreateTransferAccountDto } from './dto/create-transfer-account.dto'
 import { TransferAccountFilterDto } from './dto/transfer-account-filter.dto'
 import { UpdateTransferAccountDto } from './dto/update-transfer-account.dto'
 import { TransferAccountService } from './transfer-account.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/transfer-accounts')
 export class TransferAccountController {
   constructor(private readonly transferAccounts: TransferAccountService) {}

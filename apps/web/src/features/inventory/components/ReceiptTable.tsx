@@ -250,6 +250,7 @@ export function ReceiptTable() {
                       { label: 'Nhân bản', onClick: () => openDuplicate(r.id) },
                       {
                         label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
+                        action: 'post',
                         onClick: () =>
                           setPosted.mutate(
                             { id: r.id, posted: !r.posted },

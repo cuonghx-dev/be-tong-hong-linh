@@ -18,8 +18,10 @@ import { GoodsIssueFilterDto } from './dto/goods-issue-filter.dto'
 import { SetGoodsIssuePostedDto } from './dto/set-goods-issue-posted.dto'
 import { UpdateGoodsIssueDto } from './dto/update-goods-issue.dto'
 import { GoodsIssueService } from './goods-issue.service'
+import { Action, Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('inventory')
+@Domain('inventory')
 @Controller('inventory/issues')
 export class GoodsIssueController {
   constructor(private readonly issue: GoodsIssueService) {}
@@ -60,6 +62,8 @@ export class GoodsIssueController {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.issue.importXlsx(file.buffer)
   }
+
+  @Action('post')
 
   @Patch(':id/posted')
   @ApiOperation({ summary: 'Ghi sổ / bỏ ghi phiếu xuất kho (đổi cờ posted)' })

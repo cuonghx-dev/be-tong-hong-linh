@@ -17,8 +17,10 @@ import { BankService } from './bank.service'
 import { BankFilterDto } from './dto/bank-filter.dto'
 import { CreateBankDto } from './dto/create-bank.dto'
 import { UpdateBankDto } from './dto/update-bank.dto'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/banks')
 export class BankController {
   constructor(private readonly banks: BankService) {}

@@ -17,8 +17,10 @@ import { BankAccountService } from './bank-account.service'
 import { BankAccountFilterDto } from './dto/bank-account-filter.dto'
 import { CreateBankAccountDto } from './dto/create-bank-account.dto'
 import { UpdateBankAccountDto } from './dto/update-bank-account.dto'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/bank-accounts')
 export class BankAccountController {
   constructor(private readonly accounts: BankAccountService) {}

@@ -17,8 +17,10 @@ import { CreateVoucherTypeDto } from './dto/create-voucher-type.dto'
 import { UpdateVoucherTypeDto } from './dto/update-voucher-type.dto'
 import { VoucherTypeFilterDto } from './dto/voucher-type-filter.dto'
 import { VoucherTypeService } from './voucher-type.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/voucher-types')
 export class VoucherTypeController {
   constructor(private readonly voucherTypes: VoucherTypeService) {}

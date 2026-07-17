@@ -17,8 +17,10 @@ import { AccountService } from './account.service'
 import { AccountFilterDto } from './dto/account-filter.dto'
 import { CreateAccountDto } from './dto/create-account.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/accounts')
 export class AccountController {
   constructor(private readonly accounts: AccountService) {}

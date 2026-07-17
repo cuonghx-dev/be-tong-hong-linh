@@ -17,8 +17,10 @@ import { SaveBankAccountBalancesDto } from './dto/save-bank-account-balances.dto
 import { SaveFixedAssetBalancesDto } from './dto/save-fixed-asset-balances.dto'
 import { SaveInventoryBalancesDto } from './dto/save-inventory-balances.dto'
 import { SavePartnerBalancesDto } from './dto/save-partner-balances.dto'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('opening-balance')
+@Domain('openingBalance')
 @Controller('opening-balance')
 export class OpeningBalanceController {
   constructor(private readonly openingBalance: OpeningBalanceService) {}

@@ -20,8 +20,10 @@ import { CashVoucherFilterDto } from './dto/cash-voucher-filter.dto'
 import { CreateCashVoucherDto } from './dto/create-cash-voucher.dto'
 import { SetCashPostedDto } from './dto/set-cash-posted.dto'
 import { UpdateCashVoucherDto } from './dto/update-cash-voucher.dto'
+import { Action, Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('cash')
+@Domain('cash')
 @Controller('cash/vouchers')
 export class CashController {
   constructor(private readonly cash: CashService) {}
@@ -71,6 +73,8 @@ export class CashController {
   update(@Param('id') id: string, @Body() dto: UpdateCashVoucherDto) {
     return this.cash.update(id, dto)
   }
+
+  @Action('post')
 
   @Patch(':id/posted')
   @ApiOperation({ summary: 'Ghi sổ / bỏ ghi phiếu' })

@@ -17,8 +17,10 @@ import { DefaultAccountService } from './default-account.service'
 import { CreateDefaultAccountDto } from './dto/create-default-account.dto'
 import { DefaultAccountFilterDto } from './dto/default-account-filter.dto'
 import { UpdateDefaultAccountDto } from './dto/update-default-account.dto'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/default-accounts')
 export class DefaultAccountController {
   constructor(private readonly defaultAccounts: DefaultAccountService) {}

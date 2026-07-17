@@ -2,8 +2,10 @@ import { Body, Controller, Delete, Get, Put } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { BookLockService } from './book-lock.service'
 import { SetBookLockDto } from './dto/set-book-lock.dto'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('book-lock')
+@Domain('bookLock')
 @Controller('book-lock')
 export class BookLockController {
   constructor(private readonly bookLock: BookLockService) {}

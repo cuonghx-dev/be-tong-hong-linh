@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AppShell } from '@/layouts/AppShell'
-import { RequireAuth } from '@/features/auth/RequireAuth'
+import { RequireAuth, RequirePermission } from '@/features/auth'
+import { domainFromPath } from '@/shared/lib/domain-from-path'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { HomePage } from '@/features/dashboard/pages/HomePage'
 import { CashPage } from '@/features/cash/pages/CashPage'
@@ -32,6 +33,7 @@ import { FixedAssetBalancePage } from '@/features/opening-balance/pages/FixedAss
 import { InventoryBalancePage } from '@/features/opening-balance/pages/InventoryBalancePage'
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
 import { CatalogItemPage } from '@/features/catalog/pages/CatalogItemPage'
+import { UsersPage } from '@/features/users'
 
 // Trang chứng từ full-page (§5) — standalone, đè Sidebar/Header.
 const recordRoutes = [
@@ -74,10 +76,23 @@ const recordRoutes = [
   { path: '/opening-balance/so-du-tai-khoan/cong-no', element: <PartnerBalanceEntryPage /> },
   // Nhập số dư tài khoản ngân hàng (TK tiền gửi 112x) — full-page (vào thẳng từ nút "Sửa").
   { path: '/opening-balance/so-du-tai-khoan/ngan-hang', element: <BankAccountBalanceEntryPage /> },
-].map((r) => ({
-  path: r.path,
-  element: <RequireAuth>{r.element}</RequireAuth>,
-}))
+].map((r) => {
+  // Trang tạo/sửa cần quyền write, trang xem/báo cáo chỉ cần read trên domain của route.
+  const domain = domainFromPath(r.path)
+  const action = r.path.endsWith('/new') || r.path.endsWith('/edit') ? 'write' : 'read'
+  return {
+    path: r.path,
+    element: (
+      <RequireAuth>
+        {domain ? (
+          <RequirePermission permission={`${domain}:${action}`}>{r.element}</RequirePermission>
+        ) : (
+          r.element
+        )}
+      </RequireAuth>
+    ),
+  }
+})
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -89,6 +104,7 @@ const router = createBrowserRouter([
         <AppShell />
       </RequireAuth>
     ),
+    // Trang danh sách trong shell — chỉ cần quyền read trên domain tương ứng.
     children: [
       { index: true, element: <HomePage /> },
       { path: 'cash', element: <CashPage /> },
@@ -104,7 +120,14 @@ const router = createBrowserRouter([
       { path: 'opening-balance/:slug', element: <OpeningBalanceItemPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'catalog/:slug', element: <CatalogItemPage /> },
-    ],
+      { path: 'settings/users', element: <UsersPage /> },
+    ].map((c) => {
+      if (!('path' in c) || !c.path) return c
+      const domain = domainFromPath(c.path)
+      return domain
+        ? { ...c, element: <RequirePermission permission={`${domain}:read`}>{c.element}</RequirePermission> }
+        : c
+    }),
   },
 ])
 

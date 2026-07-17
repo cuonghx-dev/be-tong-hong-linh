@@ -17,8 +17,10 @@ import { CreateWarehouseDto } from './dto/create-warehouse.dto'
 import { UpdateWarehouseDto } from './dto/update-warehouse.dto'
 import { WarehouseFilterDto } from './dto/warehouse-filter.dto'
 import { WarehouseService } from './warehouse.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/warehouses')
 export class WarehouseController {
   constructor(private readonly warehouses: WarehouseService) {}

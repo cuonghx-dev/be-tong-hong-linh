@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { LoggerModule } from 'nestjs-pino'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
-import { RolesGuard } from './common/guards/roles.guard'
+import { PermissionsGuard } from './common/guards/permissions.guard'
 import { DatabaseModule } from './database/database.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { BankModule } from './modules/bank/bank.module'
@@ -17,6 +17,7 @@ import { OpeningBalanceModule } from './modules/opening-balance/opening-balance.
 import { PurchaseModule } from './modules/purchase/purchase.module'
 import { ReportModule } from './modules/report/report.module'
 import { SalesModule } from './modules/sales/sales.module'
+import { UsersModule } from './modules/users/users.module'
 
 @Module({
   imports: [
@@ -40,11 +41,12 @@ import { SalesModule } from './modules/sales/sales.module'
     DashboardModule,
     OpeningBalanceModule,
     ReportModule,
+    UsersModule,
   ],
   providers: [
-    // Guard toàn cục: mọi endpoint yêu cầu đăng nhập (trừ @Public), rồi mới xét @Roles.
+    // Guard toàn cục: mọi endpoint yêu cầu đăng nhập (trừ @Public), rồi mới xét quyền @Domain.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })
 export class AppModule {}

@@ -2,8 +2,10 @@ import { Controller, Get, Query } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { ReceivableFilterDto } from './dto/receivable-filter.dto'
 import { ReceivableService } from './receivable.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('sales')
+@Domain('sales')
 @Controller('sales/receivables')
 export class ReceivableController {
   constructor(private readonly receivables: ReceivableService) {}

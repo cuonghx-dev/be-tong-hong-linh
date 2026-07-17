@@ -17,8 +17,10 @@ import { CostObjectService } from './cost-object.service'
 import { CostObjectFilterDto } from './dto/cost-object-filter.dto'
 import { CreateCostObjectDto } from './dto/create-cost-object.dto'
 import { UpdateCostObjectDto } from './dto/update-cost-object.dto'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/cost-objects')
 export class CostObjectController {
   constructor(private readonly costObjects: CostObjectService) {}

@@ -17,8 +17,10 @@ import { CreateOrganizationUnitDto } from './dto/create-organization-unit.dto'
 import { OrganizationUnitFilterDto } from './dto/organization-unit-filter.dto'
 import { UpdateOrganizationUnitDto } from './dto/update-organization-unit.dto'
 import { OrganizationUnitService } from './organization-unit.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/organization-units')
 export class OrganizationUnitController {
   constructor(private readonly units: OrganizationUnitService) {}

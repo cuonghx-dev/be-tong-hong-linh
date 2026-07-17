@@ -20,8 +20,10 @@ import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
 import { SetPurchasePostedDto } from './dto/set-purchase-posted.dto'
 import { UpdatePurchaseVoucherDto } from './dto/update-purchase-voucher.dto'
 import { PurchaseService } from './purchase.service'
+import { Action, Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('purchase')
+@Domain('purchase')
 @Controller('purchase/vouchers')
 export class PurchaseController {
   constructor(private readonly purchase: PurchaseService) {}
@@ -65,6 +67,8 @@ export class PurchaseController {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.purchase.importXlsx(file.buffer)
   }
+
+  @Action('post')
 
   @Patch(':id/posted')
   @ApiOperation({ summary: 'Ghi sổ / bỏ ghi chứng từ mua hàng (đổi cờ posted)' })

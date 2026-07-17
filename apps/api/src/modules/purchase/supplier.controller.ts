@@ -17,8 +17,10 @@ import { CreateSupplierDto } from './dto/create-supplier.dto'
 import { SupplierFilterDto } from './dto/supplier-filter.dto'
 import { UpdateSupplierDto } from './dto/update-supplier.dto'
 import { SupplierService } from './supplier.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('purchase')
+@Domain('purchase')
 @Controller('purchase/suppliers')
 export class SupplierController {
   constructor(private readonly suppliers: SupplierService) {}

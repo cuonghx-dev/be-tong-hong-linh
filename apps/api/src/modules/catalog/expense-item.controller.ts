@@ -17,8 +17,10 @@ import { CreateExpenseItemDto } from './dto/create-expense-item.dto'
 import { ExpenseItemFilterDto } from './dto/expense-item-filter.dto'
 import { UpdateExpenseItemDto } from './dto/update-expense-item.dto'
 import { ExpenseItemService } from './expense-item.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/expense-items')
 export class ExpenseItemController {
   constructor(private readonly items: ExpenseItemService) {}

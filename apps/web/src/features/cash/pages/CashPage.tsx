@@ -265,6 +265,7 @@ function CashTable() {
                       items={[
                         {
                           label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
+                        action: 'post',
                           onClick: () =>
                             setPosted.mutate(
                               { id: r.id, posted: !r.posted },

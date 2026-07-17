@@ -2,8 +2,10 @@ import { Controller, Get, Query } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { DashboardService } from './dashboard.service'
 import { FinancePeriodDto, TopQueryDto, YearQueryDto } from './dto/dashboard-query.dto'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('dashboard')
+@Domain('dashboard')
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboard: DashboardService) {}

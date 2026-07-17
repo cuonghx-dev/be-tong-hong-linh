@@ -18,8 +18,10 @@ import { SalesVoucherFilterDto } from './dto/sales-voucher-filter.dto'
 import { SetSalesPostedDto } from './dto/set-sales-posted.dto'
 import { UpdateSalesVoucherDto } from './dto/update-sales-voucher.dto'
 import { SalesService } from './sales.service'
+import { Action, Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('sales')
+@Domain('sales')
 @Controller('sales/vouchers')
 export class SalesController {
   constructor(private readonly sales: SalesService) {}
@@ -60,6 +62,8 @@ export class SalesController {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.sales.importXlsx(file.buffer)
   }
+
+  @Action('post')
 
   @Patch(':id/posted')
   @ApiOperation({ summary: 'Ghi sổ / bỏ ghi chứng từ bán hàng (đổi cờ posted)' })

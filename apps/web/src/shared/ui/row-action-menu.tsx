@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useLocation } from 'react-router-dom'
+import { useCan } from '@/features/auth'
 import { cn } from '@/shared/lib/cn'
+import { domainFromPath } from '@/shared/lib/domain-from-path'
 import { ChevronDownIcon } from '@/shared/ui/icons'
 
 export interface RowAction {
@@ -8,6 +11,8 @@ export interface RowAction {
   onClick: () => void
   danger?: boolean
   icon?: ReactNode
+  /** Quyền cần có trên domain hiện tại — mặc định 'write' (Sửa/Xóa/Nhân bản). Ghi sổ dùng 'post'. */
+  action?: 'write' | 'post'
 }
 
 interface Props {
@@ -18,7 +23,13 @@ interface Props {
 
 // Cột "Chức năng": link chính (Xem) + ▾ mở menu (design.md §3.8).
 // Menu dùng position:fixed → không bị clip bởi overflow của bảng.
-export function RowActionMenu({ primaryLabel = 'Xem', onPrimary, items }: Props) {
+export function RowActionMenu({ primaryLabel = 'Xem', onPrimary, items: allItems }: Props) {
+  const can = useCan()
+  const domain = domainFromPath(useLocation().pathname)
+  // Lọc thao tác theo quyền trên domain hiện tại (Sửa/Xóa cần write, Ghi sổ cần post).
+  const items = domain
+    ? allItems.filter((it) => can(`${domain}:${it.action ?? 'write'}`))
+    : allItems
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, right: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -61,15 +72,17 @@ export function RowActionMenu({ primaryLabel = 'Xem', onPrimary, items }: Props)
       <button className="font-medium text-primary hover:underline" onClick={onPrimary}>
         {primaryLabel}
       </button>
-      <button
-        ref={btnRef}
-        onClick={toggle}
-        aria-label="Thao tác khác"
-        aria-expanded={open}
-        className="grid h-6 w-6 place-items-center rounded text-primary hover:bg-primary/10"
-      >
-        <ChevronDownIcon size={14} />
-      </button>
+      {items.length > 0 && (
+        <button
+          ref={btnRef}
+          onClick={toggle}
+          aria-label="Thao tác khác"
+          aria-expanded={open}
+          className="grid h-6 w-6 place-items-center rounded text-primary hover:bg-primary/10"
+        >
+          <ChevronDownIcon size={14} />
+        </button>
+      )}
 
       {/* Portal ra body: cell sticky của bảng tạo stacking context riêng → menu
           để trong td sẽ bị cell các hàng dưới đè lên, z-index không cứu được. */}

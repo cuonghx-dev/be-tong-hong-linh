@@ -17,8 +17,10 @@ import { CreateProductGroupDto } from './dto/create-product-group.dto'
 import { ProductGroupFilterDto } from './dto/product-group-filter.dto'
 import { UpdateProductGroupDto } from './dto/update-product-group.dto'
 import { ProductGroupService } from './product-group.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/product-groups')
 export class ProductGroupController {
   constructor(private readonly groups: ProductGroupService) {}

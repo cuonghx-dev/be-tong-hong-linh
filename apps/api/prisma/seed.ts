@@ -74,6 +74,26 @@ async function main() {
     })
     console.log(`Người dùng: ${email} (ADMIN)`)
 
+    // ── User mẫu mỗi vai trò — test phân quyền nhanh (mật khẩu như admin) ──
+    const sampleUsers = [
+      { email: 'ketoan@ketoan.vn', name: 'Kế toán', role: 'KETOAN' },
+      { email: 'thuquy@ketoan.vn', name: 'Thủ quỹ', role: 'THUQUY' },
+      { email: 'viewer@ketoan.vn', name: 'Giám đốc', role: 'VIEWER' },
+    ] as const
+    for (const u of sampleUsers) {
+      await prisma.user.upsert({
+        where: { email: u.email },
+        update: {},
+        create: {
+          email: u.email,
+          passwordHash: hashSync(process.env.SEED_ADMIN_PASSWORD ?? 'admin123', 10),
+          name: u.name,
+          role: u.role,
+        },
+      })
+      console.log(`Người dùng: ${u.email} (${u.role})`)
+    }
+
     const openingBalance = app.get(OpeningBalanceService)
 
     // Thứ tự theo phụ thuộc: danh mục → đối tượng (KH/NCC) → số dư đầu kỳ

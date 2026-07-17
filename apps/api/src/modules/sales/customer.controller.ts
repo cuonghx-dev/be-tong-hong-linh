@@ -17,8 +17,10 @@ import { CustomerService } from './customer.service'
 import { CreateCustomerDto } from './dto/create-customer.dto'
 import { CustomerFilterDto } from './dto/customer-filter.dto'
 import { UpdateCustomerDto } from './dto/update-customer.dto'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('sales')
+@Domain('sales')
 @Controller('sales/customers')
 export class CustomerController {
   constructor(private readonly customers: CustomerService) {}

@@ -17,8 +17,10 @@ import { CreateUnitDto } from './dto/create-unit.dto'
 import { UnitFilterDto } from './dto/unit-filter.dto'
 import { UpdateUnitDto } from './dto/update-unit.dto'
 import { UnitService } from './unit.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/units')
 export class UnitController {
   constructor(private readonly units: UnitService) {}

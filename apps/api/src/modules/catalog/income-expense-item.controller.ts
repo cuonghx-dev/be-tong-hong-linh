@@ -17,8 +17,10 @@ import { CreateIncomeExpenseItemDto } from './dto/create-income-expense-item.dto
 import { IncomeExpenseItemFilterDto } from './dto/income-expense-item-filter.dto'
 import { UpdateIncomeExpenseItemDto } from './dto/update-income-expense-item.dto'
 import { IncomeExpenseItemService } from './income-expense-item.service'
+import { Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('catalog')
+@Domain('catalog')
 @Controller('catalog/income-expense-items')
 export class IncomeExpenseItemController {
   constructor(private readonly incomeExpenseItems: IncomeExpenseItemService) {}

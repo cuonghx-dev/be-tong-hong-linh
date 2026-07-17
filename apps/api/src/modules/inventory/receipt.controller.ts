@@ -18,8 +18,10 @@ import { InventoryReceiptFilterDto } from './dto/receipt-filter.dto'
 import { SetReceiptPostedDto } from './dto/set-receipt-posted.dto'
 import { UpdateInventoryReceiptDto } from './dto/update-receipt.dto'
 import { ReceiptService } from './receipt.service'
+import { Action, Domain } from '../../common/decorators/domain.decorator'
 
 @ApiTags('inventory')
+@Domain('inventory')
 @Controller('inventory/receipts')
 export class ReceiptController {
   constructor(private readonly receipt: ReceiptService) {}
@@ -60,6 +62,8 @@ export class ReceiptController {
     if (!file?.buffer) throw new BadRequestException('Thiếu file Excel')
     return this.receipt.importXlsx(file.buffer)
   }
+
+  @Action('post')
 
   @Patch(':id/posted')
   @ApiOperation({ summary: 'Ghi sổ / bỏ ghi phiếu nhập kho (đổi cờ posted)' })
