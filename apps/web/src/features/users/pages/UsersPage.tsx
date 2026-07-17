@@ -10,6 +10,7 @@ import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useUsers } from '../api/useUsers'
 import { useUpdateUser } from '../api/useUserMutations'
+import { ResetPasswordDialog } from '../components/ResetPasswordDialog'
 import { UserDialog } from '../components/UserDialog'
 
 // Quản lý người dùng (chỉ ADMIN) — danh sách + tạo/sửa/khóa tài khoản.
@@ -21,6 +22,7 @@ export function UsersPage() {
     open: false,
     user: null,
   })
+  const [resetTarget, setResetTarget] = useState<UserListItem | null>(null)
   const { toast } = useToast()
   const confirm = useConfirm()
 
@@ -112,9 +114,10 @@ export function UsersPage() {
                   <RowActionMenu
                     primaryLabel="Sửa"
                     onPrimary={() => setDialog({ open: true, user: u })}
-                    items={
+                    items={[
+                      { label: 'Cấp lại mật khẩu', onClick: () => setResetTarget(u) },
                       // Không cho tự khóa chính mình (API cũng chặn).
-                      u.id === currentUser?.id
+                      ...(u.id === currentUser?.id
                         ? []
                         : [
                             {
@@ -122,8 +125,8 @@ export function UsersPage() {
                               danger: u.isActive,
                               onClick: () => toggleActive(u),
                             },
-                          ]
-                    }
+                          ]),
+                    ]}
                   />
                 </td>
               </tr>
@@ -136,6 +139,11 @@ export function UsersPage() {
         open={dialog.open}
         user={dialog.user}
         onClose={() => setDialog({ open: false, user: null })}
+      />
+      <ResetPasswordDialog
+        open={!!resetTarget}
+        user={resetTarget}
+        onClose={() => setResetTarget(null)}
       />
     </div>
   )

@@ -16,7 +16,8 @@ interface Props {
 
 const empty = { email: '', name: '', role: UserRole.KeToan, password: '' }
 
-// Dialog tạo/sửa người dùng — sửa: email khóa, mật khẩu để trống nếu không đổi.
+// Dialog tạo/sửa người dùng — sửa: email khóa, không đổi mật khẩu ở đây
+// (cấp lại mật khẩu là thao tác riêng — ResetPasswordDialog).
 export function UserDialog({ open, onClose, user }: Props) {
   const [form, setForm] = useState(empty)
   const create = useCreateUser()
@@ -43,11 +44,7 @@ export function UserDialog({ open, onClose, user }: Props) {
       if (user) {
         await update.mutateAsync({
           id: user.id,
-          dto: {
-            name: form.name.trim(),
-            role: form.role,
-            password: form.password || undefined,
-          },
+          dto: { name: form.name.trim(), role: form.role },
         })
       } else {
         await create.mutateAsync({
@@ -84,7 +81,7 @@ export function UserDialog({ open, onClose, user }: Props) {
         </>
       }
     >
-      <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+      <div className="space-y-3">
         <L label="Email" required>
           <input
             value={form.email}
@@ -114,14 +111,16 @@ export function UserDialog({ open, onClose, user }: Props) {
             ))}
           </select>
         </L>
-        <L label={user ? 'Mật khẩu mới (bỏ trống nếu giữ nguyên)' : 'Mật khẩu'} required={!user}>
-          <input
-            type="password"
-            value={form.password}
-            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            className={cls}
-          />
-        </L>
+        {!user && (
+          <L label="Mật khẩu" required>
+            <input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              className={cls}
+            />
+          </L>
+        )}
       </div>
     </Modal>
   )
