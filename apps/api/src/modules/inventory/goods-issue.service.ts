@@ -8,6 +8,7 @@ import {
   type GoodsIssueVoucher,
 } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { buildPartnerLookup } from '../../database/partner-lookup'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { CreateGoodsIssueDto, CreateGoodsIssueLineDto } from './dto/create-goods-issue.dto'
 import { GoodsIssueFilterDto } from './dto/goods-issue-filter.dto'
@@ -164,6 +165,7 @@ export class GoodsIssueService {
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
     const lockDate = await this.bookLock.getLockDate()
+    const lookup = await buildPartnerLookup(this.prisma)
 
     const vouchers: Prisma.GoodsIssueVoucherCreateManyInput[] = []
     const lines: Prisma.GoodsIssueLineCreateManyInput[] = []
@@ -174,12 +176,16 @@ export class GoodsIssueService {
 
       const total = new Prisma.Decimal(p.totalAmount)
       const id = randomUUID()
+      // Người nhận thường là khách lẻ (không có trong danh mục) → customerId có thể null.
+      const customer = lookup.customer(p.receiver)
       vouchers.push({
         id,
         category: p.category,
         voucherNo: p.voucherNo,
         postingDate: p.date,
         voucherDate: p.date,
+        customerId: customer?.id ?? null,
+        customerName: p.receiver,
         receiver: p.receiver,
         description: p.description ?? 'Xuất kho',
         totalAmount: total,

@@ -37,6 +37,7 @@ export const CHART_OF_ACCOUNTS = {
   FIXED_ASSET_VEHICLES: '21113', // Phương tiện vận tải, truyền dẫn
   FIXED_ASSET_DEPRECIATION: '2141', // Hao mòn TSCD hữu hình
   OTHER_EXPENSE: '811', // Chi phí khác (giá trị còn lại khi ghi giảm TSCD)
+  OTHER_INCOME: '711', // Thu nhập khác (thu khác không theo nghiệp vụ chuẩn)
 } as const
 
 // ── TK đối ứng ngầm định phiếu thu/chi tiền mặt theo loại nghiệp vụ (§5) ──────
@@ -50,6 +51,7 @@ export const CASH_RECEIPT_CREDIT_ACCOUNT: Readonly<Record<string, string>> = {
   RECEIPT_EMPLOYEE_ADVANCE: CHART_OF_ACCOUNTS.ADVANCE, // 141
   RECEIPT_CUSTOMER: CHART_OF_ACCOUNTS.RECEIVABLE, // 131
   RECEIPT_LOAN_RECOVERY: CHART_OF_ACCOUNTS.LOAN, // 1283
+  RECEIPT: CHART_OF_ACCOUNTS.OTHER_INCOME, // 711 (phiếu thu / thu khác không phân loại)
 }
 
 export const CASH_PAYMENT_DEBIT_ACCOUNT: Readonly<Record<string, string>> = {
@@ -61,4 +63,7 @@ export const CASH_PAYMENT_DEBIT_ACCOUNT: Readonly<Record<string, string>> = {
   PAYMENT_TO_BRANCH: CHART_OF_ACCOUNTS.INTERNAL_RECEIVABLE, // 1368
   PAYMENT_LOAN: CHART_OF_ACCOUNTS.LOAN, // 1283
   PAYMENT_CIT_TAX: CHART_OF_ACCOUNTS.CIT_PAYABLE, // 3334
+  PURCHASE_SERVICE_CASH: CHART_OF_ACCOUNTS.SERVICE_EXPENSE, // 642 (mua dịch vụ trả tiền mặt)
+  PURCHASE_GOODS_CASH: CHART_OF_ACCOUNTS.GOODS, // 156 (mua hàng không qua kho trả tiền mặt)
+  PAYMENT: CHART_OF_ACCOUNTS.OTHER_EXPENSE, // 811 (phiếu chi / chi khác không phân loại)
 }

@@ -8,6 +8,7 @@ import {
   type PurchaseVoucherLine,
 } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { buildPartnerLookup } from '../../database/partner-lookup'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { CreatePurchaseVoucherDto, CreatePurchaseVoucherLineDto } from './dto/create-purchase-voucher.dto'
 import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
@@ -188,6 +189,7 @@ export class PurchaseService {
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
     const lockDate = await this.bookLock.getLockDate()
+    const lookup = await buildPartnerLookup(this.prisma)
 
     const vouchers: Prisma.PurchaseVoucherCreateManyInput[] = []
     const lines: Prisma.PurchaseVoucherLineCreateManyInput[] = []
@@ -219,6 +221,7 @@ export class PurchaseService {
         invoiceNo: p.invoiceNo,
         postingDate: p.date,
         voucherDate: p.date,
+        supplierId: lookup.supplier(p.supplierName)?.id ?? null,
         supplierName: p.supplierName,
         description: 'Mua hàng',
         totalGoods,

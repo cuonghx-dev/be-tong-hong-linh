@@ -1,8 +1,9 @@
 import { CHART_OF_ACCOUNTS, type Paginated } from '@app/shared'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
-import { BankVoucherType, Prisma, type BankVoucher, type BankVoucherLine } from '@prisma/client'
+import { BankVoucherType, PartnerType, Prisma, type BankVoucher, type BankVoucherLine } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { buildPartnerLookup } from '../../database/partner-lookup'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { parseBankXlsx } from './bank-import'
 import { BankVoucherFilterDto } from './dto/bank-voucher-filter.dto'
@@ -10,6 +11,14 @@ import { CreateBankVoucherDto, CreateBankVoucherLineDto } from './dto/create-ban
 import { UpdateBankVoucherDto } from './dto/update-bank-voucher.dto'
 
 type VoucherWithLines = BankVoucher & { lines: BankVoucherLine[] }
+
+// TK đối ứng ngầm định của chứng từ tiền gửi theo loại đối tượng.
+function counterAccount(type: PartnerType | undefined, isReceipt: boolean): string {
+  if (type === PartnerType.CUSTOMER) return CHART_OF_ACCOUNTS.RECEIVABLE // 131
+  if (type === PartnerType.SUPPLIER) return CHART_OF_ACCOUNTS.PAYABLE // 331
+  if (type === PartnerType.EMPLOYEE) return CHART_OF_ACCOUNTS.ADVANCE // 141
+  return isReceipt ? CHART_OF_ACCOUNTS.RECEIVABLE : CHART_OF_ACCOUNTS.PAYABLE
+}
 
 @Injectable()
 export class BankService {
@@ -166,6 +175,7 @@ export class BankService {
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
     const lockDate = await this.bookLock.getLockDate()
+    const lookup = await buildPartnerLookup(this.prisma)
 
     const vouchers: Prisma.BankVoucherCreateManyInput[] = []
     const lines: Prisma.BankVoucherLineCreateManyInput[] = []
@@ -175,6 +185,7 @@ export class BankService {
       seen.add(p.voucherNo) // chống trùng trong chính file
       const id = randomUUID()
       const isReceipt = p.type === BankVoucherType.RECEIPT
+      const resolved = lookup.any(p.partnerName)
       vouchers.push({
         id,
         type: p.type,
@@ -183,19 +194,27 @@ export class BankService {
         postingDate: p.date,
         voucherDate: p.date,
         bankAccountNo: p.bankAccountNo,
+        partnerType: resolved?.type ?? null,
+        partnerId: resolved?.id ?? null,
         partnerName: p.partnerName,
+        employeeId: resolved?.type === PartnerType.EMPLOYEE ? resolved.id : null,
         reason: p.reason,
         totalAmount: new Prisma.Decimal(p.amount),
         branchId: p.branchId,
       })
+      // TK đối ứng suy từ loại đối tượng: KH→131, NCC→331, NV→141; không rõ →
+      // 131 (thu) / 331 (chi) để bút toán vẫn cân.
+      const counter = counterAccount(resolved?.type, isReceipt)
       lines.push({
         id: randomUUID(),
         voucherId: id,
         lineNo: 1,
         description: p.description,
-        debitAccount: isReceipt ? CHART_OF_ACCOUNTS.BANK_DEPOSIT : '',
-        creditAccount: isReceipt ? '' : CHART_OF_ACCOUNTS.BANK_DEPOSIT,
+        debitAccount: isReceipt ? CHART_OF_ACCOUNTS.BANK_DEPOSIT : counter,
+        creditAccount: isReceipt ? counter : CHART_OF_ACCOUNTS.BANK_DEPOSIT,
         amount: new Prisma.Decimal(p.amount),
+        partnerId: resolved?.id ?? null,
+        partnerName: p.partnerName,
       })
     }
 

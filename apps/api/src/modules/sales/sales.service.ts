@@ -10,6 +10,7 @@ import {
 } from '@prisma/client'
 import { randomUUID } from 'crypto'
 import { PrismaService } from '../../database/prisma.service'
+import { buildPartnerLookup } from '../../database/partner-lookup'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { CreateSalesVoucherDto, CreateSalesVoucherLineDto } from './dto/create-sales-voucher.dto'
 import { SalesVoucherFilterDto } from './dto/sales-voucher-filter.dto'
@@ -217,6 +218,7 @@ export class SalesService {
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
     const lockDate = await this.bookLock.getLockDate()
+    const lookup = await buildPartnerLookup(this.prisma)
 
     const vouchers: Prisma.SalesVoucherCreateManyInput[] = []
     const lines: Prisma.SalesVoucherLineCreateManyInput[] = []
@@ -238,6 +240,7 @@ export class SalesService {
         withInvoice: p.withInvoice,
         postingDate: p.date,
         voucherDate: p.date,
+        customerId: lookup.customer(p.customerName)?.id ?? null,
         customerName: p.customerName,
         description: 'Bán hàng',
         totalGoods,

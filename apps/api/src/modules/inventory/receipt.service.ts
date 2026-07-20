@@ -8,6 +8,7 @@ import {
   type InventoryReceiptLine,
 } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { buildPartnerLookup } from '../../database/partner-lookup'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { CreateInventoryReceiptDto, CreateInventoryReceiptLineDto } from './dto/create-receipt.dto'
 import { InventoryReceiptFilterDto } from './dto/receipt-filter.dto'
@@ -151,6 +152,7 @@ export class ReceiptService {
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
     const lockDate = await this.bookLock.getLockDate()
+    const lookup = await buildPartnerLookup(this.prisma)
 
     const receipts: Prisma.InventoryReceiptCreateManyInput[] = []
     const lines: Prisma.InventoryReceiptLineCreateManyInput[] = []
@@ -161,12 +163,17 @@ export class ReceiptService {
 
       const total = new Prisma.Decimal(p.totalAmount)
       const id = randomUUID()
+      // Nhập kho mua hàng: tên NCC nằm trong diễn giải "Mua hàng của <NCC> theo hóa đơn số X".
+      const supplierName = supplierFromDescription(p.description)
+      const supplier = lookup.supplier(supplierName)
       receipts.push({
         id,
         receiptType: p.receiptType,
         voucherNo: p.voucherNo,
         postingDate: p.date,
         voucherDate: p.date,
+        partnerId: supplier?.id ?? null,
+        partnerName: supplier?.name ?? supplierName,
         deliverer: p.deliverer,
         description: p.description ?? 'Nhập kho',
         totalAmount: total,
@@ -249,6 +256,13 @@ function defaultCreditAccount(type: InventoryReceiptType): string | null {
     default:
       return null
   }
+}
+
+// Trích tên NCC từ diễn giải nhập kho mua hàng: "Mua hàng của <NCC> theo hóa đơn số X".
+function supplierFromDescription(desc: string | null): string | null {
+  if (!desc) return null
+  const m = desc.match(/Mua hàng của\s+(.+?)\s+theo hóa đơn/i)
+  return m ? m[1]!.trim() : null
 }
 
 function normalizeLines(type: InventoryReceiptType, lines: CreateInventoryReceiptLineDto[]) {

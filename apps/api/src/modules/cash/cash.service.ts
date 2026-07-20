@@ -6,8 +6,16 @@ import {
 } from '@app/shared'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
-import { CashVoucherType, Prisma, type CashVoucher, type CashVoucherLine } from '@prisma/client'
+import {
+  CashVoucherCategory,
+  CashVoucherType,
+  PartnerType,
+  Prisma,
+  type CashVoucher,
+  type CashVoucherLine,
+} from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
+import { buildPartnerLookup } from '../../database/partner-lookup'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { parseCashXlsx } from './cash-import'
 import { CashVoucherFilterDto } from './dto/cash-voucher-filter.dto'
@@ -15,6 +23,14 @@ import { CreateCashVoucherDto, CreateCashVoucherLineDto } from './dto/create-cas
 import { UpdateCashVoucherDto } from './dto/update-cash-voucher.dto'
 
 type VoucherWithLines = CashVoucher & { lines: CashVoucherLine[] }
+
+// Loại nghiệp vụ mà đối tượng là nhân viên (tạm ứng / hoàn ứng / lương).
+const EMPLOYEE_CATEGORIES = new Set<CashVoucherCategory>([
+  CashVoucherCategory.RECEIPT_EMPLOYEE_ADVANCE,
+  CashVoucherCategory.PAYMENT_EMPLOYEE_ADVANCE,
+  CashVoucherCategory.PAYMENT_SALARY_ADVANCE,
+  CashVoucherCategory.PAYMENT_SALARY,
+])
 
 @Injectable()
 export class CashService {
@@ -157,6 +173,7 @@ export class CashService {
     })
     const seen = new Set(existing.map((e) => e.voucherNo))
     const lockDate = await this.bookLock.getLockDate()
+    const lookup = await buildPartnerLookup(this.prisma)
 
     const vouchers: Prisma.CashVoucherCreateManyInput[] = []
     const lines: Prisma.CashVoucherLineCreateManyInput[] = []
@@ -166,6 +183,11 @@ export class CashService {
       seen.add(p.voucherNo) // chống trùng trong chính file
       const id = randomUUID()
       const isReceipt = p.type === CashVoucherType.RECEIPT
+      // Loại nghiệp vụ liên quan nhân viên → ưu tiên tra trong danh mục nhân viên.
+      const emp = EMPLOYEE_CATEGORIES.has(p.category) ? lookup.employee(p.partnerName) : null
+      const resolved = emp
+        ? { type: PartnerType.EMPLOYEE, ...emp }
+        : lookup.any(p.partnerName)
       vouchers.push({
         id,
         type: p.type,
@@ -173,7 +195,10 @@ export class CashService {
         voucherNo: p.voucherNo,
         postingDate: p.date,
         voucherDate: p.date,
+        partnerType: resolved?.type ?? null,
+        partnerId: resolved?.id ?? null,
         partnerName: p.partnerName,
+        employeeId: resolved?.type === PartnerType.EMPLOYEE ? resolved.id : null,
         reason: p.reason,
         totalAmount: new Prisma.Decimal(p.amount),
         branchId: p.branchId,
@@ -190,6 +215,8 @@ export class CashService {
         debitAccount: isReceipt ? CHART_OF_ACCOUNTS.CASH_ON_HAND : counter,
         creditAccount: isReceipt ? counter : CHART_OF_ACCOUNTS.CASH_ON_HAND,
         amount: new Prisma.Decimal(p.amount),
+        partnerId: resolved?.id ?? null,
+        partnerName: p.partnerName,
       })
     }
 

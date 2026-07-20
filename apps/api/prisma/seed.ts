@@ -30,6 +30,7 @@ import { TransferAccountService } from '../src/modules/catalog/transfer-account.
 import { UnitService } from '../src/modules/catalog/unit.service'
 import { VoucherTypeService } from '../src/modules/catalog/voucher-type.service'
 import { WarehouseService } from '../src/modules/catalog/warehouse.service'
+import { OrganizationUnitService } from '../src/modules/catalog/organization-unit.service'
 import { GeneralService } from '../src/modules/general/general.service'
 import { GoodsIssueService } from '../src/modules/inventory/goods-issue.service'
 import { ReceiptService } from '../src/modules/inventory/receipt.service'
@@ -38,6 +39,7 @@ import { PurchaseService } from '../src/modules/purchase/purchase.service'
 import { SupplierService } from '../src/modules/purchase/supplier.service'
 import { CustomerService } from '../src/modules/sales/customer.service'
 import { SalesService } from '../src/modules/sales/sales.service'
+import { enrichSeed } from './seed-enrich'
 
 const MISA_DIR = join(__dirname, '../../../docs/misa-specs')
 
@@ -59,6 +61,32 @@ async function main() {
 
   try {
     const prisma = app.get(PrismaService)
+
+    // ── Reset dữ liệu nghiệp vụ (SEED_RESET=1) — xóa sạch để seed lại giống thật ──
+    // Giữ bảng users (tài khoản đăng nhập). TRUNCATE ... CASCADE gỡ mọi ràng buộc FK.
+    if (process.env.SEED_RESET === '1') {
+      const tables = [
+        'cash_voucher_lines', 'cash_vouchers',
+        'bank_voucher_lines', 'bank_vouchers',
+        'purchase_voucher_lines', 'purchase_vouchers',
+        'sales_voucher_lines', 'sales_vouchers',
+        'inventory_receipt_lines', 'inventory_receipts',
+        'goods_issue_lines', 'goods_issue_vouchers',
+        'general_voucher_lines', 'general_vouchers',
+        'suppliers', 'customers',
+        'account_opening_balances', 'partner_opening_balances',
+        'fixed_asset_opening_balances', 'bank_account_opening_balances',
+        'inventory_opening_balances',
+        'products', 'warehouses', 'employees', 'partner_groups', 'product_groups',
+        'bank_accounts', 'expense_items', 'accounts', 'cost_objects',
+        'income_expense_items', 'banks', 'transfer_accounts', 'default_accounts',
+        'voucher_types', 'units', 'book_locks', 'organization_units',
+      ]
+      await prisma.$executeRawUnsafe(
+        `TRUNCATE TABLE ${tables.map((t) => `"${t}"`).join(', ')} RESTART IDENTITY CASCADE`,
+      )
+      console.log(`Reset: đã xóa ${tables.length} bảng (giữ users).`)
+    }
 
     // ── Người dùng quản trị (auth) — mật khẩu đặt qua env SEED_ADMIN_PASSWORD ──
     const email = 'admin@ketoan.vn'
@@ -100,6 +128,7 @@ async function main() {
     // (cần danh mục hàng hóa + KH) → chứng từ.
     const steps: Array<[string, () => Promise<ImportResult>]> = [
       // Danh mục
+      ['Cơ cấu tổ chức', () => app.get(OrganizationUnitService).importXlsx(xlsx('Danh_sach_co_cau_to_chuc.xlsx'))],
       ['Hệ thống tài khoản', () => app.get(AccountService).importXlsx(xlsx('Danh_sach_he_thong_tai_khoan_.xlsx'))],
       ['Tài khoản ngầm định', () => app.get(DefaultAccountService).importXlsx(xlsx('Danh_sach_tai_khoan_ngam_dinh.xlsx'))],
       ['Tài khoản kết chuyển', () => app.get(TransferAccountService).importXlsx(xlsx('Danh_sach_tai_khoan_ket_chuyen.xlsx'))],
@@ -137,6 +166,15 @@ async function main() {
       const r = await run()
       console.log(`${label}: ${r.created} mới / ${r.total} dòng (bỏ qua ${r.skipped})`)
     }
+
+    // ── Làm giàu: dòng hàng chi tiết + liên kết chứng từ + số dư đầu kỳ chi tiết ──
+    console.log('Đang làm giàu dữ liệu (dòng hàng, liên kết, số dư)…')
+    const e = await enrichSeed(prisma)
+    console.log(
+      `Làm giàu xong: ${e.salesLines} dòng bán hàng, ${e.purchaseItems} dòng mua hàng, ` +
+        `${e.receiptsLinked} nhập kho ↔ mua hàng, ${e.issuesLinked} xuất kho ↔ bán hàng, ` +
+        `${e.salesPaid} bán hàng ↔ phiếu thu, số dư NH: ${e.bankOpening}.`,
+    )
 
     console.log('Seed xong.')
   } finally {
