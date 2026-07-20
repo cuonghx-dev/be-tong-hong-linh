@@ -38,11 +38,10 @@ export function CashProcessTab() {
         { label: 'Tùy chọn', icon: <ProcessGearIcon /> },
       ]}
       reports={[
-        'Bảng kê số dư tiền theo ngày',
-        'Dòng tiền',
-        'S03a1-DNN: Sổ nhật ký thu tiền',
-        'Sổ kế toán chi tiết quỹ tiền mặt',
-        'S03a2-DNN: Sổ nhật ký chi tiền',
+        { label: 'Bảng kê số dư tiền theo ngày', to: '/cash/reports/daily-balance' },
+        { label: 'S03a1-DNN: Sổ nhật ký thu tiền', to: '/cash/reports/receipt-journal' },
+        { label: 'Sổ kế toán chi tiết quỹ tiền mặt', to: '/cash/reports/cash-book' },
+        { label: 'S03a2-DNN: Sổ nhật ký chi tiền', to: '/cash/reports/payment-journal' },
       ]}
     />
   )

@@ -22,6 +22,9 @@ export interface ProcessShortcut {
   to?: string
 }
 
+/** Mục báo cáo trong panel: chuỗi (chưa có trang) hoặc `{ label, to }` (dẫn link). */
+export type ProcessReport = string | { label: string; to: string }
+
 /** Một cột trên trục thời gian: node phía trên và/hoặc phía dưới trục. */
 export interface ProcessTimelineColumn {
   top?: ProcessFlowNode
@@ -49,7 +52,8 @@ export function ProcessDashboard({
   /** Nhánh nguồn bên trái gộp vào đầu trục (vd Lệnh sản xuất / Lắp ráp ở phân hệ Kho). */
   timelineLead?: ProcessTimelineColumn
   shortcuts: ProcessShortcut[]
-  reports: string[]
+  /** Mỗi báo cáo: chuỗi (chưa có trang → nút chết) hoặc `{ label, to }` (dẫn link). */
+  reports: ProcessReport[]
 }) {
   return (
     <div className="mx-auto grid max-w-6xl grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
@@ -127,18 +131,27 @@ export function ProcessDashboard({
           Báo cáo
         </h2>
         <ul className="flex-1 px-4">
-          {reports.map((r) => (
-            <li key={r} className="border-b border-border/70 last:border-b-0">
-              <button
-                type="button"
-                title="Tính năng đang phát triển."
-                className="flex w-full items-center gap-3 py-4 text-left text-sm text-slate-700 hover:text-primary"
-              >
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
-                {r}
-              </button>
-            </li>
-          ))}
+          {reports.map((r) => {
+            const label = typeof r === 'string' ? r : r.label
+            const to = typeof r === 'string' ? undefined : r.to
+            const cls =
+              'flex w-full items-center gap-3 py-4 text-left text-sm text-slate-700 hover:text-primary'
+            return (
+              <li key={label} className="border-b border-border/70 last:border-b-0">
+                {to ? (
+                  <Link to={to} className={cls}>
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
+                    {label}
+                  </Link>
+                ) : (
+                  <button type="button" title="Tính năng đang phát triển." className={cls}>
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
+                    {label}
+                  </button>
+                )}
+              </li>
+            )
+          })}
         </ul>
         <button
           type="button"
