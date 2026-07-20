@@ -41,7 +41,7 @@ export class DashboardService {
       this.inventoryTotal(),
       this.prisma.salesVoucher.aggregate({
         _sum: { totalGoods: true },
-        where: { postingDate: { gte: from, lte: to } },
+        where: { postingDate: { gte: from, lte: to }, posted: true },
       }),
       this.expenseTotal(from, to),
     ])
@@ -200,23 +200,48 @@ export class DashboardService {
   }
 
   // ── Hàng hóa tồn kho — top theo giá trị ────────────────────────────────────
+  // Tồn = khai báo đầu kỳ + Σ nhập − Σ xuất (chỉ chứng từ đã ghi sổ, bỏ dòng
+  // đại diện nhập khẩu không có mã hàng). Khớp logic báo cáo Kho (StockSummary).
   async inventorySummary(limit = 5): Promise<InventorySummaryDto> {
     const [total, items] = await Promise.all([
       this.inventoryTotal(),
       this.prisma.$queryRaw<{ item_name: string; quantity: string; value: string }[]>(Prisma.sql`
+        WITH opening AS (
+          SELECT p.code AS item_code, p.name AS item_name,
+                 SUM(b.quantity) AS qty, SUM(b.amount) AS amt
+          FROM inventory_opening_balances b
+          JOIN products p ON p.id = b.product_id
+          GROUP BY p.code, p.name
+        ),
+        receipt AS (
+          SELECT l.item_id AS item_code, SUM(l.quantity) AS qty, SUM(l.amount) AS amt
+          FROM inventory_receipt_lines l
+          JOIN inventory_receipts v ON v.id = l.receipt_id
+          WHERE v.posted AND COALESCE(l.item_id, '') <> ''
+          GROUP BY l.item_id
+        ),
+        issue AS (
+          SELECT l.item_id AS item_code, SUM(l.quantity) AS qty, SUM(l.amount) AS amt
+          FROM goods_issue_lines l
+          JOIN goods_issue_vouchers v ON v.id = l.voucher_id
+          WHERE v.posted AND COALESCE(l.item_id, '') <> ''
+          GROUP BY l.item_id
+        ),
+        codes AS (
+          SELECT item_code FROM opening
+          UNION SELECT item_code FROM receipt
+          UNION SELECT item_code FROM issue
+        )
         SELECT
-          COALESCE(r.item_name, i.item_name) AS item_name,
-          (COALESCE(r.qty, 0) - COALESCE(i.qty, 0))::text AS quantity,
-          (COALESCE(r.amt, 0) - COALESCE(i.amt, 0))::text AS value
-        FROM (
-          SELECT item_name, SUM(quantity) AS qty, SUM(amount) AS amt
-          FROM inventory_receipt_lines WHERE item_name IS NOT NULL GROUP BY item_name
-        ) r
-        FULL OUTER JOIN (
-          SELECT item_name, SUM(quantity) AS qty, SUM(amount) AS amt
-          FROM goods_issue_lines WHERE item_name IS NOT NULL GROUP BY item_name
-        ) i USING (item_name)
-        ORDER BY (COALESCE(r.amt, 0) - COALESCE(i.amt, 0)) DESC
+          COALESCE(o.item_name, p.name) AS item_name,
+          (COALESCE(o.qty, 0) + COALESCE(r.qty, 0) - COALESCE(i.qty, 0))::text AS quantity,
+          (COALESCE(o.amt, 0) + COALESCE(r.amt, 0) - COALESCE(i.amt, 0))::text AS value
+        FROM codes c
+        LEFT JOIN opening o ON o.item_code = c.item_code
+        LEFT JOIN receipt r ON r.item_code = c.item_code
+        LEFT JOIN issue i ON i.item_code = c.item_code
+        LEFT JOIN products p ON p.code = c.item_code
+        ORDER BY (COALESCE(o.amt, 0) + COALESCE(r.amt, 0) - COALESCE(i.amt, 0)) DESC
         LIMIT ${limit}
       `),
     ])
@@ -234,14 +259,14 @@ export class DashboardService {
     const [revenueAgg, items] = await Promise.all([
       this.prisma.salesVoucher.aggregate({
         _sum: { totalGoods: true },
-        where: { postingDate: { gte: from, lte: to } },
+        where: { postingDate: { gte: from, lte: to }, posted: true },
       }),
       this.prisma.$queryRaw<{ item_name: string; quantity: string; revenue: string }[]>(Prisma.sql`
         SELECT l.item_name, COALESCE(SUM(l.quantity), 0)::text AS quantity,
                COALESCE(SUM(l.amount), 0)::text AS revenue
         FROM sales_voucher_lines l
         JOIN sales_vouchers v ON v.id = l.voucher_id
-        WHERE l.item_name IS NOT NULL AND v.posting_date BETWEEN ${from} AND ${to}
+        WHERE l.item_name IS NOT NULL AND v.posted AND v.posting_date BETWEEN ${from} AND ${to}
         GROUP BY l.item_name
         ORDER BY SUM(l.amount) DESC
         LIMIT ${limit}
@@ -296,12 +321,20 @@ export class DashboardService {
     return new Prisma.Decimal(rows[0]?.s ?? 0)
   }
 
-  // Giá trị tồn kho = Σ nhập − Σ xuất (toàn thời gian).
+  // Giá trị tồn kho = khai báo đầu kỳ + Σ nhập − Σ xuất (toàn thời gian, chỉ
+  // chứng từ đã ghi sổ, bỏ dòng đại diện nhập khẩu). Khớp báo cáo Kho.
   private async inventoryTotal(): Promise<Prisma.Decimal> {
     const rows = await this.prisma.$queryRaw<{ s: string }[]>(Prisma.sql`
       SELECT (
-        (SELECT COALESCE(SUM(amount), 0) FROM inventory_receipt_lines)
-        - (SELECT COALESCE(SUM(amount), 0) FROM goods_issue_lines)
+        (SELECT COALESCE(SUM(amount), 0) FROM inventory_opening_balances)
+        + (SELECT COALESCE(SUM(l.amount), 0)
+           FROM inventory_receipt_lines l
+           JOIN inventory_receipts v ON v.id = l.receipt_id
+           WHERE v.posted AND COALESCE(l.item_id, '') <> '')
+        - (SELECT COALESCE(SUM(l.amount), 0)
+           FROM goods_issue_lines l
+           JOIN goods_issue_vouchers v ON v.id = l.voucher_id
+           WHERE v.posted AND COALESCE(l.item_id, '') <> '')
       )::text AS s
     `)
     return new Prisma.Decimal(rows[0]?.s ?? 0)
