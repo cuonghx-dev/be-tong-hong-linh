@@ -166,8 +166,11 @@ export function SalesVoucherForm({
         })),
       }
       try {
-        if (voucherId) await update.mutateAsync({ id: voucherId, dto })
-        else await create.mutateAsync(dto)
+        if (voucherId) {
+          // Sửa phiếu không cho đổi loại (voucherType) — backend từ chối field thừa (forbidNonWhitelisted).
+          const { voucherType: _voucherType, ...updateDto } = dto
+          await update.mutateAsync({ id: voucherId, dto: updateDto })
+        } else await create.mutateAsync(dto)
         if (goNext && !voucherId) reset(defaultValues())
         else onSaved()
       } catch (e) {

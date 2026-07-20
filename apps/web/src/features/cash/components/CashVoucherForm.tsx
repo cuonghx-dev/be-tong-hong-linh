@@ -200,7 +200,9 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
       }
       try {
         if (voucherId) {
-          await update.mutateAsync({ id: voucherId, dto })
+          // Sửa phiếu không cho đổi loại (type) — backend từ chối field thừa (forbidNonWhitelisted).
+          const { type: _type, ...updateDto } = dto
+          await update.mutateAsync({ id: voucherId, dto: updateDto })
         } else {
           await create.mutateAsync(dto)
         }
@@ -243,7 +245,12 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {CATEGORY_OPTIONS[type].map((c) => (
+              {/* Loại hiện tại có thể là category tự sinh (SALES_CASH, mua hàng…) không nằm trong
+                  danh sách chọn tay — vẫn thêm vào để hiển thị đúng khi xem/sửa phiếu. */}
+              {(CATEGORY_OPTIONS[type].includes(category)
+                ? CATEGORY_OPTIONS[type]
+                : [category, ...CATEGORY_OPTIONS[type]]
+              ).map((c) => (
                 <SelectItem key={c} value={c}>
                   {CATEGORY_LABEL[c]}
                 </SelectItem>

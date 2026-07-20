@@ -244,8 +244,11 @@ export function PurchaseVoucherForm({
         })),
       }
       try {
-        if (voucherId) await update.mutateAsync({ id: voucherId, dto })
-        else await create.mutateAsync(dto)
+        if (voucherId) {
+          // Sửa phiếu không cho đổi loại (type) — backend từ chối field thừa (forbidNonWhitelisted).
+          const { type: _type, ...updateDto } = dto
+          await update.mutateAsync({ id: voucherId, dto: updateDto })
+        } else await create.mutateAsync(dto)
         if (goNext && !voucherId) {
           // Giữ nguyên "Lý do" (loại + nguồn gốc) đang chọn khi lưu và thêm tiếp.
           reset({ ...defaultValues(values.type), origin: values.origin })

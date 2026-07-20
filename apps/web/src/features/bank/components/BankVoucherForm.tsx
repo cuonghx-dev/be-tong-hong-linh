@@ -181,7 +181,9 @@ export function BankVoucherForm({
       }
       try {
         if (voucherId) {
-          await update.mutateAsync({ id: voucherId, dto })
+          // Sửa phiếu không cho đổi loại (type) — backend từ chối field thừa (forbidNonWhitelisted).
+          const { type: _type, ...updateDto } = dto
+          await update.mutateAsync({ id: voucherId, dto: updateDto })
         } else {
           await create.mutateAsync(dto)
         }
