@@ -1,4 +1,4 @@
-import { CashVoucherCategory, CashVoucherType, type CashVoucherFilter } from '@app/shared'
+import { CashVoucherCategory, CashVoucherType, type CashVoucherFilter, type PurchaseVoucherType } from '@app/shared'
 import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
@@ -28,11 +28,29 @@ function CashTable() {
 
   // Điều hướng sang trang chứng từ full-page (§5).
   const openNew = (type: CashVoucherType) => navigate(`/cash/vouchers/new?type=${type}`)
-  // PT "Bán hàng hóa trong nước - Tiền mặt" tự sinh → Xem = mở chứng từ bán hàng nguồn.
-  const openView = (r: { id: string; type: CashVoucherType; category: CashVoucherCategory; salesVoucherId: string | null }) =>
-    r.category === CashVoucherCategory.SalesCash && r.salesVoucherId
-      ? navigate(`/sales/vouchers/${r.salesVoucherId}`)
-      : navigate(`/cash/vouchers/${r.id}?type=${r.type}`)
+  // Phiếu tự sinh → Xem = mở chứng từ nguồn: PT bán hàng tiền mặt → chứng từ bán hàng;
+  // PC mua hàng không qua kho / mua dịch vụ tiền mặt → chứng từ mua hàng.
+  const openView = (r: {
+    id: string
+    type: CashVoucherType
+    category: CashVoucherCategory
+    salesVoucherId: string | null
+    purchaseVoucherId: string | null
+    purchaseVoucherType: PurchaseVoucherType | null
+  }) => {
+    if (r.category === CashVoucherCategory.SalesCash && r.salesVoucherId) {
+      return navigate(`/sales/vouchers/${r.salesVoucherId}`)
+    }
+    if (
+      (r.category === CashVoucherCategory.PurchaseGoodsCash ||
+        r.category === CashVoucherCategory.PurchaseServiceCash) &&
+      r.purchaseVoucherId &&
+      r.purchaseVoucherType
+    ) {
+      return navigate(`/purchase/vouchers/${r.purchaseVoucherId}?type=${r.purchaseVoucherType}`)
+    }
+    return navigate(`/cash/vouchers/${r.id}?type=${r.type}`)
+  }
   const openEdit = (id: string, type: CashVoucherType) =>
     navigate(`/cash/vouchers/${id}/edit?type=${type}`)
   // Nhân bản: mở form tạo mới, điền sẵn dữ liệu phiếu nguồn (số phiếu cấp lại khi Lưu).

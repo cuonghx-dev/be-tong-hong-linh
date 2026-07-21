@@ -1,5 +1,5 @@
 // Type request/response phân hệ Tiền mặt (01-tien-mat) — dùng chung FE ↔ BE.
-import type { CashVoucherCategory, CashVoucherType, PartnerType } from '../enums'
+import type { CashVoucherCategory, CashVoucherType, PartnerType, PurchaseVoucherType } from '../enums'
 
 // Dòng hạch toán (bút toán) của phiếu thu/chi.
 export interface CashVoucherLineDto {
@@ -38,6 +38,9 @@ export interface CashVoucherDto {
   posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
   // Chứng từ bán hàng nguồn (PT SALES_CASH tự sinh) — FE "Xem" mở chứng từ bán hàng.
   salesVoucherId: string | null
+  // Chứng từ mua hàng nguồn (PC PURCHASE_*_CASH tự sinh) — FE "Xem" mở chứng từ mua hàng/mua dịch vụ.
+  purchaseVoucherId: string | null
+  purchaseVoucherType: PurchaseVoucherType | null
   lines: CashVoucherLineDto[]
   createdAt: string
   updatedAt: string
