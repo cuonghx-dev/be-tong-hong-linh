@@ -24,11 +24,9 @@ import { UpdateCashVoucherDto } from './dto/update-cash-voucher.dto'
 
 type VoucherWithLines = CashVoucher & { lines: CashVoucherLine[] }
 
-// Loại nghiệp vụ mà đối tượng là nhân viên (tạm ứng / hoàn ứng / lương).
+// Loại nghiệp vụ mà đối tượng là nhân viên (tạm ứng).
 const EMPLOYEE_CATEGORIES = new Set<CashVoucherCategory>([
   CashVoucherCategory.PAYMENT_EMPLOYEE_ADVANCE,
-  CashVoucherCategory.PAYMENT_SALARY_ADVANCE,
-  CashVoucherCategory.PAYMENT_SALARY,
 ])
 
 @Injectable()

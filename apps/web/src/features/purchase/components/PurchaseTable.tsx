@@ -46,11 +46,11 @@ export function PurchaseTable() {
   // Nhân bản: mở form tạo mới, điền sẵn dữ liệu chứng từ nguồn (số chứng từ cấp lại khi Lưu).
   const openDuplicate = (id: string, type: PurchaseVoucherType) =>
     navigate(`/purchase/vouchers/new?type=${type}&duplicateFrom=${id}`)
-  // Trả tiền NCC: mở phiếu chi tiền mặt điền sẵn NCC + số tiền (định khoản Nợ 331/Có 111).
+  // Trả tiền NCC: mở phiếu chi tiền mặt điền sẵn NCC + số tiền (loại Chi khác, TK Nợ tự nhập).
   const openPay = (r: PurchaseVoucherDto) => {
     const q = new URLSearchParams({
       type: CashVoucherType.Payment,
-      category: CashVoucherCategory.PaymentSupplier,
+      category: CashVoucherCategory.Payment,
       amount: r.totalPayment,
     })
     if (r.supplierId) q.set('partnerId', r.supplierId)
