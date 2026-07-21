@@ -16,7 +16,11 @@ export function Popover({ trigger, children, align = 'left', className }: Popove
   useEffect(() => {
     if (!open) return
     const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      // Dropdown Radix (Select…) portal ra document.body — click chọn option nằm ngoài
+      // DOM của popover nhưng không phải "click ngoài", đừng đóng (bug bộ lọc tự đóng).
+      if (target instanceof Element && target.closest('[data-radix-popper-content-wrapper]')) return
+      if (ref.current && !ref.current.contains(target)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
     document.addEventListener('mousedown', onClick)
