@@ -225,6 +225,141 @@ export class ReceiptService {
     await this.prisma.inventoryReceipt.delete({ where: { id } })
     return { id }
   }
+
+  // ── Phiếu nhập tự sinh từ chứng từ mua hàng nhập kho (receiptType PURCHASE) ─
+  // Public API cho PurchaseModule: chạy trong transaction phía gọi. Chứng từ mua
+  // chưa thanh toán mang số NK → phiếu nhập dùng CHUNG số đó (MISA: chứng từ mua
+  // nhập kho kiêm phiếu nhập, khớp dữ liệu nhập khẩu + luật khử trùng report);
+  // trả ngay (số PC/UNC) → phiếu nhập nhận số NK kế tiếp riêng.
+
+  async createPurchaseReceipt(
+    tx: Prisma.TransactionClient,
+    input: PurchaseReceiptInput,
+    presetVoucherNo?: string,
+  ) {
+    const voucherNo = presetVoucherNo ?? (await nextVoucherNo(tx))
+    const lines = purchaseReceiptLines(input)
+    const created = await tx.inventoryReceipt.create({
+      data: {
+        receiptType: InventoryReceiptType.PURCHASE,
+        voucherNo,
+        ...purchaseReceiptData(input, lines),
+        lines: { create: lines },
+      },
+      select: { id: true },
+    })
+    return created.id
+  }
+
+  // Đồng bộ phiếu nhập theo chứng từ mua khi sửa; đã bị xóa tay → tạo lại (id mới).
+  async upsertPurchaseReceipt(
+    tx: Prisma.TransactionClient,
+    receiptId: string | null,
+    input: PurchaseReceiptInput,
+    presetVoucherNo?: string,
+  ) {
+    if (receiptId) {
+      const existing = await tx.inventoryReceipt.findUnique({
+        where: { id: receiptId },
+        select: { id: true },
+      })
+      if (existing) {
+        const lines = purchaseReceiptLines(input)
+        await tx.inventoryReceiptLine.deleteMany({ where: { receiptId } })
+        await tx.inventoryReceipt.update({
+          where: { id: receiptId },
+          data: { ...purchaseReceiptData(input, lines), lines: { create: lines } },
+        })
+        return receiptId
+      }
+    }
+    return this.createPurchaseReceipt(tx, input, presetVoucherNo)
+  }
+
+  // deleteMany/updateMany + điều kiện receiptType: không nổ nếu phiếu đã bị xóa
+  // tay, và không cho chứng từ mua đụng nhầm phiếu nhập tay loại khác.
+  async deletePurchaseReceipt(tx: Prisma.TransactionClient, receiptId: string) {
+    await tx.inventoryReceipt.deleteMany({
+      where: { id: receiptId, receiptType: InventoryReceiptType.PURCHASE },
+    })
+  }
+
+  async setPurchaseReceiptPosted(
+    tx: Prisma.TransactionClient,
+    receiptId: string,
+    posted: boolean,
+  ) {
+    await tx.inventoryReceipt.updateMany({
+      where: { id: receiptId, receiptType: InventoryReceiptType.PURCHASE },
+      data: { posted },
+    })
+  }
+
+  async findVoucherNo(id: string) {
+    const r = await this.prisma.inventoryReceipt.findUnique({
+      where: { id },
+      select: { voucherNo: true },
+    })
+    return r?.voucherNo ?? null
+  }
+}
+
+// Dữ liệu phiếu nhập tự sinh — dòng hàng mirror chứng từ mua (định khoản Nợ TK
+// kho / Có TK công nợ-quỹ đã nằm ở purchase_voucher_lines; report khử trùng).
+export type PurchaseReceiptInput = {
+  postingDate: Date
+  voucherDate: Date
+  supplierId: string | null
+  supplierName: string | null
+  address: string | null
+  deliverer: string | null
+  description: string
+  reference: string | null // số chứng từ mua gốc
+  posted: boolean
+  lines: {
+    itemId: string | null
+    itemName: string | null
+    warehouseId: string | null
+    debitAccount: string | null
+    creditAccount: string | null
+    unit: string | null
+    quantity: Prisma.Decimal
+    unitPrice: Prisma.Decimal
+    amount: Prisma.Decimal
+  }[]
+}
+
+function purchaseReceiptData(
+  input: PurchaseReceiptInput,
+  lines: ReturnType<typeof purchaseReceiptLines>,
+) {
+  return {
+    postingDate: input.postingDate,
+    voucherDate: input.voucherDate,
+    partnerId: input.supplierId,
+    partnerName: input.supplierName,
+    address: input.address,
+    deliverer: input.deliverer,
+    description: input.description,
+    reference: input.reference,
+    posted: input.posted,
+    totalAmount: computeTotal(lines),
+  }
+}
+
+function purchaseReceiptLines(input: PurchaseReceiptInput) {
+  return input.lines.map((l, i) => ({
+    lineNo: i + 1,
+    itemId: l.itemId,
+    itemName: l.itemName,
+    warehouseId: l.warehouseId,
+    debitAccount: l.debitAccount || defaultDebitAccount(InventoryReceiptType.PURCHASE),
+    creditAccount: l.creditAccount || defaultCreditAccount(InventoryReceiptType.PURCHASE),
+    unit: l.unit,
+    quantity: l.quantity,
+    unitPrice: l.unitPrice,
+    amount: l.amount,
+  }))
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────

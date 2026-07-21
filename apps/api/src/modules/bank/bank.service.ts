@@ -353,6 +353,129 @@ export class BankService {
     })
     return created
   }
+
+  // ── UNC tự sinh từ chứng từ mua hàng thanh toán ngay - chuyển khoản ─────────
+  // (PURCHASE_SERVICE_BANK / PURCHASE_GOODS_BANK) — mirror nhóm PC bên quỹ:
+  // chạy trong transaction phía gọi, Có luôn 1121, Nợ theo dòng đầu vào.
+
+  // Số UNC kế tiếp — public để PurchaseModule đánh số chứng từ mua thanh toán
+  // ngay CK (MH/MDV) trùng với UNC tự sinh (MISA dùng chung 1 số UNC####/YYYY).
+  async nextPaymentNo(tx: Prisma.TransactionClient, voucherDate: Date) {
+    return nextVoucherNo(tx, BankVoucherType.PAYMENT, voucherDate)
+  }
+
+  async createPurchasePayment(
+    tx: Prisma.TransactionClient,
+    input: PurchaseBankPaymentInput,
+    presetVoucherNo?: string,
+  ) {
+    const voucherNo =
+      presetVoucherNo ?? (await nextVoucherNo(tx, BankVoucherType.PAYMENT, input.voucherDate))
+    const created = await tx.bankVoucher.create({
+      data: {
+        type: BankVoucherType.PAYMENT,
+        category: input.category,
+        voucherNo,
+        ...purchasePaymentData(input),
+        lines: { create: purchasePaymentLines(input) },
+      },
+      select: { id: true },
+    })
+    return created.id
+  }
+
+  // Đồng bộ UNC theo chứng từ mua khi sửa; UNC đã bị xóa tay → tạo lại (id mới).
+  async upsertPurchasePayment(
+    tx: Prisma.TransactionClient,
+    paymentId: string | null,
+    input: PurchaseBankPaymentInput,
+  ) {
+    if (paymentId) {
+      const existing = await tx.bankVoucher.findUnique({
+        where: { id: paymentId },
+        select: { id: true },
+      })
+      if (existing) {
+        await tx.bankVoucherLine.deleteMany({ where: { voucherId: paymentId } })
+        await tx.bankVoucher.update({
+          where: { id: paymentId },
+          data: {
+            category: input.category,
+            ...purchasePaymentData(input),
+            lines: { create: purchasePaymentLines(input) },
+          },
+        })
+        return paymentId
+      }
+    }
+    return this.createPurchasePayment(tx, input)
+  }
+
+  // deleteMany/updateMany + điều kiện category: không nổ nếu UNC đã bị xóa tay,
+  // và không cho chứng từ mua đụng nhầm chứng từ nhập tay.
+  async deletePurchasePayment(tx: Prisma.TransactionClient, paymentId: string) {
+    await tx.bankVoucher.deleteMany({
+      where: { id: paymentId, category: { in: PURCHASE_BANK_CATEGORIES } },
+    })
+  }
+
+  async setPurchasePaymentPosted(tx: Prisma.TransactionClient, paymentId: string, posted: boolean) {
+    await tx.bankVoucher.updateMany({
+      where: { id: paymentId, category: { in: PURCHASE_BANK_CATEGORIES } },
+      data: { posted },
+    })
+  }
+}
+
+const PURCHASE_BANK_CATEGORIES = [
+  BankVoucherCategory.PURCHASE_SERVICE_BANK,
+  BankVoucherCategory.PURCHASE_GOODS_BANK,
+]
+
+// Dữ liệu UNC tự sinh — mirror từ chứng từ mua hàng thanh toán ngay CK.
+export type PurchaseBankPaymentInput = {
+  category: BankVoucherCategory // PURCHASE_SERVICE_BANK | PURCHASE_GOODS_BANK
+  postingDate: Date
+  voucherDate: Date
+  supplierId: string | null
+  supplierName: string | null
+  address: string | null
+  reason: string
+  branchId: string | null
+  posted: boolean
+  bankAccountNo: string | null
+  bankName: string | null
+  // Dòng hạch toán phía Nợ (TK kho/chi phí theo dòng hàng + thuế GTGT); Có luôn 1121.
+  lines: { description: string | null; debitAccount: string; amount: Prisma.Decimal }[]
+}
+
+function purchasePaymentData(input: PurchaseBankPaymentInput) {
+  return {
+    postingDate: input.postingDate,
+    voucherDate: input.voucherDate,
+    bankAccountNo: input.bankAccountNo,
+    bankName: input.bankName,
+    partnerType: PartnerType.SUPPLIER,
+    partnerId: input.supplierId,
+    partnerName: input.supplierName,
+    address: input.address,
+    reason: input.reason,
+    branchId: input.branchId,
+    posted: input.posted,
+    totalAmount: sumAmount(input.lines),
+  }
+}
+
+function purchasePaymentLines(input: PurchaseBankPaymentInput) {
+  return input.lines.map((l, i) => ({
+    lineNo: i + 1,
+    description: l.description,
+    debitAccount: l.debitAccount,
+    creditAccount: CHART_OF_ACCOUNTS.BANK_DEPOSIT,
+    amount: l.amount,
+    partnerId: input.supplierId,
+    partnerName: input.supplierName,
+  }))
 }
 
 // Dữ liệu thu tiền gửi tự sinh — mirror từ chứng từ bán hàng thu tiền ngay CK.

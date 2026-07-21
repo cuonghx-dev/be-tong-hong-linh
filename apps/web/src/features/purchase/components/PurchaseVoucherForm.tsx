@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
+import { useBankAccounts } from '@/features/catalog'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
@@ -69,14 +70,18 @@ function defaultStockAccount(type: PurchaseVoucherType): string {
     : CHART_OF_ACCOUNTS.SERVICE_EXPENSE
 }
 
-function emptyLine(type: PurchaseVoucherType, paysCash = false): PurchaseLineFormValues {
+function emptyLine(
+  type: PurchaseVoucherType,
+  // Trả ngay → vế Có là quỹ 1111 (TM) / tiền gửi 1121 (CK) thay công nợ 331
+  // (khớp định khoản backend).
+  payableAccount: string = CHART_OF_ACCOUNTS.PAYABLE,
+): PurchaseLineFormValues {
   return {
     quantity: 1,
     unitPrice: 0,
     vatRate: 8,
     stockAccount: defaultStockAccount(type),
-    // Trả ngay TM → vế Có là quỹ 1111 thay công nợ 331 (khớp định khoản backend).
-    payableAccount: paysCash ? CHART_OF_ACCOUNTS.CASH_ON_HAND : CHART_OF_ACCOUNTS.PAYABLE,
+    payableAccount,
     vatAccount: CHART_OF_ACCOUNTS.VAT_INPUT_DEDUCTIBLE,
   }
 }
@@ -199,6 +204,8 @@ export function PurchaseVoucherForm({
       einvoiceLookupCode: v.einvoiceLookupCode ?? undefined,
       einvoiceLookupUrl: v.einvoiceLookupUrl ?? undefined,
       branchId: v.branchId ?? undefined,
+      bankAccountNo: v.bankAccountNo ?? undefined,
+      bankName: v.bankName ?? undefined,
       lines: v.lines.map((l) => ({
         itemId: l.itemId ?? undefined,
         itemName: l.itemName ?? undefined,
@@ -220,17 +227,31 @@ export function PurchaseVoucherForm({
   const paymentMethod = watch('paymentMethod')
   const receiveWithInvoice = watch('receiveWithInvoice')
 
-  // Trả ngay TM → TK công nợ dòng hàng đổi 331 → 1111 và ngược lại (MISA đổi
-  // tự động); chỉ đè 2 giá trị mặc định, giữ TK người dùng đã sửa tay.
+  // Trả ngay → TK công nợ dòng hàng đổi 331 → 1111 (TM) / 1121 (CK) và ngược lại
+  // (MISA đổi tự động); chỉ đè các giá trị mặc định, giữ TK người dùng đã sửa tay.
   const paysCash =
     paymentMode === PurchasePaymentMode.Immediate && paymentMethod !== PaymentMethod.BankTransfer
+  const paysBank =
+    paymentMode === PurchasePaymentMode.Immediate && paymentMethod === PaymentMethod.BankTransfer
+  const linePayableDefault = paysCash
+    ? CHART_OF_ACCOUNTS.CASH_ON_HAND
+    : paysBank
+      ? CHART_OF_ACCOUNTS.BANK_DEPOSIT
+      : CHART_OF_ACCOUNTS.PAYABLE
   useEffect(() => {
-    const target = paysCash ? CHART_OF_ACCOUNTS.CASH_ON_HAND : CHART_OF_ACCOUNTS.PAYABLE
-    const other = paysCash ? CHART_OF_ACCOUNTS.PAYABLE : CHART_OF_ACCOUNTS.CASH_ON_HAND
+    const defaults: string[] = [
+      CHART_OF_ACCOUNTS.PAYABLE,
+      CHART_OF_ACCOUNTS.CASH_ON_HAND,
+      CHART_OF_ACCOUNTS.BANK_DEPOSIT,
+    ]
     getValues('lines')?.forEach((l, i) => {
-      if (l.payableAccount === other) setValue(`lines.${i}.payableAccount`, target)
+      if (l.payableAccount !== linePayableDefault && defaults.includes(l.payableAccount ?? ''))
+        setValue(`lines.${i}.payableAccount`, linePayableDefault)
     })
-  }, [paysCash, getValues, setValue])
+  }, [linePayableDefault, getValues, setValue])
+
+  // TKNH chi tiền khi trả ngay CK (bắt buộc chọn để UNC tự sinh có TKNH).
+  const bankAccounts = useBankAccounts({ page: 1, pageSize: 100 })
   // Loại/nguồn gốc là trạng thái form (đổi qua dropdown "Lý do"), không dùng prop cố định.
   const currentType = watch('type')
   const currentOrigin = watch('origin')
@@ -354,24 +375,65 @@ export function PurchaseVoucherForm({
             </SelectContent>
           </Select>
         )}
+        {/* Trả ngay CK → chọn TKNH chi tiền (bắt buộc để sinh UNC chi tiền gửi). */}
+        {paysBank && (
+          <Select
+            value={watch('bankAccountNo') ?? ''}
+            onValueChange={(no) => {
+              const acc = bankAccounts.data?.data.find((a) => a.accountNumber === no)
+              setValue('bankAccountNo', no)
+              setValue('bankName', acc?.bankName ?? undefined)
+            }}
+          >
+            <SelectTrigger className="h-8 w-auto min-w-44 bg-white">
+              <SelectValue placeholder="Chọn TK ngân hàng chi" />
+            </SelectTrigger>
+            <SelectContent>
+              {(bankAccounts.data?.data ?? []).map((a) => (
+                <SelectItem key={a.id} value={a.accountNumber}>
+                  {a.accountNumber} — {a.bankName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <label className="ml-auto flex items-center gap-1.5 text-sm">
           <input type="checkbox" {...register('receiveWithInvoice')} />
           Nhận kèm hóa đơn
         </label>
       </div>
 
-      {/* Chứng từ tự sinh: Phiếu chi (thanh toán ngay TM). */}
-      {!!voucherId && !!editing.data?.paymentId && (
-        <p className="space-x-3 text-sm text-slate-600">
-          <span>Tham chiếu:</span>
-          <Link
-            to={`/cash/vouchers/${editing.data.paymentId}`}
-            className="font-medium text-primary hover:underline"
-          >
-            {editing.data.paymentNo ?? 'Phiếu chi'}
-          </Link>
-        </p>
-      )}
+      {/* Chứng từ tự sinh: Phiếu chi (TM) / UNC chi tiền gửi (CK) / Phiếu nhập kho. */}
+      {!!voucherId &&
+        !!(editing.data?.paymentId || editing.data?.bankPaymentId || editing.data?.receiptId) && (
+          <p className="space-x-3 text-sm text-slate-600">
+            <span>Tham chiếu:</span>
+            {editing.data?.paymentId && (
+              <Link
+                to={`/cash/vouchers/${editing.data.paymentId}`}
+                className="font-medium text-primary hover:underline"
+              >
+                {editing.data.paymentNo ?? 'Phiếu chi'}
+              </Link>
+            )}
+            {editing.data?.bankPaymentId && (
+              <Link
+                to={`/bank/vouchers/${editing.data.bankPaymentId}`}
+                className="font-medium text-primary hover:underline"
+              >
+                {editing.data.bankPaymentNo ?? 'UNC chi tiền gửi'}
+              </Link>
+            )}
+            {editing.data?.receiptId && (
+              <Link
+                to={`/inventory/receipts/${editing.data.receiptId}`}
+                className="font-medium text-primary hover:underline"
+              >
+                {editing.data.receiptNo ?? 'Phiếu nhập kho'}
+              </Link>
+            )}
+          </p>
+        )}
 
       {/* Thông tin chung */}
       <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
@@ -439,7 +501,7 @@ export function PurchaseVoucherForm({
       <div className="rounded-md border border-border">
         <div className="flex items-center gap-2 border-b border-border bg-slate-50 px-2 py-1.5">
           <span className="text-sm font-medium text-slate-600">Hàng tiền</span>
-          <Button type="button" variant="outline" size="sm" onClick={() => append(emptyLine(currentType, paysCash))}>
+          <Button type="button" variant="outline" size="sm" onClick={() => append(emptyLine(currentType, linePayableDefault))}>
             <PlusIcon size={14} /> Thêm dòng
           </Button>
         </div>

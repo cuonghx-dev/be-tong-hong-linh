@@ -5,7 +5,9 @@ import type {
 } from '@app/shared'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/lib/api'
+import { bankKeys } from '@/features/bank'
 import { cashKeys } from '@/features/cash'
+import { inventoryKeys } from '@/features/inventory'
 import { purchaseKeys } from './keys'
 
 export function useCreatePurchaseVoucher() {
@@ -15,9 +17,11 @@ export function useCreatePurchaseVoucher() {
       api.post<PurchaseVoucherDto>('/purchase/vouchers', dto).then((r) => r.data),
     onSuccess: () => {
       // Chứng từ mua hàng ảnh hưởng công nợ + tồn kho → invalidate toàn phân hệ.
-      // Trả ngay TM sinh phiếu chi (PC) → invalidate cả Tiền mặt.
+      // Chứng từ tự sinh (PC/UNC/phiếu nhập) → invalidate cả Tiền mặt + Tiền gửi + Kho.
       qc.invalidateQueries({ queryKey: purchaseKeys.all })
       qc.invalidateQueries({ queryKey: cashKeys.all })
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
     },
   })
 }
@@ -54,6 +58,8 @@ export function useUpdatePurchaseVoucher() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: purchaseKeys.all })
       qc.invalidateQueries({ queryKey: cashKeys.all })
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
     },
   })
 }
@@ -67,6 +73,8 @@ export function useSetPurchaseVoucherPosted() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: purchaseKeys.all })
       qc.invalidateQueries({ queryKey: cashKeys.all })
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
     },
   })
 }
@@ -78,6 +86,8 @@ export function useDeletePurchaseVoucher() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: purchaseKeys.all })
       qc.invalidateQueries({ queryKey: cashKeys.all })
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
     },
   })
 }

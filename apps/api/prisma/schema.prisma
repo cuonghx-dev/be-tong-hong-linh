@@ -302,8 +302,14 @@ model PurchaseVoucher {
   stockValue         Decimal               @default(0) @map("stock_value") @db.Decimal(18, 2)
   einvoiceLookupCode String?               @map("einvoice_lookup_code")
   einvoiceLookupUrl  String?               @map("einvoice_lookup_url")
-  // Phiếu chi tự sinh khi thanh toán ngay tiền mặt (tham chiếu lỏng, không FK).
+  // Chứng từ tự sinh (tham chiếu lỏng, không FK): trả ngay TM → phiếu chi,
+  // trả ngay CK → UNC chi tiền gửi, loại nhập kho → phiếu nhập kho (chung số NK).
   paymentId          String?               @map("payment_id")
+  bankPaymentId      String?               @map("bank_payment_id")
+  receiptId          String?               @map("receipt_id")
+  // TKNH chi tiền khi thanh toán ngay chuyển khoản (tham chiếu lỏng như BankVoucher).
+  bankAccountNo      String?               @map("bank_account_no")
+  bankName           String?               @map("bank_name")
   receiveStatus      PurchaseReceiveStatus @default(NOT_RECEIVED) @map("receive_status")
   paymentStatus      PurchasePaymentStatus @default(UNPAID) @map("payment_status")
   // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.

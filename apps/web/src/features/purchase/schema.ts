@@ -45,6 +45,9 @@ export const purchaseVoucherSchema = z.object({
   einvoiceLookupCode: z.string().optional(),
   einvoiceLookupUrl: z.string().optional(),
   branchId: z.string().optional(),
+  // TKNH chi tiền khi thanh toán ngay chuyển khoản (UNC tự sinh).
+  bankAccountNo: z.string().optional(),
+  bankName: z.string().optional(),
   lines: z.array(purchaseLineSchema).min(1, 'Cần ít nhất 1 dòng hàng'),
 })
 

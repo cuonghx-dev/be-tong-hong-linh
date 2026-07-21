@@ -235,8 +235,11 @@ export class ReportService {
   //   trả ngay TM (định khoản Nợ 15x-64x/Có 111x đã nằm ở purchase_voucher_lines):
   //   khớp qua payment_id (PC của chứng từ nhập kho mang số PC riêng) hoặc
   //   voucher_no trùng (MH/MDV dùng chung số PC, kể cả dữ liệu nhập khẩu chưa link).
-  // - Phiếu nhập kho sinh từ mua hàng qua kho (định khoản Nợ 15x/Có 331 đã
-  //   nằm ở purchase_voucher_lines, kèm cả vế VAT).
+  // - UNC PURCHASE_SERVICE_BANK / PURCHASE_GOODS_BANK sinh từ mua hàng trả ngay
+  //   CK — cùng logic khớp qua bank_payment_id hoặc voucher_no trùng.
+  // - Phiếu nhập kho sinh từ mua hàng qua kho (định khoản Nợ 15x/Có 331-111x đã
+  //   nằm ở purchase_voucher_lines, kèm cả vế VAT) — khớp qua receipt_id hoặc
+  //   voucher_no trùng (chứng từ mua chưa thanh toán dùng chung số NK).
   private journalSql(): Prisma.Sql {
     return Prisma.sql`
       SELECT v.posting_date, v.voucher_date, v.voucher_no,
@@ -255,6 +258,9 @@ export class ReportService {
              l.debit_account, l.credit_account, l.amount, l.line_no, 0
       FROM bank_voucher_lines l JOIN bank_vouchers v ON v.id = l.voucher_id
       WHERE v.category <> 'SALES_BANK' AND v.posted
+        AND NOT (v.category IN ('PURCHASE_SERVICE_BANK', 'PURCHASE_GOODS_BANK') AND EXISTS (
+          SELECT 1 FROM purchase_vouchers p WHERE p.bank_payment_id = v.id OR p.voucher_no = v.voucher_no
+        ))
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no, 'GENERAL',
              COALESCE(l.description, v.description),
@@ -268,7 +274,7 @@ export class ReportService {
       FROM inventory_receipt_lines l JOIN inventory_receipts v ON v.id = l.receipt_id
       WHERE v.posted AND l.debit_account IS NOT NULL AND l.credit_account IS NOT NULL
         AND NOT (v.receipt_type = 'PURCHASE' AND EXISTS (
-          SELECT 1 FROM purchase_vouchers p WHERE p.voucher_no = v.voucher_no
+          SELECT 1 FROM purchase_vouchers p WHERE p.receipt_id = v.id OR p.voucher_no = v.voucher_no
         ))
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no, 'GOODS_ISSUE',

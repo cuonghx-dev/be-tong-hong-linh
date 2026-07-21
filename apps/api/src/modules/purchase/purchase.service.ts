@@ -2,6 +2,7 @@ import { CHART_OF_ACCOUNTS, type Paginated } from '@app/shared'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import {
+  BankVoucherCategory,
   CashVoucherCategory,
   PaymentMethod,
   Prisma,
@@ -12,8 +13,10 @@ import {
 } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { buildPartnerLookup } from '../../database/partner-lookup'
+import { BankService, type PurchaseBankPaymentInput } from '../bank/bank.service'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { CashService, type PurchasePaymentInput } from '../cash/cash.service'
+import { ReceiptService, type PurchaseReceiptInput } from '../inventory/receipt.service'
 import { CreatePurchaseVoucherDto, CreatePurchaseVoucherLineDto } from './dto/create-purchase-voucher.dto'
 import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
 import { parsePurchaseXlsx } from './purchase-import'
@@ -27,6 +30,8 @@ export class PurchaseService {
     private readonly prisma: PrismaService,
     private readonly bookLock: BookLockService,
     private readonly cash: CashService,
+    private readonly bank: BankService,
+    private readonly receipt: ReceiptService,
   ) {}
 
   async list(
@@ -76,16 +81,20 @@ export class PurchaseService {
     return this.toDetailDto(voucher)
   }
 
-  // DTO chi tiết kèm số phiếu chi tự sinh (hiện link tham chiếu trên form).
+  // DTO chi tiết kèm số các chứng từ tự sinh (hiện link tham chiếu trên form).
   private async toDetailDto(v: VoucherWithLines) {
-    const paymentNo = v.paymentId ? await this.cash.findVoucherNo(v.paymentId) : null
-    return { ...toVoucherDto(v), paymentNo }
+    const [paymentNo, bankPaymentNo, receiptNo] = await Promise.all([
+      v.paymentId ? this.cash.findVoucherNo(v.paymentId) : null,
+      v.bankPaymentId ? this.bank.findVoucherNo(v.bankPaymentId) : null,
+      v.receiptId ? this.receipt.findVoucherNo(v.receiptId) : null,
+    ])
+    return { ...toVoucherDto(v), paymentNo, bankPaymentNo, receiptNo }
   }
 
   // Xem trước số chứng từ kế tiếp để hiển thị trên form — KHÔNG giữ chỗ;
   // số chính thức vẫn cấp lại trong transaction lúc create (tránh trùng khi ghi đồng thời).
-  // Đánh số theo tùy chọn thanh toán như MISA: MH/MDV thanh toán ngay TM → số PC
-  // (sequence quỹ, dùng chung với phiếu chi tự sinh); còn lại → NK/MH/MDV.
+  // Đánh số theo tùy chọn thanh toán như MISA: MH/MDV thanh toán ngay TM → số PC,
+  // CK → số UNC (dùng chung với phiếu chi/UNC tự sinh); còn lại → NK/MH/MDV.
   async previewNextVoucherNo(
     type: PurchaseVoucherType,
     voucherDate?: string,
@@ -93,8 +102,13 @@ export class PurchaseService {
     paymentMethod?: PaymentMethod,
   ) {
     const date = voucherDate ? new Date(voucherDate) : new Date()
-    if (sharesPaymentNo(type, paymentMode ?? PurchasePaymentMode.UNPAID, paymentMethod ?? null))
-      return { voucherNo: await this.cash.nextPaymentNo(this.prisma, date) }
+    const mode = paymentMode ?? PurchasePaymentMode.UNPAID
+    const method = paymentMethod ?? null
+    if (sharesPaymentNo(type, mode, method)) {
+      return paysBankNow(mode, method)
+        ? { voucherNo: await this.bank.nextPaymentNo(this.prisma, date) }
+        : { voucherNo: await this.cash.nextPaymentNo(this.prisma, date) }
+    }
     const voucherNo = await nextVoucherNo(this.prisma, type, date)
     return { voucherNo }
   }
@@ -103,14 +117,18 @@ export class PurchaseService {
     await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {
       const vDate = new Date(dto.voucherDate)
-      const wantsCash = paysCashNow(dto.paymentMode, dto.paymentMethod ?? null)
-      // Số chứng từ theo tùy chọn thanh toán (MISA): MH/MDV trả ngay TM dùng chung
-      // số PC với phiếu chi tự sinh; nhập kho giữ dãy NK riêng (PC nhận số PC riêng).
-      const shared = sharesPaymentNo(dto.type, dto.paymentMode, dto.paymentMethod ?? null)
+      const method = dto.paymentMethod ?? null
+      const wantsCash = paysCashNow(dto.paymentMode, method)
+      const wantsBank = paysBankNow(dto.paymentMode, method)
+      // Số chứng từ theo tùy chọn thanh toán (MISA): MH/MDV trả ngay TM/CK dùng chung
+      // số PC/UNC với chứng từ chi tự sinh; nhập kho giữ dãy NK riêng (PC/UNC số riêng).
+      const shared = sharesPaymentNo(dto.type, dto.paymentMode, method)
       const voucherNo = shared
-        ? await this.cash.nextPaymentNo(tx, vDate)
+        ? wantsBank
+          ? await this.bank.nextPaymentNo(tx, vDate)
+          : await this.cash.nextPaymentNo(tx, vDate)
         : await nextVoucherNo(tx, dto.type, vDate)
-      const lines = normalizeLines(dto.type, dto.lines, wantsCash)
+      const lines = normalizeLines(dto.type, dto.lines, wantsCash, wantsBank)
       const totals = computeTotals(lines, dto.purchaseCost ?? 0)
       const voucher = await tx.purchaseVoucher.create({
         data: {
@@ -139,6 +157,8 @@ export class PurchaseService {
           receiveStatus: dto.receiveWithInvoice ? 'RECEIVED' : 'NOT_RECEIVED',
           paymentStatus: dto.paymentMode === 'IMMEDIATE' ? 'PAID' : 'UNPAID',
           branchId: dto.branchId ?? null,
+          bankAccountNo: wantsBank ? dto.bankAccountNo ?? null : null,
+          bankName: wantsBank ? dto.bankName ?? null : null,
           einvoiceLookupCode: dto.einvoiceLookupCode ?? null,
           einvoiceLookupUrl: dto.einvoiceLookupUrl ?? null,
           lines: { create: lines },
@@ -146,17 +166,35 @@ export class PurchaseService {
         include: { lines: { orderBy: { lineNo: 'asc' } } },
       })
 
-      // Phiếu chi tự sinh kèm theo (mirror §11 bán hàng): trả ngay TM → PC
-      // (MH/MDV cùng số, NK giữ số NK và PC nhận số PC riêng).
+      // Chứng từ tự sinh kèm theo (mirror §11 bán hàng): trả ngay TM → PC, CK → UNC
+      // (MH/MDV cùng số, NK giữ số NK và PC/UNC nhận số riêng); nhập kho → phiếu
+      // nhập kho dùng chung số NK (trả ngay thì phiếu nhập nhận số NK riêng).
+      const links: Prisma.PurchaseVoucherUpdateInput = {}
       if (wantsCash) {
-        const paymentId = await this.cash.createPurchasePayment(
+        links.paymentId = await this.cash.createPurchasePayment(
           tx,
           buildCashPaymentInput(voucher),
           shared ? voucherNo : undefined,
         )
+      }
+      if (wantsBank) {
+        links.bankPaymentId = await this.bank.createPurchasePayment(
+          tx,
+          buildBankPaymentInput(voucher),
+          shared ? voucherNo : undefined,
+        )
+      }
+      if (voucher.type === PurchaseVoucherType.STOCK) {
+        links.receiptId = await this.receipt.createPurchaseReceipt(
+          tx,
+          buildReceiptInput(voucher),
+          voucherNo.startsWith('NK') ? voucherNo : undefined,
+        )
+      }
+      if (Object.keys(links).length > 0) {
         return tx.purchaseVoucher.update({
           where: { id: voucher.id },
-          data: { paymentId },
+          data: links,
           include: { lines: { orderBy: { lineNo: 'asc' } } },
         })
       }
@@ -200,13 +238,20 @@ export class PurchaseService {
         data.receiveStatus = dto.receiveWithInvoice ? 'RECEIVED' : 'NOT_RECEIVED'
       }
 
-      const wantsCash = paysCashNow(
-        dto.paymentMode ?? existing.paymentMode,
-        (dto.paymentMethod !== undefined ? dto.paymentMethod : existing.paymentMethod) ?? null,
-      )
+      const mode = dto.paymentMode ?? existing.paymentMode
+      const method =
+        (dto.paymentMethod !== undefined ? dto.paymentMethod : existing.paymentMethod) ?? null
+      const wantsCash = paysCashNow(mode, method)
+      const wantsBank = paysBankNow(mode, method)
+      data.bankAccountNo = wantsBank
+        ? dto.bankAccountNo !== undefined
+          ? dto.bankAccountNo
+          : undefined
+        : null
+      data.bankName = wantsBank ? (dto.bankName !== undefined ? dto.bankName : undefined) : null
 
       if (dto.lines) {
-        const lines = normalizeLines(existing.type, dto.lines, wantsCash)
+        const lines = normalizeLines(existing.type, dto.lines, wantsCash, wantsBank)
         const cost = dto.purchaseCost ?? Number(existing.purchaseCost)
         Object.assign(data, computeTotals(lines, cost))
         data.purchaseCost = new Prisma.Decimal(cost)
@@ -217,15 +262,41 @@ export class PurchaseService {
         data.stockValue = new Prisma.Decimal(dto.purchaseCost).add(existing.totalGoods)
       }
 
+      // Đổi tùy chọn thanh toán không kèm dòng mới → đổi vế Có mặc định của dòng
+      // cũ (331 ↔ 1111/1121) cho khớp định khoản; giữ TK người dùng đã sửa tay.
+      if (!dto.lines) {
+        const target = wantsCash
+          ? CHART_OF_ACCOUNTS.CASH_ON_HAND
+          : wantsBank
+            ? CHART_OF_ACCOUNTS.BANK_DEPOSIT
+            : CHART_OF_ACCOUNTS.PAYABLE
+        await tx.purchaseVoucherLine.updateMany({
+          where: {
+            voucherId: id,
+            payableAccount: {
+              in: [
+                CHART_OF_ACCOUNTS.PAYABLE,
+                CHART_OF_ACCOUNTS.CASH_ON_HAND,
+                CHART_OF_ACCOUNTS.BANK_DEPOSIT,
+              ],
+              not: target,
+            },
+          },
+          data: { payableAccount: target },
+        })
+      }
+
       const voucher = await tx.purchaseVoucher.update({
         where: { id },
         data,
         include: { lines: { orderBy: { lineNo: 'asc' } } },
       })
 
-      // Đồng bộ PC tự sinh theo tùy chọn mới (mirror §11 bán hàng). Số chứng từ
-      // mua giữ nguyên sau khi tạo; PC sinh lại khi đổi tùy chọn nhận số PC mới.
+      // Đồng bộ chứng từ tự sinh theo tùy chọn mới (mirror §11 bán hàng). Số chứng
+      // từ mua giữ nguyên sau khi tạo; chứng từ sinh lại khi đổi tùy chọn nhận số mới.
       const links: Prisma.PurchaseVoucherUpdateInput = {}
+
+      // Phiếu chi tiền mặt (PURCHASE_*_CASH)
       if (wantsCash) {
         const paymentId = await this.cash.upsertPurchasePayment(
           tx,
@@ -237,6 +308,31 @@ export class PurchaseService {
         await this.cash.deletePurchasePayment(tx, existing.paymentId)
         links.paymentId = null
       }
+
+      // UNC chi tiền gửi (PURCHASE_*_BANK)
+      if (wantsBank) {
+        const bankPaymentId = await this.bank.upsertPurchasePayment(
+          tx,
+          existing.bankPaymentId,
+          buildBankPaymentInput(voucher),
+        )
+        if (bankPaymentId !== existing.bankPaymentId) links.bankPaymentId = bankPaymentId
+      } else if (existing.bankPaymentId) {
+        await this.bank.deletePurchasePayment(tx, existing.bankPaymentId)
+        links.bankPaymentId = null
+      }
+
+      // Phiếu nhập kho (loại nhập kho — type không đổi sau khi tạo)
+      if (voucher.type === PurchaseVoucherType.STOCK) {
+        const receiptId = await this.receipt.upsertPurchaseReceipt(
+          tx,
+          existing.receiptId,
+          buildReceiptInput(voucher),
+          voucher.voucherNo.startsWith('NK') ? voucher.voucherNo : undefined,
+        )
+        if (receiptId !== existing.receiptId) links.receiptId = receiptId
+      }
+
       if (Object.keys(links).length > 0) {
         return tx.purchaseVoucher.update({
           where: { id },
@@ -345,8 +441,12 @@ export class PurchaseService {
         data: { posted },
         include: { lines: { orderBy: { lineNo: 'asc' } } },
       })
-      // Ghi sổ / bỏ ghi lan sang phiếu chi tự sinh — cùng trạng thái sổ.
+      // Ghi sổ / bỏ ghi lan sang mọi chứng từ tự sinh — cùng trạng thái sổ.
       if (voucher.paymentId) await this.cash.setPurchasePaymentPosted(tx, voucher.paymentId, posted)
+      if (voucher.bankPaymentId)
+        await this.bank.setPurchasePaymentPosted(tx, voucher.bankPaymentId, posted)
+      if (voucher.receiptId)
+        await this.receipt.setPurchaseReceiptPosted(tx, voucher.receiptId, posted)
       return voucher
     })
     return this.toDetailDto(updated)
@@ -358,8 +458,10 @@ export class PurchaseService {
     await this.bookLock.assertUnlocked(existing.postingDate)
     await this.prisma.$transaction(async (tx) => {
       await tx.purchaseVoucher.delete({ where: { id } })
-      // Xóa kèm phiếu chi tự sinh — không để PC mồ côi khi mất chứng từ gốc.
+      // Xóa kèm mọi chứng từ tự sinh — không để chứng từ mồ côi khi mất chứng từ gốc.
       if (existing.paymentId) await this.cash.deletePurchasePayment(tx, existing.paymentId)
+      if (existing.bankPaymentId) await this.bank.deletePurchasePayment(tx, existing.bankPaymentId)
+      if (existing.receiptId) await this.receipt.deletePurchaseReceipt(tx, existing.receiptId)
     })
     return { id }
   }
@@ -368,7 +470,7 @@ export class PurchaseService {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 // Thanh toán ngay không qua ngân hàng → sinh Phiếu chi tiền mặt (mirror
-// needsCashReceipt bên bán hàng; chuyển khoản chờ luồng UNC tự sinh, chưa hỗ trợ).
+// needsCashReceipt bên bán hàng).
 function paysCashNow(
   paymentMode: PurchasePaymentMode,
   paymentMethod: PaymentMethod | null,
@@ -378,21 +480,35 @@ function paysCashNow(
   )
 }
 
-// MH/MDV trả ngay TM dùng chung số PC với phiếu chi tự sinh (MISA: PC 0101/2026);
-// nhập kho giữ dãy NK riêng — PC kèm theo nhận số PC kế tiếp độc lập.
+// Thanh toán ngay chuyển khoản → sinh UNC chi tiền gửi (mirror needsBankReceipt).
+function paysBankNow(
+  paymentMode: PurchasePaymentMode,
+  paymentMethod: PaymentMethod | null,
+): boolean {
+  return (
+    paymentMode === PurchasePaymentMode.IMMEDIATE && paymentMethod === PaymentMethod.BANK_TRANSFER
+  )
+}
+
+// MH/MDV trả ngay dùng chung số PC/UNC với chứng từ chi tự sinh (MISA: PC 0101/2026,
+// UNC0101/2026); nhập kho giữ dãy NK riêng — PC/UNC kèm theo nhận số kế tiếp độc lập.
 function sharesPaymentNo(
   type: PurchaseVoucherType,
   paymentMode: PurchasePaymentMode,
   paymentMethod: PaymentMethod | null,
 ): boolean {
-  return paysCashNow(paymentMode, paymentMethod) && type !== PurchaseVoucherType.STOCK
+  return (
+    (paysCashNow(paymentMode, paymentMethod) || paysBankNow(paymentMode, paymentMethod)) &&
+    type !== PurchaseVoucherType.STOCK
+  )
 }
 
-// PC tự sinh mirror chứng từ mua trả ngay TM: mỗi dòng hàng 1 dòng Nợ TK kho/chi phí,
-// thuế GTGT gộp theo TK thuế (thường 1331); TK Có (1111) do CashService gán.
-// LƯU Ý: định khoản gốc đã nằm trong dòng chứng từ mua (Có 111x thay 331) — sổ
-// nhật ký loại PC dẫn xuất để không đếm trùng (xem report.service).
-function buildCashPaymentInput(v: VoucherWithLines): PurchasePaymentInput {
+// Chứng từ chi tự sinh mirror chứng từ mua trả ngay: mỗi dòng hàng 1 dòng Nợ TK
+// kho/chi phí, thuế GTGT gộp theo TK thuế (thường 1331); TK Có (1111/1121) do
+// Cash/BankService gán. LƯU Ý: định khoản gốc đã nằm trong dòng chứng từ mua
+// (Có 111x/112x thay 331) — sổ nhật ký loại PC/UNC dẫn xuất để không đếm trùng
+// (xem report.service).
+function buildPaymentCore(v: VoucherWithLines) {
   const lines = v.lines.map((l) => ({
     description: l.itemName,
     debitAccount: l.stockAccount ?? defaultStockAccount(v.type),
@@ -411,10 +527,6 @@ function buildCashPaymentInput(v: VoucherWithLines): PurchasePaymentInput {
   }
   const noun = v.type === PurchaseVoucherType.SERVICE ? 'dịch vụ' : 'hàng'
   return {
-    category:
-      v.type === PurchaseVoucherType.SERVICE
-        ? CashVoucherCategory.PURCHASE_SERVICE_CASH
-        : CashVoucherCategory.PURCHASE_GOODS_CASH,
     postingDate: v.postingDate,
     voucherDate: v.voucherDate,
     supplierId: v.supplierId,
@@ -428,6 +540,56 @@ function buildCashPaymentInput(v: VoucherWithLines): PurchasePaymentInput {
   }
 }
 
+function buildCashPaymentInput(v: VoucherWithLines): PurchasePaymentInput {
+  return {
+    category:
+      v.type === PurchaseVoucherType.SERVICE
+        ? CashVoucherCategory.PURCHASE_SERVICE_CASH
+        : CashVoucherCategory.PURCHASE_GOODS_CASH,
+    ...buildPaymentCore(v),
+  }
+}
+
+function buildBankPaymentInput(v: VoucherWithLines): PurchaseBankPaymentInput {
+  return {
+    category:
+      v.type === PurchaseVoucherType.SERVICE
+        ? BankVoucherCategory.PURCHASE_SERVICE_BANK
+        : BankVoucherCategory.PURCHASE_GOODS_BANK,
+    bankAccountNo: v.bankAccountNo,
+    bankName: v.bankName,
+    ...buildPaymentCore(v),
+  }
+}
+
+// Phiếu nhập tự sinh mirror chứng từ mua nhập kho: dòng hàng giữ nguyên định khoản
+// Nợ TK kho / Có TK công nợ-quỹ (đã nằm ở purchase_voucher_lines — report khử trùng).
+// Diễn giải theo mẫu MISA để importer/report nhận diện: "Mua hàng của <NCC> ...".
+function buildReceiptInput(v: VoucherWithLines): PurchaseReceiptInput {
+  return {
+    postingDate: v.postingDate,
+    voucherDate: v.voucherDate,
+    supplierId: v.supplierId,
+    supplierName: v.supplierName,
+    address: v.address,
+    deliverer: v.deliverer,
+    description: `Mua hàng${v.supplierName ? ` của ${v.supplierName}` : ''}${v.invoiceNo ? ` theo hóa đơn số ${v.invoiceNo}` : ''}`,
+    reference: v.voucherNo,
+    posted: v.posted,
+    lines: v.lines.map((l) => ({
+      itemId: l.itemId,
+      itemName: l.itemName,
+      warehouseId: l.warehouseId,
+      debitAccount: l.stockAccount,
+      creditAccount: l.payableAccount,
+      unit: l.unit,
+      quantity: l.quantity,
+      unitPrice: l.unitPrice,
+      amount: l.amount,
+    })),
+  }
+}
+
 // Định khoản mặc định theo loại chứng từ (§5):
 //   nhập kho → TK Kho 152/156; không qua kho / dịch vụ → chi phí 642.
 function defaultStockAccount(type: PurchaseVoucherType): string {
@@ -438,6 +600,7 @@ function normalizeLines(
   type: PurchaseVoucherType,
   lines: CreatePurchaseVoucherLineDto[],
   paysCash: boolean,
+  paysBank = false,
 ) {
   return lines.map((line, i) => {
     const quantity = new Prisma.Decimal(line.quantity)
@@ -445,13 +608,18 @@ function normalizeLines(
     const amount = quantity.mul(unitPrice)
     const vatRate = new Prisma.Decimal(line.vatRate ?? 0)
     const vatAmount = amount.mul(vatRate).div(100)
-    // Trả ngay TM: vế Có của dòng hàng là quỹ 111x thay công nợ 331 (MISA đổi
-    // TK tự động); giá trị người dùng nhập chỉ giữ khi vẫn là TK quỹ.
+    // Trả ngay: vế Có của dòng hàng là quỹ 111x (TM) / tiền gửi 112x (CK) thay
+    // công nợ 331 (MISA đổi TK tự động); giá trị người dùng nhập chỉ giữ khi
+    // vẫn thuộc đúng nhóm TK đó.
     const payableAccount = paysCash
       ? line.payableAccount?.startsWith(CHART_OF_ACCOUNTS.CASH)
         ? line.payableAccount
         : CHART_OF_ACCOUNTS.CASH_ON_HAND
-      : line.payableAccount || CHART_OF_ACCOUNTS.PAYABLE
+      : paysBank
+        ? line.payableAccount?.startsWith(CHART_OF_ACCOUNTS.BANK)
+          ? line.payableAccount
+          : CHART_OF_ACCOUNTS.BANK_DEPOSIT
+        : line.payableAccount || CHART_OF_ACCOUNTS.PAYABLE
     return {
       lineNo: i + 1,
       itemId: line.itemId ?? null,
@@ -507,21 +675,47 @@ async function nextVoucherNo(
   type: PurchaseVoucherType,
   voucherDate: Date,
 ): Promise<string> {
+  // Số kế tiếp = MAX(số hiện có) + 1 — không dùng count vì bảng còn chứa chứng từ
+  // mang số PC/UNC (trả ngay) và dữ liệu nhập khẩu có thể đứt quãng → count+1 gây trùng.
   // Nhập kho: dãy số chạy toàn cục, không kèm năm (vd NK07098) → không reset theo năm.
+  // Dãy NK dùng CHUNG với phiếu nhập kho (chứng từ mua nhập kho kiêm phiếu nhập;
+  // phiếu nhập tự sinh khi trả ngay nhận số NK riêng) → lấy MAX trên cả 2 bảng.
   if (type === PurchaseVoucherType.STOCK) {
-    const count = await tx.purchaseVoucher.count({ where: { type } })
-    return `NK${String(count + 1).padStart(5, '0')}`
+    const fromPurchase = await tx.purchaseVoucher.findMany({
+      where: { voucherNo: { startsWith: 'NK' } },
+      select: { voucherNo: true },
+    })
+    const fromInventory = await tx.inventoryReceipt.findMany({
+      where: { voucherNo: { startsWith: 'NK' } },
+      select: { voucherNo: true },
+    })
+    const maxSeq = maxVoucherSeq([...fromPurchase, ...fromInventory])
+    return `NK${String(maxSeq + 1).padStart(5, '0')}`
   }
   // MH / MDV: số reset theo năm, kèm hậu tố /YYYY.
   const year = voucherDate.getFullYear()
   const yearStart = new Date(year, 0, 1)
   const yearEnd = new Date(year + 1, 0, 1)
-  const count = await tx.purchaseVoucher.count({
-    where: { type, voucherDate: { gte: yearStart, lt: yearEnd } },
-  })
-  const seq = String(count + 1).padStart(4, '0')
   const prefix = type === PurchaseVoucherType.SERVICE ? 'MDV' : 'MH'
+  const rows = await tx.purchaseVoucher.findMany({
+    where: {
+      type,
+      voucherNo: { startsWith: prefix },
+      voucherDate: { gte: yearStart, lt: yearEnd },
+    },
+    select: { voucherNo: true },
+  })
+  const seq = String(maxVoucherSeq(rows) + 1).padStart(4, '0')
   return `${prefix}${seq}/${year}`
+}
+
+// Lấy phần số trước dấu "/" của số chứng từ lớn nhất: "MH0326/2025" → 326.
+function maxVoucherSeq(rows: { voucherNo: string }[]): number {
+  return rows.reduce((max, r) => {
+    const digits = r.voucherNo.split('/')[0]?.replace(/\D/g, '') ?? ''
+    const n = Number.parseInt(digits, 10)
+    return Number.isNaN(n) ? max : Math.max(max, n)
+  }, 0)
 }
 
 function toDateOnly(d: Date | null): string | null {
@@ -560,6 +754,10 @@ function toVoucherDto(v: VoucherWithLines) {
     einvoiceLookupCode: v.einvoiceLookupCode,
     einvoiceLookupUrl: v.einvoiceLookupUrl,
     paymentId: v.paymentId,
+    bankPaymentId: v.bankPaymentId,
+    receiptId: v.receiptId,
+    bankAccountNo: v.bankAccountNo,
+    bankName: v.bankName,
     receiveStatus: v.receiveStatus,
     paymentStatus: v.paymentStatus,
     branchId: v.branchId,
