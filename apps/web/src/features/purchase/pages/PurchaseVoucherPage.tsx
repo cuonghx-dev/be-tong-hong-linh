@@ -1,6 +1,7 @@
 import { PurchaseVoucherType } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { Button } from '@/shared/ui/button'
 import { BookIcon, PlusSquareIcon, TrashIcon } from '@/shared/ui/icons'
@@ -32,7 +33,7 @@ export function PurchaseVoucherPage({ mode }: { mode: Mode }) {
       }
     : null
 
-  const close = () => navigate('/purchase')
+  const close = useNavigateBack('/purchase')
 
   const { data: voucher } = usePurchaseVoucher(mode === 'new' ? null : (id ?? null))
   const { toast } = useToast()

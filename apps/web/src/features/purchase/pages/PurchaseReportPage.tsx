@@ -1,6 +1,7 @@
 import type { PurchaseReportFilter } from '@app/shared'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import {
   Select,
   SelectContent,
@@ -24,7 +25,7 @@ const PRESETS: { key: string; label: string; range: () => { from: string; to: st
 
 // Trang xem báo cáo mua hàng full-page (§5 design.md). Route: /purchase/reports/:slug
 export function PurchaseReportPage() {
-  const navigate = useNavigate()
+  const close = useNavigateBack('/purchase')
   const { slug } = useParams()
   const [params, setParams] = useSearchParams()
 
@@ -55,7 +56,7 @@ export function PurchaseReportPage() {
     <RecordPageShell
       title={report?.name ?? 'Báo cáo'}
       subtitle={`Kỳ ${formatDate(fromDate)} – ${formatDate(toDate)}`}
-      onClose={() => navigate('/purchase')}
+      onClose={close}
     >
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}

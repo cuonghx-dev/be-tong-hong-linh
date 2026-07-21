@@ -1,6 +1,7 @@
 import type { CashReportFilter } from '@app/shared'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { formatDate, monthRange, REPORT_PRESETS } from '@/shared/lib/report-period'
 import {
   Select,
@@ -16,7 +17,7 @@ import { CASH_REPORTS, type CashReportSlug } from '../types'
 
 // Trang xem báo cáo tiền mặt full-page (§5 design.md). Route: /cash/reports/:slug
 export function CashReportPage() {
-  const navigate = useNavigate()
+  const close = useNavigateBack('/cash')
   const { slug } = useParams()
   const [params, setParams] = useSearchParams()
 
@@ -43,7 +44,7 @@ export function CashReportPage() {
     <RecordPageShell
       title={report?.name ?? 'Báo cáo'}
       subtitle={`Kỳ ${formatDate(fromDate)} – ${formatDate(toDate)}`}
-      onClose={() => navigate('/cash')}
+      onClose={close}
     >
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}

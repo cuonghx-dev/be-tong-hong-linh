@@ -1,6 +1,7 @@
 import type { SalesReportFilter } from '@app/shared'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { formatDate, monthRange, REPORT_PRESETS } from '@/shared/lib/report-period'
 import {
   Select,
@@ -22,7 +23,7 @@ const inputClass =
 // Trang xem báo cáo bán hàng full-page (§5 design.md). Route: /sales/reports/:slug
 // 2 báo cáo công nợ lọc thêm được theo 1 khách hàng.
 export function SalesReportPage() {
-  const navigate = useNavigate()
+  const close = useNavigateBack('/sales')
   const { slug } = useParams()
   const [params, setParams] = useSearchParams()
 
@@ -56,7 +57,7 @@ export function SalesReportPage() {
     <RecordPageShell
       title={report?.name ?? 'Báo cáo'}
       subtitle={`Kỳ ${formatDate(fromDate)} – ${formatDate(toDate)}`}
-      onClose={() => navigate('/sales')}
+      onClose={close}
     >
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}

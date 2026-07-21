@@ -1,6 +1,7 @@
 import { CashVoucherCategory, CashVoucherType } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { Button } from '@/shared/ui/button'
 import { BookIcon, PlusSquareIcon, TrashIcon } from '@/shared/ui/icons'
@@ -36,7 +37,7 @@ export function CashVoucherPage({ mode }: { mode: Mode }) {
   // Nhân bản: tạo mới từ phiếu nguồn (điền sẵn, cấp số phiếu mới khi Lưu).
   const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
 
-  const close = () => navigate('/cash')
+  const close = useNavigateBack('/cash')
 
   // Số chứng từ trong tiêu đề (vd "Phiếu thu PT4602/2026") — query dedupe với form.
   const { data: voucher } = useCashVoucher(mode === 'new' ? null : (id ?? null))

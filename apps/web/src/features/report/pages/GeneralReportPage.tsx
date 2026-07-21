@@ -1,6 +1,7 @@
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useAccounts } from '@/features/catalog'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { formatDate, monthRange, REPORT_PRESETS } from '@/shared/lib/report-period'
 import {
   Select,
@@ -19,7 +20,7 @@ const inputClass =
 // Trang xem báo cáo Tổng hợp full-page (§5 design.md). Route: /general/reports/:slug
 // Sổ chi tiết các tài khoản lọc thêm được theo 1 TK (khớp tiền tố: 131 gồm 1311…).
 export function GeneralReportPage() {
-  const navigate = useNavigate()
+  const close = useNavigateBack('/general')
   const { slug } = useParams()
   const [params, setParams] = useSearchParams()
 
@@ -54,7 +55,7 @@ export function GeneralReportPage() {
     <RecordPageShell
       title={report?.name ?? 'Báo cáo'}
       subtitle={`Kỳ ${formatDate(fromDate)} – ${formatDate(toDate)}`}
-      onClose={() => navigate('/general')}
+      onClose={close}
     >
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}

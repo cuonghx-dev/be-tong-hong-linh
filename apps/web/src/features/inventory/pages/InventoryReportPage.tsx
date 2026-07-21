@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useProducts, useWarehouses } from '@/features/catalog'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { ItemPicker } from '@/shared/ui/item-picker'
 import {
   Select,
@@ -28,7 +29,7 @@ const inputClass =
 // Trang xem báo cáo kho full-page (§5 design.md). Route: /inventory/reports/:slug
 // Cả 2 báo cáo lọc theo kho; sổ chi tiết VTHH bắt buộc chọn 1 VTHH (mã).
 export function InventoryReportPage() {
-  const navigate = useNavigate()
+  const close = useNavigateBack('/inventory')
   const { slug } = useParams()
   const [params, setParams] = useSearchParams()
 
@@ -63,7 +64,7 @@ export function InventoryReportPage() {
     <RecordPageShell
       title={report?.name ?? 'Báo cáo'}
       subtitle={`Kỳ ${formatDate(fromDate)} – ${formatDate(toDate)}`}
-      onClose={() => navigate('/inventory')}
+      onClose={close}
     >
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}

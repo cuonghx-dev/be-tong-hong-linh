@@ -1,12 +1,12 @@
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { SalesVoucherForm } from '../components/SalesVoucherForm'
 
 type Mode = 'new' | 'view' | 'edit'
 
 // Trang chứng từ bán hàng full-page (§5 design.md). Route: /sales/vouchers/{new|:id|:id/edit}
 export function SalesVoucherPage({ mode }: { mode: Mode }) {
-  const navigate = useNavigate()
   const { id } = useParams()
   const [sp] = useSearchParams()
   // Nhân bản: tạo mới nhưng nạp sẵn dữ liệu từ chứng từ nguồn.
@@ -22,7 +22,7 @@ export function SalesVoucherPage({ mode }: { mode: Mode }) {
       }
     : null
 
-  const close = () => navigate('/sales')
+  const close = useNavigateBack('/sales')
 
   const title =
     mode === 'new'

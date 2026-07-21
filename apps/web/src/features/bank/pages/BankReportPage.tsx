@@ -1,7 +1,8 @@
 import type { BankReportFilter } from '@app/shared'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useBankAccounts } from '@/features/catalog'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { formatDate, monthRange, REPORT_PRESETS } from '@/shared/lib/report-period'
 import {
   Select,
@@ -21,7 +22,7 @@ const inputClass =
 // Trang xem báo cáo tiền gửi full-page (§5 design.md). Route: /bank/reports/:slug
 // Bảng kê số dư ngân hàng chỉ dùng mốc "đến ngày"; sổ tiền gửi lọc thêm theo TKNH.
 export function BankReportPage() {
-  const navigate = useNavigate()
+  const close = useNavigateBack('/bank')
   const { slug } = useParams()
   const [params, setParams] = useSearchParams()
 
@@ -55,7 +56,7 @@ export function BankReportPage() {
     <RecordPageShell
       title={report?.name ?? 'Báo cáo'}
       subtitle={balanceOnly ? `Đến ngày ${formatDate(toDate)}` : `Kỳ ${formatDate(fromDate)} – ${formatDate(toDate)}`}
-      onClose={() => navigate('/bank')}
+      onClose={close}
     >
       <div className="mx-auto flex h-full max-w-6xl flex-col gap-3">
         {/* Bộ lọc kỳ báo cáo */}

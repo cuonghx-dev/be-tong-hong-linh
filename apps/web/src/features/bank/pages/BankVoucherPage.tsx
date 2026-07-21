@@ -1,6 +1,7 @@
 import { BankVoucherType } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { Button } from '@/shared/ui/button'
 import { BookIcon, PlusSquareIcon, TrashIcon } from '@/shared/ui/icons'
@@ -27,7 +28,7 @@ export function BankVoucherPage({ mode }: { mode: Mode }) {
   // Nhân bản: tạo mới từ chứng từ nguồn (điền sẵn, cấp số chứng từ mới khi Lưu).
   const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
 
-  const close = () => navigate('/bank')
+  const close = useNavigateBack('/bank')
 
   // Trạng thái ghi sổ cho action nổi — query dedupe với form.
   const { data: voucher } = useBankVoucher(mode === 'new' ? null : (id ?? null))
