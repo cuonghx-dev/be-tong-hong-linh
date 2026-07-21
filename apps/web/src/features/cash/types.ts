@@ -50,6 +50,17 @@ export const CATEGORY_OPTIONS: Record<CashVoucherType, CashVoucherCategory[]> = 
   ],
 }
 
+// Lý do lọc theo loại phiếu — khác CATEGORY_OPTIONS (chỉ loại nhập tay) ở chỗ
+// gồm cả loại tự sinh (bán hàng/mua hàng tiền mặt) để lọc được phiếu tự sinh.
+export const FILTER_CATEGORY_OPTIONS: Record<CashVoucherType, CashVoucherCategory[]> = {
+  [CashVoucherType.Receipt]: CATEGORY_OPTIONS[CashVoucherType.Receipt],
+  [CashVoucherType.Payment]: [
+    ...CATEGORY_OPTIONS[CashVoucherType.Payment],
+    CashVoucherCategory.PurchaseGoodsCash,
+    CashVoucherCategory.PurchaseServiceCash,
+  ],
+}
+
 // Cấu hình cột bảng hạch toán — thay đổi theo loại nghiệp vụ (§4).
 export interface LineColumnConfig {
   showCostItem: boolean // Khoản mục CP (PC - Chi khác)

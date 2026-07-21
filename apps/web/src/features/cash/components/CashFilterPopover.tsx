@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
-import { CATEGORY_LABEL } from '../types'
+import { CATEGORY_LABEL, FILTER_CATEGORY_OPTIONS } from '../types'
 
 export interface CashFilterValue {
   type: string
@@ -59,6 +59,11 @@ export function CashFilterPopover({ value, onApply, onReset }: Props) {
   // Đồng bộ lại khi filter ngoài đổi (vd back/forward).
   useEffect(() => setDraft(value), [value])
 
+  // Lý do thu/chi thu hẹp theo loại chứng từ đang chọn.
+  const categoryOptions = draft.type
+    ? FILTER_CATEGORY_OPTIONS[draft.type as CashVoucherType]
+    : Object.values(CashVoucherCategory)
+
   const activeCount =
     (value.type ? 1 : 0) + (value.category ? 1 : 0) + (value.from || value.to ? 1 : 0)
 
@@ -83,7 +88,17 @@ export function CashFilterPopover({ value, onApply, onReset }: Props) {
           <Field label="Loại chứng từ">
             <Select
               value={draft.type || 'all'}
-              onValueChange={(v) => setDraft({ ...draft, type: v === 'all' ? '' : v })}
+              onValueChange={(v) => {
+                const type = v === 'all' ? '' : v
+                // Đổi loại → bỏ lý do không còn thuộc loại mới.
+                const keep =
+                  !draft.category ||
+                  !type ||
+                  FILTER_CATEGORY_OPTIONS[type as CashVoucherType].includes(
+                    draft.category as CashVoucherCategory,
+                  )
+                setDraft({ ...draft, type, category: keep ? draft.category : '' })
+              }}
             >
               <SelectTrigger className="h-9">
                 <SelectValue />
@@ -106,7 +121,7 @@ export function CashFilterPopover({ value, onApply, onReset }: Props) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả</SelectItem>
-                {Object.values(CashVoucherCategory).map((c) => (
+                {categoryOptions.map((c) => (
                   <SelectItem key={c} value={c}>
                     {CATEGORY_LABEL[c]}
                   </SelectItem>
