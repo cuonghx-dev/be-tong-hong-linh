@@ -25,11 +25,7 @@ export enum CashVoucherType {
 export enum CashVoucherCategory {
   SalesCash = 'SALES_CASH', // Bán hàng hóa trong nước - Tiền mặt (PT tự sinh)
   // Loại nghiệp vụ Phiếu thu nhập tay (§5) — quyết định định khoản TK Có mặc định.
-  ReceiptBankWithdraw = 'RECEIPT_BANK_WITHDRAW', // 1. Rút tiền gửi về nhập quỹ (Có 1121)
-  ReceiptEmployeeAdvance = 'RECEIPT_EMPLOYEE_ADVANCE', // 2. Thu hoàn ứng nhân viên (Có 141)
-  ReceiptCustomer = 'RECEIPT_CUSTOMER', // 3. Thu tiền khách hàng không theo hóa đơn (Có 131)
-  Receipt = 'RECEIPT', // 4. Thu khác (Có tự nhập)
-  ReceiptLoanRecovery = 'RECEIPT_LOAN_RECOVERY', // 5. Thu hồi các khoản cho vay (Có 1283)
+  Receipt = 'RECEIPT', // Thu khác (Có tự nhập)
   // Loại nghiệp vụ Phiếu chi nhập tay (§5) — quyết định định khoản TK Nợ mặc định.
   PaymentEmployeeAdvance = 'PAYMENT_EMPLOYEE_ADVANCE', // 1. Tạm ứng cho nhân viên (Nợ 141)
   Payment = 'PAYMENT', // 2. Chi khác (Nợ tự nhập)

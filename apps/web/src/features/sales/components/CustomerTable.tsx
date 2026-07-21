@@ -159,10 +159,10 @@ export function CustomerTable() {
                 if (r.address) q.set('customerAddress', r.address)
                 navigate(`/sales/vouchers/new?${q.toString()}`)
               }
-              // Thu tiền: mở phiếu thu tiền mặt, loại "Thu tiền khách hàng" (Có 131), điền sẵn KH.
+              // Thu tiền: mở phiếu thu tiền mặt, loại "Thu khác", điền sẵn KH.
               const collectDebt = () =>
                 navigate(
-                  `/cash/vouchers/new?type=${CashVoucherType.Receipt}&category=${CashVoucherCategory.ReceiptCustomer}` +
+                  `/cash/vouchers/new?type=${CashVoucherType.Receipt}&category=${CashVoucherCategory.Receipt}` +
                     `&partnerId=${r.id}&partnerName=${encodeURIComponent(r.name)}`,
                 )
               return (

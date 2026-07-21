@@ -3,11 +3,7 @@ import { CashVoucherCategory, CashVoucherType, PartnerType } from '@app/shared'
 // Nhãn hiển thị loại chứng từ (§5).
 export const CATEGORY_LABEL: Record<CashVoucherCategory, string> = {
   [CashVoucherCategory.SalesCash]: 'Bán hàng hóa trong nước - Tiền mặt',
-  [CashVoucherCategory.ReceiptBankWithdraw]: 'Rút tiền gửi về nhập quỹ',
-  [CashVoucherCategory.ReceiptEmployeeAdvance]: 'Thu hoàn ứng nhân viên',
-  [CashVoucherCategory.ReceiptCustomer]: 'Thu tiền khách hàng (không theo hóa đơn)',
   [CashVoucherCategory.Receipt]: 'Thu khác',
-  [CashVoucherCategory.ReceiptLoanRecovery]: 'Thu hồi các khoản cho vay',
   [CashVoucherCategory.PaymentEmployeeAdvance]: 'Tạm ứng cho nhân viên',
   [CashVoucherCategory.Payment]: 'Chi khác',
   [CashVoucherCategory.DepositToBank]: 'Gửi tiền vào ngân hàng',
@@ -26,11 +22,7 @@ export const CATEGORY_LABEL: Record<CashVoucherCategory, string> = {
 // Template kết thúc bằng khoảng trắng → nối thêm tên đối tượng nếu có.
 const CATEGORY_REASON: Record<CashVoucherCategory, string> = {
   [CashVoucherCategory.SalesCash]: 'Thu tiền bán hàng ',
-  [CashVoucherCategory.ReceiptBankWithdraw]: 'Rút tiền gửi về nhập quỹ',
-  [CashVoucherCategory.ReceiptEmployeeAdvance]: 'Thu hoàn ứng của ',
-  [CashVoucherCategory.ReceiptCustomer]: 'Thu tiền của ',
   [CashVoucherCategory.Receipt]: 'Thu tiền của ',
-  [CashVoucherCategory.ReceiptLoanRecovery]: 'Thu hồi khoản cho vay từ ',
   [CashVoucherCategory.PaymentEmployeeAdvance]: 'Tạm ứng cho ',
   [CashVoucherCategory.Payment]: 'Chi tiền cho ',
   [CashVoucherCategory.DepositToBank]: 'Gửi tiền vào ngân hàng',
@@ -59,11 +51,8 @@ export const PARTNER_TYPE_LABEL: Record<PartnerType, string> = {
 // Loại nghiệp vụ chọn được theo loại phiếu (dropdown đầu form) — thứ tự theo MISA §5.
 export const CATEGORY_OPTIONS: Record<CashVoucherType, CashVoucherCategory[]> = {
   [CashVoucherType.Receipt]: [
-    CashVoucherCategory.ReceiptBankWithdraw,
-    CashVoucherCategory.ReceiptEmployeeAdvance,
-    CashVoucherCategory.ReceiptCustomer,
     CashVoucherCategory.Receipt,
-    CashVoucherCategory.ReceiptLoanRecovery,
+    CashVoucherCategory.SalesCash,
   ],
   [CashVoucherType.Payment]: [
     CashVoucherCategory.PaymentEmployeeAdvance,

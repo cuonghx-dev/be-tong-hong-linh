@@ -63,7 +63,7 @@ const today = () => new Date().toISOString().slice(0, 10)
 // Mã đối tượng mặc định cho phiếu thu có tên đối tượng nhưng chưa có trong danh mục (khách lẻ).
 const WALK_IN_PARTNER_CODE = 'KHACH LE'
 
-// Loại nghiệp vụ ngoài danh sách chọn tay (SALES_CASH, mua hàng… tự sinh) →
+// Loại nghiệp vụ ngoài danh sách chọn tay (mua hàng… tự sinh) →
 // quy về mặc định "Thu khác" / "Chi khác" khi hiển thị và lưu phiếu.
 function normalizeCategory(type: CashVoucherType, category?: CashVoucherCategory): CashVoucherCategory {
   const fallback = type === CashVoucherType.Receipt ? CashVoucherCategory.Receipt : CashVoucherCategory.Payment

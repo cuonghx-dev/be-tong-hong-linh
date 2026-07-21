@@ -17,11 +17,7 @@ export interface ParsedVoucher {
 const CATEGORY_MAP: Record<string, CashVoucherCategory> = {
   'Bán hàng hóa trong nước - Tiền mặt': CashVoucherCategory.SALES_CASH,
   'Phiếu thu': CashVoucherCategory.RECEIPT,
-  'Rút tiền gửi về nhập quỹ': CashVoucherCategory.RECEIPT_BANK_WITHDRAW,
-  'Thu hoàn ứng nhân viên': CashVoucherCategory.RECEIPT_EMPLOYEE_ADVANCE,
-  'Thu tiền khách hàng (không theo hóa đơn)': CashVoucherCategory.RECEIPT_CUSTOMER,
   'Thu khác': CashVoucherCategory.RECEIPT,
-  'Thu hồi các khoản cho vay': CashVoucherCategory.RECEIPT_LOAN_RECOVERY,
   'Phiếu chi': CashVoucherCategory.PAYMENT,
   'Tạm ứng cho nhân viên': CashVoucherCategory.PAYMENT_EMPLOYEE_ADVANCE,
   'Chi khác': CashVoucherCategory.PAYMENT,

@@ -48,11 +48,7 @@ enum CashVoucherType {
 // Loại nghiệp vụ (§5) — quyết định định khoản mặc định + nguồn sinh phiếu.
 enum CashVoucherCategory {
   SALES_CASH
-  RECEIPT_BANK_WITHDRAW
-  RECEIPT_EMPLOYEE_ADVANCE
-  RECEIPT_CUSTOMER
   RECEIPT
-  RECEIPT_LOAN_RECOVERY
   PAYMENT_EMPLOYEE_ADVANCE
   PAYMENT
   DEPOSIT_TO_BANK

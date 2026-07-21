@@ -26,7 +26,6 @@ type VoucherWithLines = CashVoucher & { lines: CashVoucherLine[] }
 
 // Loại nghiệp vụ mà đối tượng là nhân viên (tạm ứng / hoàn ứng / lương).
 const EMPLOYEE_CATEGORIES = new Set<CashVoucherCategory>([
-  CashVoucherCategory.RECEIPT_EMPLOYEE_ADVANCE,
   CashVoucherCategory.PAYMENT_EMPLOYEE_ADVANCE,
   CashVoucherCategory.PAYMENT_SALARY_ADVANCE,
   CashVoucherCategory.PAYMENT_SALARY,
@@ -402,16 +401,16 @@ export class CashService {
     return v?.voucherNo ?? null
   }
 
-  // ── PT thu tiền khách hàng theo hóa đơn (RECEIPT_CUSTOMER) ──────────────────
+  // ── PT thu tiền khách hàng theo hóa đơn (đối trừ công nợ) ───────────────────
   // Public API cho SalesModule (đối trừ công nợ): sinh phiếu thu Nợ 1111 /
   // Có 131 trong transaction của phía gọi. Dòng Có lấy từ input (TK công nợ
-  // của từng chứng từ bán được đối trừ).
+  // của từng chứng từ bán được đối trừ). Loại nghiệp vụ dùng RECEIPT (Thu khác).
   async createCustomerReceipt(tx: Prisma.TransactionClient, input: SalesReceiptInput) {
     const voucherNo = await nextVoucherNo(tx, CashVoucherType.RECEIPT, input.voucherDate)
     const created = await tx.cashVoucher.create({
       data: {
         type: CashVoucherType.RECEIPT,
-        category: CashVoucherCategory.RECEIPT_CUSTOMER,
+        category: CashVoucherCategory.RECEIPT,
         voucherNo,
         ...salesReceiptData(input),
         lines: { create: salesReceiptLines(input) },
