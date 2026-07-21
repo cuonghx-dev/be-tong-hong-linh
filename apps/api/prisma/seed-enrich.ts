@@ -443,5 +443,94 @@ export async function enrichSeed(prisma: PrismaService): Promise<EnrichStats> {
     })
   }
 
+  // ── 9. Chứng từ mua hàng nguồn cho PC mua hàng/mua dịch vụ tiền mặt ──────────
+  await backfillPurchaseCashSources(prisma)
+
   return stats
+}
+
+// PC PURCHASE_GOODS_CASH / PURCHASE_SERVICE_CASH nhập từ Excel không kèm chứng
+// từ mua hàng gốc → sinh MH/MDV trả ngay tiền mặt tương ứng và link paymentId
+// để nút "Xem" mở thẳng chứng từ mua hàng/mua dịch vụ. Line giữ nguyên định
+// khoản PC (Nợ TK chi phí-hàng / Có 1111, VAT = 0) nên journal khử trùng qua
+// payment_id không làm sổ sách đổi số. Idempotent: bỏ qua PC đã có nguồn.
+export async function backfillPurchaseCashSources(prisma: PrismaService): Promise<number> {
+  const pcs = await prisma.cashVoucher.findMany({
+    where: { category: { in: ['PURCHASE_GOODS_CASH', 'PURCHASE_SERVICE_CASH'] } },
+    include: { lines: { orderBy: { lineNo: 'asc' } } },
+    orderBy: { postingDate: 'asc' },
+  })
+  const linked = new Set(
+    (
+      await prisma.purchaseVoucher.findMany({
+        where: { paymentId: { not: null } },
+        select: { paymentId: true },
+      })
+    ).map((p) => p.paymentId!),
+  )
+  const missing = pcs.filter((pc) => !linked.has(pc.id))
+  if (missing.length === 0) return 0
+
+  // Số chứng từ tiếp theo mỗi prefix: MAX(seq hiện có) + 1 (giữ hậu tố năm phổ biến).
+  const nextNo = async (prefix: 'MH' | 'MDV') => {
+    const rows = await prisma.purchaseVoucher.findMany({
+      where: { voucherNo: { startsWith: prefix } },
+      select: { voucherNo: true },
+    })
+    let max = 0
+    let suffix = '/2025'
+    for (const r of rows) {
+      const m = r.voucherNo.match(new RegExp(`^${prefix}(\\d+)(/\\d{4})?$`))
+      if (m && Number(m[1]) > max) {
+        max = Number(m[1])
+        if (m[2]) suffix = m[2]
+      }
+    }
+    let seq = max
+    return () => `${prefix}${++seq}${suffix}`
+  }
+  const nextMH = await nextNo('MH')
+  const nextMDV = await nextNo('MDV')
+
+  for (const pc of missing) {
+    const service = pc.category === 'PURCHASE_SERVICE_CASH'
+    await prisma.purchaseVoucher.create({
+      data: {
+        type: service ? 'SERVICE' : 'NON_STOCK',
+        origin: 'DOMESTIC',
+        paymentMode: 'IMMEDIATE',
+        paymentMethod: 'CASH',
+        receiveWithInvoice: true,
+        voucherNo: service ? nextMDV() : nextMH(),
+        postingDate: pc.postingDate,
+        voucherDate: pc.voucherDate,
+        supplierId: pc.partnerId,
+        supplierName: pc.partnerName,
+        description: pc.reason,
+        totalGoods: pc.totalAmount,
+        totalVat: new Prisma.Decimal(0),
+        totalPayment: pc.totalAmount,
+        receiveStatus: 'RECEIVED',
+        paymentStatus: 'PAID',
+        posted: pc.posted,
+        branchId: pc.branchId,
+        paymentId: pc.id,
+        lines: {
+          create: pc.lines.map((l, i) => ({
+            lineNo: i + 1,
+            itemName: l.description ?? pc.reason,
+            stockAccount: l.debitAccount,
+            payableAccount: l.creditAccount,
+            quantity: new Prisma.Decimal(1),
+            unitPrice: l.amount,
+            amount: l.amount,
+            vatRate: new Prisma.Decimal(0),
+            vatAmount: new Prisma.Decimal(0),
+            vatAccount: CHART_OF_ACCOUNTS.VAT_INPUT,
+          })),
+        },
+      },
+    })
+  }
+  return missing.length
 }
