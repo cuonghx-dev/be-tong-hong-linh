@@ -60,6 +60,16 @@ interface CashVoucherFormProps {
 
 const today = () => new Date().toISOString().slice(0, 10)
 
+// Mã đối tượng mặc định cho phiếu thu có tên đối tượng nhưng chưa có trong danh mục (khách lẻ).
+const WALK_IN_PARTNER_CODE = 'KHACH LE'
+
+// Loại nghiệp vụ ngoài danh sách chọn tay (SALES_CASH, mua hàng… tự sinh) →
+// quy về mặc định "Thu khác" / "Chi khác" khi hiển thị và lưu phiếu.
+function normalizeCategory(type: CashVoucherType, category?: CashVoucherCategory): CashVoucherCategory {
+  const fallback = type === CashVoucherType.Receipt ? CashVoucherCategory.Receipt : CashVoucherCategory.Payment
+  return category && CATEGORY_OPTIONS[type].includes(category) ? category : fallback
+}
+
 // Dòng mặc định — định khoản theo loại nghiệp vụ (§8.3, map dùng chung ở @app/shared).
 function emptyLine(category: CashVoucherCategory, type: CashVoucherType): CashLineFormValues {
   return type === CashVoucherType.Receipt
@@ -68,8 +78,7 @@ function emptyLine(category: CashVoucherCategory, type: CashVoucherType): CashLi
 }
 
 function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): CashVoucherFormValues {
-  const fallback = type === CashVoucherType.Receipt ? CashVoucherCategory.Receipt : CashVoucherCategory.Payment
-  const category = prefill?.category ?? fallback
+  const category = normalizeCategory(type, prefill?.category)
   const reason = defaultReason(category, prefill?.partnerName)
   return {
     type,
@@ -134,14 +143,16 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
   useEffect(() => {
     const v = editing.data
     if (!v) return
+    // Phiếu thu có tên đối tượng nhưng chưa có mã (khách lẻ, dữ liệu nhập khẩu) → mã "KHACH LE".
+    const walkIn = v.type === CashVoucherType.Receipt && !v.partnerId && !!v.partnerName
     reset({
       type: v.type,
-      category: v.category,
+      category: normalizeCategory(v.type, v.category),
       // Nhân bản → ngày về hôm nay (phiếu mới), sửa → giữ nguyên ngày gốc.
       postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
-      partnerType: v.partnerType ?? undefined,
-      partnerId: v.partnerId ?? undefined,
+      partnerType: walkIn ? PartnerType.Customer : (v.partnerType ?? undefined),
+      partnerId: walkIn ? WALK_IN_PARTNER_CODE : (v.partnerId ?? undefined),
       partnerName: v.partnerName ?? undefined,
       payerReceiver: v.payerReceiver ?? undefined,
       address: v.address ?? undefined,
@@ -183,8 +194,12 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
 
   const submit = (goNext: boolean) =>
     handleSubmit(async (values) => {
+      // Phiếu thu nhập tên đối tượng mà không chọn mã → mặc định mã "KHACH LE".
+      const walkIn = isReceipt && !values.partnerId && !!values.partnerName
       const dto: CreateCashVoucherInput = {
         ...values,
+        partnerId: walkIn ? WALK_IN_PARTNER_CODE : values.partnerId,
+        partnerType: walkIn ? PartnerType.Customer : values.partnerType,
         lines: values.lines.map((l) => ({
           description: l.description,
           debitAccount: l.debitAccount ?? '',
@@ -245,12 +260,7 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {/* Loại hiện tại có thể là category tự sinh (SALES_CASH, mua hàng…) không nằm trong
-                  danh sách chọn tay — vẫn thêm vào để hiển thị đúng khi xem/sửa phiếu. */}
-              {(CATEGORY_OPTIONS[type].includes(category)
-                ? CATEGORY_OPTIONS[type]
-                : [category, ...CATEGORY_OPTIONS[type]]
-              ).map((c) => (
+              {CATEGORY_OPTIONS[type].map((c) => (
                 <SelectItem key={c} value={c}>
                   {CATEGORY_LABEL[c]}
                 </SelectItem>
