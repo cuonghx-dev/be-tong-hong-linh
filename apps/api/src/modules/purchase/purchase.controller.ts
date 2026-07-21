@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
-import { PurchaseVoucherType } from '@prisma/client'
+import { PaymentMethod, PurchasePaymentMode, PurchaseVoucherType } from '@prisma/client'
 import { CreatePurchaseVoucherDto } from './dto/create-purchase-voucher.dto'
 import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
 import { SetPurchasePostedDto } from './dto/set-purchase-posted.dto'
@@ -35,13 +35,16 @@ export class PurchaseController {
   }
 
   // Đặt TRƯỚC @Get(':id') để route ':id' không nuốt mất 'next-no'.
+  // Số phụ thuộc tùy chọn thanh toán: MH/MDV trả ngay TM → PC, còn lại → NK/MH/MDV.
   @Get('next-no')
   @ApiOperation({ summary: 'Xem trước số chứng từ kế tiếp (chỉ hiển thị, không giữ chỗ)' })
   nextNo(
     @Query('type', new ParseEnumPipe(PurchaseVoucherType)) type: PurchaseVoucherType,
     @Query('voucherDate') voucherDate?: string,
+    @Query('paymentMode') paymentMode?: PurchasePaymentMode,
+    @Query('paymentMethod') paymentMethod?: PaymentMethod,
   ) {
-    return this.purchase.previewNextVoucherNo(type, voucherDate)
+    return this.purchase.previewNextVoucherNo(type, voucherDate, paymentMode, paymentMethod)
   }
 
   @Get(':id')

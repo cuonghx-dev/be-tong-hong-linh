@@ -409,7 +409,7 @@ export class SalesReportService {
              l.amount::text
       FROM cash_voucher_lines l
       JOIN cash_vouchers v ON v.id = l.voucher_id
-      WHERE l.credit_account LIKE ${RECEIVABLE_LIKE}
+      WHERE v.posted AND l.credit_account LIKE ${RECEIVABLE_LIKE}
         AND ${dateCond}
       UNION ALL
       SELECT v.id,
@@ -423,7 +423,7 @@ export class SalesReportService {
              l.amount::text
       FROM bank_voucher_lines l
       JOIN bank_vouchers v ON v.id = l.voucher_id
-      WHERE l.credit_account LIKE ${RECEIVABLE_LIKE}
+      WHERE v.posted AND l.credit_account LIKE ${RECEIVABLE_LIKE}
         AND ${dateCond}
       UNION ALL
       SELECT v.id,
@@ -437,7 +437,7 @@ export class SalesReportService {
              l.amount::text
       FROM general_voucher_lines l
       JOIN general_vouchers v ON v.id = l.voucher_id
-      WHERE l.debit_account LIKE ${RECEIVABLE_LIKE}
+      WHERE v.posted AND l.debit_account LIKE ${RECEIVABLE_LIKE}
         AND ${dateCond}
       UNION ALL
       SELECT v.id,
@@ -451,7 +451,7 @@ export class SalesReportService {
              l.amount::text
       FROM general_voucher_lines l
       JOIN general_vouchers v ON v.id = l.voucher_id
-      WHERE l.credit_account LIKE ${RECEIVABLE_LIKE}
+      WHERE v.posted AND l.credit_account LIKE ${RECEIVABLE_LIKE}
         AND ${dateCond}
       ORDER BY posting_date, voucher_no
     `)

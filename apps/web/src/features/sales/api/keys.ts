@@ -16,6 +16,8 @@ export const salesKeys = {
   customer: (id: string) => [...salesKeys.all, 'customer', id] as const,
   receivables: (filter: CustomerReceivableFilter) =>
     [...salesKeys.all, 'receivables', filter] as const,
+  openReceivables: (customerId: string) =>
+    [...salesKeys.all, 'receivables', 'open', customerId] as const,
   report: (slug: string, filter: SalesReportFilter) =>
     [...salesKeys.all, 'report', slug, filter] as const,
 }

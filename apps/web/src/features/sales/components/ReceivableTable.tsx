@@ -1,15 +1,11 @@
-import {
-  CashVoucherCategory,
-  CashVoucherType,
-  ReceivableAging,
-  ReceivableStatus,
-  type CustomerReceivableFilter,
-} from '@app/shared'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ReceivableAging, ReceivableStatus, type CustomerReceivableFilter } from '@app/shared'
+import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { useReceivables } from '../api/useReceivables'
+import { CollectPaymentDialog } from './CollectPaymentDialog'
 import {
   ReceivableFilterPopover,
   emptyReceivableFilter,
@@ -20,14 +16,9 @@ const PAGE_SIZE = 20
 
 export function ReceivableTable() {
   const [params, setParams] = useSearchParams()
-  const navigate = useNavigate()
 
-  // Ghi thu nợ: mở phiếu thu tiền mặt, loại "Thu tiền khách hàng" (TK Có 131), điền sẵn KH.
-  const collect = (customerId: string, customerName: string) =>
-    navigate(
-      `/cash/vouchers/new?type=${CashVoucherType.Receipt}&category=${CashVoucherCategory.ReceiptCustomer}` +
-        `&partnerId=${customerId}&partnerName=${encodeURIComponent(customerName)}`,
-    )
+  // Thu nợ theo hóa đơn (MISA: Thu tiền khách hàng) — dialog đối trừ chứng từ; null = đóng.
+  const [collectFor, setCollectFor] = useState<{ id: string; name: string } | null>(null)
 
   const page = Number(params.get('rpage') ?? 1)
   const keyword = params.get('rq') ?? ''
@@ -192,7 +183,7 @@ export function ReceivableTable() {
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <button
                       className="font-medium text-primary hover:underline"
-                      onClick={() => collect(r.customerId, r.customerName)}
+                      onClick={() => setCollectFor({ id: r.customerId, name: r.customerName })}
                     >
                       Thu nợ
                     </button>
@@ -239,6 +230,8 @@ export function ReceivableTable() {
           </button>
         </div>
       </div>
+
+      <CollectPaymentDialog customer={collectFor} onClose={() => setCollectFor(null)} />
     </div>
   )
 }

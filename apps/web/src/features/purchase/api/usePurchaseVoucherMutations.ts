@@ -5,6 +5,7 @@ import type {
 } from '@app/shared'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/lib/api'
+import { cashKeys } from '@/features/cash'
 import { purchaseKeys } from './keys'
 
 export function useCreatePurchaseVoucher() {
@@ -14,7 +15,9 @@ export function useCreatePurchaseVoucher() {
       api.post<PurchaseVoucherDto>('/purchase/vouchers', dto).then((r) => r.data),
     onSuccess: () => {
       // Chứng từ mua hàng ảnh hưởng công nợ + tồn kho → invalidate toàn phân hệ.
+      // Trả ngay TM sinh phiếu chi (PC) → invalidate cả Tiền mặt.
       qc.invalidateQueries({ queryKey: purchaseKeys.all })
+      qc.invalidateQueries({ queryKey: cashKeys.all })
     },
   })
 }
@@ -50,6 +53,7 @@ export function useUpdatePurchaseVoucher() {
       api.patch<PurchaseVoucherDto>(`/purchase/vouchers/${id}`, dto).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: purchaseKeys.all })
+      qc.invalidateQueries({ queryKey: cashKeys.all })
     },
   })
 }
@@ -62,6 +66,7 @@ export function useSetPurchaseVoucherPosted() {
       api.patch<PurchaseVoucherDto>(`/purchase/vouchers/${id}/posted`, { posted }).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: purchaseKeys.all })
+      qc.invalidateQueries({ queryKey: cashKeys.all })
     },
   })
 }
@@ -72,6 +77,7 @@ export function useDeletePurchaseVoucher() {
     mutationFn: (id: string) => api.delete(`/purchase/vouchers/${id}`).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: purchaseKeys.all })
+      qc.invalidateQueries({ queryKey: cashKeys.all })
     },
   })
 }

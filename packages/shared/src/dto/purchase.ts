@@ -59,6 +59,8 @@ export interface PurchaseVoucherDto {
   stockValue: string // Giá trị nhập kho
   einvoiceLookupCode: string | null // Mã tra cứu HĐĐT
   einvoiceLookupUrl: string | null // Đường dẫn tra cứu HĐĐT
+  paymentId: string | null // Phiếu chi tự sinh (thanh toán ngay TM)
+  paymentNo?: string | null // Số phiếu chi tự sinh (chỉ trả ở API chi tiết)
   receiveStatus: PurchaseReceiveStatus
   paymentStatus: PurchasePaymentStatus
   posted: boolean // Đã ghi sổ / bỏ ghi (loại khỏi sổ sách, không xóa dữ liệu)

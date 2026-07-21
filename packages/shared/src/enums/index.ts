@@ -130,6 +130,14 @@ export enum SalesPaymentMode {
   PaidNow = 'PAID_NOW', // Thu tiền ngay → Nợ 1111/1121, sinh phiếu thu
 }
 
+// Trạng thái thanh toán chứng từ bán hàng (cột "TT thanh toán" MISA) — tính từ
+// đối trừ thu tiền: thu ngay = Đã TT; chưa thu = so tổng phân bổ với tổng tiền.
+export enum SalesPaymentStatus {
+  Unpaid = 'UNPAID', // Chưa thanh toán
+  Partial = 'PARTIAL', // Thanh toán một phần
+  Paid = 'PAID', // Đã thanh toán
+}
+
 // Loại đối tượng khách hàng (§8): Tổ chức / Cá nhân.
 export enum CustomerType {
   Organization = 'ORG',

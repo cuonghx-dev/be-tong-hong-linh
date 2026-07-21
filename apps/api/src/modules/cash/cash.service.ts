@@ -322,12 +322,103 @@ export class CashService {
     })
   }
 
+  // ── PC tự sinh từ chứng từ mua hàng thanh toán ngay - tiền mặt ─────────────
+  // (PURCHASE_SERVICE_CASH / PURCHASE_GOODS_CASH) — mirror nhóm PT bán hàng ở
+  // trên: chạy trong transaction phía gọi, Có luôn 1111, Nợ theo dòng đầu vào.
+
+  // Số PC kế tiếp — public để PurchaseModule đánh số chứng từ mua thanh toán
+  // ngay TM (MH/MDV) trùng với phiếu chi tự sinh (MISA dùng chung 1 số PC ####/YYYY).
+  async nextPaymentNo(tx: Prisma.TransactionClient, voucherDate: Date) {
+    return nextVoucherNo(tx, CashVoucherType.PAYMENT, voucherDate)
+  }
+
+  async createPurchasePayment(
+    tx: Prisma.TransactionClient,
+    input: PurchasePaymentInput,
+    presetVoucherNo?: string,
+  ) {
+    const voucherNo =
+      presetVoucherNo ?? (await nextVoucherNo(tx, CashVoucherType.PAYMENT, input.voucherDate))
+    const created = await tx.cashVoucher.create({
+      data: {
+        type: CashVoucherType.PAYMENT,
+        category: input.category,
+        voucherNo,
+        ...purchasePaymentData(input),
+        lines: { create: purchasePaymentLines(input) },
+      },
+      select: { id: true },
+    })
+    return created.id
+  }
+
+  // Đồng bộ PC theo chứng từ mua hàng khi sửa; PC đã bị xóa tay → tạo lại (id mới).
+  async upsertPurchasePayment(
+    tx: Prisma.TransactionClient,
+    paymentId: string | null,
+    input: PurchasePaymentInput,
+  ) {
+    if (paymentId) {
+      const existing = await tx.cashVoucher.findUnique({
+        where: { id: paymentId },
+        select: { id: true },
+      })
+      if (existing) {
+        await tx.cashVoucherLine.deleteMany({ where: { voucherId: paymentId } })
+        await tx.cashVoucher.update({
+          where: { id: paymentId },
+          data: {
+            category: input.category,
+            ...purchasePaymentData(input),
+            lines: { create: purchasePaymentLines(input) },
+          },
+        })
+        return paymentId
+      }
+    }
+    return this.createPurchasePayment(tx, input)
+  }
+
+  // deleteMany/updateMany + điều kiện category: không nổ nếu PC đã bị xóa tay,
+  // và không cho chứng từ mua hàng đụng nhầm phiếu chi nhập tay.
+  async deletePurchasePayment(tx: Prisma.TransactionClient, paymentId: string) {
+    await tx.cashVoucher.deleteMany({
+      where: { id: paymentId, category: { in: PURCHASE_CASH_CATEGORIES } },
+    })
+  }
+
+  async setPurchasePaymentPosted(tx: Prisma.TransactionClient, paymentId: string, posted: boolean) {
+    await tx.cashVoucher.updateMany({
+      where: { id: paymentId, category: { in: PURCHASE_CASH_CATEGORIES } },
+      data: { posted },
+    })
+  }
+
   async findVoucherNo(id: string) {
     const v = await this.prisma.cashVoucher.findUnique({
       where: { id },
       select: { voucherNo: true },
     })
     return v?.voucherNo ?? null
+  }
+
+  // ── PT thu tiền khách hàng theo hóa đơn (RECEIPT_CUSTOMER) ──────────────────
+  // Public API cho SalesModule (đối trừ công nợ): sinh phiếu thu Nợ 1111 /
+  // Có 131 trong transaction của phía gọi. Dòng Có lấy từ input (TK công nợ
+  // của từng chứng từ bán được đối trừ).
+  async createCustomerReceipt(tx: Prisma.TransactionClient, input: SalesReceiptInput) {
+    const voucherNo = await nextVoucherNo(tx, CashVoucherType.RECEIPT, input.voucherDate)
+    const created = await tx.cashVoucher.create({
+      data: {
+        type: CashVoucherType.RECEIPT,
+        category: CashVoucherCategory.RECEIPT_CUSTOMER,
+        voucherNo,
+        ...salesReceiptData(input),
+        lines: { create: salesReceiptLines(input) },
+      },
+      select: { id: true, voucherNo: true },
+    })
+    return created
   }
 }
 
@@ -370,6 +461,55 @@ function salesReceiptLines(input: SalesReceiptInput) {
     amount: l.amount,
     partnerId: input.customerId,
     partnerName: input.customerName,
+  }))
+}
+
+// Loại PC tự sinh từ mua hàng — điều kiện update/delete để không đụng phiếu nhập tay.
+const PURCHASE_CASH_CATEGORIES = [
+  CashVoucherCategory.PURCHASE_SERVICE_CASH,
+  CashVoucherCategory.PURCHASE_GOODS_CASH,
+]
+
+// Dữ liệu PC tự sinh — mirror từ chứng từ mua hàng thanh toán ngay tiền mặt.
+export type PurchasePaymentInput = {
+  category: CashVoucherCategory // PURCHASE_SERVICE_CASH | PURCHASE_GOODS_CASH
+  postingDate: Date
+  voucherDate: Date
+  supplierId: string | null
+  supplierName: string | null
+  address: string | null
+  reason: string
+  branchId: string | null
+  posted: boolean
+  // Dòng hạch toán phía Nợ (TK kho/chi phí theo dòng hàng + thuế GTGT); Có luôn 1111.
+  lines: { description: string | null; debitAccount: string; amount: Prisma.Decimal }[]
+}
+
+function purchasePaymentData(input: PurchasePaymentInput) {
+  return {
+    postingDate: input.postingDate,
+    voucherDate: input.voucherDate,
+    partnerType: PartnerType.SUPPLIER,
+    partnerId: input.supplierId,
+    partnerName: input.supplierName,
+    payerReceiver: input.supplierName,
+    address: input.address,
+    reason: input.reason,
+    branchId: input.branchId,
+    posted: input.posted,
+    totalAmount: sumAmount(input.lines),
+  }
+}
+
+function purchasePaymentLines(input: PurchasePaymentInput) {
+  return input.lines.map((l, i) => ({
+    lineNo: i + 1,
+    description: l.description,
+    debitAccount: l.debitAccount,
+    creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND,
+    amount: l.amount,
+    partnerId: input.supplierId,
+    partnerName: input.supplierName,
   }))
 }
 

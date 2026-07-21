@@ -4,6 +4,7 @@ import {
   ReceivableAging,
   ReceivableStatus,
   SalesPaymentMode,
+  SalesPaymentStatus,
   SalesVoucherType,
 } from '@app/shared'
 
@@ -22,6 +23,13 @@ export const PAYMENT_MODE_LABEL: Record<SalesPaymentMode, string> = {
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   [PaymentMethod.Cash]: 'Tiền mặt',
   [PaymentMethod.BankTransfer]: 'Chuyển khoản',
+}
+
+// Nhãn cột "TT thanh toán" (tính từ đối trừ thu tiền).
+export const PAYMENT_STATUS_LABEL: Record<SalesPaymentStatus, string> = {
+  [SalesPaymentStatus.Unpaid]: 'Chưa thanh toán',
+  [SalesPaymentStatus.Partial]: 'TT một phần',
+  [SalesPaymentStatus.Paid]: 'Đã thanh toán',
 }
 
 export const CUSTOMER_TYPE_LABEL: Record<CustomerType, string> = {

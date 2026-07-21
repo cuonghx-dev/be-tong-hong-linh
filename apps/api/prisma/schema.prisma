@@ -95,6 +95,8 @@ model CashVoucher {
   // Đã ghi sổ (ảnh hưởng sổ sách). Bỏ ghi → còn là nháp, loại khỏi sổ/báo cáo.
   posted          Boolean             @default(true)
   lines           CashVoucherLine[]
+  // Đối trừ chứng từ bán hàng (thu tiền khách hàng theo hóa đơn).
+  allocations     PaymentAllocation[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -177,6 +179,8 @@ model BankVoucher {
   // Đã ghi sổ (ảnh hưởng sổ sách). Bỏ ghi → còn là nháp, loại khỏi sổ/báo cáo.
   posted            Boolean             @default(true)
   lines             BankVoucherLine[]
+  // Đối trừ chứng từ bán hàng (thu tiền khách hàng theo hóa đơn).
+  allocations       PaymentAllocation[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -308,6 +312,8 @@ model PurchaseVoucher {
   stockValue         Decimal               @default(0) @map("stock_value") @db.Decimal(18, 2)
   einvoiceLookupCode String?               @map("einvoice_lookup_code")
   einvoiceLookupUrl  String?               @map("einvoice_lookup_url")
+  // Phiếu chi tự sinh khi thanh toán ngay tiền mặt (tham chiếu lỏng, không FK).
+  paymentId          String?               @map("payment_id")
   receiveStatus      PurchaseReceiveStatus @default(NOT_RECEIVED) @map("receive_status")
   paymentStatus      PurchasePaymentStatus @default(UNPAID) @map("payment_status")
   // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
@@ -563,6 +569,8 @@ model SalesVoucher {
   posted             Boolean            @default(true)
   branchId           String?            @map("branch_id")
   lines              SalesVoucherLine[]
+  // Đối trừ thu tiền sau (thu tiền khách hàng theo hóa đơn) — quyết định TT thanh toán.
+  allocations        PaymentAllocation[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -596,6 +604,29 @@ model SalesVoucherLine {
 
   @@index([voucherId])
   @@map("sales_voucher_lines")
+}
+
+// Đối trừ thu tiền khách hàng theo hóa đơn (MISA: Thu tiền khách hàng):
+// mỗi dòng phân bổ số tiền của 1 phiếu thu (TM) hoặc thu tiền gửi (CK) vào 1 chứng từ
+// bán hàng chưa thu. TT thanh toán chứng từ bán = tổng phân bổ so với tổng tiền.
+// FK cascade cả 2 phía: xóa chứng từ nguồn hoặc chứng từ bán → đối trừ tự mất.
+model PaymentAllocation {
+  id             String       @id @default(uuid())
+  salesVoucherId String       @map("sales_voucher_id")
+  salesVoucher   SalesVoucher @relation(fields: [salesVoucherId], references: [id], onDelete: Cascade)
+  // Nguồn tiền: đúng 1 trong 2 (phiếu thu tiền mặt / thu tiền gửi).
+  cashVoucherId  String?      @map("cash_voucher_id")
+  cashVoucher    CashVoucher? @relation(fields: [cashVoucherId], references: [id], onDelete: Cascade)
+  bankVoucherId  String?      @map("bank_voucher_id")
+  bankVoucher    BankVoucher? @relation(fields: [bankVoucherId], references: [id], onDelete: Cascade)
+  amount         Decimal      @db.Decimal(18, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([salesVoucherId])
+  @@index([cashVoucherId])
+  @@index([bankVoucherId])
+  @@map("payment_allocations")
 }
 
 // ── Tổng hợp (Chung_tu_nghiep_vu_khac) ──────────────────────────────────────

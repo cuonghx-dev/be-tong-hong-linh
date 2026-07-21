@@ -1,4 +1,9 @@
-import { SalesPaymentMode, SalesVoucherType, type SalesVoucherFilter } from '@app/shared'
+import {
+  SalesPaymentMode,
+  SalesPaymentStatus,
+  SalesVoucherType,
+  type SalesVoucherFilter,
+} from '@app/shared'
 import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getApiErrorMessage } from '@/shared/lib/api'
@@ -15,7 +20,7 @@ import {
   useImportSalesVouchers,
   useSetSalesVoucherPosted,
 } from '../api/useSalesVoucherMutations'
-import { PAYMENT_MODE_LABEL } from '../types'
+import { PAYMENT_STATUS_LABEL } from '../types'
 import { IssueInvoiceDialog } from './IssueInvoiceDialog'
 import { SalesFilterPopover, type SalesFilterValue } from './SalesFilterPopover'
 
@@ -238,11 +243,19 @@ export function SalesVoucherTable() {
                   <Badge on={r.withInvoice} onLabel="Đã lập" offLabel="Chưa lập" />
                 </td>
                 <td className="px-3 py-2">
-                  <Badge
-                    on={r.paymentMode === SalesPaymentMode.PaidNow}
-                    onLabel="Đã thanh toán"
-                    offLabel={PAYMENT_MODE_LABEL[SalesPaymentMode.Unpaid]}
-                  />
+                  {/* TT thanh toán từ đối trừ thu tiền: Đã TT / TT một phần / Chưa TT. */}
+                  <span
+                    className={cn(
+                      'rounded px-1.5 py-0.5 text-xs',
+                      r.paymentStatus === SalesPaymentStatus.Paid
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : r.paymentStatus === SalesPaymentStatus.Partial
+                          ? 'bg-amber-50 text-amber-700'
+                          : 'bg-slate-100 text-slate-500',
+                    )}
+                  >
+                    {PAYMENT_STATUS_LABEL[r.paymentStatus]}
+                  </span>
                 </td>
                 <td className="px-3 py-2">
                   <Badge on={r.isInventoryIssue} onLabel="Đã xuất" offLabel="Chưa xuất" />

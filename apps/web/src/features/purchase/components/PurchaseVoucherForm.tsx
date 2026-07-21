@@ -10,6 +10,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
@@ -68,13 +69,14 @@ function defaultStockAccount(type: PurchaseVoucherType): string {
     : CHART_OF_ACCOUNTS.SERVICE_EXPENSE
 }
 
-function emptyLine(type: PurchaseVoucherType): PurchaseLineFormValues {
+function emptyLine(type: PurchaseVoucherType, paysCash = false): PurchaseLineFormValues {
   return {
     quantity: 1,
     unitPrice: 0,
     vatRate: 8,
     stockAccount: defaultStockAccount(type),
-    payableAccount: CHART_OF_ACCOUNTS.PAYABLE,
+    // Trả ngay TM → vế Có là quỹ 1111 thay công nợ 331 (khớp định khoản backend).
+    payableAccount: paysCash ? CHART_OF_ACCOUNTS.CASH_ON_HAND : CHART_OF_ACCOUNTS.PAYABLE,
     vatAccount: CHART_OF_ACCOUNTS.VAT_INPUT_DEDUCTIBLE,
   }
 }
@@ -125,11 +127,18 @@ export function PurchaseVoucherForm({
         : {}),
     },
   })
-  const { control, register, handleSubmit, reset, watch, setValue, formState } = form
+  const { control, register, handleSubmit, reset, watch, setValue, getValues, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
   // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
-  const nextNo = useNextPurchaseVoucherNo(type, watch('voucherDate'), !voucherId)
+  // Số đổi theo tùy chọn thanh toán: MH/MDV trả ngay TM → PC, còn lại → NK/MH/MDV.
+  const nextNo = useNextPurchaseVoucherNo(
+    type,
+    watch('voucherDate'),
+    watch('paymentMode'),
+    watch('paymentMethod') ?? '',
+    !voucherId,
+  )
 
   // Picker nhà cung cấp: tra cứu theo mã/tên, tự điền tên + địa chỉ.
   const [supplierKw, setSupplierKw] = useState('')
@@ -208,7 +217,20 @@ export function PurchaseVoucherForm({
   const lines = watch('lines')
   const purchaseCost = watch('purchaseCost') ?? 0
   const paymentMode = watch('paymentMode')
+  const paymentMethod = watch('paymentMethod')
   const receiveWithInvoice = watch('receiveWithInvoice')
+
+  // Trả ngay TM → TK công nợ dòng hàng đổi 331 → 1111 và ngược lại (MISA đổi
+  // tự động); chỉ đè 2 giá trị mặc định, giữ TK người dùng đã sửa tay.
+  const paysCash =
+    paymentMode === PurchasePaymentMode.Immediate && paymentMethod !== PaymentMethod.BankTransfer
+  useEffect(() => {
+    const target = paysCash ? CHART_OF_ACCOUNTS.CASH_ON_HAND : CHART_OF_ACCOUNTS.PAYABLE
+    const other = paysCash ? CHART_OF_ACCOUNTS.PAYABLE : CHART_OF_ACCOUNTS.CASH_ON_HAND
+    getValues('lines')?.forEach((l, i) => {
+      if (l.payableAccount === other) setValue(`lines.${i}.payableAccount`, target)
+    })
+  }, [paysCash, getValues, setValue])
   // Loại/nguồn gốc là trạng thái form (đổi qua dropdown "Lý do"), không dùng prop cố định.
   const currentType = watch('type')
   const currentOrigin = watch('origin')
@@ -338,6 +360,19 @@ export function PurchaseVoucherForm({
         </label>
       </div>
 
+      {/* Chứng từ tự sinh: Phiếu chi (thanh toán ngay TM). */}
+      {!!voucherId && !!editing.data?.paymentId && (
+        <p className="space-x-3 text-sm text-slate-600">
+          <span>Tham chiếu:</span>
+          <Link
+            to={`/cash/vouchers/${editing.data.paymentId}`}
+            className="font-medium text-primary hover:underline"
+          >
+            {editing.data.paymentNo ?? 'Phiếu chi'}
+          </Link>
+        </p>
+      )}
+
       {/* Thông tin chung */}
       <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
         <Field label="Mã nhà cung cấp">
@@ -404,7 +439,7 @@ export function PurchaseVoucherForm({
       <div className="rounded-md border border-border">
         <div className="flex items-center gap-2 border-b border-border bg-slate-50 px-2 py-1.5">
           <span className="text-sm font-medium text-slate-600">Hàng tiền</span>
-          <Button type="button" variant="outline" size="sm" onClick={() => append(emptyLine(currentType))}>
+          <Button type="button" variant="outline" size="sm" onClick={() => append(emptyLine(currentType, paysCash))}>
             <PlusIcon size={14} /> Thêm dòng
           </Button>
         </div>

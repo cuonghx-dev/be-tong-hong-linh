@@ -231,6 +231,10 @@ export class ReportService {
   // voucher_no và cùng định khoản — giữ chứng từ gốc, loại bản dẫn xuất):
   // - Phiếu thu SALES_CASH / thu tiền gửi SALES_BANK sinh từ bán hàng thu tiền
   //   ngay (định khoản đã nằm ở sales_voucher_lines, Nợ 111x-112x/Có 511x).
+  // - Phiếu chi PURCHASE_SERVICE_CASH / PURCHASE_GOODS_CASH sinh từ mua hàng
+  //   trả ngay TM (định khoản Nợ 15x-64x/Có 111x đã nằm ở purchase_voucher_lines):
+  //   khớp qua payment_id (PC của chứng từ nhập kho mang số PC riêng) hoặc
+  //   voucher_no trùng (MH/MDV dùng chung số PC, kể cả dữ liệu nhập khẩu chưa link).
   // - Phiếu nhập kho sinh từ mua hàng qua kho (định khoản Nợ 15x/Có 331 đã
   //   nằm ở purchase_voucher_lines, kèm cả vế VAT).
   private journalSql(): Prisma.Sql {
@@ -241,6 +245,9 @@ export class ReportService {
              l.debit_account, l.credit_account, l.amount, l.line_no, 0 AS sub
       FROM cash_voucher_lines l JOIN cash_vouchers v ON v.id = l.voucher_id
       WHERE v.category <> 'SALES_CASH' AND v.posted
+        AND NOT (v.category IN ('PURCHASE_SERVICE_CASH', 'PURCHASE_GOODS_CASH') AND EXISTS (
+          SELECT 1 FROM purchase_vouchers p WHERE p.payment_id = v.id OR p.voucher_no = v.voucher_no
+        ))
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no,
              CASE WHEN v.type = 'RECEIPT' THEN 'BANK_RECEIPT' ELSE 'BANK_PAYMENT' END,

@@ -334,6 +334,25 @@ export class BankService {
     })
     return v?.voucherNo ?? null
   }
+
+  // ── Thu tiền gửi thu tiền khách hàng theo hóa đơn (RECEIPT) ─────────────────
+  // Public API cho SalesModule (đối trừ công nợ): sinh thu tiền gửi Nợ 1121 /
+  // Có 131 trong transaction của phía gọi. Dòng Có lấy từ input (TK công nợ
+  // của từng chứng từ bán được đối trừ).
+  async createCustomerReceipt(tx: Prisma.TransactionClient, input: SalesBankReceiptInput) {
+    const voucherNo = await nextVoucherNo(tx, BankVoucherType.RECEIPT, input.voucherDate)
+    const created = await tx.bankVoucher.create({
+      data: {
+        type: BankVoucherType.RECEIPT,
+        category: BankVoucherCategory.RECEIPT,
+        voucherNo,
+        ...salesReceiptData(input),
+        lines: { create: salesReceiptLines(input) },
+      },
+      select: { id: true, voucherNo: true },
+    })
+    return created
+  }
 }
 
 // Dữ liệu thu tiền gửi tự sinh — mirror từ chứng từ bán hàng thu tiền ngay CK.

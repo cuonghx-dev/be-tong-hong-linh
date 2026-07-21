@@ -5,6 +5,7 @@ import type {
   ReceivableAging,
   ReceivableStatus,
   SalesPaymentMode,
+  SalesPaymentStatus,
   SalesVoucherType,
 } from '../enums'
 
@@ -68,6 +69,8 @@ export interface SalesVoucherDto {
   bankName: string | null
   posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
   branchId: string | null
+  paidAmount: string // Đã thu (thu ngay = tổng tiền; chưa thu = tổng đối trừ đã ghi sổ)
+  paymentStatus: SalesPaymentStatus // TT thanh toán (tính từ paidAmount)
   lines: SalesVoucherLineDto[]
   createdAt: string
   updatedAt: string
@@ -211,4 +214,45 @@ export interface CustomerReceivableFilter {
   aging?: ReceivableAging // Phân tích theo tuổi nợ
   status?: ReceivableStatus // Tình trạng nợ
   toDate?: string // Đến ngày (YYYY-MM-DD): số dư tính đến ngày này (voucherDate ≤ toDate)
+}
+
+// ── Thu tiền khách hàng theo hóa đơn (đối trừ chứng từ) ──────────────────────
+
+// 1 chứng từ bán hàng còn phải thu của KH — dòng chọn trong form thu tiền.
+export interface OpenReceivableVoucherDto {
+  salesVoucherId: string
+  voucherNo: string
+  invoiceNo: string | null
+  postingDate: string // Ngày hạch toán (ISO date-only)
+  dueDate: string | null // Hạn thanh toán
+  description: string | null
+  totalAmount: string // Tổng tiền thanh toán
+  paidAmount: string // Đã thu (đối trừ đã ghi sổ)
+  remainingAmount: string // Còn phải thu = total − paid
+}
+
+// 1 dòng phân bổ tiền thu vào 1 chứng từ bán hàng.
+export interface CollectPaymentAllocationInput {
+  salesVoucherId: string
+  amount: number // > 0, ≤ số còn phải thu của chứng từ
+}
+
+// Payload thu tiền khách hàng theo hóa đơn: sinh phiếu thu (TM) hoặc thu tiền
+// gửi (CK) hạch toán Có 131 + ghi đối trừ vào từng chứng từ bán hàng.
+export interface CollectPaymentInput {
+  customerId: string
+  postingDate: string
+  voucherDate: string
+  paymentMethod: PaymentMethod // Tiền mặt → phiếu thu; Chuyển khoản → thu tiền gửi
+  bankAccountNo?: string | null // TKNH nhận tiền — bắt buộc khi chuyển khoản
+  bankName?: string | null
+  description?: string | null // Lý do thu; mặc định "Thu tiền khách hàng ..."
+  allocations: CollectPaymentAllocationInput[]
+}
+
+// Kết quả thu tiền: chứng từ thu đã sinh.
+export interface CollectPaymentResultDto {
+  voucherId: string // id phiếu thu / thu tiền gửi
+  voucherNo: string // số PT / NTTK
+  totalAmount: string // tổng tiền đã thu
 }

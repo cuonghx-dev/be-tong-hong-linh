@@ -47,7 +47,8 @@ export function SalesProcessTab() {
           top: {
             label: 'Thu tiền theo hóa đơn',
             icon: <ProcessCollectInvoiceIcon />,
-            disabled: true,
+            // Thu tiền đối trừ theo KH → mở tab Công nợ, bấm "Thu nợ" trên dòng KH.
+            onClick: () => navigate('/sales?tab=debt'),
           },
         },
       ]}

@@ -14,7 +14,9 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, PlusIcon } from '@/shared/ui/icons'
+import { BankAccountPicker } from '@/shared/ui/bank-account-picker'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import { QuickAddBankAccountDialog } from '@/shared/ui/quick-add-bank-account-dialog'
 import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
 import { QuickAddEmployeeDialog } from '@/shared/ui/quick-add-employee-dialog'
 import {
@@ -100,9 +102,17 @@ export function BankVoucherForm({
   const [partnerKw, setPartnerKw] = useState('')
   const { items: partnerItems, loading: partnerLoading } = usePartnerOptions(partnerKw)
 
-  // Tạo nhanh đối tượng / nhân viên (dialog mở từ nút + trên picker).
+  // Tạo nhanh đối tượng / nhân viên / TK ngân hàng (dialog mở từ nút + trên picker).
   const [partnerDialog, setPartnerDialog] = useState(false)
   const [employeeDialog, setEmployeeDialog] = useState(false)
+  // null = đóng; string = mở, điền sẵn số TK gõ dở ở picker.
+  const [bankAccountDialog, setBankAccountDialog] = useState<string | null>(null)
+
+  // Chọn TKNH từ danh mục: điền số TK + tự điền Tên ngân hàng.
+  const selectBankAccount = (a: { accountNumber: string; bankName: string }) => {
+    setValue('bankAccountNo', a.accountNumber)
+    setValue('bankName', a.bankName)
+  }
 
   // Chọn đối tượng: điền header + tự điền Lý do/Diễn giải + Đối tượng cho mọi dòng.
   const selectPartner = (p: PartnerOption) => {
@@ -285,10 +295,14 @@ export function BankVoucherForm({
               label={isReceipt ? 'Nộp vào tài khoản' : 'Tài khoản chi'}
               error={formState.errors.bankAccountNo?.message}
             >
-              <LookupInput {...register('bankAccountNo')} withAdd placeholder="Số TK ngân hàng" />
+              <BankAccountPicker
+                value={watch('bankAccountNo')}
+                onSelect={selectBankAccount}
+                onAddNew={(kw) => setBankAccountDialog(kw)}
+              />
             </Field>
             <Field label="Tên ngân hàng">
-              <input {...register('bankName')} className={inputCls} placeholder="Auto theo số TK" />
+              <input {...register('bankName')} className={inputCls} placeholder="Tự điền theo số TK" />
             </Field>
 
             {isReceipt ? (
@@ -502,6 +516,12 @@ export function BankVoucherForm({
         onClose={() => setEmployeeDialog(false)}
         initialCode={watch('employeeId') || undefined}
         onCreated={(p) => setValue('employeeId', p.code)}
+      />
+      <QuickAddBankAccountDialog
+        open={bankAccountDialog !== null}
+        onClose={() => setBankAccountDialog(null)}
+        initialAccountNumber={bankAccountDialog || undefined}
+        onCreated={selectBankAccount}
       />
     </form>
   )

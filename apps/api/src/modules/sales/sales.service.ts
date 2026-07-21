@@ -1,4 +1,4 @@
-import { CHART_OF_ACCOUNTS, type Paginated } from '@app/shared'
+import { CHART_OF_ACCOUNTS, SalesPaymentStatus, type Paginated } from '@app/shared'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import {
   PaymentMethod,
@@ -22,7 +22,20 @@ import { UpdateSalesVoucherDto } from './dto/update-sales-voucher.dto'
 
 type VoucherWithRelations = SalesVoucher & {
   lines: SalesVoucherLine[]
+  // Đối trừ thu tiền sau, chỉ dòng có nguồn đã ghi sổ (xem VOUCHER_INCLUDE) —
+  // vắng mặt (create/update trả về) = coi như chưa có đối trừ.
+  allocations?: { amount: Prisma.Decimal }[]
 }
+
+// Include chung cho mọi query trả VoucherWithRelations: dòng hàng + đối trừ đã
+// ghi sổ (nguồn tiền posted) để tính TT thanh toán.
+const VOUCHER_INCLUDE = {
+  lines: { orderBy: { lineNo: 'asc' } },
+  allocations: {
+    where: { OR: [{ cashVoucher: { posted: true } }, { bankVoucher: { posted: true } }] },
+    select: { amount: true },
+  },
+} satisfies Prisma.SalesVoucherInclude
 
 @Injectable()
 export class SalesService {
@@ -56,7 +69,7 @@ export class SalesService {
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.salesVoucher.findMany({
         where,
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: VOUCHER_INCLUDE,
         orderBy: [{ postingDate: 'desc' }, { createdAt: 'desc' }],
         skip: (filter.page - 1) * filter.pageSize,
         take: filter.pageSize,
@@ -73,7 +86,7 @@ export class SalesService {
   async findOne(id: string) {
     const voucher = await this.prisma.salesVoucher.findUnique({
       where: { id },
-      include: { lines: { orderBy: { lineNo: 'asc' } } },
+      include: VOUCHER_INCLUDE,
     })
     if (!voucher) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
     return this.toDetailDto(voucher)
@@ -197,7 +210,7 @@ export class SalesService {
           ...totals,
           lines: { create: lines },
         },
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: VOUCHER_INCLUDE,
       })
 
       // Chứng từ tự sinh kèm theo (§11): thu ngay TM → Phiếu thu (cùng số),
@@ -224,7 +237,7 @@ export class SalesService {
         return tx.salesVoucher.update({
           where: { id: voucher.id },
           data: links,
-          include: { lines: { orderBy: { lineNo: 'asc' } } },
+          include: VOUCHER_INCLUDE,
         })
       }
 
@@ -285,7 +298,7 @@ export class SalesService {
       const voucher = await tx.salesVoucher.update({
         where: { id },
         data,
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: VOUCHER_INCLUDE,
       })
 
       // Đồng bộ chứng từ tự sinh theo tùy chọn mới (§11). Số chứng từ bán hàng
@@ -335,7 +348,7 @@ export class SalesService {
         return tx.salesVoucher.update({
           where: { id },
           data: links,
-          include: { lines: { orderBy: { lineNo: 'asc' } } },
+          include: VOUCHER_INCLUDE,
         })
       }
 
@@ -354,7 +367,7 @@ export class SalesService {
       const voucher = await tx.salesVoucher.update({
         where: { id },
         data: { posted },
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: VOUCHER_INCLUDE,
       })
       // Ghi sổ / bỏ ghi lan sang mọi chứng từ tự sinh — cùng trạng thái sổ.
       if (voucher.receiptId) await this.cash.setSalesReceiptPosted(tx, voucher.receiptId, posted)
@@ -601,8 +614,26 @@ function toDateOnly(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
+// TT thanh toán (cột MISA): thu ngay = đã thanh toán; chưa thu = so tổng đối trừ
+// đã ghi sổ với tổng tiền chứng từ.
+function paymentInfo(v: VoucherWithRelations): { paidAmount: Prisma.Decimal; paymentStatus: SalesPaymentStatus } {
+  if (v.paymentMode === SalesPaymentMode.PAID_NOW) {
+    return { paidAmount: v.totalAmount, paymentStatus: SalesPaymentStatus.Paid }
+  }
+  const paid = (v.allocations ?? []).reduce((s, a) => s.add(a.amount), new Prisma.Decimal(0))
+  const paymentStatus = paid.greaterThanOrEqualTo(v.totalAmount)
+    ? SalesPaymentStatus.Paid
+    : paid.greaterThan(0)
+      ? SalesPaymentStatus.Partial
+      : SalesPaymentStatus.Unpaid
+  return { paidAmount: paid, paymentStatus }
+}
+
 function toVoucherDto(v: VoucherWithRelations) {
+  const { paidAmount, paymentStatus } = paymentInfo(v)
   return {
+    paidAmount: paidAmount.toString(),
+    paymentStatus,
     id: v.id,
     voucherNo: v.voucherNo,
     invoiceNo: v.invoiceNo,
