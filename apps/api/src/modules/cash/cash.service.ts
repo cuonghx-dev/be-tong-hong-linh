@@ -70,8 +70,12 @@ export class CashService {
       this.prisma.cashVoucher.count({ where }),
     ])
 
+    const salesByReceipt = await this.lookupSalesVouchers(rows)
     return {
-      data: rows.map(toVoucherDto),
+      data: rows.map((r) => ({
+        ...toVoucherDto(r),
+        salesVoucherId: salesByReceipt.get(r.id) ?? null,
+      })),
       pagination: { page: filter.page, pageSize: filter.pageSize, total },
     }
   }
@@ -82,7 +86,22 @@ export class CashService {
       include: { lines: { orderBy: { lineNo: 'asc' } } },
     })
     if (!voucher) throw new NotFoundException(`Không tìm thấy phiếu ${id}`)
-    return toVoucherDto(voucher)
+    const salesByReceipt = await this.lookupSalesVouchers([voucher])
+    return { ...toVoucherDto(voucher), salesVoucherId: salesByReceipt.get(voucher.id) ?? null }
+  }
+
+  // PT SALES_CASH tự sinh → tìm chứng từ bán hàng nguồn (SalesVoucher.receiptId,
+  // tham chiếu lỏng không FK) để FE "Xem" mở thẳng chứng từ bán hàng.
+  private async lookupSalesVouchers(vouchers: CashVoucher[]): Promise<Map<string, string>> {
+    const receiptIds = vouchers
+      .filter((v) => v.category === CashVoucherCategory.SALES_CASH)
+      .map((v) => v.id)
+    if (receiptIds.length === 0) return new Map()
+    const sales = await this.prisma.salesVoucher.findMany({
+      where: { receiptId: { in: receiptIds } },
+      select: { id: true, receiptId: true },
+    })
+    return new Map(sales.filter((s) => s.receiptId).map((s) => [s.receiptId!, s.id]))
   }
 
   // Xem trước số phiếu kế tiếp để hiển thị trên form — KHÔNG giữ chỗ;
@@ -592,6 +611,8 @@ function toVoucherDto(v: VoucherWithLines) {
     totalAmount: v.totalAmount.toString(),
     branchId: v.branchId,
     posted: v.posted,
+    // Chứng từ bán hàng nguồn (PT SALES_CASH) — list/findOne enrich đè giá trị thật.
+    salesVoucherId: null as string | null,
     lines: v.lines.map((l) => ({
       id: l.id,
       lineNo: l.lineNo,

@@ -28,8 +28,11 @@ function CashTable() {
 
   // Điều hướng sang trang chứng từ full-page (§5).
   const openNew = (type: CashVoucherType) => navigate(`/cash/vouchers/new?type=${type}`)
-  const openView = (id: string, type: CashVoucherType) =>
-    navigate(`/cash/vouchers/${id}?type=${type}`)
+  // PT "Bán hàng hóa trong nước - Tiền mặt" tự sinh → Xem = mở chứng từ bán hàng nguồn.
+  const openView = (r: { id: string; type: CashVoucherType; category: CashVoucherCategory; salesVoucherId: string | null }) =>
+    r.category === CashVoucherCategory.SalesCash && r.salesVoucherId
+      ? navigate(`/sales/vouchers/${r.salesVoucherId}`)
+      : navigate(`/cash/vouchers/${r.id}?type=${r.type}`)
   const openEdit = (id: string, type: CashVoucherType) =>
     navigate(`/cash/vouchers/${id}/edit?type=${type}`)
   // Nhân bản: mở form tạo mới, điền sẵn dữ liệu phiếu nguồn (số phiếu cấp lại khi Lưu).
@@ -218,7 +221,7 @@ function CashTable() {
                   <td className="whitespace-nowrap px-3 py-2">
                     <button
                       className="text-primary hover:underline"
-                      onClick={() => openView(r.id, r.type)}
+                      onClick={() => openView(r)}
                     >
                       {r.voucherNo}
                     </button>
@@ -261,7 +264,7 @@ function CashTable() {
                   </td>
                   <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
-                      onPrimary={() => openView(r.id, r.type)}
+                      onPrimary={() => openView(r)}
                       items={[
                         {
                           label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',

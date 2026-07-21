@@ -36,6 +36,8 @@ export interface CashVoucherDto {
   totalAmount: string // Σ số tiền dòng
   branchId: string | null
   posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
+  // Chứng từ bán hàng nguồn (PT SALES_CASH tự sinh) — FE "Xem" mở chứng từ bán hàng.
+  salesVoucherId: string | null
   lines: CashVoucherLineDto[]
   createdAt: string
   updatedAt: string
