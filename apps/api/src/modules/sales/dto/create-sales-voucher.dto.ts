@@ -91,6 +91,16 @@ export class CreateSalesVoucherDto {
   @IsEnum(PaymentMethod)
   paymentMethod?: PaymentMethod
 
+  @ApiPropertyOptional({ description: 'Số TKNH nhận tiền (thu tiền ngay chuyển khoản)' })
+  @IsOptional()
+  @IsString()
+  bankAccountNo?: string
+
+  @ApiPropertyOptional({ description: 'Tên ngân hàng nhận tiền' })
+  @IsOptional()
+  @IsString()
+  bankName?: string
+
   @ApiPropertyOptional({ description: 'Kiêm phiếu xuất' })
   @IsOptional()
   @IsBoolean()

@@ -1,5 +1,6 @@
 // Public API — phân hệ Kho (05-kho).
 export { InventoryPage } from './pages/InventoryPage'
+export { inventoryKeys } from './api/keys'
 export { InventoryReceiptPage } from './pages/InventoryReceiptPage'
 export { useReceipts, useReceipt } from './api/useReceipts'
 export {

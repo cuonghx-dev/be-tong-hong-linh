@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { PaymentMethod, SalesPaymentMode } from '@prisma/client'
 import { CreateSalesVoucherDto } from './dto/create-sales-voucher.dto'
 import { SalesVoucherFilterDto } from './dto/sales-voucher-filter.dto'
 import { SetSalesPostedDto } from './dto/set-sales-posted.dto'
@@ -33,10 +34,15 @@ export class SalesController {
   }
 
   // Đặt TRƯỚC @Get(':id') để route ':id' không nuốt mất 'next-no'.
+  // Số phụ thuộc tùy chọn thanh toán: thu ngay TM → PT, thu ngay CK → NTTK, chưa thu → BH.
   @Get('next-no')
   @ApiOperation({ summary: 'Xem trước số chứng từ kế tiếp (chỉ hiển thị, không giữ chỗ)' })
-  nextNo(@Query('voucherDate') voucherDate?: string) {
-    return this.sales.previewNextVoucherNo(voucherDate)
+  nextNo(
+    @Query('voucherDate') voucherDate?: string,
+    @Query('paymentMode') paymentMode?: SalesPaymentMode,
+    @Query('paymentMethod') paymentMethod?: PaymentMethod,
+  ) {
+    return this.sales.previewNextVoucherNo(voucherDate, paymentMode, paymentMethod)
   }
 
   @Get(':id')

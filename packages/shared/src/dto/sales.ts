@@ -58,7 +58,14 @@ export interface SalesVoucherDto {
   totalAmount: string // Tổng tiền thanh toán
   einvoiceLookupCode: string | null // Mã tra cứu HĐĐT
   einvoiceLookupUrl: string | null // Đường dẫn tra cứu HĐĐT
-  receiptId: string | null // Phiếu thu (thu ngay)
+  receiptId: string | null // Phiếu thu (thu ngay TM)
+  receiptNo?: string | null // Số phiếu thu tự sinh (chỉ trả ở API chi tiết)
+  bankReceiptId: string | null // Thu tiền gửi (thu ngay CK)
+  bankReceiptNo?: string | null // Số thu tiền gửi tự sinh (chỉ trả ở API chi tiết)
+  issueId: string | null // Phiếu xuất kho (kiêm phiếu xuất)
+  issueNo?: string | null // Số phiếu xuất tự sinh (chỉ trả ở API chi tiết)
+  bankAccountNo: string | null // TKNH nhận tiền (thu ngay CK)
+  bankName: string | null
   posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
   branchId: string | null
   lines: SalesVoucherLineDto[]
@@ -106,6 +113,9 @@ export interface CreateSalesVoucherInput {
   einvoiceLookupCode?: string | null
   einvoiceLookupUrl?: string | null
   branchId?: string | null
+  // TKNH nhận tiền — bắt buộc chọn khi thu tiền ngay chuyển khoản.
+  bankAccountNo?: string | null
+  bankName?: string | null
   lines: CreateSalesVoucherLineInput[]
 }
 

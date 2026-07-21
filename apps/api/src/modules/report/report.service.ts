@@ -229,8 +229,8 @@ export class ReportService {
   //
   // Khử trùng chứng từ dẫn xuất (1 nghiệp vụ sinh bản ghi ở 2 bảng, cùng
   // voucher_no và cùng định khoản — giữ chứng từ gốc, loại bản dẫn xuất):
-  // - Phiếu thu SALES_CASH sinh từ bán hàng thu tiền ngay (định khoản đã nằm
-  //   ở sales_voucher_lines, Nợ 111x/Có 511x).
+  // - Phiếu thu SALES_CASH / thu tiền gửi SALES_BANK sinh từ bán hàng thu tiền
+  //   ngay (định khoản đã nằm ở sales_voucher_lines, Nợ 111x-112x/Có 511x).
   // - Phiếu nhập kho sinh từ mua hàng qua kho (định khoản Nợ 15x/Có 331 đã
   //   nằm ở purchase_voucher_lines, kèm cả vế VAT).
   private journalSql(): Prisma.Sql {
@@ -247,7 +247,7 @@ export class ReportService {
              COALESCE(l.description, v.reason),
              l.debit_account, l.credit_account, l.amount, l.line_no, 0
       FROM bank_voucher_lines l JOIN bank_vouchers v ON v.id = l.voucher_id
-      WHERE v.posted
+      WHERE v.category <> 'SALES_BANK' AND v.posted
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no, 'GENERAL',
              COALESCE(l.description, v.description),

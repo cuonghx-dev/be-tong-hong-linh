@@ -553,6 +553,12 @@ model SalesVoucher {
   einvoiceLookupCode String?            @map("einvoice_lookup_code")
   einvoiceLookupUrl  String?            @map("einvoice_lookup_url")
   receiptId          String?            @map("receipt_id")
+  // Chứng từ tự sinh khi thu tiền ngay CK / kiêm phiếu xuất (tham chiếu lỏng, không FK).
+  bankReceiptId      String?            @map("bank_receipt_id")
+  issueId            String?            @map("issue_id")
+  // TKNH nhận tiền khi thu ngay chuyển khoản (tham chiếu lỏng như BankVoucher).
+  bankAccountNo      String?            @map("bank_account_no")
+  bankName           String?            @map("bank_name")
   // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
   posted             Boolean            @default(true)
   branchId           String?            @map("branch_id")

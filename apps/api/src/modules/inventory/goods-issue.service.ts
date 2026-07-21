@@ -225,12 +225,135 @@ export class GoodsIssueService {
     await this.prisma.goodsIssueVoucher.delete({ where: { id } })
     return { id }
   }
+
+  // ── Phiếu xuất tự sinh từ bán hàng kiêm phiếu xuất — xem SalesIssueInput ────
+
+  async createSalesIssue(tx: Prisma.TransactionClient, input: SalesIssueInput) {
+    const voucherNo = await nextVoucherNo(tx, input.voucherDate)
+    const lines = salesIssueLines(input)
+    const created = await tx.goodsIssueVoucher.create({
+      data: {
+        category: GoodsIssueCategory.SALES,
+        voucherNo,
+        ...salesIssueData(input, lines),
+        lines: { create: lines },
+      },
+      select: { id: true },
+    })
+    return created.id
+  }
+
+  // Đồng bộ phiếu xuất theo chứng từ bán hàng khi sửa; đã bị xóa tay → tạo lại.
+  async upsertSalesIssue(
+    tx: Prisma.TransactionClient,
+    issueId: string | null,
+    input: SalesIssueInput,
+  ) {
+    if (issueId) {
+      const existing = await tx.goodsIssueVoucher.findUnique({
+        where: { id: issueId },
+        select: { id: true },
+      })
+      if (existing) {
+        const lines = salesIssueLines(input)
+        await tx.goodsIssueLine.deleteMany({ where: { voucherId: issueId } })
+        await tx.goodsIssueVoucher.update({
+          where: { id: issueId },
+          data: { ...salesIssueData(input, lines), lines: { create: lines } },
+        })
+        return issueId
+      }
+    }
+    return this.createSalesIssue(tx, input)
+  }
+
+  // deleteMany/updateMany + điều kiện category: không nổ nếu phiếu đã bị xóa tay,
+  // không đụng nhầm phiếu xuất nhập tay (khác category cũng bỏ qua).
+  async deleteSalesIssue(tx: Prisma.TransactionClient, issueId: string) {
+    await tx.goodsIssueVoucher.deleteMany({
+      where: { id: issueId, category: GoodsIssueCategory.SALES },
+    })
+  }
+
+  async setSalesIssuePosted(tx: Prisma.TransactionClient, issueId: string, posted: boolean) {
+    await tx.goodsIssueVoucher.updateMany({
+      where: { id: issueId, category: GoodsIssueCategory.SALES },
+      data: { posted },
+    })
+  }
+
+  async findVoucherNo(id: string) {
+    const v = await this.prisma.goodsIssueVoucher.findUnique({
+      where: { id },
+      select: { voucherNo: true },
+    })
+    return v?.voucherNo ?? null
+  }
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 // Định khoản TK Nợ mặc định theo lý do xuất:
 //   bán hàng → 632 (giá vốn); sản xuất → 621 (CP NVL trực tiếp); khác → 632.
+// ── Phiếu xuất tự sinh từ chứng từ bán hàng kiêm phiếu xuất (category SALES) ─
+// Public API cho SalesModule: chạy trong transaction của phía gọi. Số XK cấp
+// riêng theo sequence kho (MISA cũng tách số XK khỏi số chứng từ bán hàng).
+
+// Dữ liệu phiếu xuất tự sinh — dòng hàng mirror chứng từ bán hàng, đơn giá = giá vốn.
+export type SalesIssueInput = {
+  postingDate: Date
+  voucherDate: Date
+  customerId: string | null
+  customerName: string | null
+  receiver: string | null
+  address: string | null
+  salesEmployeeId: string | null
+  description: string
+  posted: boolean
+  lines: {
+    itemId: string | null
+    itemName: string | null
+    warehouseId: string | null
+    debitAccount?: string | null
+    creditAccount?: string | null
+    unit: string | null
+    quantity: Prisma.Decimal
+    unitPrice: Prisma.Decimal // giá vốn
+    lotNo: string | null
+  }[]
+}
+
+function salesIssueData(input: SalesIssueInput, lines: ReturnType<typeof salesIssueLines>) {
+  return {
+    postingDate: input.postingDate,
+    voucherDate: input.voucherDate,
+    customerId: input.customerId,
+    customerName: input.customerName,
+    receiver: input.receiver,
+    address: input.address,
+    salesEmployeeId: input.salesEmployeeId,
+    description: input.description,
+    posted: input.posted,
+    totalAmount: computeTotal(lines),
+  }
+}
+
+function salesIssueLines(input: SalesIssueInput) {
+  return input.lines.map((l, i) => ({
+    lineNo: i + 1,
+    itemId: l.itemId,
+    itemName: l.itemName,
+    warehouseId: l.warehouseId,
+    debitAccount: l.debitAccount || defaultDebitAccount(GoodsIssueCategory.SALES),
+    creditAccount: l.creditAccount || defaultCreditAccount(GoodsIssueCategory.SALES),
+    unit: l.unit,
+    quantity: l.quantity,
+    unitPrice: l.unitPrice,
+    amount: l.quantity.mul(l.unitPrice),
+    lotNo: l.lotNo,
+  }))
+}
+
 function defaultDebitAccount(category: GoodsIssueCategory): string {
   return category === GoodsIssueCategory.PRODUCTION
     ? CHART_OF_ACCOUNTS.DIRECT_MATERIAL_COST

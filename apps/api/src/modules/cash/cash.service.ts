@@ -253,6 +253,124 @@ export class CashService {
     await this.prisma.cashVoucher.delete({ where: { id } })
     return { id }
   }
+
+  // ── PT tự sinh từ chứng từ bán hàng thu tiền ngay - tiền mặt (SALES_CASH) ──
+  // Public API cho SalesModule (§11): chạy trong transaction của phía gọi để
+  // chứng từ bán hàng + phiếu thu ghi atomic. Nợ luôn 1111, Có theo dòng đầu vào.
+
+  // Số PT kế tiếp — public để SalesModule đánh số chứng từ bán hàng thu ngay TM
+  // trùng với phiếu thu tự sinh (MISA dùng chung 1 số PT####/YYYY).
+  async nextReceiptNo(tx: Prisma.TransactionClient, voucherDate: Date) {
+    return nextVoucherNo(tx, CashVoucherType.RECEIPT, voucherDate)
+  }
+
+  async createSalesReceipt(
+    tx: Prisma.TransactionClient,
+    input: SalesReceiptInput,
+    presetVoucherNo?: string,
+  ) {
+    const voucherNo =
+      presetVoucherNo ?? (await nextVoucherNo(tx, CashVoucherType.RECEIPT, input.voucherDate))
+    const created = await tx.cashVoucher.create({
+      data: {
+        type: CashVoucherType.RECEIPT,
+        category: CashVoucherCategory.SALES_CASH,
+        voucherNo,
+        ...salesReceiptData(input),
+        lines: { create: salesReceiptLines(input) },
+      },
+      select: { id: true },
+    })
+    return created.id
+  }
+
+  // Đồng bộ PT theo chứng từ bán hàng khi sửa; PT đã bị xóa tay → tạo lại (id mới).
+  async upsertSalesReceipt(
+    tx: Prisma.TransactionClient,
+    receiptId: string | null,
+    input: SalesReceiptInput,
+  ) {
+    if (receiptId) {
+      const existing = await tx.cashVoucher.findUnique({
+        where: { id: receiptId },
+        select: { id: true },
+      })
+      if (existing) {
+        await tx.cashVoucherLine.deleteMany({ where: { voucherId: receiptId } })
+        await tx.cashVoucher.update({
+          where: { id: receiptId },
+          data: { ...salesReceiptData(input), lines: { create: salesReceiptLines(input) } },
+        })
+        return receiptId
+      }
+    }
+    return this.createSalesReceipt(tx, input)
+  }
+
+  // deleteMany/updateMany + điều kiện category: không nổ nếu PT đã bị xóa tay,
+  // và không cho chứng từ bán hàng đụng nhầm phiếu nhập tay.
+  async deleteSalesReceipt(tx: Prisma.TransactionClient, receiptId: string) {
+    await tx.cashVoucher.deleteMany({
+      where: { id: receiptId, category: CashVoucherCategory.SALES_CASH },
+    })
+  }
+
+  async setSalesReceiptPosted(tx: Prisma.TransactionClient, receiptId: string, posted: boolean) {
+    await tx.cashVoucher.updateMany({
+      where: { id: receiptId, category: CashVoucherCategory.SALES_CASH },
+      data: { posted },
+    })
+  }
+
+  async findVoucherNo(id: string) {
+    const v = await this.prisma.cashVoucher.findUnique({
+      where: { id },
+      select: { voucherNo: true },
+    })
+    return v?.voucherNo ?? null
+  }
+}
+
+// Dữ liệu PT tự sinh — mirror từ chứng từ bán hàng thu tiền ngay.
+export type SalesReceiptInput = {
+  postingDate: Date
+  voucherDate: Date
+  customerId: string | null
+  customerName: string | null
+  address: string | null
+  reason: string
+  branchId: string | null
+  posted: boolean
+  // Dòng hạch toán phía Có (doanh thu theo dòng hàng + thuế GTGT); Nợ luôn 1111.
+  lines: { description: string | null; creditAccount: string; amount: Prisma.Decimal }[]
+}
+
+function salesReceiptData(input: SalesReceiptInput) {
+  return {
+    postingDate: input.postingDate,
+    voucherDate: input.voucherDate,
+    partnerType: PartnerType.CUSTOMER,
+    partnerId: input.customerId,
+    partnerName: input.customerName,
+    payerReceiver: input.customerName,
+    address: input.address,
+    reason: input.reason,
+    branchId: input.branchId,
+    posted: input.posted,
+    totalAmount: sumAmount(input.lines),
+  }
+}
+
+function salesReceiptLines(input: SalesReceiptInput) {
+  return input.lines.map((l, i) => ({
+    lineNo: i + 1,
+    description: l.description,
+    debitAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND,
+    creditAccount: l.creditAccount,
+    amount: l.amount,
+    partnerId: input.customerId,
+    partnerName: input.customerName,
+  }))
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────

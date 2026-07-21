@@ -7,6 +7,8 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { Link } from 'react-router-dom'
+import { useBankAccounts } from '@/features/catalog'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
@@ -103,7 +105,13 @@ export function SalesVoucherForm({
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
   // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
-  const nextNo = useNextSalesVoucherNo(watch('voucherDate'), !voucherId)
+  // Số đổi theo tùy chọn thanh toán (PT/NTTK/BH) nên truyền cả mode + method.
+  const nextNo = useNextSalesVoucherNo(
+    watch('voucherDate'),
+    watch('paymentMode'),
+    watch('paymentMethod') ?? '',
+    !voucherId,
+  )
 
   useEffect(() => {
     const v = editing.data
@@ -122,6 +130,8 @@ export function SalesVoucherForm({
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       customerId: v.customerId ?? undefined,
       customerName: v.customerName ?? undefined,
+      bankAccountNo: v.bankAccountNo ?? undefined,
+      bankName: v.bankName ?? undefined,
       taxCode: v.taxCode ?? undefined,
       contactPerson: v.contactPerson ?? undefined,
       address: v.address ?? undefined,
@@ -144,6 +154,11 @@ export function SalesVoucherForm({
   }, [editing.data, reset, duplicating])
 
   const paymentMode = watch('paymentMode')
+  const paymentMethod = watch('paymentMethod')
+  const payingByBank =
+    paymentMode === SalesPaymentMode.PaidNow && paymentMethod === PaymentMethod.BankTransfer
+  // Danh mục TKNH — chỉ cần khi thu tiền ngay chuyển khoản.
+  const bankAccounts = useBankAccounts({ page: 1, pageSize: 100 })
   const withInvoice = watch('withInvoice')
   const lines = watch('lines')
   const totalGoods = lines?.reduce((s, l) => s + lineAmount(l), 0) ?? 0
@@ -235,6 +250,28 @@ export function SalesVoucherForm({
             </SelectContent>
           </Select>
         )}
+        {/* Thu ngay CK → chọn TKNH nhận tiền (bắt buộc để sinh Thu tiền gửi). */}
+        {payingByBank && (
+          <Select
+            value={watch('bankAccountNo') ?? ''}
+            onValueChange={(no) => {
+              const acc = bankAccounts.data?.data.find((a) => a.accountNumber === no)
+              setValue('bankAccountNo', no)
+              setValue('bankName', acc?.bankName ?? undefined)
+            }}
+          >
+            <SelectTrigger className="h-8 w-auto min-w-44">
+              <SelectValue placeholder="Chọn TK ngân hàng nhận" />
+            </SelectTrigger>
+            <SelectContent>
+              {(bankAccounts.data?.data ?? []).map((a) => (
+                <SelectItem key={a.id} value={a.accountNumber}>
+                  {a.accountNumber} — {a.bankName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <span className="mx-1 h-4 w-px bg-border" />
         <label className="flex items-center gap-1.5">
           <input type="checkbox" {...register('isInventoryIssue')} /> Kiêm phiếu xuất
@@ -246,6 +283,38 @@ export function SalesVoucherForm({
           <input type="checkbox" {...register('isPosInvoice')} /> Hóa đơn từ máy tính tiền
         </label>
       </div>
+
+      {/* Chứng từ tự sinh: Phiếu thu (thu ngay TM) / Thu tiền gửi (CK) / Phiếu xuất kho. */}
+      {!!voucherId &&
+        !!(editing.data?.receiptId || editing.data?.bankReceiptId || editing.data?.issueId) && (
+          <p className="space-x-3 text-sm text-slate-600">
+            <span>Tham chiếu:</span>
+            {editing.data?.receiptId && (
+              <Link
+                to={`/cash/vouchers/${editing.data.receiptId}`}
+                className="font-medium text-primary hover:underline"
+              >
+                {editing.data.receiptNo ?? 'Phiếu thu'}
+              </Link>
+            )}
+            {editing.data?.bankReceiptId && (
+              <Link
+                to={`/bank/vouchers/${editing.data.bankReceiptId}`}
+                className="font-medium text-primary hover:underline"
+              >
+                {editing.data.bankReceiptNo ?? 'Thu tiền gửi'}
+              </Link>
+            )}
+            {editing.data?.issueId && (
+              <Link
+                to={`/inventory/issues/${editing.data.issueId}`}
+                className="font-medium text-primary hover:underline"
+              >
+                {editing.data.issueNo ?? 'Phiếu xuất'}
+              </Link>
+            )}
+          </p>
+        )}
 
       {/* Thông tin chung */}
       <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">

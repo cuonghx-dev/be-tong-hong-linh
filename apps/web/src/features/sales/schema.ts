@@ -20,6 +20,9 @@ export const salesVoucherSchema = z.object({
   voucherType: z.nativeEnum(SalesVoucherType),
   paymentMode: z.nativeEnum(SalesPaymentMode),
   paymentMethod: z.nativeEnum(PaymentMethod).optional(),
+  // TKNH nhận tiền — dùng khi thu tiền ngay chuyển khoản.
+  bankAccountNo: z.string().optional(),
+  bankName: z.string().optional(),
   isInventoryIssue: z.boolean().optional(),
   withInvoice: z.boolean().optional(),
   isPosInvoice: z.boolean().optional(),

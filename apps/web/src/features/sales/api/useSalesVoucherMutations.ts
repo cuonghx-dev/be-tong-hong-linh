@@ -5,6 +5,9 @@ import type {
 } from '@app/shared'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/lib/api'
+import { bankKeys } from '@/features/bank'
+import { cashKeys } from '@/features/cash'
+import { inventoryKeys } from '@/features/inventory'
 import { salesKeys } from './keys'
 
 export function useCreateSalesVoucher() {
@@ -14,7 +17,11 @@ export function useCreateSalesVoucher() {
       api.post<SalesVoucherDto>('/sales/vouchers', dto).then((r) => r.data),
     onSuccess: () => {
       // Chứng từ ảnh hưởng doanh thu + công nợ + hóa đơn → invalidate toàn phân hệ.
+      // Chứng từ tự sinh (PT/NTTK/XK) → invalidate cả Tiền mặt + Tiền gửi + Kho.
       qc.invalidateQueries({ queryKey: salesKeys.all })
+      qc.invalidateQueries({ queryKey: cashKeys.all })
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
     },
   })
 }
@@ -39,6 +46,9 @@ export function useImportSalesVouchers() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: salesKeys.all })
+      qc.invalidateQueries({ queryKey: cashKeys.all })
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
     },
   })
 }
@@ -50,6 +60,9 @@ export function useUpdateSalesVoucher() {
       api.patch<SalesVoucherDto>(`/sales/vouchers/${id}`, dto).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: salesKeys.all })
+      qc.invalidateQueries({ queryKey: cashKeys.all })
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
     },
   })
 }
@@ -62,6 +75,9 @@ export function useSetSalesVoucherPosted() {
       api.patch<SalesVoucherDto>(`/sales/vouchers/${id}/posted`, { posted }).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: salesKeys.all })
+      qc.invalidateQueries({ queryKey: cashKeys.all })
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
     },
   })
 }
@@ -72,6 +88,9 @@ export function useDeleteSalesVoucher() {
     mutationFn: (id: string) => api.delete(`/sales/vouchers/${id}`).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: salesKeys.all })
+      qc.invalidateQueries({ queryKey: cashKeys.all })
+      qc.invalidateQueries({ queryKey: bankKeys.all })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
     },
   })
 }
