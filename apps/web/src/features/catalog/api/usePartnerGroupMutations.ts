@@ -6,6 +6,7 @@ import { catalogKeys } from './keys'
 export function useCreatePartnerGroup() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm nhóm KH, NCC' },
     mutationFn: (dto: CreatePartnerGroupInput) =>
       api.post<PartnerGroupDto>('/catalog/partner-groups', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -37,6 +38,7 @@ export function useImportPartnerGroups() {
 export function useUpdatePartnerGroup() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật nhóm KH, NCC' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdatePartnerGroupInput }) =>
       api.patch<PartnerGroupDto>(`/catalog/partner-groups/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -46,6 +48,7 @@ export function useUpdatePartnerGroup() {
 export function useDeletePartnerGroup() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa nhóm KH, NCC', error: 'Xóa nhóm KH, NCC thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/partner-groups/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

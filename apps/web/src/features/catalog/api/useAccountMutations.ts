@@ -6,6 +6,7 @@ import { catalogKeys } from './keys'
 export function useCreateAccount() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm tài khoản' },
     mutationFn: (dto: CreateAccountInput) =>
       api.post<AccountDto>('/catalog/accounts', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -37,6 +38,7 @@ export function useImportAccounts() {
 export function useUpdateAccount() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật tài khoản' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateAccountInput }) =>
       api.patch<AccountDto>(`/catalog/accounts/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -46,6 +48,7 @@ export function useUpdateAccount() {
 export function useDeleteAccount() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa tài khoản', error: 'Xóa tài khoản thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/accounts/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

@@ -10,6 +10,7 @@ import { catalogKeys } from './keys'
 export function useCreateOrganizationUnit() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm đơn vị' },
     mutationFn: (dto: CreateOrganizationUnitInput) =>
       api.post<OrganizationUnitDto>('/catalog/organization-units', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -41,6 +42,7 @@ export function useImportOrganizationUnits() {
 export function useUpdateOrganizationUnit() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật đơn vị' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateOrganizationUnitInput }) =>
       api.patch<OrganizationUnitDto>(`/catalog/organization-units/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -50,6 +52,7 @@ export function useUpdateOrganizationUnit() {
 export function useDeleteOrganizationUnit() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa đơn vị', error: 'Xóa đơn vị thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/organization-units/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

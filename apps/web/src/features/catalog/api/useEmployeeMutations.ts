@@ -6,6 +6,7 @@ import { catalogKeys } from './keys'
 export function useCreateEmployee() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm nhân viên' },
     mutationFn: (dto: CreateEmployeeInput) =>
       api.post<EmployeeDto>('/catalog/employees', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -37,6 +38,7 @@ export function useImportEmployees() {
 export function useUpdateEmployee() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật nhân viên' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateEmployeeInput }) =>
       api.patch<EmployeeDto>(`/catalog/employees/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -46,6 +48,7 @@ export function useUpdateEmployee() {
 export function useDeleteEmployee() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa nhân viên', error: 'Xóa nhân viên thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/employees/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

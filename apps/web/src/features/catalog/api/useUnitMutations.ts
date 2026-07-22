@@ -6,6 +6,7 @@ import { catalogKeys } from './keys'
 export function useCreateUnit() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm đơn vị tính' },
     mutationFn: (dto: CreateUnitInput) =>
       api.post<UnitDto>('/catalog/units', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -37,6 +38,7 @@ export function useImportUnits() {
 export function useUpdateUnit() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật đơn vị tính' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateUnitInput }) =>
       api.patch<UnitDto>(`/catalog/units/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -46,6 +48,7 @@ export function useUpdateUnit() {
 export function useDeleteUnit() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa đơn vị tính', error: 'Xóa đơn vị tính thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/units/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

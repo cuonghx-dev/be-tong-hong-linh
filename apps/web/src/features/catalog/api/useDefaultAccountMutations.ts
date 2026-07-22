@@ -10,6 +10,7 @@ import { catalogKeys } from './keys'
 export function useCreateDefaultAccount() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm tài khoản ngầm định' },
     mutationFn: (dto: CreateDefaultAccountInput) =>
       api.post<DefaultAccountDto>('/catalog/default-accounts', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -41,6 +42,7 @@ export function useImportDefaultAccounts() {
 export function useUpdateDefaultAccount() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật tài khoản ngầm định' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateDefaultAccountInput }) =>
       api.patch<DefaultAccountDto>(`/catalog/default-accounts/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -50,6 +52,7 @@ export function useUpdateDefaultAccount() {
 export function useDeleteDefaultAccount() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa tài khoản ngầm định', error: 'Xóa tài khoản ngầm định thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/default-accounts/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

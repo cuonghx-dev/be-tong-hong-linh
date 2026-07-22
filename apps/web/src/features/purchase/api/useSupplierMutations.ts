@@ -6,6 +6,7 @@ import { purchaseKeys } from './keys'
 export function useCreateSupplier() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm nhà cung cấp' },
     mutationFn: (dto: CreateSupplierInput) =>
       api.post<SupplierDto>('/purchase/suppliers', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: purchaseKeys.all }),
@@ -37,6 +38,7 @@ export function useImportSuppliers() {
 export function useUpdateSupplier() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật nhà cung cấp' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateSupplierInput }) =>
       api.patch<SupplierDto>(`/purchase/suppliers/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: purchaseKeys.all }),
@@ -46,6 +48,7 @@ export function useUpdateSupplier() {
 export function useDeleteSupplier() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa nhà cung cấp', error: 'Xóa nhà cung cấp thất bại' },
     mutationFn: (id: string) => api.delete(`/purchase/suppliers/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: purchaseKeys.all }),
   })

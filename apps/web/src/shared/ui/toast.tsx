@@ -1,4 +1,13 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { cn } from '@/shared/lib/cn'
 
 type ToastVariant = 'default' | 'success' | 'error'
@@ -20,6 +29,14 @@ interface ToastContextValue {
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
+
+// Cho phép bắn toast từ ngoài React (vd MutationCache trong query-client.ts).
+// No-op khi ToastProvider chưa mount.
+let dispatchToast: ((opts: ToastOptions) => void) | null = null
+
+export function toast(opts: ToastOptions) {
+  dispatchToast?.(opts)
+}
 
 const variantClass: Record<ToastVariant, string> = {
   default: 'border-border bg-white text-slate-800',
@@ -52,6 +69,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   )
 
   const value = useMemo(() => ({ toast }), [toast])
+
+  useEffect(() => {
+    dispatchToast = toast
+    return () => {
+      dispatchToast = null
+    }
+  }, [toast])
 
   return (
     <ToastContext.Provider value={value}>

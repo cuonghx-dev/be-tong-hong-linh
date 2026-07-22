@@ -13,6 +13,7 @@ import { purchaseKeys } from './keys'
 export function useCreatePurchaseVoucher() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: (d: unknown) => `Đã lưu chứng từ ${(d as { voucherNo: string }).voucherNo}` },
     mutationFn: (dto: CreatePurchaseVoucherInput) =>
       api.post<PurchaseVoucherDto>('/purchase/vouchers', dto).then((r) => r.data),
     onSuccess: () => {
@@ -53,6 +54,7 @@ export function useImportPurchaseVouchers() {
 export function useUpdatePurchaseVoucher() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: (d: unknown) => `Đã lưu chứng từ ${(d as { voucherNo: string }).voucherNo}` },
     mutationFn: ({ id, dto }: { id: string; dto: UpdatePurchaseVoucherInput }) =>
       api.patch<PurchaseVoucherDto>(`/purchase/vouchers/${id}`, dto).then((r) => r.data),
     onSuccess: () => {
@@ -68,6 +70,10 @@ export function useUpdatePurchaseVoucher() {
 export function useSetPurchaseVoucherPosted() {
   const qc = useQueryClient()
   return useMutation({
+    meta: {
+      success: (_d: unknown, v: unknown) =>
+        (v as { posted: boolean }).posted ? 'Đã ghi sổ chứng từ' : 'Đã bỏ ghi chứng từ',
+    },
     mutationFn: ({ id, posted }: { id: string; posted: boolean }) =>
       api.patch<PurchaseVoucherDto>(`/purchase/vouchers/${id}/posted`, { posted }).then((r) => r.data),
     onSuccess: () => {
@@ -82,6 +88,7 @@ export function useSetPurchaseVoucherPosted() {
 export function useDeletePurchaseVoucher() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa chứng từ', error: 'Xóa chứng từ thất bại' },
     mutationFn: (id: string) => api.delete(`/purchase/vouchers/${id}`).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: purchaseKeys.all })

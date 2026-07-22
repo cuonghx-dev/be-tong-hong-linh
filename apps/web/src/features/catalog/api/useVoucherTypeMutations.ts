@@ -10,6 +10,7 @@ import { catalogKeys } from './keys'
 export function useCreateVoucherType() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm loại chứng từ' },
     mutationFn: (dto: CreateVoucherTypeInput) =>
       api.post<VoucherTypeDto>('/catalog/voucher-types', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -41,6 +42,7 @@ export function useImportVoucherTypes() {
 export function useUpdateVoucherType() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật loại chứng từ' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateVoucherTypeInput }) =>
       api.patch<VoucherTypeDto>(`/catalog/voucher-types/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -50,6 +52,7 @@ export function useUpdateVoucherType() {
 export function useDeleteVoucherType() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa loại chứng từ', error: 'Xóa loại chứng từ thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/voucher-types/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

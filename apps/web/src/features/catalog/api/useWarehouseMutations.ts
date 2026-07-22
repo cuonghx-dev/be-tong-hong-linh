@@ -6,6 +6,7 @@ import { catalogKeys } from './keys'
 export function useCreateWarehouse() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm kho' },
     mutationFn: (dto: CreateWarehouseInput) =>
       api.post<WarehouseDto>('/catalog/warehouses', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -37,6 +38,7 @@ export function useImportWarehouses() {
 export function useUpdateWarehouse() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật kho' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateWarehouseInput }) =>
       api.patch<WarehouseDto>(`/catalog/warehouses/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -46,6 +48,7 @@ export function useUpdateWarehouse() {
 export function useDeleteWarehouse() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa kho', error: 'Xóa kho thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/warehouses/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

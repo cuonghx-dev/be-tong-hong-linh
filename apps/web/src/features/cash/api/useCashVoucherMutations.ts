@@ -6,6 +6,7 @@ import { cashKeys } from './keys'
 export function useCreateCashVoucher() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: (d: unknown) => `Đã lưu chứng từ ${(d as CashVoucherDto).voucherNo}` },
     mutationFn: (dto: CreateCashVoucherInput) =>
       api.post<CashVoucherDto>('/cash/vouchers', dto).then((r) => r.data),
     onSuccess: () => {
@@ -18,6 +19,7 @@ export function useCreateCashVoucher() {
 export function useUpdateCashVoucher() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: (d: unknown) => `Đã lưu chứng từ ${(d as CashVoucherDto).voucherNo}` },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateCashVoucherInput }) =>
       api.patch<CashVoucherDto>(`/cash/vouchers/${id}`, dto).then((r) => r.data),
     onSuccess: () => {
@@ -54,6 +56,10 @@ export function useImportCashVouchers() {
 export function useSetCashVoucherPosted() {
   const qc = useQueryClient()
   return useMutation({
+    meta: {
+      success: (_d: unknown, v: unknown) =>
+        (v as { posted: boolean }).posted ? 'Đã ghi sổ chứng từ' : 'Đã bỏ ghi chứng từ',
+    },
     mutationFn: ({ id, posted }: { id: string; posted: boolean }) =>
       api.patch<CashVoucherDto>(`/cash/vouchers/${id}/posted`, { posted }).then((r) => r.data),
     onSuccess: () => {
@@ -65,6 +71,7 @@ export function useSetCashVoucherPosted() {
 export function useDeleteCashVoucher() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa chứng từ', error: 'Xóa chứng từ thất bại' },
     mutationFn: (id: string) => api.delete(`/cash/vouchers/${id}`).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: cashKeys.all })

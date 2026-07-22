@@ -10,6 +10,7 @@ import { inventoryKeys } from './keys'
 export function useCreateGoodsIssue() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: (d: unknown) => `Đã lưu chứng từ ${(d as { voucherNo: string }).voucherNo}` },
     mutationFn: (dto: CreateGoodsIssueInput) =>
       api.post<GoodsIssueDto>('/inventory/issues', dto).then((r) => r.data),
     onSuccess: () => {
@@ -46,6 +47,7 @@ export function useImportGoodsIssues() {
 export function useUpdateGoodsIssue() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: (d: unknown) => `Đã lưu chứng từ ${(d as { voucherNo: string }).voucherNo}` },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateGoodsIssueInput }) =>
       api.patch<GoodsIssueDto>(`/inventory/issues/${id}`, dto).then((r) => r.data),
     onSuccess: () => {
@@ -58,6 +60,10 @@ export function useUpdateGoodsIssue() {
 export function useSetGoodsIssuePosted() {
   const qc = useQueryClient()
   return useMutation({
+    meta: {
+      success: (_d: unknown, v: unknown) =>
+        (v as { posted: boolean }).posted ? 'Đã ghi sổ chứng từ' : 'Đã bỏ ghi chứng từ',
+    },
     mutationFn: ({ id, posted }: { id: string; posted: boolean }) =>
       api.patch<GoodsIssueDto>(`/inventory/issues/${id}/posted`, { posted }).then((r) => r.data),
     onSuccess: () => {
@@ -69,6 +75,7 @@ export function useSetGoodsIssuePosted() {
 export function useDeleteGoodsIssue() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa chứng từ' },
     mutationFn: (id: string) => api.delete(`/inventory/issues/${id}`).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inventoryKeys.all })

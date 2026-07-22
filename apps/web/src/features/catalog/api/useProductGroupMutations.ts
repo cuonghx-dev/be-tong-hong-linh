@@ -6,6 +6,7 @@ import { catalogKeys } from './keys'
 export function useCreateProductGroup() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm nhóm VTHH' },
     mutationFn: (dto: CreateProductGroupInput) =>
       api.post<ProductGroupDto>('/catalog/product-groups', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -37,6 +38,7 @@ export function useImportProductGroups() {
 export function useUpdateProductGroup() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật nhóm VTHH' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateProductGroupInput }) =>
       api.patch<ProductGroupDto>(`/catalog/product-groups/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -46,6 +48,7 @@ export function useUpdateProductGroup() {
 export function useDeleteProductGroup() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa nhóm VTHH', error: 'Xóa nhóm VTHH thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/product-groups/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

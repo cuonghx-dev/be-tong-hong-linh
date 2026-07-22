@@ -6,6 +6,7 @@ import { catalogKeys } from './keys'
 export function useCreateExpenseItem() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm khoản mục chi phí' },
     mutationFn: (dto: CreateExpenseItemInput) =>
       api.post<ExpenseItemDto>('/catalog/expense-items', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -37,6 +38,7 @@ export function useImportExpenseItems() {
 export function useUpdateExpenseItem() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật khoản mục chi phí' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateExpenseItemInput }) =>
       api.patch<ExpenseItemDto>(`/catalog/expense-items/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -46,6 +48,7 @@ export function useUpdateExpenseItem() {
 export function useDeleteExpenseItem() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa khoản mục chi phí', error: 'Xóa khoản mục chi phí thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/expense-items/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

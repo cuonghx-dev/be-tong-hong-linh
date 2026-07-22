@@ -6,6 +6,7 @@ import { catalogKeys } from './keys'
 export function useCreateBank() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm ngân hàng' },
     mutationFn: (dto: CreateBankInput) =>
       api.post<BankDto>('/catalog/banks', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -37,6 +38,7 @@ export function useImportBanks() {
 export function useUpdateBank() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật ngân hàng' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateBankInput }) =>
       api.patch<BankDto>(`/catalog/banks/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -46,6 +48,7 @@ export function useUpdateBank() {
 export function useDeleteBank() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa ngân hàng', error: 'Xóa ngân hàng thất bại' },
     mutationFn: (id: string) => api.delete(`/catalog/banks/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
   })

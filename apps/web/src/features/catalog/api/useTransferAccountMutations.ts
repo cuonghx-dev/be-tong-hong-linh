@@ -10,6 +10,7 @@ import { catalogKeys } from './keys'
 export function useCreateTransferAccount() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã thêm tài khoản kết chuyển' },
     mutationFn: (dto: CreateTransferAccountInput) =>
       api.post<TransferAccountDto>('/catalog/transfer-accounts', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -41,6 +42,7 @@ export function useImportTransferAccounts() {
 export function useUpdateTransferAccount() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã cập nhật tài khoản kết chuyển' },
     mutationFn: ({ id, dto }: { id: string; dto: UpdateTransferAccountInput }) =>
       api.patch<TransferAccountDto>(`/catalog/transfer-accounts/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
@@ -50,6 +52,7 @@ export function useUpdateTransferAccount() {
 export function useDeleteTransferAccount() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { success: 'Đã xóa tài khoản kết chuyển', error: 'Xóa tài khoản kết chuyển thất bại' },
     mutationFn: (id: string) =>
       api.delete(`/catalog/transfer-accounts/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.all }),
