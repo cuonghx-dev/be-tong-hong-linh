@@ -1,5 +1,6 @@
 import { BankPaymentMethod, BankVoucherCategory, BankVoucherType, PartnerType } from '@app/shared'
 import { z } from 'zod'
+import { optionalEnum } from '@/shared/lib/form'
 
 // Dòng hạch toán.
 export const bankLineSchema = z.object({
@@ -14,7 +15,7 @@ export const bankLineSchema = z.object({
 export const bankVoucherSchema = z.object({
   type: z.nativeEnum(BankVoucherType),
   category: z.nativeEnum(BankVoucherCategory),
-  paymentMethod: z.nativeEnum(BankPaymentMethod).optional(),
+  paymentMethod: optionalEnum(BankPaymentMethod),
   isBatchTransfer: z.boolean().optional(),
   internalRef: z.string().optional(),
   postingDate: z.string().min(1, 'Chọn ngày hạch toán'),
@@ -22,7 +23,7 @@ export const bankVoucherSchema = z.object({
   bankAccountNo: z.string().min(1, 'Nhập số tài khoản ngân hàng'),
   bankName: z.string().optional(),
   receiverAccountNo: z.string().optional(),
-  partnerType: z.nativeEnum(PartnerType).optional(),
+  partnerType: optionalEnum(PartnerType),
   partnerId: z.string().optional(),
   partnerName: z.string().optional(),
   address: z.string().optional(),

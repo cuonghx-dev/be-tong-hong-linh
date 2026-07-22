@@ -12,6 +12,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
+import { invalidToast } from '@/shared/lib/form'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, PlusIcon } from '@/shared/ui/icons'
 import { BankAccountPicker } from '@/shared/ui/bank-account-picker'
@@ -144,7 +145,9 @@ export function BankVoucherForm({
     reset({
       type: v.type,
       category: v.category,
-      paymentMethod: v.paymentMethod ?? undefined,
+      // Chứng từ cũ có thể chưa lưu phương thức TT — UNC là mặc định của chi tiền gửi.
+      paymentMethod:
+        v.paymentMethod ?? (v.type === BankVoucherType.Payment ? BankPaymentMethod.UNC : undefined),
       isBatchTransfer: v.isBatchTransfer,
       internalRef: v.internalRef ?? undefined,
       // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
@@ -177,7 +180,8 @@ export function BankVoucherForm({
   const total = lines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
 
   const submit = (goNext: boolean) =>
-    handleSubmit(async (values) => {
+    handleSubmit(
+      async (values) => {
       const dto: CreateBankVoucherInput = {
         ...values,
         lines: values.lines.map((l) => ({
@@ -209,7 +213,10 @@ export function BankVoucherForm({
           description: getApiErrorMessage(e),
         })
       }
-    })
+      },
+      // Lỗi validate ở field không có chỗ hiện (vd. paymentMethod trong Select) → toast, tránh bấm Lưu không thấy gì.
+      invalidToast(toast),
+    )
 
   const saving = create.isPending || update.isPending
 

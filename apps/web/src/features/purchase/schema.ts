@@ -6,6 +6,7 @@ import {
   SupplierType,
 } from '@app/shared'
 import { z } from 'zod'
+import { optionalEnum } from '@/shared/lib/form'
 
 // Dòng hàng tiền của chứng từ mua hàng.
 export const purchaseLineSchema = z.object({
@@ -25,7 +26,7 @@ export const purchaseVoucherSchema = z.object({
   type: z.nativeEnum(PurchaseVoucherType),
   origin: z.nativeEnum(PurchaseOrigin),
   paymentMode: z.nativeEnum(PurchasePaymentMode),
-  paymentMethod: z.nativeEnum(PaymentMethod).optional(),
+  paymentMethod: optionalEnum(PaymentMethod),
   receiveWithInvoice: z.boolean().optional(),
   invoiceNo: z.string().optional(),
   postingDate: z.string().min(1, 'Chọn ngày hạch toán'),

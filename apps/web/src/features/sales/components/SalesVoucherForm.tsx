@@ -10,6 +10,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { useBankAccounts } from '@/features/catalog'
 import { getApiErrorMessage } from '@/shared/lib/api'
+import { invalidToast } from '@/shared/lib/form'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
@@ -195,7 +196,7 @@ export function SalesVoucherForm({
           description: getApiErrorMessage(e),
         })
       }
-    })
+    }, invalidToast(toast)) // toast lỗi validate — tránh bấm Lưu không thấy phản hồi
 
   const saving = create.isPending || update.isPending
 

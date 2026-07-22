@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
+import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon, TrashIcon } from '@/shared/ui/icons'
@@ -229,7 +230,7 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
       } catch (e) {
         toast({ variant: 'error', title: 'Lưu chứng từ thất bại', description: getApiErrorMessage(e) })
       }
-    })
+    }, invalidToast(toast)) // toast lỗi validate — tránh bấm Lưu không thấy phản hồi
 
   const saving = create.isPending || update.isPending
   const colSpan = 4 + (cols.showPartner ? 2 : 0) + (cols.showCostItem ? 1 : 0) + (cols.showBank ? 2 : 0)

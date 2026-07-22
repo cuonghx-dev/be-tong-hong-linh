@@ -1,5 +1,6 @@
 import { CashVoucherCategory, CashVoucherType, PartnerType } from '@app/shared'
 import { z } from 'zod'
+import { optionalEnum } from '@/shared/lib/form'
 
 // Dòng hạch toán.
 export const cashLineSchema = z.object({
@@ -20,7 +21,7 @@ export const cashVoucherSchema = z.object({
   category: z.nativeEnum(CashVoucherCategory),
   postingDate: z.string().min(1, 'Chọn ngày hạch toán'),
   voucherDate: z.string().min(1, 'Chọn ngày phiếu'),
-  partnerType: z.nativeEnum(PartnerType).optional(),
+  partnerType: optionalEnum(PartnerType),
   partnerId: z.string().optional(),
   partnerName: z.string().optional(),
   payerReceiver: z.string().optional(),

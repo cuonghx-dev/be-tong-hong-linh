@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
+import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
@@ -135,7 +136,7 @@ export function GeneralVoucherForm({
           description: getApiErrorMessage(e),
         })
       }
-    })
+    }, invalidToast(toast)) // toast lỗi validate — tránh bấm Lưu không thấy phản hồi
 
   const saving = create.isPending || update.isPending
 
