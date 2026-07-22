@@ -59,14 +59,10 @@ export interface PurchaseVoucherDto {
   stockValue: string // Giá trị nhập kho
   einvoiceLookupCode: string | null // Mã tra cứu HĐĐT
   einvoiceLookupUrl: string | null // Đường dẫn tra cứu HĐĐT
-  paymentId: string | null // Phiếu chi tự sinh (thanh toán ngay TM)
+  paymentId: string | null // Phiếu chi tự sinh (thanh toán ngay tiền mặt)
   paymentNo?: string | null // Số phiếu chi tự sinh (chỉ trả ở API chi tiết)
-  bankPaymentId: string | null // UNC chi tiền gửi tự sinh (thanh toán ngay CK)
-  bankPaymentNo?: string | null // Số UNC tự sinh (chỉ trả ở API chi tiết)
   receiptId: string | null // Phiếu nhập kho tự sinh (loại nhập kho)
   receiptNo?: string | null // Số phiếu nhập tự sinh (chỉ trả ở API chi tiết)
-  bankAccountNo: string | null // TKNH chi tiền khi thanh toán ngay CK
-  bankName: string | null
   receiveStatus: PurchaseReceiveStatus
   paymentStatus: PurchasePaymentStatus
   posted: boolean // Đã ghi sổ / bỏ ghi (loại khỏi sổ sách, không xóa dữ liệu)
@@ -115,8 +111,6 @@ export interface CreatePurchaseVoucherInput {
   einvoiceLookupCode?: string | null
   einvoiceLookupUrl?: string | null
   branchId?: string | null
-  bankAccountNo?: string | null // TKNH chi tiền khi thanh toán ngay CK
-  bankName?: string | null
   lines: CreatePurchaseVoucherLineInput[]
 }
 

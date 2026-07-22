@@ -15,19 +15,14 @@ export function useSalesVouchers(filter: SalesVoucherFilter) {
 
 // Số chứng từ kế tiếp (preview trên form tạo mới — số thật cấp lúc Lưu).
 // Key nằm dưới salesKeys.all nên tự refetch sau khi create invalidate.
-// Số đổi theo tùy chọn thanh toán: thu ngay TM → PT, thu ngay CK → NTTK, chưa thu → BH.
-export function useNextSalesVoucherNo(
-  voucherDate: string,
-  paymentMode: string,
-  paymentMethod: string,
-  enabled = true,
-) {
+// Số đổi theo tùy chọn thanh toán: thu tiền mặt ngay → PT, chưa thu → BH.
+export function useNextSalesVoucherNo(voucherDate: string, paymentMode: string, enabled = true) {
   return useQuery({
-    queryKey: salesKeys.nextNo(voucherDate, paymentMode, paymentMethod),
+    queryKey: salesKeys.nextNo(voucherDate, paymentMode),
     queryFn: () =>
       api
         .get<{ voucherNo: string }>('/sales/vouchers/next-no', {
-          params: { voucherDate, paymentMode, paymentMethod },
+          params: { voucherDate, paymentMode },
         })
         .then((r) => r.data.voucherNo),
     enabled,

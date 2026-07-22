@@ -1,5 +1,4 @@
 import {
-  PaymentMethod,
   SalesPaymentMode,
   SalesVoucherType,
   type CreateSalesVoucherInput,
@@ -8,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
-import { useBankAccounts } from '@/features/catalog'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { invalidToast } from '@/shared/lib/form'
 import { cn } from '@/shared/lib/cn'
@@ -30,7 +28,7 @@ import {
   type SalesLineFormValues,
   type SalesVoucherFormValues,
 } from '../schema'
-import { PAYMENT_METHOD_LABEL, VOUCHER_TYPE_LABEL } from '../types'
+import { VOUCHER_TYPE_LABEL } from '../types'
 import { AmountInput } from './AmountInput'
 
 interface SalesVoucherFormProps {
@@ -54,7 +52,6 @@ function defaultValues(): SalesVoucherFormValues {
   return {
     voucherType: SalesVoucherType.DomesticGoods,
     paymentMode: SalesPaymentMode.Unpaid,
-    paymentMethod: PaymentMethod.Cash,
     withInvoice: true,
     isInventoryIssue: true,
     isPosInvoice: false,
@@ -106,13 +103,8 @@ export function SalesVoucherForm({
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
   // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
-  // Số đổi theo tùy chọn thanh toán (PT/NTTK/BH) nên truyền cả mode + method.
-  const nextNo = useNextSalesVoucherNo(
-    watch('voucherDate'),
-    watch('paymentMode'),
-    watch('paymentMethod') ?? '',
-    !voucherId,
-  )
+  // Số đổi theo tùy chọn thanh toán (PT/BH) nên truyền cả mode.
+  const nextNo = useNextSalesVoucherNo(watch('voucherDate'), watch('paymentMode'), !voucherId)
 
   useEffect(() => {
     const v = editing.data
@@ -120,7 +112,6 @@ export function SalesVoucherForm({
     reset({
       voucherType: v.voucherType,
       paymentMode: v.paymentMode,
-      paymentMethod: v.paymentMethod ?? PaymentMethod.Cash,
       withInvoice: v.withInvoice,
       isInventoryIssue: v.isInventoryIssue,
       isPosInvoice: v.isPosInvoice,
@@ -131,8 +122,6 @@ export function SalesVoucherForm({
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       customerId: v.customerId ?? undefined,
       customerName: v.customerName ?? undefined,
-      bankAccountNo: v.bankAccountNo ?? undefined,
-      bankName: v.bankName ?? undefined,
       taxCode: v.taxCode ?? undefined,
       contactPerson: v.contactPerson ?? undefined,
       address: v.address ?? undefined,
@@ -154,12 +143,6 @@ export function SalesVoucherForm({
     })
   }, [editing.data, reset, duplicating])
 
-  const paymentMode = watch('paymentMode')
-  const paymentMethod = watch('paymentMethod')
-  const payingByBank =
-    paymentMode === SalesPaymentMode.PaidNow && paymentMethod === PaymentMethod.BankTransfer
-  // Danh mục TKNH — chỉ cần khi thu tiền ngay chuyển khoản.
-  const bankAccounts = useBankAccounts({ page: 1, pageSize: 100 })
   const withInvoice = watch('withInvoice')
   const lines = watch('lines')
   const totalGoods = lines?.reduce((s, l) => s + lineAmount(l), 0) ?? 0
@@ -232,47 +215,8 @@ export function SalesVoucherForm({
         </label>
         <label className="flex items-center gap-1.5">
           <input type="radio" value={SalesPaymentMode.PaidNow} {...register('paymentMode')} />
-          Thu tiền ngay
+          Thu tiền mặt ngay
         </label>
-        {paymentMode === SalesPaymentMode.PaidNow && (
-          <Select
-            value={watch('paymentMethod')}
-            onValueChange={(v) => setValue('paymentMethod', v as PaymentMethod)}
-          >
-            <SelectTrigger className="h-8 w-auto">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.values(PaymentMethod).map((m) => (
-                <SelectItem key={m} value={m}>
-                  {PAYMENT_METHOD_LABEL[m]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        {/* Thu ngay CK → chọn TKNH nhận tiền (bắt buộc để sinh Thu tiền gửi). */}
-        {payingByBank && (
-          <Select
-            value={watch('bankAccountNo') ?? ''}
-            onValueChange={(no) => {
-              const acc = bankAccounts.data?.data.find((a) => a.accountNumber === no)
-              setValue('bankAccountNo', no)
-              setValue('bankName', acc?.bankName ?? undefined)
-            }}
-          >
-            <SelectTrigger className="h-8 w-auto min-w-44">
-              <SelectValue placeholder="Chọn TK ngân hàng nhận" />
-            </SelectTrigger>
-            <SelectContent>
-              {(bankAccounts.data?.data ?? []).map((a) => (
-                <SelectItem key={a.id} value={a.accountNumber}>
-                  {a.accountNumber} — {a.bankName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
         <span className="mx-1 h-4 w-px bg-border" />
         <label className="flex items-center gap-1.5">
           <input type="checkbox" {...register('isInventoryIssue')} /> Kiêm phiếu xuất
@@ -285,9 +229,9 @@ export function SalesVoucherForm({
         </label>
       </div>
 
-      {/* Chứng từ tự sinh: Phiếu thu (thu ngay TM) / Thu tiền gửi (CK) / Phiếu xuất kho. */}
+      {/* Chứng từ tự sinh: Phiếu thu (thu tiền mặt ngay) / Phiếu xuất kho. */}
       {!!voucherId &&
-        !!(editing.data?.receiptId || editing.data?.bankReceiptId || editing.data?.issueId) && (
+        !!(editing.data?.receiptId || editing.data?.issueId) && (
           <p className="space-x-3 text-sm text-slate-600">
             <span>Tham chiếu:</span>
             {editing.data?.receiptId && (
@@ -296,14 +240,6 @@ export function SalesVoucherForm({
                 className="font-medium text-primary hover:underline"
               >
                 {editing.data.receiptNo ?? 'Phiếu thu'}
-              </Link>
-            )}
-            {editing.data?.bankReceiptId && (
-              <Link
-                to={`/bank/vouchers/${editing.data.bankReceiptId}`}
-                className="font-medium text-primary hover:underline"
-              >
-                {editing.data.bankReceiptNo ?? 'Thu tiền gửi'}
               </Link>
             )}
             {editing.data?.issueId && (

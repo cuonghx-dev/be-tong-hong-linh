@@ -39,11 +39,6 @@ function toNumber(v: unknown): number {
   return Number.isFinite(n) ? n : 0
 }
 
-// Loại nghiệp vụ suy từ tiền tố số chứng từ: BDV→dịch vụ, còn lại→hàng hóa.
-function typeFromVoucherNo(no: string): SalesVoucherType {
-  return no.startsWith('BDV') ? SalesVoucherType.DOMESTIC_SERVICE : SalesVoucherType.DOMESTIC_GOODS
-}
-
 // Parse file xlsx chứng từ bán hàng (mức tổng hợp, không có dòng hàng) → danh sách chứng từ.
 export function parseSalesXlsx(buffer: Buffer): ParsedSales[] {
   const wb = XLSX.read(buffer, { cellDates: true })
@@ -89,7 +84,7 @@ export function parseSalesXlsx(buffer: Buffer): ParsedSales[] {
     out.push({
       voucherNo,
       invoiceNo: iInvoiceNo >= 0 ? toStr(r[iInvoiceNo]) : null,
-      type: typeFromVoucherNo(voucherNo),
+      type: SalesVoucherType.DOMESTIC_GOODS,
       date,
       customerName: iCustomer >= 0 ? toStr(r[iCustomer]) : null,
       totalPayment: iPayment >= 0 ? toNumber(r[iPayment]) : 0,

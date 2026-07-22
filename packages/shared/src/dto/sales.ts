@@ -8,6 +8,8 @@ import type {
   SalesPaymentStatus,
   SalesVoucherType,
 } from '../enums'
+// LƯU Ý: chứng từ bán hàng chỉ còn 2 loại — "Bán hàng hóa trong nước - Tiền mặt"
+// (PAID_NOW, PT tự sinh) và "Bán hàng hóa trong nước chưa thu tiền" (UNPAID).
 
 // ── Chứng từ bán hàng ────────────────────────────────────────────────────────
 
@@ -18,8 +20,8 @@ export interface SalesVoucherLineDto {
   itemId: string | null // Mã hàng
   itemName: string | null // Tên hàng
   tradeDiscount: string // Chiết khấu thương mại (Decimal → string)
-  debtAccount: string // TK công nợ 131 (Nợ) — đổi thành TK tiền khi thu ngay
-  revenueAccount: string // TK doanh thu 5111/5112 (Có)
+  debtAccount: string // TK công nợ 131 (Nợ) — đổi thành TK tiền mặt khi thu ngay
+  revenueAccount: string // TK doanh thu 5111 (Có)
   unit: string | null // ĐVT
   quantity: string // Số lượng
   unitPrice: string // Đơn giá
@@ -36,8 +38,7 @@ export interface SalesVoucherDto {
   voucherNo: string // vd BH2167/2026
   invoiceNo: string | null // Số hóa đơn
   voucherType: SalesVoucherType
-  paymentMode: SalesPaymentMode // Chưa thu / Thu ngay
-  paymentMethod: PaymentMethod | null // Khi thu ngay
+  paymentMode: SalesPaymentMode // Chưa thu / Thu tiền mặt ngay
   isInventoryIssue: boolean // Kiêm phiếu xuất
   withInvoice: boolean // Lập kèm hóa đơn
   isPosInvoice: boolean // Là hóa đơn từ máy tính tiền
@@ -61,12 +62,8 @@ export interface SalesVoucherDto {
   einvoiceLookupUrl: string | null // Đường dẫn tra cứu HĐĐT
   receiptId: string | null // Phiếu thu (thu ngay TM)
   receiptNo?: string | null // Số phiếu thu tự sinh (chỉ trả ở API chi tiết)
-  bankReceiptId: string | null // Thu tiền gửi (thu ngay CK)
-  bankReceiptNo?: string | null // Số thu tiền gửi tự sinh (chỉ trả ở API chi tiết)
   issueId: string | null // Phiếu xuất kho (kiêm phiếu xuất)
   issueNo?: string | null // Số phiếu xuất tự sinh (chỉ trả ở API chi tiết)
-  bankAccountNo: string | null // TKNH nhận tiền (thu ngay CK)
-  bankName: string | null
   posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
   branchId: string | null
   paidAmount: string // Đã thu (thu ngay = tổng tiền; chưa thu = tổng đối trừ đã ghi sổ)
@@ -96,7 +93,6 @@ export interface CreateSalesVoucherInput {
   voucherType: SalesVoucherType
   invoiceNo?: string | null
   paymentMode: SalesPaymentMode
-  paymentMethod?: PaymentMethod | null
   isInventoryIssue?: boolean
   withInvoice?: boolean
   isPosInvoice?: boolean
@@ -116,9 +112,6 @@ export interface CreateSalesVoucherInput {
   einvoiceLookupCode?: string | null
   einvoiceLookupUrl?: string | null
   branchId?: string | null
-  // TKNH nhận tiền — bắt buộc chọn khi thu tiền ngay chuyển khoản.
-  bankAccountNo?: string | null
-  bankName?: string | null
   lines: CreateSalesVoucherLineInput[]
 }
 

@@ -5,9 +5,6 @@ export const CATEGORY_LABEL: Record<BankVoucherCategory, string> = {
   [BankVoucherCategory.Receipt]: 'Thu khác',
   [BankVoucherCategory.InternalTransfer]: 'Chuyển tiền nội bộ',
   [BankVoucherCategory.Payment]: 'Chi khác',
-  [BankVoucherCategory.SalesBank]: 'Bán hàng - chuyển khoản',
-  [BankVoucherCategory.PurchaseServiceBank]: 'Mua dịch vụ - chuyển khoản',
-  [BankVoucherCategory.PurchaseGoodsBank]: 'Mua hàng - chuyển khoản',
 }
 
 // Nhãn loại chứng từ hiển thị ở lưới (§5).

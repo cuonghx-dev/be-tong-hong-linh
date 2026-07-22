@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { BankModule } from '../bank/bank.module'
 import { BookLockModule } from '../book-lock/book-lock.module'
 import { CashModule } from '../cash/cash.module'
 import { InventoryModule } from '../inventory/inventory.module'
@@ -11,7 +10,7 @@ import { SupplierController } from './supplier.controller'
 import { SupplierService } from './supplier.service'
 
 @Module({
-  imports: [BookLockModule, CashModule, BankModule, InventoryModule],
+  imports: [BookLockModule, CashModule, InventoryModule],
   controllers: [PurchaseController, SupplierController, PurchaseReportController],
   providers: [PurchaseService, SupplierService, PurchaseReportService],
   exports: [PurchaseService, SupplierService],

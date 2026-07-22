@@ -22,20 +22,19 @@ export function usePurchaseVouchers(filter: PurchaseVoucherFilter) {
 
 // Số chứng từ kế tiếp (preview trên form tạo mới — số thật cấp lúc Lưu).
 // Key nằm dưới purchaseKeys.all nên tự refetch sau khi create invalidate.
-// Số đổi theo tùy chọn thanh toán: MH/MDV trả ngay TM → PC, còn lại → NK/MH/MDV.
+// Số đổi theo tùy chọn thanh toán: MH/MDV trả ngay tiền mặt → PC, còn lại → NK/MH/MDV.
 export function useNextPurchaseVoucherNo(
   type: PurchaseVoucherType,
   voucherDate: string,
   paymentMode: string,
-  paymentMethod: string,
   enabled = true,
 ) {
   return useQuery({
-    queryKey: purchaseKeys.nextNo(type, voucherDate, paymentMode, paymentMethod),
+    queryKey: purchaseKeys.nextNo(type, voucherDate, paymentMode),
     queryFn: () =>
       api
         .get<{ voucherNo: string }>('/purchase/vouchers/next-no', {
-          params: { type, voucherDate, paymentMode, paymentMethod },
+          params: { type, voucherDate, paymentMode },
         })
         .then((r) => r.data.voucherNo),
     enabled,

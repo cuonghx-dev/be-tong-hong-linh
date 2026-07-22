@@ -186,17 +186,6 @@ export class CreatePurchaseVoucherDto {
   @IsString()
   branchId?: string
 
-  // TKNH chi tiền khi thanh toán ngay chuyển khoản (UNC tự sinh).
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  bankAccountNo?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  bankName?: string
-
   @ApiProperty({ type: [CreatePurchaseVoucherLineDto] })
   @IsArray()
   @ArrayMinSize(1)

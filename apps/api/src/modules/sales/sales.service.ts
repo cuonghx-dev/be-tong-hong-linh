@@ -1,17 +1,14 @@
 import { CHART_OF_ACCOUNTS, SalesPaymentStatus, type Paginated } from '@app/shared'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import {
-  PaymentMethod,
   Prisma,
   SalesPaymentMode,
-  SalesVoucherType,
   type SalesVoucher,
   type SalesVoucherLine,
 } from '@prisma/client'
 import { randomUUID } from 'crypto'
 import { PrismaService } from '../../database/prisma.service'
 import { buildPartnerLookup } from '../../database/partner-lookup'
-import { BankService, type SalesBankReceiptInput } from '../bank/bank.service'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { CashService, type SalesReceiptInput } from '../cash/cash.service'
 import { GoodsIssueService, type SalesIssueInput } from '../inventory/goods-issue.service'
@@ -43,7 +40,6 @@ export class SalesService {
     private readonly prisma: PrismaService,
     private readonly bookLock: BookLockService,
     private readonly cash: CashService,
-    private readonly bank: BankService,
     private readonly goodsIssue: GoodsIssueService,
   ) {}
 
@@ -94,12 +90,11 @@ export class SalesService {
 
   // DTO chi tiết kèm số các chứng từ tự sinh (hiện link tham chiếu trên form).
   private async toDetailDto(v: VoucherWithRelations) {
-    const [receiptNo, bankReceiptNo, issueNo] = await Promise.all([
+    const [receiptNo, issueNo] = await Promise.all([
       v.receiptId ? this.cash.findVoucherNo(v.receiptId) : null,
-      v.bankReceiptId ? this.bank.findVoucherNo(v.bankReceiptId) : null,
       v.issueId ? this.goodsIssue.findVoucherNo(v.issueId) : null,
     ])
-    return { ...toVoucherDto(v), receiptNo, bankReceiptNo, issueNo }
+    return { ...toVoucherDto(v), receiptNo, issueNo }
   }
 
   // Dòng phiếu xuất từ dòng bán hàng: resolve sản phẩm (theo id/mã/tên) để lấy
@@ -147,19 +142,13 @@ export class SalesService {
 
   // Xem trước số chứng từ kế tiếp để hiển thị trên form — KHÔNG giữ chỗ;
   // số chính thức vẫn cấp lại trong transaction lúc create (tránh trùng khi ghi đồng thời).
-  // Đánh số theo tùy chọn thanh toán như MISA: thu ngay TM → số PT (sequence quỹ),
-  // thu ngay CK → số NTTK (sequence tiền gửi), chưa thu → BH.
-  async previewNextVoucherNo(
-    voucherDate?: string,
-    paymentMode?: SalesPaymentMode,
-    paymentMethod?: PaymentMethod,
-  ) {
+  // Đánh số theo tùy chọn thanh toán như MISA: thu tiền mặt ngay → số PT (sequence quỹ),
+  // chưa thu → BH.
+  async previewNextVoucherNo(voucherDate?: string, paymentMode?: SalesPaymentMode) {
     const date = voucherDate ? new Date(voucherDate) : new Date()
     const mode = paymentMode ?? SalesPaymentMode.UNPAID
-    if (needsCashReceipt(mode, paymentMethod ?? null))
+    if (mode === SalesPaymentMode.PAID_NOW)
       return { voucherNo: await this.cash.nextReceiptNo(this.prisma, date) }
-    if (needsBankReceipt(mode, paymentMethod ?? null))
-      return { voucherNo: await this.bank.nextReceiptNo(this.prisma, date) }
     return { voucherNo: await nextVoucherNo(this.prisma, date) }
   }
 
@@ -167,15 +156,12 @@ export class SalesService {
     await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {
       const vDate = new Date(dto.voucherDate)
-      const wantsCash = needsCashReceipt(dto.paymentMode, dto.paymentMethod ?? null)
-      const wantsBank = needsBankReceipt(dto.paymentMode, dto.paymentMethod ?? null)
-      // Số chứng từ theo tùy chọn thanh toán (MISA): thu ngay dùng chung số với
-      // phiếu thu/thu tiền gửi tự sinh; chưa thu → BH####/YYYY.
+      const wantsCash = dto.paymentMode === SalesPaymentMode.PAID_NOW
+      // Số chứng từ theo tùy chọn thanh toán (MISA): thu tiền mặt ngay dùng chung
+      // số với phiếu thu tự sinh; chưa thu → BH####/YYYY.
       const voucherNo = wantsCash
         ? await this.cash.nextReceiptNo(tx, vDate)
-        : wantsBank
-          ? await this.bank.nextReceiptNo(tx, vDate)
-          : await nextVoucherNo(tx, vDate)
+        : await nextVoucherNo(tx, vDate)
       const lines = normalizeLines(dto, dto.lines)
       const totals = sumTotals(lines)
 
@@ -185,7 +171,6 @@ export class SalesService {
           invoiceNo: dto.invoiceNo ?? null,
           voucherType: dto.voucherType,
           paymentMode: dto.paymentMode,
-          paymentMethod: dto.paymentMethod ?? null,
           isInventoryIssue: dto.isInventoryIssue ?? false,
           withInvoice: dto.withInvoice ?? false,
           isPosInvoice: dto.isPosInvoice ?? false,
@@ -205,27 +190,19 @@ export class SalesService {
           einvoiceLookupCode: dto.einvoiceLookupCode ?? null,
           einvoiceLookupUrl: dto.einvoiceLookupUrl ?? null,
           branchId: dto.branchId ?? null,
-          bankAccountNo: dto.bankAccountNo ?? null,
-          bankName: dto.bankName ?? null,
           ...totals,
           lines: { create: lines },
         },
         include: VOUCHER_INCLUDE,
       })
 
-      // Chứng từ tự sinh kèm theo (§11): thu ngay TM → Phiếu thu (cùng số),
-      // thu ngay CK → Thu tiền gửi (cùng số), kiêm phiếu xuất → Phiếu xuất kho (số XK riêng).
+      // Chứng từ tự sinh kèm theo (§11): thu tiền mặt ngay → Phiếu thu (cùng số),
+      // kiêm phiếu xuất → Phiếu xuất kho (số XK riêng).
       const links: Prisma.SalesVoucherUpdateInput = {}
       if (wantsCash)
         links.receiptId = await this.cash.createSalesReceipt(
           tx,
           buildCashReceiptInput(voucher),
-          voucherNo,
-        )
-      if (wantsBank)
-        links.bankReceiptId = await this.bank.createSalesReceipt(
-          tx,
-          buildBankReceiptInput(voucher),
           voucherNo,
         )
       if (voucher.isInventoryIssue)
@@ -255,7 +232,6 @@ export class SalesService {
       const data: Prisma.SalesVoucherUpdateInput = {
         invoiceNo: dto.invoiceNo ?? undefined,
         paymentMode: dto.paymentMode ?? undefined,
-        paymentMethod: dto.paymentMethod ?? undefined,
         isInventoryIssue: dto.isInventoryIssue ?? undefined,
         withInvoice: dto.withInvoice ?? undefined,
         isPosInvoice: dto.isPosInvoice ?? undefined,
@@ -274,8 +250,6 @@ export class SalesService {
         einvoiceLookupCode: dto.einvoiceLookupCode ?? undefined,
         einvoiceLookupUrl: dto.einvoiceLookupUrl ?? undefined,
         branchId: dto.branchId ?? undefined,
-        bankAccountNo: dto.bankAccountNo ?? undefined,
-        bankName: dto.bankName ?? undefined,
       }
       if (dto.customerId !== undefined) {
         data.customer = dto.customerId
@@ -286,7 +260,7 @@ export class SalesService {
       let totals: ReturnType<typeof sumTotals> | null = null
       if (dto.lines) {
         const lines = normalizeLines(
-          { voucherType: existing.voucherType, paymentMode: dto.paymentMode ?? existing.paymentMode, paymentMethod: dto.paymentMethod ?? existing.paymentMethod ?? undefined },
+          { paymentMode: dto.paymentMode ?? existing.paymentMode },
           dto.lines,
         )
         totals = sumTotals(lines)
@@ -306,7 +280,7 @@ export class SalesService {
       const links: Prisma.SalesVoucherUpdateInput = {}
 
       // Phiếu thu tiền mặt (SALES_CASH)
-      if (needsCashReceipt(voucher.paymentMode, voucher.paymentMethod)) {
+      if (voucher.paymentMode === SalesPaymentMode.PAID_NOW) {
         const receiptId = await this.cash.upsertSalesReceipt(
           tx,
           existing.receiptId,
@@ -316,19 +290,6 @@ export class SalesService {
       } else if (existing.receiptId) {
         await this.cash.deleteSalesReceipt(tx, existing.receiptId)
         links.receiptId = null
-      }
-
-      // Thu tiền gửi (SALES_BANK)
-      if (needsBankReceipt(voucher.paymentMode, voucher.paymentMethod)) {
-        const bankReceiptId = await this.bank.upsertSalesReceipt(
-          tx,
-          existing.bankReceiptId,
-          buildBankReceiptInput(voucher),
-        )
-        if (bankReceiptId !== existing.bankReceiptId) links.bankReceiptId = bankReceiptId
-      } else if (existing.bankReceiptId) {
-        await this.bank.deleteSalesReceipt(tx, existing.bankReceiptId)
-        links.bankReceiptId = null
       }
 
       // Phiếu xuất kho (kiêm phiếu xuất)
@@ -371,8 +332,6 @@ export class SalesService {
       })
       // Ghi sổ / bỏ ghi lan sang mọi chứng từ tự sinh — cùng trạng thái sổ.
       if (voucher.receiptId) await this.cash.setSalesReceiptPosted(tx, voucher.receiptId, posted)
-      if (voucher.bankReceiptId)
-        await this.bank.setSalesReceiptPosted(tx, voucher.bankReceiptId, posted)
       if (voucher.issueId) await this.goodsIssue.setSalesIssuePosted(tx, voucher.issueId, posted)
       return voucher
     })
@@ -387,7 +346,6 @@ export class SalesService {
       await tx.salesVoucher.delete({ where: { id } })
       // Xóa kèm mọi chứng từ tự sinh — không để chứng từ mồ côi khi mất chứng từ gốc.
       if (existing.receiptId) await this.cash.deleteSalesReceipt(tx, existing.receiptId)
-      if (existing.bankReceiptId) await this.bank.deleteSalesReceipt(tx, existing.bankReceiptId)
       if (existing.issueId) await this.goodsIssue.deleteSalesIssue(tx, existing.issueId)
     })
     return { id }
@@ -416,7 +374,7 @@ export class SalesService {
       seen.add(p.voucherNo) // chống trùng trong chính file
 
       const totalGoods = new Prisma.Decimal(p.totalPayment)
-      const ctx: NormalizeCtx = { voucherType: p.type, paymentMode: p.paymentMode }
+      const ctx: NormalizeCtx = { paymentMode: p.paymentMode }
       const id = randomUUID()
       vouchers.push({
         id,
@@ -441,7 +399,7 @@ export class SalesService {
         voucherId: id,
         lineNo: 1,
         debtAccount: defaultDebtAccount(ctx),
-        revenueAccount: defaultRevenueAccount(ctx),
+        revenueAccount: CHART_OF_ACCOUNTS.REVENUE_GOODS,
         quantity: new Prisma.Decimal(1),
         unitPrice: totalGoods,
         amount: totalGoods,
@@ -466,31 +424,11 @@ export class SalesService {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-// Thu tiền ngay không qua ngân hàng → sinh Phiếu thu tiền mặt (MISA: tab Phiếu thu
-// trên chứng từ bán hàng).
-function needsCashReceipt(
-  paymentMode: SalesPaymentMode,
-  paymentMethod: PaymentMethod | null,
-): boolean {
-  return (
-    paymentMode === SalesPaymentMode.PAID_NOW && paymentMethod !== PaymentMethod.BANK_TRANSFER
-  )
-}
-
-// Thu tiền ngay chuyển khoản → sinh Thu tiền gửi (MISA: tab Thu tiền gửi).
-function needsBankReceipt(
-  paymentMode: SalesPaymentMode,
-  paymentMethod: PaymentMethod | null,
-): boolean {
-  return (
-    paymentMode === SalesPaymentMode.PAID_NOW && paymentMethod === PaymentMethod.BANK_TRANSFER
-  )
-}
-
-// Chứng từ thu tự sinh mirror chứng từ bán hàng: mỗi dòng hàng 1 dòng Có TK doanh thu,
-// thuế GTGT gộp theo TK thuế (thường 33311); TK Nợ (1111/1121) do Cash/BankService gán.
+// Phiếu thu tự sinh (thu tiền mặt ngay) mirror chứng từ bán hàng: mỗi dòng hàng
+// 1 dòng Có TK doanh thu, thuế GTGT gộp theo TK thuế (thường 33311); TK Nợ (1111)
+// do CashService gán.
 // LƯU Ý: định khoản gốc đã nằm trong dòng chứng từ bán hàng — sổ nhật ký loại
-// category SALES_CASH/SALES_BANK để không đếm trùng (xem report.service).
+// category SALES_CASH để không đếm trùng (xem report.service).
 function buildReceiptCore(v: VoucherWithRelations) {
   const lines = v.lines.map((l) => ({
     description: l.itemName,
@@ -525,38 +463,22 @@ function buildCashReceiptInput(v: VoucherWithRelations): SalesReceiptInput {
   return buildReceiptCore(v)
 }
 
-function buildBankReceiptInput(v: VoucherWithRelations): SalesBankReceiptInput {
-  return { ...buildReceiptCore(v), bankAccountNo: v.bankAccountNo, bankName: v.bankName }
-}
-
 type NormalizeCtx = {
-  voucherType: SalesVoucherType
   paymentMode: SalesPaymentMode
-  paymentMethod?: PaymentMethod | null
 }
 
 // TK Nợ theo tùy chọn thanh toán (§7, §11):
-//   Chưa thu → 131 (phải thu); Thu ngay → 1111 (TM) / 1121 (CK).
+//   Chưa thu → 131 (phải thu); Thu tiền mặt ngay → 1111.
 function defaultDebtAccount(ctx: NormalizeCtx): string {
-  if (ctx.paymentMode === SalesPaymentMode.PAID_NOW) {
-    return ctx.paymentMethod === PaymentMethod.BANK_TRANSFER
-      ? CHART_OF_ACCOUNTS.BANK_DEPOSIT
-      : CHART_OF_ACCOUNTS.CASH_ON_HAND
-  }
-  return CHART_OF_ACCOUNTS.RECEIVABLE
-}
-
-// TK doanh thu theo loại nghiệp vụ: hàng hóa 5111 / dịch vụ 5112.
-function defaultRevenueAccount(ctx: NormalizeCtx): string {
-  return ctx.voucherType === SalesVoucherType.DOMESTIC_SERVICE
-    ? CHART_OF_ACCOUNTS.REVENUE_SERVICE
-    : CHART_OF_ACCOUNTS.REVENUE_GOODS
+  return ctx.paymentMode === SalesPaymentMode.PAID_NOW
+    ? CHART_OF_ACCOUNTS.CASH_ON_HAND
+    : CHART_OF_ACCOUNTS.RECEIVABLE
 }
 
 // Chuẩn hóa dòng hàng + tính thành tiền/thuế + gán TK mặc định (§11.4).
 function normalizeLines(ctx: NormalizeCtx, lines: CreateSalesVoucherLineDto[]) {
   const debt = defaultDebtAccount(ctx)
-  const revenue = defaultRevenueAccount(ctx)
+  const revenue = CHART_OF_ACCOUNTS.REVENUE_GOODS
   return lines.map((line, i) => {
     const quantity = new Prisma.Decimal(line.quantity)
     const unitPrice = new Prisma.Decimal(line.unitPrice)
@@ -639,7 +561,6 @@ function toVoucherDto(v: VoucherWithRelations) {
     invoiceNo: v.invoiceNo,
     voucherType: v.voucherType,
     paymentMode: v.paymentMode,
-    paymentMethod: v.paymentMethod,
     isInventoryIssue: v.isInventoryIssue,
     withInvoice: v.withInvoice,
     isPosInvoice: v.isPosInvoice,
@@ -662,10 +583,7 @@ function toVoucherDto(v: VoucherWithRelations) {
     einvoiceLookupCode: v.einvoiceLookupCode,
     einvoiceLookupUrl: v.einvoiceLookupUrl,
     receiptId: v.receiptId,
-    bankReceiptId: v.bankReceiptId,
     issueId: v.issueId,
-    bankAccountNo: v.bankAccountNo,
-    bankName: v.bankName,
     posted: v.posted,
     branchId: v.branchId,
     lines: v.lines.map((l) => ({

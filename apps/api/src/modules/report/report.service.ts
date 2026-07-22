@@ -229,14 +229,12 @@ export class ReportService {
   //
   // Khử trùng chứng từ dẫn xuất (1 nghiệp vụ sinh bản ghi ở 2 bảng, cùng
   // voucher_no và cùng định khoản — giữ chứng từ gốc, loại bản dẫn xuất):
-  // - Phiếu thu SALES_CASH / thu tiền gửi SALES_BANK sinh từ bán hàng thu tiền
-  //   ngay (định khoản đã nằm ở sales_voucher_lines, Nợ 111x-112x/Có 511x).
+  // - Phiếu thu SALES_CASH sinh từ bán hàng thu tiền mặt ngay (định khoản đã
+  //   nằm ở sales_voucher_lines, Nợ 111x/Có 511x).
   // - Phiếu chi PURCHASE_SERVICE_CASH / PURCHASE_GOODS_CASH sinh từ mua hàng
   //   trả ngay TM (định khoản Nợ 15x-64x/Có 111x đã nằm ở purchase_voucher_lines):
   //   khớp qua payment_id (PC của chứng từ nhập kho mang số PC riêng) hoặc
   //   voucher_no trùng (MH/MDV dùng chung số PC, kể cả dữ liệu nhập khẩu chưa link).
-  // - UNC PURCHASE_SERVICE_BANK / PURCHASE_GOODS_BANK sinh từ mua hàng trả ngay
-  //   CK — cùng logic khớp qua bank_payment_id hoặc voucher_no trùng.
   // - Phiếu nhập kho sinh từ mua hàng qua kho (định khoản Nợ 15x/Có 331-111x đã
   //   nằm ở purchase_voucher_lines, kèm cả vế VAT) — khớp qua receipt_id hoặc
   //   voucher_no trùng (chứng từ mua chưa thanh toán dùng chung số NK).
@@ -257,10 +255,7 @@ export class ReportService {
              COALESCE(l.description, v.reason),
              l.debit_account, l.credit_account, l.amount, l.line_no, 0
       FROM bank_voucher_lines l JOIN bank_vouchers v ON v.id = l.voucher_id
-      WHERE v.category <> 'SALES_BANK' AND v.posted
-        AND NOT (v.category IN ('PURCHASE_SERVICE_BANK', 'PURCHASE_GOODS_BANK') AND EXISTS (
-          SELECT 1 FROM purchase_vouchers p WHERE p.bank_payment_id = v.id OR p.voucher_no = v.voucher_no
-        ))
+      WHERE v.posted
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no, 'GENERAL',
              COALESCE(l.description, v.description),

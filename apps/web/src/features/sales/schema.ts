@@ -1,6 +1,5 @@
-import { CustomerType, PaymentMethod, SalesPaymentMode, SalesVoucherType } from '@app/shared'
+import { CustomerType, SalesPaymentMode, SalesVoucherType } from '@app/shared'
 import { z } from 'zod'
-import { optionalEnum } from '@/shared/lib/form'
 
 // Dòng hàng tiền chứng từ bán hàng.
 export const salesLineSchema = z.object({
@@ -20,10 +19,6 @@ export const salesLineSchema = z.object({
 export const salesVoucherSchema = z.object({
   voucherType: z.nativeEnum(SalesVoucherType),
   paymentMode: z.nativeEnum(SalesPaymentMode),
-  paymentMethod: optionalEnum(PaymentMethod),
-  // TKNH nhận tiền — dùng khi thu tiền ngay chuyển khoản.
-  bankAccountNo: z.string().optional(),
-  bankName: z.string().optional(),
   isInventoryIssue: z.boolean().optional(),
   withInvoice: z.boolean().optional(),
   isPosInvoice: z.boolean().optional(),

@@ -1,4 +1,4 @@
-import { PaymentMethod, SalesPaymentMode, SalesVoucherType } from '@app/shared'
+import { SalesPaymentMode, SalesVoucherType } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
@@ -39,7 +39,7 @@ export class CreateSalesVoucherLineDto {
   @IsString()
   debtAccount?: string
 
-  @ApiPropertyOptional({ description: 'TK doanh thu (mặc định 5111/5112)' })
+  @ApiPropertyOptional({ description: 'TK doanh thu (mặc định 5111)' })
   @IsOptional()
   @IsString()
   revenueAccount?: string
@@ -85,21 +85,6 @@ export class CreateSalesVoucherDto {
   @ApiProperty({ enum: SalesPaymentMode })
   @IsEnum(SalesPaymentMode)
   paymentMode!: SalesPaymentMode
-
-  @ApiPropertyOptional({ enum: PaymentMethod })
-  @IsOptional()
-  @IsEnum(PaymentMethod)
-  paymentMethod?: PaymentMethod
-
-  @ApiPropertyOptional({ description: 'Số TKNH nhận tiền (thu tiền ngay chuyển khoản)' })
-  @IsOptional()
-  @IsString()
-  bankAccountNo?: string
-
-  @ApiPropertyOptional({ description: 'Tên ngân hàng nhận tiền' })
-  @IsOptional()
-  @IsString()
-  bankName?: string
 
   @ApiPropertyOptional({ description: 'Kiêm phiếu xuất' })
   @IsOptional()

@@ -55,9 +55,6 @@ export enum BankVoucherCategory {
   Receipt = 'RECEIPT', // Thu khác (thu tiền gửi nhập tay)
   InternalTransfer = 'INTERNAL_TRANSFER', // Chuyển tiền nội bộ giữa các TKNH
   Payment = 'PAYMENT', // Ủy nhiệm chi nhập tay (chi khác)
-  SalesBank = 'SALES_BANK', // Bán hàng - chuyển khoản (NTTK tự sinh)
-  PurchaseServiceBank = 'PURCHASE_SERVICE_BANK', // Mua dịch vụ - chuyển khoản (UNC tự sinh)
-  PurchaseGoodsBank = 'PURCHASE_GOODS_BANK', // Mua hàng - chuyển khoản (UNC tự sinh)
 }
 
 // Phương thức thanh toán khi chi (§4) — chỉ dùng cho UNC.
@@ -76,16 +73,15 @@ export enum PurchaseVoucherType {
   Service = 'SERVICE', // Mua dịch vụ (MDV)
 }
 
-// Nguồn gốc hàng mua (§5) — kết hợp với loại kho để ra "Lý do" nhập chứng từ.
+// Nguồn gốc hàng mua (§5) — chỉ còn trong nước (loại nhập khẩu đã bỏ).
 export enum PurchaseOrigin {
   Domestic = 'DOMESTIC', // Trong nước
-  Import = 'IMPORT', // Nhập khẩu
 }
 
 // Hình thức thanh toán khi lập chứng từ (§4 - Tùy chọn đầu form).
 export enum PurchasePaymentMode {
   Unpaid = 'UNPAID', // Chưa thanh toán → sinh công nợ 331
-  Immediate = 'IMMEDIATE', // Thanh toán ngay → Có 1111/1121
+  Immediate = 'IMMEDIATE', // Thanh toán ngay tiền mặt → Có 1111 (PC tự sinh)
 }
 
 // Trạng thái nhận hóa đơn (cột TT nhận hóa đơn).
@@ -112,13 +108,13 @@ export enum SupplierType {
 // Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.
 export enum SalesVoucherType {
   DomesticGoods = 'DOMESTIC_GOODS', // Bán hàng hóa trong nước (TK 5111)
-  DomesticService = 'DOMESTIC_SERVICE', // Bán dịch vụ trong nước (TK 5112)
 }
 
 // Tùy chọn thanh toán (§3) — quyết định định khoản TK Nợ + sinh phiếu thu.
+// Chỉ còn 2 chứng từ bán hàng: chưa thu tiền (BH) và thu tiền mặt ngay (PT tự sinh).
 export enum SalesPaymentMode {
   Unpaid = 'UNPAID', // Chưa thu tiền → công nợ 131
-  PaidNow = 'PAID_NOW', // Thu tiền ngay → Nợ 1111/1121, sinh phiếu thu
+  PaidNow = 'PAID_NOW', // Thu tiền mặt ngay → Nợ 1111, sinh phiếu thu
 }
 
 // Trạng thái thanh toán chứng từ bán hàng (cột "TT thanh toán" MISA) — tính từ

@@ -11,13 +11,12 @@ import {
 // Nhãn loại nghiệp vụ chứng từ bán hàng (§3).
 export const VOUCHER_TYPE_LABEL: Record<SalesVoucherType, string> = {
   [SalesVoucherType.DomesticGoods]: 'Bán hàng hóa trong nước',
-  [SalesVoucherType.DomesticService]: 'Bán dịch vụ trong nước',
 }
 
-// Nhãn tùy chọn thanh toán (§3).
+// Nhãn tùy chọn thanh toán (§3) — 2 chứng từ: chưa thu tiền / thu tiền mặt ngay.
 export const PAYMENT_MODE_LABEL: Record<SalesPaymentMode, string> = {
   [SalesPaymentMode.Unpaid]: 'Chưa thu tiền',
-  [SalesPaymentMode.PaidNow]: 'Thu tiền ngay',
+  [SalesPaymentMode.PaidNow]: 'Thu tiền mặt ngay',
 }
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {

@@ -1,5 +1,4 @@
 import {
-  PaymentMethod,
   PurchaseOrigin,
   PurchasePaymentMode,
   PurchasePaymentStatus,
@@ -15,42 +14,78 @@ export const VOUCHER_TYPE_LABEL: Record<PurchaseVoucherType, string> = {
   [PurchaseVoucherType.Service]: 'Mua dịch vụ',
 }
 
-// Nhãn nguồn gốc mua hàng (§5).
+// Nhãn nguồn gốc mua hàng (§5) — chỉ còn trong nước.
 export const PURCHASE_ORIGIN_LABEL: Record<PurchaseOrigin, string> = {
   [PurchaseOrigin.Domestic]: 'trong nước',
-  [PurchaseOrigin.Import]: 'nhập khẩu',
 }
 
-// "Lý do" nhập chứng từ mua hàng hóa = nguồn gốc × loại kho (§5).
-// Không gồm Mua dịch vụ (chứng từ riêng).
+// "Lý do" (loại chứng từ) mua hàng — đúng 4 loại theo MISA, mã hóa cả tùy chọn
+// thanh toán: loại "- Tiền mặt" là trả ngay TM (tự sinh phiếu chi, số PC).
 export interface PurchaseReasonOption {
   origin: PurchaseOrigin
   type: PurchaseVoucherType
+  paymentMode: PurchasePaymentMode
   label: string
 }
 
 export const PURCHASE_REASON_OPTIONS: PurchaseReasonOption[] = [
-  { origin: PurchaseOrigin.Domestic, type: PurchaseVoucherType.Stock, label: 'Mua hàng trong nước nhập kho' },
-  { origin: PurchaseOrigin.Domestic, type: PurchaseVoucherType.NonStock, label: 'Mua hàng trong nước không qua kho' },
-  { origin: PurchaseOrigin.Import, type: PurchaseVoucherType.Stock, label: 'Mua hàng nhập khẩu nhập kho' },
-  { origin: PurchaseOrigin.Import, type: PurchaseVoucherType.NonStock, label: 'Mua hàng nhập khẩu không qua kho' },
+  {
+    origin: PurchaseOrigin.Domestic,
+    type: PurchaseVoucherType.Stock,
+    paymentMode: PurchasePaymentMode.Unpaid,
+    label: 'Mua hàng trong nước nhập kho chưa thanh toán',
+  },
+  {
+    origin: PurchaseOrigin.Domestic,
+    type: PurchaseVoucherType.NonStock,
+    paymentMode: PurchasePaymentMode.Unpaid,
+    label: 'Mua hàng trong nước không qua kho chưa thanh toán',
+  },
+  {
+    origin: PurchaseOrigin.Domestic,
+    type: PurchaseVoucherType.NonStock,
+    paymentMode: PurchasePaymentMode.Immediate,
+    label: 'Mua hàng trong nước không qua kho - Tiền mặt',
+  },
+  {
+    origin: PurchaseOrigin.Domestic,
+    type: PurchaseVoucherType.Service,
+    paymentMode: PurchasePaymentMode.Unpaid,
+    label: 'Chứng từ mua dịch vụ chưa thanh toán',
+  },
 ]
 
-// Mã hóa lựa chọn "Lý do" thành value cho <select> ("DOMESTIC:STOCK").
-export const reasonKey = (origin: PurchaseOrigin, type: PurchaseVoucherType) => `${origin}:${type}`
-
-export function parseReasonKey(key: string): { origin: PurchaseOrigin; type: PurchaseVoucherType } {
-  const [origin, type] = key.split(':') as [PurchaseOrigin, PurchaseVoucherType]
-  return { origin, type }
+// Tổ hợp xác định 1 loại chứng từ (dòng bảng cũng có đủ các field này).
+export interface PurchaseReasonCombo {
+  origin: PurchaseOrigin
+  type: PurchaseVoucherType
+  paymentMode: PurchasePaymentMode
 }
 
-// Nhãn "Lý do" đầy đủ theo nguồn gốc + loại (dùng cho tiêu đề trang, dòng bảng).
-export function purchaseReasonLabel(origin: PurchaseOrigin, type: PurchaseVoucherType): string {
-  if (type === PurchaseVoucherType.Service) return VOUCHER_TYPE_LABEL[type]
-  return (
-    PURCHASE_REASON_OPTIONS.find((o) => o.origin === origin && o.type === type)?.label ??
-    VOUCHER_TYPE_LABEL[type]
+// Mã hóa lựa chọn "Lý do" thành value cho <select> ("DOMESTIC:STOCK:UNPAID").
+export const reasonKey = (c: PurchaseReasonCombo) => `${c.origin}:${c.type}:${c.paymentMode}`
+
+export function parseReasonKey(key: string): PurchaseReasonCombo {
+  const [origin, type, paymentMode] = key.split(':') as [
+    PurchaseOrigin,
+    PurchaseVoucherType,
+    PurchasePaymentMode,
+  ]
+  return { origin, type, paymentMode }
+}
+
+// Nhãn loại chứng từ đầy đủ (dòng bảng). Tổ hợp ngoài 4 loại chuẩn (nếu còn
+// trong dữ liệu cũ) dựng nhãn theo công thức MISA thay vì rơi về nhãn cụt.
+export function purchaseReasonLabel(c: PurchaseReasonCombo): string {
+  const exact = PURCHASE_REASON_OPTIONS.find(
+    (o) => o.origin === c.origin && o.type === c.type && o.paymentMode === c.paymentMode,
   )
+  if (exact) return exact.label
+  const base =
+    c.type === PurchaseVoucherType.Service
+      ? 'Chứng từ mua dịch vụ'
+      : `Mua hàng ${PURCHASE_ORIGIN_LABEL[c.origin]} ${c.type === PurchaseVoucherType.Stock ? 'nhập kho' : 'không qua kho'}`
+  return base + (c.paymentMode === PurchasePaymentMode.Immediate ? ' - Tiền mặt' : ' chưa thanh toán')
 }
 
 // Prefix số chứng từ theo loại (§10.1).
@@ -63,11 +98,6 @@ export const VOUCHER_TYPE_PREFIX: Record<PurchaseVoucherType, string> = {
 export const PAYMENT_MODE_LABEL: Record<PurchasePaymentMode, string> = {
   [PurchasePaymentMode.Unpaid]: 'Chưa thanh toán',
   [PurchasePaymentMode.Immediate]: 'Thanh toán ngay',
-}
-
-export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
-  [PaymentMethod.Cash]: 'Tiền mặt',
-  [PaymentMethod.BankTransfer]: 'Chuyển khoản',
 }
 
 export const RECEIVE_STATUS_LABEL: Record<PurchaseReceiveStatus, string> = {

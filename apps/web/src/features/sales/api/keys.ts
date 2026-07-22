@@ -10,8 +10,8 @@ export const salesKeys = {
   all: ['sales'] as const,
   vouchers: (filter: SalesVoucherFilter) => [...salesKeys.all, 'vouchers', filter] as const,
   voucher: (id: string) => [...salesKeys.all, 'voucher', id] as const,
-  nextNo: (voucherDate: string, paymentMode: string, paymentMethod: string) =>
-    [...salesKeys.all, 'next-no', voucherDate, paymentMode, paymentMethod] as const,
+  nextNo: (voucherDate: string, paymentMode: string) =>
+    [...salesKeys.all, 'next-no', voucherDate, paymentMode] as const,
   customers: (filter: CustomerFilter) => [...salesKeys.all, 'customers', filter] as const,
   customer: (id: string) => [...salesKeys.all, 'customer', id] as const,
   receivables: (filter: CustomerReceivableFilter) =>

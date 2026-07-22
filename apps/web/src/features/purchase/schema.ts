@@ -1,12 +1,10 @@
 import {
-  PaymentMethod,
   PurchaseOrigin,
   PurchasePaymentMode,
   PurchaseVoucherType,
   SupplierType,
 } from '@app/shared'
 import { z } from 'zod'
-import { optionalEnum } from '@/shared/lib/form'
 
 // Dòng hàng tiền của chứng từ mua hàng.
 export const purchaseLineSchema = z.object({
@@ -26,7 +24,6 @@ export const purchaseVoucherSchema = z.object({
   type: z.nativeEnum(PurchaseVoucherType),
   origin: z.nativeEnum(PurchaseOrigin),
   paymentMode: z.nativeEnum(PurchasePaymentMode),
-  paymentMethod: optionalEnum(PaymentMethod),
   receiveWithInvoice: z.boolean().optional(),
   invoiceNo: z.string().optional(),
   postingDate: z.string().min(1, 'Chọn ngày hạch toán'),
@@ -46,9 +43,6 @@ export const purchaseVoucherSchema = z.object({
   einvoiceLookupCode: z.string().optional(),
   einvoiceLookupUrl: z.string().optional(),
   branchId: z.string().optional(),
-  // TKNH chi tiền khi thanh toán ngay chuyển khoản (UNC tự sinh).
-  bankAccountNo: z.string().optional(),
-  bankName: z.string().optional(),
   lines: z.array(purchaseLineSchema).min(1, 'Cần ít nhất 1 dòng hàng'),
 })
 

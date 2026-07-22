@@ -131,9 +131,6 @@ enum BankVoucherCategory {
   RECEIPT
   INTERNAL_TRANSFER
   PAYMENT
-  SALES_BANK
-  PURCHASE_SERVICE_BANK
-  PURCHASE_GOODS_BANK
 }
 
 // Phương thức thanh toán khi chi (§4) — chỉ dùng cho UNC.
@@ -208,10 +205,9 @@ enum PurchaseVoucherType {
   SERVICE
 }
 
-// Nguồn gốc hàng mua (§5): trong nước / nhập khẩu.
+// Nguồn gốc hàng mua (§5): chỉ còn trong nước (loại nhập khẩu đã bỏ).
 enum PurchaseOrigin {
   DOMESTIC
-  IMPORT
 }
 
 // Hình thức thanh toán khi lập chứng từ.
@@ -303,14 +299,10 @@ model PurchaseVoucher {
   stockValue         Decimal               @default(0) @map("stock_value") @db.Decimal(18, 2)
   einvoiceLookupCode String?               @map("einvoice_lookup_code")
   einvoiceLookupUrl  String?               @map("einvoice_lookup_url")
-  // Chứng từ tự sinh (tham chiếu lỏng, không FK): trả ngay TM → phiếu chi,
-  // trả ngay CK → UNC chi tiền gửi, loại nhập kho → phiếu nhập kho (chung số NK).
+  // Chứng từ tự sinh (tham chiếu lỏng, không FK): trả ngay tiền mặt → phiếu chi,
+  // loại nhập kho → phiếu nhập kho (chung số NK).
   paymentId          String?               @map("payment_id")
-  bankPaymentId      String?               @map("bank_payment_id")
   receiptId          String?               @map("receipt_id")
-  // TKNH chi tiền khi thanh toán ngay chuyển khoản (tham chiếu lỏng như BankVoucher).
-  bankAccountNo      String?               @map("bank_account_no")
-  bankName           String?               @map("bank_name")
   receiveStatus      PurchaseReceiveStatus @default(NOT_RECEIVED) @map("receive_status")
   paymentStatus      PurchasePaymentStatus @default(UNPAID) @map("payment_status")
   // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
@@ -478,10 +470,10 @@ model GoodsIssueLine {
 // Loại nghiệp vụ chứng từ bán hàng (§3) — quyết định TK doanh thu mặc định.
 enum SalesVoucherType {
   DOMESTIC_GOODS
-  DOMESTIC_SERVICE
 }
 
 // Tùy chọn thanh toán (§3) — quyết định định khoản + sinh phiếu thu.
+// Chỉ còn 2 chứng từ: chưa thu tiền (BH) và thu tiền mặt ngay (PT tự sinh).
 enum SalesPaymentMode {
   UNPAID
   PAID_NOW
@@ -532,7 +524,6 @@ model SalesVoucher {
   invoiceNo          String?            @map("invoice_no")
   voucherType        SalesVoucherType   @map("voucher_type")
   paymentMode        SalesPaymentMode   @default(UNPAID) @map("payment_mode")
-  paymentMethod      PaymentMethod?     @map("payment_method")
   isInventoryIssue   Boolean            @default(false) @map("is_inventory_issue")
   withInvoice        Boolean            @default(false) @map("with_invoice")
   isPosInvoice       Boolean            @default(false) @map("is_pos_invoice")
@@ -556,12 +547,8 @@ model SalesVoucher {
   einvoiceLookupCode String?            @map("einvoice_lookup_code")
   einvoiceLookupUrl  String?            @map("einvoice_lookup_url")
   receiptId          String?            @map("receipt_id")
-  // Chứng từ tự sinh khi thu tiền ngay CK / kiêm phiếu xuất (tham chiếu lỏng, không FK).
-  bankReceiptId      String?            @map("bank_receipt_id")
+  // Chứng từ tự sinh khi kiêm phiếu xuất (tham chiếu lỏng, không FK).
   issueId            String?            @map("issue_id")
-  // TKNH nhận tiền khi thu ngay chuyển khoản (tham chiếu lỏng như BankVoucher).
-  bankAccountNo      String?            @map("bank_account_no")
-  bankName           String?            @map("bank_name")
   // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
   posted             Boolean            @default(true)
   branchId           String?            @map("branch_id")

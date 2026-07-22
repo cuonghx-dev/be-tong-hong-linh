@@ -6,8 +6,8 @@ export const purchaseKeys = {
   vouchers: (filter: PurchaseVoucherFilter) =>
     [...purchaseKeys.all, 'vouchers', filter] as const,
   voucher: (id: string) => [...purchaseKeys.all, 'voucher', id] as const,
-  nextNo: (type: string, voucherDate: string, paymentMode: string, paymentMethod: string) =>
-    [...purchaseKeys.all, 'next-no', type, voucherDate, paymentMode, paymentMethod] as const,
+  nextNo: (type: string, voucherDate: string, paymentMode: string) =>
+    [...purchaseKeys.all, 'next-no', type, voucherDate, paymentMode] as const,
   suppliers: (filter: SupplierFilter) => [...purchaseKeys.all, 'suppliers', filter] as const,
   supplier: (id: string) => [...purchaseKeys.all, 'supplier', id] as const,
   report: (slug: string, filter: PurchaseReportFilter) =>
