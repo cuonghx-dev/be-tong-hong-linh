@@ -1,4 +1,4 @@
-import { BankVoucherType, type BankVoucherFilter } from '@app/shared'
+import { BankVoucherType, type BankVoucherCategory, type BankVoucherFilter } from '@app/shared'
 import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
@@ -57,6 +57,7 @@ function BankTable() {
   const page = Number(params.get('page') ?? 1)
   const keyword = params.get('q') ?? ''
   const typeParam = (params.get('type') as BankVoucherType | null) ?? null
+  const categoryParam = (params.get('category') as BankVoucherCategory | null) ?? null
   const bankAccountNo = params.get('bank') ?? ''
   const fromDate = params.get('from') ?? ''
   const toDate = params.get('to') ?? ''
@@ -66,6 +67,7 @@ function BankTable() {
     pageSize: PAGE_SIZE,
     keyword: keyword || undefined,
     type: typeParam ?? undefined,
+    category: categoryParam ?? undefined,
     bankAccountNo: bankAccountNo || undefined,
     fromDate: fromDate || undefined,
     toDate: toDate || undefined,
@@ -89,6 +91,7 @@ function BankTable() {
     const next = new URLSearchParams(params)
     for (const [k, val] of Object.entries({
       type: v.type,
+      category: v.category,
       bank: v.bankAccountNo,
       from: v.from,
       to: v.to,
@@ -102,7 +105,7 @@ function BankTable() {
 
   const resetFilter = () => {
     const next = new URLSearchParams(params)
-    ;['type', 'bank', 'from', 'to'].forEach((k) => next.delete(k))
+    ;['type', 'category', 'bank', 'from', 'to'].forEach((k) => next.delete(k))
     next.set('page', '1')
     setParams(next)
   }
@@ -112,7 +115,13 @@ function BankTable() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
         <BankFilterPopover
-          value={{ type: typeParam ?? '', bankAccountNo, from: fromDate, to: toDate }}
+          value={{
+            type: typeParam ?? '',
+            category: categoryParam ?? '',
+            bankAccountNo,
+            from: fromDate,
+            to: toDate,
+          }}
           onApply={applyFilter}
           onReset={resetFilter}
         />

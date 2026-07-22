@@ -52,7 +52,8 @@ export enum BankVoucherType {
 
 // Loại nghiệp vụ (§5) — quyết định định khoản mặc định + nguồn sinh phiếu.
 export enum BankVoucherCategory {
-  Receipt = 'RECEIPT', // Thu tiền gửi nhập tay (thu khác)
+  Receipt = 'RECEIPT', // Thu khác (thu tiền gửi nhập tay)
+  InternalTransfer = 'INTERNAL_TRANSFER', // Chuyển tiền nội bộ giữa các TKNH
   Payment = 'PAYMENT', // Ủy nhiệm chi nhập tay (chi khác)
   SalesBank = 'SALES_BANK', // Bán hàng - chuyển khoản (NTTK tự sinh)
   PurchaseServiceBank = 'PURCHASE_SERVICE_BANK', // Mua dịch vụ - chuyển khoản (UNC tự sinh)

@@ -2,8 +2,9 @@ import { BankPaymentMethod, BankVoucherCategory, BankVoucherType, PartnerType } 
 
 // Nhãn hiển thị loại nghiệp vụ (§5).
 export const CATEGORY_LABEL: Record<BankVoucherCategory, string> = {
-  [BankVoucherCategory.Receipt]: 'Thu tiền gửi',
-  [BankVoucherCategory.Payment]: 'Ủy nhiệm chi',
+  [BankVoucherCategory.Receipt]: 'Thu khác',
+  [BankVoucherCategory.InternalTransfer]: 'Chuyển tiền nội bộ',
+  [BankVoucherCategory.Payment]: 'Chi khác',
   [BankVoucherCategory.SalesBank]: 'Bán hàng - chuyển khoản',
   [BankVoucherCategory.PurchaseServiceBank]: 'Mua dịch vụ - chuyển khoản',
   [BankVoucherCategory.PurchaseGoodsBank]: 'Mua hàng - chuyển khoản',
@@ -28,13 +29,15 @@ export const PAYMENT_METHOD_LABEL: Record<BankPaymentMethod, string> = {
   [BankPaymentMethod.Check]: 'Séc',
 }
 
-// Loại nghiệp vụ chọn được theo loại chứng từ (dropdown đầu form).
+// Loại nghiệp vụ chọn được theo loại chứng từ (dropdown đầu form + bộ lọc).
 export const CATEGORY_OPTIONS: Record<BankVoucherType, BankVoucherCategory[]> = {
-  [BankVoucherType.Receipt]: [BankVoucherCategory.Receipt, BankVoucherCategory.SalesBank],
+  [BankVoucherType.Receipt]: [
+    BankVoucherCategory.Receipt,
+    BankVoucherCategory.InternalTransfer,
+  ],
   [BankVoucherType.Payment]: [
     BankVoucherCategory.Payment,
-    BankVoucherCategory.PurchaseServiceBank,
-    BankVoucherCategory.PurchaseGoodsBank,
+    BankVoucherCategory.InternalTransfer,
   ],
 }
 

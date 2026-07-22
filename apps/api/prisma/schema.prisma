@@ -129,6 +129,7 @@ enum BankVoucherType {
 // Loại nghiệp vụ (§5) — quyết định định khoản mặc định + nguồn sinh phiếu.
 enum BankVoucherCategory {
   RECEIPT
+  INTERNAL_TRANSFER
   PAYMENT
   SALES_BANK
   PURCHASE_SERVICE_BANK

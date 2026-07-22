@@ -1,4 +1,4 @@
-import { BankVoucherType } from '@app/shared'
+import { BankVoucherCategory, BankVoucherType } from '@app/shared'
 import { useEffect, useState } from 'react'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, FilterIcon } from '@/shared/ui/icons'
@@ -10,15 +10,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { CATEGORY_LABEL, CATEGORY_OPTIONS } from '../types'
 
 export interface BankFilterValue {
   type: string
+  category: string
   bankAccountNo: string
   from: string
   to: string
 }
 
-const EMPTY: BankFilterValue = { type: '', bankAccountNo: '', from: '', to: '' }
+const EMPTY: BankFilterValue = { type: '', category: '', bankAccountNo: '', from: '', to: '' }
 
 // Preset khoảng thời gian → [from, to] (yyyy-mm-dd).
 type Preset = 'year' | 'month' | 'quarter' | 'custom'
@@ -60,8 +62,22 @@ export function BankFilterPopover({ value, onApply, onReset }: Props) {
   // Đồng bộ lại khi filter ngoài đổi (vd back/forward).
   useEffect(() => setDraft(value), [value])
 
+  // Lý do thu/chi thu hẹp theo loại chứng từ đang chọn; chưa chọn loại
+  // → gộp 2 danh sách (khử trùng Chuyển tiền nội bộ có ở cả thu lẫn chi).
+  const categoryOptions = draft.type
+    ? CATEGORY_OPTIONS[draft.type as BankVoucherType]
+    : [
+        ...new Set([
+          ...CATEGORY_OPTIONS[BankVoucherType.Receipt],
+          ...CATEGORY_OPTIONS[BankVoucherType.Payment],
+        ]),
+      ]
+
   const activeCount =
-    (value.type ? 1 : 0) + (value.bankAccountNo ? 1 : 0) + (value.from || value.to ? 1 : 0)
+    (value.type ? 1 : 0) +
+    (value.category ? 1 : 0) +
+    (value.bankAccountNo ? 1 : 0) +
+    (value.from || value.to ? 1 : 0)
 
   return (
     <Popover
@@ -85,7 +101,17 @@ export function BankFilterPopover({ value, onApply, onReset }: Props) {
             <Field label="Loại chứng từ">
               <Select
                 value={draft.type || 'all'}
-                onValueChange={(v) => setDraft({ ...draft, type: v === 'all' ? '' : v })}
+                onValueChange={(v) => {
+                  const type = v === 'all' ? '' : v
+                  // Đổi loại → bỏ lý do không còn thuộc loại mới.
+                  const keep =
+                    !draft.category ||
+                    !type ||
+                    CATEGORY_OPTIONS[type as BankVoucherType].includes(
+                      draft.category as BankVoucherCategory,
+                    )
+                  setDraft({ ...draft, type, category: keep ? draft.category : '' })
+                }}
               >
                 <SelectTrigger className="h-9">
                   <SelectValue />
@@ -98,6 +124,27 @@ export function BankFilterPopover({ value, onApply, onReset }: Props) {
               </Select>
             </Field>
 
+            <Field label="Lý do thu, chi">
+              <Select
+                value={draft.category || 'all'}
+                onValueChange={(v) => setDraft({ ...draft, category: v === 'all' ? '' : v })}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  {categoryOptions.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {CATEGORY_LABEL[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
             <Field label="Số tài khoản NH">
               <input
                 value={draft.bankAccountNo}
