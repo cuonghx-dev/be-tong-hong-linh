@@ -34,6 +34,7 @@ import { InventoryBalancePage } from '@/features/opening-balance/pages/Inventory
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
 import { CatalogItemPage } from '@/features/catalog/pages/CatalogItemPage'
 import { UsersPage } from '@/features/users'
+import { SettingsPage } from '@/features/settings'
 
 // Trang chứng từ full-page (§5) — standalone, đè Sidebar/Header.
 const recordRoutes = [
@@ -120,6 +121,7 @@ const router = createBrowserRouter([
       { path: 'opening-balance/:slug', element: <OpeningBalanceItemPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'catalog/:slug', element: <CatalogItemPage /> },
+      { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/users', element: <UsersPage /> },
     ].map((c) => {
       if (!('path' in c) || !c.path) return c

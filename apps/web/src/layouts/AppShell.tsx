@@ -57,7 +57,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/opening-balance', label: 'Số dư ban đầu', icon: BookIcon, domain: 'openingBalance' },
       { to: '/catalog', label: 'Danh mục', icon: LayersIcon, domain: 'catalog' },
-      { to: '/settings/users', label: 'Người dùng', icon: UserIcon, domain: 'users' },
     ],
   },
 ]
@@ -138,6 +137,7 @@ function Header() {
   const navigate = useNavigate()
   const user = useAuth((s) => s.user)
   const logout = useAuth((s) => s.logout)
+  const can = useCan()
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-white px-4">
@@ -155,7 +155,7 @@ function Header() {
 
       {/* Utility phải */}
       <div className="ml-auto flex items-center gap-1">
-        {[BellIcon, HelpIcon, SettingsIcon].map((Icon, i) => (
+        {[BellIcon, HelpIcon].map((Icon, i) => (
           <button
             key={i}
             className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
@@ -163,6 +163,16 @@ function Header() {
             <Icon size={18} />
           </button>
         ))}
+        {/* Cài đặt hệ thống (quản lý người dùng…) — không thuộc nghiệp vụ kế toán nên nằm ngoài sidebar */}
+        {can('users:read') && (
+          <button
+            title="Cài đặt"
+            onClick={() => navigate('/settings')}
+            className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
+          >
+            <SettingsIcon size={18} />
+          </button>
+        )}
         <div className="group relative">
           <button className="ml-1 flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-slate-100">
             <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary">

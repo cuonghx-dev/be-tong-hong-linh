@@ -1,11 +1,12 @@
 import { USER_ROLE_LABELS, type UserListItem } from '@app/shared'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
-import { PlusIcon, RefreshIcon } from '@/shared/ui/icons'
+import { ChevronLeftIcon, PlusIcon, RefreshIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
 import { useUsers } from '../api/useUsers'
@@ -52,6 +53,13 @@ export function UsersPage() {
 
   return (
     <div className="flex h-full flex-col p-4">
+      <Link
+        to="/settings"
+        className="mb-2 flex w-fit items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+      >
+        <ChevronLeftIcon size={16} />
+        Thiết lập hệ thống
+      </Link>
       <div className="mb-3 flex items-center gap-2">
         <h1 className="text-lg font-semibold text-slate-800">Người dùng</h1>
         <button
