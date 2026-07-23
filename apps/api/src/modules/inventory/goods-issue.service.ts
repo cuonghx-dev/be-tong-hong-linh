@@ -109,7 +109,7 @@ export class GoodsIssueService {
     await this.bookLock.assertUnlocked(existing.postingDate, dto.postingDate)
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      const data: Prisma.GoodsIssueVoucherUpdateInput = {
+      const data: Prisma.GoodsIssueVoucherUncheckedUpdateInput = {
         postingDate: dto.postingDate ? new Date(dto.postingDate) : undefined,
         voucherDate: dto.voucherDate ? new Date(dto.voucherDate) : undefined,
         customerId: dto.customerId ?? undefined,

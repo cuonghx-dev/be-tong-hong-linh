@@ -186,7 +186,7 @@ export class PurchaseService {
     await this.bookLock.assertUnlocked(existing.postingDate, dto.postingDate)
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      const data: Prisma.PurchaseVoucherUpdateInput = {
+      const data: Prisma.PurchaseVoucherUncheckedUpdateInput = {
         origin: dto.origin ?? undefined,
         paymentMode: dto.paymentMode ?? undefined,
         receiveWithInvoice: dto.receiveWithInvoice ?? undefined,

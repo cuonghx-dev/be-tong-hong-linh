@@ -50,6 +50,7 @@ export class BankAccountService {
       data: {
         accountNumber: dto.accountNumber,
         bankName: dto.bankName,
+        bankId: await this.resolveBankId(dto.bankName),
         bankBranch: dto.bankBranch ?? null,
         accountHolder: dto.accountHolder ?? null,
         branch: dto.branch ?? null,
@@ -71,6 +72,8 @@ export class BankAccountService {
       data: {
         accountNumber: dto.accountNumber ?? undefined,
         bankName: dto.bankName ?? undefined,
+        // Đổi tên ngân hàng → gắn lại bankId theo danh mục Bank.
+        bankId: dto.bankName ? await this.resolveBankId(dto.bankName) : undefined,
         bankBranch: dto.bankBranch ?? undefined,
         accountHolder: dto.accountHolder ?? undefined,
         branch: dto.branch ?? undefined,
@@ -92,6 +95,14 @@ export class BankAccountService {
     })
     const seen = new Set(existing.map((e) => e.accountNumber))
 
+    // Map tên ngân hàng → id danh mục Bank (khớp short_name hoặc full_name) để gắn bankId.
+    const banks = await this.prisma.bank.findMany({ select: { id: true, shortName: true, fullName: true } })
+    const bankByName = new Map<string, string>()
+    for (const b of banks) {
+      bankByName.set(b.shortName, b.id)
+      bankByName.set(b.fullName, b.id)
+    }
+
     const data: Prisma.BankAccountCreateManyInput[] = []
     for (const p of parsed) {
       if (seen.has(p.accountNumber)) continue
@@ -99,6 +110,7 @@ export class BankAccountService {
       data.push({
         accountNumber: p.accountNumber,
         bankName: p.bankName,
+        bankId: bankByName.get(p.bankName) ?? null,
         bankBranch: p.bankBranch,
         accountHolder: p.accountHolder,
         branch: p.branch,
@@ -125,12 +137,22 @@ export class BankAccountService {
     const dup = await this.prisma.bankAccount.findUnique({ where: { accountNumber } })
     if (dup) throw new ConflictException(`Số tài khoản "${accountNumber}" đã tồn tại`)
   }
+
+  // Khớp tên ngân hàng với danh mục Bank (short_name hoặc full_name); không khớp → null.
+  private async resolveBankId(bankName: string): Promise<string | null> {
+    const bank = await this.prisma.bank.findFirst({
+      where: { OR: [{ shortName: bankName }, { fullName: bankName }] },
+      select: { id: true },
+    })
+    return bank?.id ?? null
+  }
 }
 
 function toBankAccountDto(a: BankAccount) {
   return {
     id: a.id,
     accountNumber: a.accountNumber,
+    bankId: a.bankId,
     bankName: a.bankName,
     bankBranch: a.bankBranch,
     accountHolder: a.accountHolder,

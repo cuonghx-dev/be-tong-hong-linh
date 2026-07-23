@@ -93,6 +93,8 @@ model CashVoucher {
   createdBy String?  @map("created_by")
 
   @@index([type, postingDate])
+  // Sổ nhật ký chung filter chỉ theo posting_date (không type) — cần index riêng.
+  @@index([postingDate])
   @@index([partnerId])
   @@map("cash_vouchers")
 }
@@ -114,7 +116,8 @@ model CashVoucherLine {
   bankAccountNo String?     @map("bank_account_no")
   bankName      String?     @map("bank_name")
 
-  @@index([voucherId])
+  // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
+  @@unique([voucherId, lineNo])
   @@map("cash_voucher_lines")
 }
 
@@ -175,6 +178,8 @@ model BankVoucher {
   createdBy String?  @map("created_by")
 
   @@index([type, postingDate])
+  // Sổ nhật ký chung filter chỉ theo posting_date (không type) — cần index riêng.
+  @@index([postingDate])
   @@index([partnerId])
   @@map("bank_vouchers")
 }
@@ -192,7 +197,8 @@ model BankVoucherLine {
   partnerId     String?     @map("partner_id")
   partnerName   String?     @map("partner_name")
 
-  @@index([voucherId])
+  // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
+  @@unique([voucherId, lineNo])
   @@map("bank_voucher_lines")
 }
 
@@ -262,6 +268,8 @@ model Supplier {
   // Ngừng sử dụng: ẩn khỏi picker khi lập chứng từ, dữ liệu cũ giữ nguyên.
   isActive           Boolean      @default(true) @map("is_active")
 
+  purchaseVouchers PurchaseVoucher[]
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   createdBy String?  @map("created_by")
@@ -282,6 +290,7 @@ model PurchaseVoucher {
   postingDate        DateTime              @map("posting_date") @db.Date
   voucherDate        DateTime              @map("voucher_date") @db.Date
   supplierId         String?               @map("supplier_id")
+  supplier           Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   supplierName       String?               @map("supplier_name")
   deliverer          String?
   address            String?
@@ -315,6 +324,8 @@ model PurchaseVoucher {
   createdBy String?  @map("created_by")
 
   @@index([type, postingDate])
+  // Sổ nhật ký chung filter chỉ theo posting_date (không type) — cần index riêng.
+  @@index([postingDate])
   @@index([supplierId])
   @@map("purchase_vouchers")
 }
@@ -338,7 +349,10 @@ model PurchaseVoucherLine {
   vatAmount      Decimal         @default(0) @map("vat_amount") @db.Decimal(18, 2)
   vatAccount     String          @map("vat_account")
 
-  @@index([voucherId])
+  // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
+  @@unique([voucherId, lineNo])
+  // Báo cáo tồn kho/tra cứu theo mặt hàng lọc trực tiếp trên bảng line.
+  @@index([itemId, warehouseId])
   @@map("purchase_voucher_lines")
 }
 
@@ -397,7 +411,10 @@ model InventoryReceiptLine {
   lotNo         String?          @map("lot_no")
   expiryDate    DateTime?        @map("expiry_date") @db.Date
 
-  @@index([receiptId])
+  // Unique kép: chặn trùng số dòng trong 1 phiếu; leading receipt_id thay index thường.
+  @@unique([receiptId, lineNo])
+  // Báo cáo tồn kho lọc trực tiếp item_id/warehouse_id trên bảng line.
+  @@index([itemId, warehouseId])
   @@map("inventory_receipt_lines")
 }
 
@@ -417,6 +434,7 @@ model GoodsIssueVoucher {
   postingDate        DateTime           @map("posting_date") @db.Date
   voucherDate        DateTime           @map("voucher_date") @db.Date
   customerId         String?            @map("customer_id")
+  customer           Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
   customerName       String?            @map("customer_name")
   receiver           String?
   address            String?
@@ -437,6 +455,8 @@ model GoodsIssueVoucher {
   createdBy String?  @map("created_by")
 
   @@index([category, postingDate])
+  // Sổ nhật ký chung filter chỉ theo posting_date (không category) — cần index riêng.
+  @@index([postingDate])
   @@index([customerId])
   @@map("goods_issue_vouchers")
 }
@@ -459,7 +479,10 @@ model GoodsIssueLine {
   lotNo         String?           @map("lot_no")
   expiryDate    DateTime?         @map("expiry_date") @db.Date
 
-  @@index([voucherId])
+  // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
+  @@unique([voucherId, lineNo])
+  // Báo cáo tồn kho lọc trực tiếp item_id/warehouse_id trên bảng line.
+  @@index([itemId, warehouseId])
   @@map("goods_issue_lines")
 }
 
@@ -505,7 +528,8 @@ model Customer {
   contactEmail       String?      @map("contact_email")
   contactPhone       String?      @map("contact_phone")
 
-  salesVouchers SalesVoucher[]
+  salesVouchers      SalesVoucher[]
+  goodsIssueVouchers GoodsIssueVoucher[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -517,39 +541,39 @@ model Customer {
 
 // Chứng từ bán hàng (§3) — ghi nhận doanh thu + công nợ phải thu.
 model SalesVoucher {
-  id                 String             @id @default(uuid())
-  voucherNo          String             @unique @map("voucher_no")
-  invoiceNo          String?            @map("invoice_no")
-  voucherType        SalesVoucherType   @map("voucher_type")
-  paymentMode        SalesPaymentMode   @default(UNPAID) @map("payment_mode")
-  isInventoryIssue   Boolean            @default(false) @map("is_inventory_issue")
-  withInvoice        Boolean            @default(false) @map("with_invoice")
-  isPosInvoice       Boolean            @default(false) @map("is_pos_invoice")
-  postingDate        DateTime           @map("posting_date") @db.Date
-  voucherDate        DateTime           @map("voucher_date") @db.Date
-  customerId         String?            @map("customer_id")
-  customer           Customer?          @relation(fields: [customerId], references: [id])
-  customerName       String?            @map("customer_name")
-  taxCode            String?            @map("tax_code")
-  contactPerson      String?            @map("contact_person")
+  id                 String              @id @default(uuid())
+  voucherNo          String              @unique @map("voucher_no")
+  invoiceNo          String?             @map("invoice_no")
+  voucherType        SalesVoucherType    @map("voucher_type")
+  paymentMode        SalesPaymentMode    @default(UNPAID) @map("payment_mode")
+  isInventoryIssue   Boolean             @default(false) @map("is_inventory_issue")
+  withInvoice        Boolean             @default(false) @map("with_invoice")
+  isPosInvoice       Boolean             @default(false) @map("is_pos_invoice")
+  postingDate        DateTime            @map("posting_date") @db.Date
+  voucherDate        DateTime            @map("voucher_date") @db.Date
+  customerId         String?             @map("customer_id")
+  customer           Customer?           @relation(fields: [customerId], references: [id])
+  customerName       String?             @map("customer_name")
+  taxCode            String?             @map("tax_code")
+  contactPerson      String?             @map("contact_person")
   address            String?
-  salesEmployeeId    String?            @map("sales_employee_id")
+  salesEmployeeId    String?             @map("sales_employee_id")
   description        String?
-  attachmentCount    Int                @default(0) @map("attachment_count")
-  paymentTermId      String?            @map("payment_term_id")
-  creditDays         Int?               @map("credit_days")
-  dueDate            DateTime?          @map("due_date") @db.Date
-  totalGoods         Decimal            @default(0) @map("total_goods") @db.Decimal(18, 2)
-  totalVat           Decimal            @default(0) @map("total_vat") @db.Decimal(18, 2)
-  totalAmount        Decimal            @default(0) @map("total_amount") @db.Decimal(18, 2)
-  einvoiceLookupCode String?            @map("einvoice_lookup_code")
-  einvoiceLookupUrl  String?            @map("einvoice_lookup_url")
-  receiptId          String?            @map("receipt_id")
+  attachmentCount    Int                 @default(0) @map("attachment_count")
+  paymentTermId      String?             @map("payment_term_id")
+  creditDays         Int?                @map("credit_days")
+  dueDate            DateTime?           @map("due_date") @db.Date
+  totalGoods         Decimal             @default(0) @map("total_goods") @db.Decimal(18, 2)
+  totalVat           Decimal             @default(0) @map("total_vat") @db.Decimal(18, 2)
+  totalAmount        Decimal             @default(0) @map("total_amount") @db.Decimal(18, 2)
+  einvoiceLookupCode String?             @map("einvoice_lookup_code")
+  einvoiceLookupUrl  String?             @map("einvoice_lookup_url")
+  receiptId          String?             @map("receipt_id")
   // Chứng từ tự sinh khi kiêm phiếu xuất (tham chiếu lỏng, không FK).
-  issueId            String?            @map("issue_id")
+  issueId            String?             @map("issue_id")
   // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
-  posted             Boolean            @default(true)
-  branchId           String?            @map("branch_id")
+  posted             Boolean             @default(true)
+  branchId           String?             @map("branch_id")
   lines              SalesVoucherLine[]
   // Đối trừ thu tiền sau (thu tiền khách hàng theo hóa đơn) — quyết định TT thanh toán.
   allocations        PaymentAllocation[]
@@ -559,6 +583,8 @@ model SalesVoucher {
   createdBy String?  @map("created_by")
 
   @@index([voucherType, postingDate])
+  // Sổ nhật ký chung filter chỉ theo posting_date (không voucherType) — cần index riêng.
+  @@index([postingDate])
   @@index([customerId])
   @@index([paymentMode])
   @@map("sales_vouchers")
@@ -584,7 +610,10 @@ model SalesVoucherLine {
   vatAccount     String       @map("vat_account")
   lotNo          String?      @map("lot_no")
 
-  @@index([voucherId])
+  // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
+  @@unique([voucherId, lineNo])
+  // Báo cáo tồn kho lọc trực tiếp item_id trên bảng line (bán hàng không có warehouse_id).
+  @@index([itemId])
   @@map("sales_voucher_lines")
 }
 
@@ -647,7 +676,8 @@ model GeneralVoucherLine {
   partnerId     String?        @map("partner_id")
   partnerName   String?        @map("partner_name")
 
-  @@index([voucherId])
+  // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
+  @@unique([voucherId, lineNo])
   @@map("general_voucher_lines")
 }
 
@@ -775,7 +805,10 @@ model ProductGroup {
 model BankAccount {
   id            String  @id @default(uuid())
   accountNumber String  @unique @map("account_number") // Số tài khoản
-  bankName      String  @map("bank_name") // Tên ngân hàng
+  // Liên kết danh mục ngân hàng (Bank). Nullable + SetNull: ngừng/xóa Bank không làm mất TK.
+  bankId        String? @map("bank_id")
+  bank          Bank?   @relation(fields: [bankId], references: [id], onDelete: SetNull)
+  bankName      String  @map("bank_name") // Tên ngân hàng (snapshot hiển thị, đồng bộ từ Bank khi có bankId)
   bankBranch    String? @map("bank_branch") // Tên chi nhánh ngân hàng
   accountHolder String? @map("account_holder") // Chủ tài khoản
   branch        String? // Chi nhánh (đơn vị)
@@ -787,6 +820,7 @@ model BankAccount {
 
   openingBalances BankAccountOpeningBalance[]
 
+  @@index([bankId])
   @@index([bankName])
   @@map("bank_accounts")
 }
@@ -896,6 +930,8 @@ model Bank {
   fullName  String  @map("full_name") // Tên đầy đủ
   isActive  Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
 
+  accounts BankAccount[]
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   createdBy String?  @map("created_by")
@@ -938,7 +974,7 @@ model TransferAccount {
 model DefaultAccount {
   id            String  @id @default(uuid())
   order         Int     @map("default_order") // STT trong danh sách MISA (giữ thứ tự gốc)
-  name          String  // Loại nghiệp vụ (cột "Loại")
+  name          String // Loại nghiệp vụ (cột "Loại")
   debitAccount  String? @map("debit_account") // TK Nợ ngầm định (có thể để trống)
   creditAccount String? @map("credit_account") // TK Có ngầm định (có thể để trống)
   isActive      Boolean @default(true) @map("is_active") // Trạng thái: Đang sử dụng
