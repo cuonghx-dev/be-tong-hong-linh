@@ -3,8 +3,16 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/shared/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useBankAccount } from '../api/useBankAccounts'
 import { useCreateBankAccount, useUpdateBankAccount } from '../api/useBankAccountMutations'
+import { useBanks } from '../api/useBanks'
 import { bankAccountSchema, type BankAccountFormValues } from '../schema'
 
 interface Props {
@@ -25,10 +33,14 @@ export function BankAccountForm({ accountId, readOnly = false, onSaved, onCancel
   const create = useCreateBankAccount()
   const update = useUpdateBankAccount()
 
-  const { register, handleSubmit, reset, formState } = useForm<BankAccountFormValues>({
-    resolver: zodResolver(bankAccountSchema),
-    defaultValues: DEFAULTS,
-  })
+  // Danh mục ngân hàng đang sử dụng cho dropdown chọn ngân hàng.
+  const banks = useBanks({ page: 1, pageSize: 200, isActive: true })
+
+  const { register, handleSubmit, reset, watch, setValue, formState } =
+    useForm<BankAccountFormValues>({
+      resolver: zodResolver(bankAccountSchema),
+      defaultValues: DEFAULTS,
+    })
 
   useEffect(() => {
     const a = editing.data
@@ -62,7 +74,26 @@ export function BankAccountForm({ accountId, readOnly = false, onSaved, onCancel
             <input {...register('accountNumber')} className={inputCls} />
           </Field>
           <Field label="Tên ngân hàng" required error={formState.errors.bankName?.message}>
-            <input {...register('bankName')} className={inputCls} />
+            <Select
+              value={watch('bankName') || undefined}
+              onValueChange={(v) => setValue('bankName', v, { shouldValidate: true })}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Chọn ngân hàng" />
+              </SelectTrigger>
+              <SelectContent>
+                {/* Giá trị cũ không còn trong danh mục (ngừng sử dụng / nhập tay) vẫn hiển thị được. */}
+                {watch('bankName') &&
+                  !banks.data?.data.some((b) => b.shortName === watch('bankName')) && (
+                    <SelectItem value={watch('bankName')}>{watch('bankName')}</SelectItem>
+                  )}
+                {banks.data?.data.map((b) => (
+                  <SelectItem key={b.id} value={b.shortName}>
+                    {b.shortName} - {b.fullName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field label="Tên chi nhánh ngân hàng">
             <input {...register('bankBranch')} className={inputCls} />
