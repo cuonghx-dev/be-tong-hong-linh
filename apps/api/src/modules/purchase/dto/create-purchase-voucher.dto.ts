@@ -1,4 +1,4 @@
-import { PaymentMethod, PurchaseOrigin, PurchasePaymentMode, PurchaseVoucherType } from '@app/shared'
+import { PurchaseOrigin, PurchasePaymentMode, PurchaseVoucherType } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
@@ -76,7 +76,7 @@ export class CreatePurchaseVoucherDto {
   @IsEnum(PurchaseVoucherType)
   type!: PurchaseVoucherType
 
-  @ApiPropertyOptional({ enum: PurchaseOrigin, description: 'Nguồn gốc: trong nước / nhập khẩu' })
+  @ApiPropertyOptional({ enum: PurchaseOrigin, description: 'Nguồn gốc: trong nước' })
   @IsOptional()
   @IsEnum(PurchaseOrigin)
   origin?: PurchaseOrigin
@@ -84,11 +84,6 @@ export class CreatePurchaseVoucherDto {
   @ApiProperty({ enum: PurchasePaymentMode })
   @IsEnum(PurchasePaymentMode)
   paymentMode!: PurchasePaymentMode
-
-  @ApiPropertyOptional({ enum: PaymentMethod })
-  @IsOptional()
-  @IsEnum(PaymentMethod)
-  paymentMethod?: PaymentMethod
 
   @ApiPropertyOptional({ description: 'Nhận kèm hóa đơn' })
   @IsOptional()

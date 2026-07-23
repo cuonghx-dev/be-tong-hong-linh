@@ -235,7 +235,8 @@ enum SupplierType {
   INDIVIDUAL
 }
 
-// Hình thức thanh toán (khi thanh toán ngay).
+// Hình thức thanh toán khi thu tiền khách hàng (đối trừ công nợ):
+// tiền mặt → phiếu thu; chuyển khoản → thu tiền gửi.
 enum PaymentMethod {
   CASH
   BANK_TRANSFER
@@ -275,7 +276,6 @@ model PurchaseVoucher {
   type               PurchaseVoucherType
   origin             PurchaseOrigin        @default(DOMESTIC)
   paymentMode        PurchasePaymentMode   @default(UNPAID) @map("payment_mode")
-  paymentMethod      PaymentMethod?        @map("payment_method")
   receiveWithInvoice Boolean               @default(false) @map("receive_with_invoice")
   voucherNo          String                @unique @map("voucher_no")
   invoiceNo          String?               @map("invoice_no")

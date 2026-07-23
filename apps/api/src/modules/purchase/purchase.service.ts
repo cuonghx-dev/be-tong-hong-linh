@@ -121,7 +121,6 @@ export class PurchaseService {
           type: dto.type,
           origin: dto.origin ?? 'DOMESTIC',
           paymentMode: dto.paymentMode,
-          paymentMethod: dto.paymentMethod ?? null,
           receiveWithInvoice: dto.receiveWithInvoice ?? false,
           voucherNo,
           invoiceNo: dto.invoiceNo ?? null,
@@ -190,7 +189,6 @@ export class PurchaseService {
       const data: Prisma.PurchaseVoucherUpdateInput = {
         origin: dto.origin ?? undefined,
         paymentMode: dto.paymentMode ?? undefined,
-        paymentMethod: dto.paymentMethod ?? undefined,
         receiveWithInvoice: dto.receiveWithInvoice ?? undefined,
         invoiceNo: dto.invoiceNo ?? undefined,
         postingDate: dto.postingDate ? new Date(dto.postingDate) : undefined,
@@ -631,7 +629,6 @@ function toVoucherDto(v: VoucherWithLines) {
     type: v.type,
     origin: v.origin,
     paymentMode: v.paymentMode,
-    paymentMethod: v.paymentMethod,
     receiveWithInvoice: v.receiveWithInvoice,
     voucherNo: v.voucherNo,
     invoiceNo: v.invoiceNo,

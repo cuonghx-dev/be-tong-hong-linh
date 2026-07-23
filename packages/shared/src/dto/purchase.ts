@@ -1,6 +1,5 @@
 // Type request/response phân hệ Mua hàng (03-mua-hang) — dùng chung FE ↔ BE.
 import type {
-  PaymentMethod,
   PurchaseOrigin,
   PurchasePaymentMode,
   PurchasePaymentStatus,
@@ -33,9 +32,8 @@ export interface PurchaseVoucherLineDto {
 export interface PurchaseVoucherDto {
   id: string
   type: PurchaseVoucherType
-  origin: PurchaseOrigin // Nguồn gốc: trong nước / nhập khẩu
+  origin: PurchaseOrigin // Nguồn gốc: trong nước
   paymentMode: PurchasePaymentMode
-  paymentMethod: PaymentMethod | null // Khi thanh toán ngay
   receiveWithInvoice: boolean // Nhận kèm hóa đơn
   voucherNo: string // vd NK07099, MH0326/2025
   invoiceNo: string | null // Số hóa đơn
@@ -91,7 +89,6 @@ export interface CreatePurchaseVoucherInput {
   type: PurchaseVoucherType
   origin?: PurchaseOrigin // Mặc định trong nước (DOMESTIC)
   paymentMode: PurchasePaymentMode
-  paymentMethod?: PaymentMethod | null
   receiveWithInvoice?: boolean
   invoiceNo?: string | null
   postingDate: string
