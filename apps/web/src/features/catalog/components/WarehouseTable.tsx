@@ -125,7 +125,6 @@ export function WarehouseTable() {
               <th className="px-3 py-2">Mã kho</th>
               <th className="px-3 py-2">Tên kho</th>
               <th className="px-3 py-2">Địa&nbsp;chỉ</th>
-              <th className="px-3 py-2">Chi&nbsp;nhánh</th>
               <th className="px-3 py-2">Trạng&nbsp;thái</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức&nbsp;năng
@@ -135,14 +134,14 @@ export function WarehouseTable() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={6} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -152,7 +151,7 @@ export function WarehouseTable() {
             )}
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
                   Chưa có kho nào.
                 </td>
               </tr>
@@ -172,7 +171,6 @@ export function WarehouseTable() {
                 </td>
                 <td className="max-w-[260px] truncate px-3 py-2 text-slate-700">{r.name}</td>
                 <td className="max-w-[220px] truncate px-3 py-2 text-slate-600">{r.address}</td>
-                <td className="max-w-[240px] truncate px-3 py-2 text-slate-600">{r.branch}</td>
                 <td className="px-3 py-2">
                   <span
                     className={cn(
