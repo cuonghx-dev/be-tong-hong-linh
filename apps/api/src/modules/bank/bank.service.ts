@@ -271,15 +271,15 @@ export class BankService {
   // Public API cho SalesModule (đối trừ công nợ): sinh thu tiền gửi Nợ 1121 /
   // Có 131 trong transaction của phía gọi. Dòng Có lấy từ input (TK công nợ
   // của từng chứng từ bán được đối trừ).
-  async createCustomerReceipt(tx: Prisma.TransactionClient, input: SalesBankReceiptInput) {
+  async createCustomerReceipt(tx: Prisma.TransactionClient, input: BankCustomerReceiptInput) {
     const voucherNo = await nextVoucherNo(tx, BankVoucherType.RECEIPT, input.voucherDate)
     const created = await tx.bankVoucher.create({
       data: {
         type: BankVoucherType.RECEIPT,
         category: BankVoucherCategory.RECEIPT,
         voucherNo,
-        ...salesReceiptData(input),
-        lines: { create: salesReceiptLines(input) },
+        ...customerReceiptData(input),
+        lines: { create: customerReceiptLines(input) },
       },
       select: { id: true, voucherNo: true },
     })
@@ -289,7 +289,7 @@ export class BankService {
 }
 
 // Dữ liệu thu tiền gửi tự sinh từ thu tiền khách hàng theo hóa đơn (đối trừ công nợ).
-export type SalesBankReceiptInput = {
+export type BankCustomerReceiptInput = {
   postingDate: Date
   voucherDate: Date
   customerId: string | null
@@ -300,11 +300,11 @@ export type SalesBankReceiptInput = {
   posted: boolean
   bankAccountNo: string | null
   bankName: string | null
-  // Dòng hạch toán phía Có (doanh thu theo dòng hàng + thuế GTGT); Nợ luôn 1121.
+  // Dòng hạch toán phía Có (TK công nợ của từng chứng từ bán được đối trừ); Nợ luôn 1121.
   lines: { description: string | null; creditAccount: string; amount: Prisma.Decimal }[]
 }
 
-function salesReceiptData(input: SalesBankReceiptInput) {
+function customerReceiptData(input: BankCustomerReceiptInput) {
   return {
     postingDate: input.postingDate,
     voucherDate: input.voucherDate,
@@ -321,7 +321,7 @@ function salesReceiptData(input: SalesBankReceiptInput) {
   }
 }
 
-function salesReceiptLines(input: SalesBankReceiptInput) {
+function customerReceiptLines(input: BankCustomerReceiptInput) {
   return input.lines.map((l, i) => ({
     lineNo: i + 1,
     description: l.description,
