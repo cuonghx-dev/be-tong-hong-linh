@@ -365,32 +365,19 @@ function purchaseReceiptLines(input: PurchaseReceiptInput) {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 // Định khoản TK Nợ (kho) mặc định theo loại phiếu:
-//   mua hàng/hàng bán trả lại → 156; thành phẩm SX → 155; khác → 152.
+//   mua hàng → 156; thành phẩm SX → 155.
 function defaultDebitAccount(type: InventoryReceiptType): string {
-  switch (type) {
-    case InventoryReceiptType.FINISHED_GOODS:
-      return CHART_OF_ACCOUNTS.FINISHED_GOODS
-    case InventoryReceiptType.PURCHASE:
-    case InventoryReceiptType.SALES_RETURN:
-      return CHART_OF_ACCOUNTS.GOODS
-    default:
-      return CHART_OF_ACCOUNTS.MATERIAL
-  }
+  return type === InventoryReceiptType.FINISHED_GOODS
+    ? CHART_OF_ACCOUNTS.FINISHED_GOODS
+    : CHART_OF_ACCOUNTS.GOODS
 }
 
 // Định khoản TK Có (đối ứng) mặc định theo loại phiếu:
-//   mua hàng → 331; thành phẩm SX → 154; hàng bán trả lại → 632; khác → tự nhập.
-function defaultCreditAccount(type: InventoryReceiptType): string | null {
-  switch (type) {
-    case InventoryReceiptType.PURCHASE:
-      return CHART_OF_ACCOUNTS.PAYABLE
-    case InventoryReceiptType.FINISHED_GOODS:
-      return CHART_OF_ACCOUNTS.WIP
-    case InventoryReceiptType.SALES_RETURN:
-      return CHART_OF_ACCOUNTS.COGS
-    default:
-      return null
-  }
+//   mua hàng → 331; thành phẩm SX → 154.
+function defaultCreditAccount(type: InventoryReceiptType): string {
+  return type === InventoryReceiptType.FINISHED_GOODS
+    ? CHART_OF_ACCOUNTS.WIP
+    : CHART_OF_ACCOUNTS.PAYABLE
 }
 
 // Trích tên NCC từ diễn giải nhập kho mua hàng: "Mua hàng của <NCC> theo hóa đơn số X".

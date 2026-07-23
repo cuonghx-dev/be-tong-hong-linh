@@ -31,12 +31,12 @@ export class CreateInventoryReceiptLineDto {
   @IsString()
   warehouseId?: string
 
-  @ApiPropertyOptional({ description: 'TK Nợ (kho 152/155/156)' })
+  @ApiPropertyOptional({ description: 'TK Nợ (kho 155/156)' })
   @IsOptional()
   @IsString()
   debitAccount?: string
 
-  @ApiPropertyOptional({ description: 'TK Có (đối ứng 331/154/632/…)' })
+  @ApiPropertyOptional({ description: 'TK Có (đối ứng 331/154)' })
   @IsOptional()
   @IsString()
   creditAccount?: string

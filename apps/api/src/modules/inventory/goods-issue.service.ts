@@ -293,8 +293,6 @@ export class GoodsIssueService {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-// Định khoản TK Nợ mặc định theo lý do xuất:
-//   bán hàng → 632 (giá vốn); sản xuất → 621 (CP NVL trực tiếp); khác → 632.
 // ── Phiếu xuất tự sinh từ chứng từ bán hàng kiêm phiếu xuất (category SALES) ─
 // Public API cho SalesModule: chạy trong transaction của phía gọi. Số XK cấp
 // riêng theo sequence kho (MISA cũng tách số XK khỏi số chứng từ bán hàng).
@@ -354,6 +352,8 @@ function salesIssueLines(input: SalesIssueInput) {
   }))
 }
 
+// Định khoản TK Nợ mặc định theo lý do xuất:
+//   bán hàng → 632 (giá vốn); sản xuất → 621 (CP NVL trực tiếp).
 function defaultDebitAccount(category: GoodsIssueCategory): string {
   return category === GoodsIssueCategory.PRODUCTION
     ? CHART_OF_ACCOUNTS.DIRECT_MATERIAL_COST
@@ -361,7 +361,7 @@ function defaultDebitAccount(category: GoodsIssueCategory): string {
 }
 
 // Định khoản TK Có (kho) mặc định theo lý do xuất:
-//   sản xuất → 152 (NVL); bán hàng/khác → 156 (hàng hóa).
+//   sản xuất → 152 (NVL); bán hàng → 156 (hàng hóa).
 function defaultCreditAccount(category: GoodsIssueCategory): string {
   return category === GoodsIssueCategory.PRODUCTION
     ? CHART_OF_ACCOUNTS.MATERIAL

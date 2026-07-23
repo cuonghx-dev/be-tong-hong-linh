@@ -38,12 +38,10 @@ function toNumber(v: unknown): number {
   return Number.isFinite(n) ? n : 0
 }
 
-// Lý do xuất suy từ text cột "Loại chứng từ".
+// Lý do xuất suy từ text cột "Loại chứng từ" — chỉ còn 2 loại, mặc định bán hàng.
 function categoryFromText(text: string | null): GoodsIssueCategory {
-  if (!text) return GoodsIssueCategory.OTHER
-  if (text.includes('bán hàng')) return GoodsIssueCategory.SALES
-  if (text.includes('sản xuất')) return GoodsIssueCategory.PRODUCTION
-  return GoodsIssueCategory.OTHER
+  if (text?.includes('sản xuất')) return GoodsIssueCategory.PRODUCTION
+  return GoodsIssueCategory.SALES
 }
 
 // Parse file xlsx danh sách xuất kho (mức tổng hợp, không có dòng hàng) → danh sách phiếu.

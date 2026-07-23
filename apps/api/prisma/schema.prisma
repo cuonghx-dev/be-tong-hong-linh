@@ -345,17 +345,16 @@ model PurchaseVoucherLine {
 // ── Kho — Nhập kho (05-kho) ──────────────────────────────────────────────────
 
 // Loại chứng từ Phiếu nhập kho — quyết định định khoản TK Nợ/Có mặc định.
+// Chỉ 2 loại theo Nhap_kho.xlsx: mua hàng trong nước chưa thanh toán + thành phẩm SX.
 enum InventoryReceiptType {
   PURCHASE
   FINISHED_GOODS
-  SALES_RETURN
-  OTHER
 }
 
 // Phiếu nhập kho (Nhập kho).
 model InventoryReceipt {
   id              String                 @id @default(uuid())
-  receiptType     InventoryReceiptType   @default(OTHER) @map("receipt_type")
+  receiptType     InventoryReceiptType   @default(PURCHASE) @map("receipt_type")
   voucherNo       String                 @unique @map("voucher_no")
   postingDate     DateTime               @map("posting_date") @db.Date
   voucherDate     DateTime               @map("voucher_date") @db.Date
@@ -408,7 +407,6 @@ model InventoryReceiptLine {
 enum GoodsIssueCategory {
   SALES
   PRODUCTION
-  OTHER
 }
 
 // Phiếu xuất kho (Xuất kho) — ghi giảm tồn kho theo bút toán kép.

@@ -153,20 +153,17 @@ export enum ReceivableStatus {
 // Kho (05-kho) ----------------------------------------------------------------
 
 // Loại chứng từ Phiếu nhập kho (Nhập kho) — quyết định định khoản TK Nợ/Có mặc định.
-// Đối chiếu dropdown "Loại chứng từ" trên form MISA (vd "3. Khác (NVL thừa, HH thuê gia công, …)").
+// Đối chiếu dropdown "Loại chứng từ" trên form MISA — chỉ dùng 2 loại (Nhap_kho.xlsx).
 export enum InventoryReceiptType {
-  Purchase = 'PURCHASE', // 1. Mua hàng trong nước nhập kho (Nợ 156 / Có 331)
+  Purchase = 'PURCHASE', // 1. Mua hàng trong nước nhập kho chưa thanh toán (Nợ 156 / Có 331)
   FinishedGoods = 'FINISHED_GOODS', // 2. Nhập kho thành phẩm sản xuất (Nợ 155 / Có 154)
-  SalesReturn = 'SALES_RETURN', // 3. Nhập kho hàng bán bị trả lại (Nợ 156 / Có 632)
-  Other = 'OTHER', // 4. Khác (NVL thừa, HH thuê gia công, …) (Nợ 152 / Có tự nhập)
 }
 
 // Lý do xuất kho (Xuất kho) — quyết định định khoản TK Nợ/Có mặc định.
-// Đối chiếu dropdown "Lý do xuất" trên form MISA (vd "1. Bán hàng").
+// Đối chiếu dropdown "Lý do xuất" trên form MISA — chỉ dùng 2 loại (Xuat_kho.xlsx).
 export enum GoodsIssueCategory {
   Sales = 'SALES', // 1. Xuất kho bán hàng (Nợ 632 / Có 156)
   Production = 'PRODUCTION', // 2. Xuất kho cho sản xuất (Nợ 621 / Có 152)
-  Other = 'OTHER', // 3. Xuất kho khác (Nợ 632 tự nhập / Có 156)
 }
 
 // Danh mục (05-danh-muc) ------------------------------------------------------

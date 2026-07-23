@@ -34,13 +34,10 @@ function toNumber(v: unknown): number {
   return Number.isFinite(n) ? n : 0
 }
 
-// Loại chứng từ suy từ text cột "Loại chứng từ".
+// Loại chứng từ suy từ text cột "Loại chứng từ" — chỉ còn 2 loại, mặc định mua hàng.
 function typeFromText(text: string | null): InventoryReceiptType {
-  if (!text) return InventoryReceiptType.OTHER
-  if (text.includes('bán bị trả lại')) return InventoryReceiptType.SALES_RETURN
-  if (text.includes('thành phẩm')) return InventoryReceiptType.FINISHED_GOODS
-  if (text.includes('Mua hàng')) return InventoryReceiptType.PURCHASE
-  return InventoryReceiptType.OTHER
+  if (text?.includes('thành phẩm')) return InventoryReceiptType.FINISHED_GOODS
+  return InventoryReceiptType.PURCHASE
 }
 
 // Parse file xlsx danh sách nhập kho (mức tổng hợp, không có dòng hàng) → danh sách phiếu.
