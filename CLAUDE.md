@@ -22,7 +22,6 @@ pnpm --filter @app/api dev            # nest start --watch
 pnpm --filter @app/api prisma:generate
 pnpm --filter @app/api prisma:migrate # sau khi sửa schema.prisma
 pnpm --filter @app/api prisma:studio
-pnpm --filter @app/api seed           # node prisma/seed.mjs
 pnpm --filter @app/web dev
 ```
 
