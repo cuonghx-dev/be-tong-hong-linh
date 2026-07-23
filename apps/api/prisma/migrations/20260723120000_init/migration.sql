@@ -1,11 +1,11 @@
 -- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'KETOAN');
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'KETOAN', 'THUQUY', 'VIEWER');
 
 -- CreateEnum
 CREATE TYPE "CashVoucherType" AS ENUM ('RECEIPT', 'PAYMENT');
 
 -- CreateEnum
-CREATE TYPE "CashVoucherCategory" AS ENUM ('SALES_CASH', 'RECEIPT_BANK_WITHDRAW', 'RECEIPT_EMPLOYEE_ADVANCE', 'RECEIPT_CUSTOMER', 'RECEIPT', 'RECEIPT_LOAN_RECOVERY', 'PAYMENT_EMPLOYEE_ADVANCE', 'PAYMENT', 'DEPOSIT_TO_BANK', 'PAYMENT_SUPPLIER', 'PAYMENT_PURCHASE_WITH_INVOICE', 'PAYMENT_SALARY_ADVANCE', 'PAYMENT_SALARY', 'PAYMENT_TO_BRANCH', 'PAYMENT_LOAN', 'PAYMENT_CIT_TAX', 'PURCHASE_SERVICE_CASH', 'PURCHASE_GOODS_CASH');
+CREATE TYPE "CashVoucherCategory" AS ENUM ('SALES_CASH', 'RECEIPT', 'PAYMENT_EMPLOYEE_ADVANCE', 'PAYMENT_PURCHASE_WITH_INVOICE', 'DEPOSIT_TO_BANK', 'PAYMENT', 'PURCHASE_SERVICE_CASH', 'PURCHASE_GOODS_CASH');
 
 -- CreateEnum
 CREATE TYPE "PartnerType" AS ENUM ('CUSTOMER', 'SUPPLIER', 'EMPLOYEE');
@@ -14,7 +14,7 @@ CREATE TYPE "PartnerType" AS ENUM ('CUSTOMER', 'SUPPLIER', 'EMPLOYEE');
 CREATE TYPE "BankVoucherType" AS ENUM ('RECEIPT', 'PAYMENT');
 
 -- CreateEnum
-CREATE TYPE "BankVoucherCategory" AS ENUM ('RECEIPT', 'PAYMENT', 'SALES_BANK', 'PURCHASE_SERVICE_BANK', 'PURCHASE_GOODS_BANK');
+CREATE TYPE "BankVoucherCategory" AS ENUM ('RECEIPT', 'INTERNAL_TRANSFER', 'PAYMENT');
 
 -- CreateEnum
 CREATE TYPE "BankPaymentMethod" AS ENUM ('UNC', 'TRANSFER', 'CHECK');
@@ -23,7 +23,7 @@ CREATE TYPE "BankPaymentMethod" AS ENUM ('UNC', 'TRANSFER', 'CHECK');
 CREATE TYPE "PurchaseVoucherType" AS ENUM ('STOCK', 'NON_STOCK', 'SERVICE');
 
 -- CreateEnum
-CREATE TYPE "PurchaseOrigin" AS ENUM ('DOMESTIC', 'IMPORT');
+CREATE TYPE "PurchaseOrigin" AS ENUM ('DOMESTIC');
 
 -- CreateEnum
 CREATE TYPE "PurchasePaymentMode" AS ENUM ('UNPAID', 'IMMEDIATE');
@@ -41,13 +41,13 @@ CREATE TYPE "SupplierType" AS ENUM ('ORG', 'INDIVIDUAL');
 CREATE TYPE "PaymentMethod" AS ENUM ('CASH', 'BANK_TRANSFER');
 
 -- CreateEnum
-CREATE TYPE "InventoryReceiptType" AS ENUM ('PURCHASE', 'FINISHED_GOODS', 'SALES_RETURN', 'OTHER');
+CREATE TYPE "InventoryReceiptType" AS ENUM ('PURCHASE', 'FINISHED_GOODS');
 
 -- CreateEnum
-CREATE TYPE "GoodsIssueCategory" AS ENUM ('SALES', 'PRODUCTION', 'OTHER');
+CREATE TYPE "GoodsIssueCategory" AS ENUM ('SALES', 'PRODUCTION');
 
 -- CreateEnum
-CREATE TYPE "SalesVoucherType" AS ENUM ('DOMESTIC_GOODS', 'DOMESTIC_SERVICE');
+CREATE TYPE "SalesVoucherType" AS ENUM ('DOMESTIC_GOODS');
 
 -- CreateEnum
 CREATE TYPE "SalesPaymentMode" AS ENUM ('UNPAID', 'PAID_NOW');
@@ -69,6 +69,9 @@ CREATE TYPE "IncomeExpenseType" AS ENUM ('INCOME', 'EXPENSE');
 
 -- CreateEnum
 CREATE TYPE "TransferSide" AS ENUM ('DEBIT', 'CREDIT', 'BOTH');
+
+-- CreateEnum
+CREATE TYPE "OrgUnitLevel" AS ENUM ('COMPANY', 'BRANCH', 'DEPARTMENT');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -102,6 +105,7 @@ CREATE TABLE "cash_vouchers" (
     "attachment_count" INTEGER NOT NULL DEFAULT 0,
     "total_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "branch_id" TEXT,
+    "posted" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "created_by" TEXT,
@@ -152,6 +156,7 @@ CREATE TABLE "bank_vouchers" (
     "attachment_count" INTEGER NOT NULL DEFAULT 0,
     "total_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "branch_id" TEXT,
+    "posted" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "created_by" TEXT,
@@ -191,6 +196,7 @@ CREATE TABLE "suppliers" (
     "is_internal" BOOLEAN NOT NULL DEFAULT false,
     "debt_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "invoice_risk" TEXT,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "created_by" TEXT,
@@ -204,7 +210,6 @@ CREATE TABLE "purchase_vouchers" (
     "type" "PurchaseVoucherType" NOT NULL,
     "origin" "PurchaseOrigin" NOT NULL DEFAULT 'DOMESTIC',
     "payment_mode" "PurchasePaymentMode" NOT NULL DEFAULT 'UNPAID',
-    "payment_method" "PaymentMethod",
     "receive_with_invoice" BOOLEAN NOT NULL DEFAULT false,
     "voucher_no" TEXT NOT NULL,
     "invoice_no" TEXT,
@@ -228,8 +233,11 @@ CREATE TABLE "purchase_vouchers" (
     "stock_value" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "einvoice_lookup_code" TEXT,
     "einvoice_lookup_url" TEXT,
+    "payment_id" TEXT,
+    "receipt_id" TEXT,
     "receive_status" "PurchaseReceiveStatus" NOT NULL DEFAULT 'NOT_RECEIVED',
     "payment_status" "PurchasePaymentStatus" NOT NULL DEFAULT 'UNPAID',
+    "posted" BOOLEAN NOT NULL DEFAULT true,
     "branch_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -262,7 +270,7 @@ CREATE TABLE "purchase_voucher_lines" (
 -- CreateTable
 CREATE TABLE "inventory_receipts" (
     "id" TEXT NOT NULL,
-    "receipt_type" "InventoryReceiptType" NOT NULL DEFAULT 'OTHER',
+    "receipt_type" "InventoryReceiptType" NOT NULL DEFAULT 'PURCHASE',
     "voucher_no" TEXT NOT NULL,
     "posting_date" DATE NOT NULL,
     "voucher_date" DATE NOT NULL,
@@ -275,6 +283,7 @@ CREATE TABLE "inventory_receipts" (
     "attachment_count" INTEGER NOT NULL DEFAULT 0,
     "total_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "branch_name" TEXT,
+    "posted" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "created_by" TEXT,
@@ -321,6 +330,7 @@ CREATE TABLE "goods_issue_vouchers" (
     "sales_doc_status" TEXT,
     "invoice_issue_status" TEXT,
     "tax_authority_code" TEXT,
+    "posted" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "created_by" TEXT,
@@ -356,6 +366,8 @@ CREATE TABLE "customers" (
     "type" "CustomerType" NOT NULL DEFAULT 'ORG',
     "is_supplier" BOOLEAN NOT NULL DEFAULT false,
     "is_internal" BOOLEAN NOT NULL DEFAULT false,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "debt_reminder_on" BOOLEAN NOT NULL DEFAULT true,
     "tax_code" TEXT,
     "budget_relation_code" TEXT,
     "phone" TEXT,
@@ -377,9 +389,9 @@ CREATE TABLE "customers" (
 CREATE TABLE "sales_vouchers" (
     "id" TEXT NOT NULL,
     "voucher_no" TEXT NOT NULL,
+    "invoice_no" TEXT,
     "voucher_type" "SalesVoucherType" NOT NULL,
     "payment_mode" "SalesPaymentMode" NOT NULL DEFAULT 'UNPAID',
-    "payment_method" "PaymentMethod",
     "is_inventory_issue" BOOLEAN NOT NULL DEFAULT false,
     "with_invoice" BOOLEAN NOT NULL DEFAULT false,
     "is_pos_invoice" BOOLEAN NOT NULL DEFAULT false,
@@ -402,6 +414,8 @@ CREATE TABLE "sales_vouchers" (
     "einvoice_lookup_code" TEXT,
     "einvoice_lookup_url" TEXT,
     "receipt_id" TEXT,
+    "issue_id" TEXT,
+    "posted" BOOLEAN NOT NULL DEFAULT true,
     "branch_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -433,6 +447,18 @@ CREATE TABLE "sales_voucher_lines" (
 );
 
 -- CreateTable
+CREATE TABLE "payment_allocations" (
+    "id" TEXT NOT NULL,
+    "sales_voucher_id" TEXT NOT NULL,
+    "cash_voucher_id" TEXT,
+    "bank_voucher_id" TEXT,
+    "amount" DECIMAL(18,2) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "payment_allocations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "general_vouchers" (
     "id" TEXT NOT NULL,
     "voucher_no" TEXT NOT NULL,
@@ -441,6 +467,7 @@ CREATE TABLE "general_vouchers" (
     "description" TEXT,
     "total_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "branch_id" TEXT,
+    "posted" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "created_by" TEXT,
@@ -785,6 +812,22 @@ CREATE TABLE "book_locks" (
     CONSTRAINT "book_locks_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "organization_units" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "address" TEXT,
+    "level" "OrgUnitLevel" NOT NULL DEFAULT 'DEPARTMENT',
+    "parent_id" TEXT,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_by" TEXT,
+
+    CONSTRAINT "organization_units_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
@@ -871,6 +914,15 @@ CREATE INDEX "sales_vouchers_payment_mode_idx" ON "sales_vouchers"("payment_mode
 
 -- CreateIndex
 CREATE INDEX "sales_voucher_lines_voucher_id_idx" ON "sales_voucher_lines"("voucher_id");
+
+-- CreateIndex
+CREATE INDEX "payment_allocations_sales_voucher_id_idx" ON "payment_allocations"("sales_voucher_id");
+
+-- CreateIndex
+CREATE INDEX "payment_allocations_cash_voucher_id_idx" ON "payment_allocations"("cash_voucher_id");
+
+-- CreateIndex
+CREATE INDEX "payment_allocations_bank_voucher_id_idx" ON "payment_allocations"("bank_voucher_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "general_vouchers_voucher_no_key" ON "general_vouchers"("voucher_no");
@@ -1001,6 +1053,15 @@ CREATE UNIQUE INDEX "bank_account_opening_balances_account_code_bank_account_id_
 -- CreateIndex
 CREATE UNIQUE INDEX "inventory_opening_balances_product_id_warehouse_code_key" ON "inventory_opening_balances"("product_id", "warehouse_code");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "organization_units_code_key" ON "organization_units"("code");
+
+-- CreateIndex
+CREATE INDEX "organization_units_name_idx" ON "organization_units"("name");
+
+-- CreateIndex
+CREATE INDEX "organization_units_parent_id_idx" ON "organization_units"("parent_id");
+
 -- AddForeignKey
 ALTER TABLE "cash_voucher_lines" ADD CONSTRAINT "cash_voucher_lines_voucher_id_fkey" FOREIGN KEY ("voucher_id") REFERENCES "cash_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -1021,6 +1082,15 @@ ALTER TABLE "sales_vouchers" ADD CONSTRAINT "sales_vouchers_customer_id_fkey" FO
 
 -- AddForeignKey
 ALTER TABLE "sales_voucher_lines" ADD CONSTRAINT "sales_voucher_lines_voucher_id_fkey" FOREIGN KEY ("voucher_id") REFERENCES "sales_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "payment_allocations" ADD CONSTRAINT "payment_allocations_sales_voucher_id_fkey" FOREIGN KEY ("sales_voucher_id") REFERENCES "sales_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "payment_allocations" ADD CONSTRAINT "payment_allocations_cash_voucher_id_fkey" FOREIGN KEY ("cash_voucher_id") REFERENCES "cash_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "payment_allocations" ADD CONSTRAINT "payment_allocations_bank_voucher_id_fkey" FOREIGN KEY ("bank_voucher_id") REFERENCES "bank_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "general_voucher_lines" ADD CONSTRAINT "general_voucher_lines_voucher_id_fkey" FOREIGN KEY ("voucher_id") REFERENCES "general_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
