@@ -305,7 +305,7 @@ export async function enrichSeed(prisma: PrismaService): Promise<EnrichStats> {
         batch.map((p) =>
           prisma.salesVoucher.update({
             where: { id: p.salesId },
-            data: { receiptId: p.cashId, paymentMode: 'PAID_NOW', paymentMethod: 'CASH' },
+            data: { receiptId: p.cashId, paymentMode: 'PAID_NOW' },
           }),
         ),
       )
@@ -499,7 +499,6 @@ export async function backfillPurchaseCashSources(prisma: PrismaService): Promis
         type: service ? 'SERVICE' : 'NON_STOCK',
         origin: 'DOMESTIC',
         paymentMode: 'IMMEDIATE',
-        paymentMethod: 'CASH',
         receiveWithInvoice: true,
         voucherNo: service ? nextMDV() : nextMH(),
         postingDate: pc.postingDate,

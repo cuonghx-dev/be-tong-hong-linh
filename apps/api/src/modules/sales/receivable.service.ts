@@ -1,7 +1,7 @@
 import type { CollectPaymentResultDto, OpenReceivableVoucherDto, Paginated } from '@app/shared'
-import { CHART_OF_ACCOUNTS, ReceivableAging, ReceivableStatus } from '@app/shared'
+import { CHART_OF_ACCOUNTS, PaymentMethod, ReceivableAging, ReceivableStatus } from '@app/shared'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { PaymentMethod, Prisma, SalesPaymentMode } from '@prisma/client'
+import { Prisma, SalesPaymentMode } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { BankService } from '../bank/bank.service'
 import { BookLockService } from '../book-lock/book-lock.service'
@@ -200,7 +200,7 @@ export class ReceivableService {
   // chứng từ bán hàng — atomic trong 1 transaction.
   async collect(dto: CollectPaymentDto): Promise<CollectPaymentResultDto> {
     await this.bookLock.assertUnlocked(dto.postingDate)
-    if (dto.paymentMethod === PaymentMethod.BANK_TRANSFER && !dto.bankAccountNo) {
+    if (dto.paymentMethod === PaymentMethod.BankTransfer && !dto.bankAccountNo) {
       throw new BadRequestException('Thu tiền chuyển khoản phải chọn tài khoản ngân hàng nhận')
     }
 
@@ -264,7 +264,7 @@ export class ReceivableService {
         lines,
       }
       const receipt =
-        dto.paymentMethod === PaymentMethod.BANK_TRANSFER
+        dto.paymentMethod === PaymentMethod.BankTransfer
           ? await this.bank.createCustomerReceipt(tx, {
               ...input,
               bankAccountNo: dto.bankAccountNo ?? null,
@@ -275,8 +275,8 @@ export class ReceivableService {
       await tx.paymentAllocation.createMany({
         data: dto.allocations.map((a) => ({
           salesVoucherId: a.salesVoucherId,
-          cashVoucherId: dto.paymentMethod === PaymentMethod.BANK_TRANSFER ? null : receipt.id,
-          bankVoucherId: dto.paymentMethod === PaymentMethod.BANK_TRANSFER ? receipt.id : null,
+          cashVoucherId: dto.paymentMethod === PaymentMethod.BankTransfer ? null : receipt.id,
+          bankVoucherId: dto.paymentMethod === PaymentMethod.BankTransfer ? receipt.id : null,
           amount: new Prisma.Decimal(a.amount),
         })),
       })
