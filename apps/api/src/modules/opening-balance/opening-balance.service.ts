@@ -9,6 +9,7 @@ import {
 } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { parseAccountBalanceXlsx } from './account-balance-import'
+import { parseBankAccountBalanceXlsx } from './bank-account-balance-import'
 import { parseFixedAssetXlsx } from './fixed-asset-import'
 import { parseInventoryBalanceXlsx } from './inventory-balance-import'
 import { parsePartnerBalanceXlsx } from './partner-balance-import'
@@ -303,6 +304,59 @@ export class OpeningBalanceService {
     })
 
     return this.listBankAccountBalances(accountCode)
+  }
+
+  // Nhập khẩu số dư tiền gửi của 1 TK từ file Excel (bỏ qua số TK không có trong danh mục
+  // và TK ngân hàng đã có số dư của TK này — như import số dư công nợ).
+  async importBankAccountBalancesXlsx(accountCode: string, buffer: Buffer) {
+    const code = accountCode.trim()
+    const parsed = parseBankAccountBalanceXlsx(buffer)
+    if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
+
+    const [bankAccounts, existing] = await Promise.all([
+      this.prisma.bankAccount.findMany({ select: { id: true, accountNumber: true } }),
+      this.prisma.bankAccountOpeningBalance.findMany({
+        where: { accountCode: code },
+        select: { bankAccountId: true },
+      }),
+    ])
+    const idByNumber = new Map(bankAccounts.map((a) => [a.accountNumber, a.id]))
+    const seen = new Set(existing.map((e) => e.bankAccountId))
+
+    const rows: Prisma.BankAccountOpeningBalanceCreateManyInput[] = []
+    for (const p of parsed) {
+      const bankAccountId = idByNumber.get(p.accountNumber)
+      const debit = Math.abs(p.debit)
+      const credit = Math.abs(p.credit)
+      if (!bankAccountId || seen.has(bankAccountId) || (debit === 0 && credit === 0)) continue
+      seen.add(bankAccountId) // chống trùng trong chính file
+      rows.push({
+        accountCode: code,
+        bankAccountId,
+        debitAmount: new Prisma.Decimal(debit),
+        creditAmount: new Prisma.Decimal(credit),
+      })
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const chunk = 500
+      for (let i = 0; i < rows.length; i += chunk) {
+        await tx.bankAccountOpeningBalance.createMany({ data: rows.slice(i, i + chunk) })
+      }
+      // Đồng bộ số dư TK tiền gửi = tổng chi tiết sau nhập (gồm cả dòng đã có trước đó).
+      const all = await tx.bankAccountOpeningBalance.findMany({
+        where: { accountCode: code },
+        select: { debitAmount: true, creditAmount: true },
+      })
+      const totalDebit = all.reduce((s, r) => s.add(r.debitAmount), new Prisma.Decimal(0))
+      const totalCredit = all.reduce((s, r) => s.add(r.creditAmount), new Prisma.Decimal(0))
+      await tx.accountOpeningBalance.updateMany({
+        where: { accountCode: code },
+        data: { debitAmount: totalDebit, creditAmount: totalCredit },
+      })
+    })
+
+    return { total: parsed.length, created: rows.length, skipped: parsed.length - rows.length }
   }
 
   // ── Tài sản cố định đầu kỳ (Danh_sach_tai_san_co_dinh_dau_ky.xlsx) ──────────

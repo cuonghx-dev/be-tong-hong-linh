@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { formatCurrency } from '@/shared/lib/currency'
+import { AddMenu } from '@/shared/ui/add-menu'
 import { SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import {
@@ -14,7 +15,10 @@ import {
 import { useToast } from '@/shared/ui/toast'
 import { AmountInput } from '../components/AmountInput'
 import { useBankAccountBalances } from '../api/useBankAccountBalances'
-import { useSaveBankAccountBalances } from '../api/useBankAccountBalanceMutations'
+import {
+  useImportBankAccountBalances,
+  useSaveBankAccountBalances,
+} from '../api/useBankAccountBalanceMutations'
 
 const PAGE_SIZES = [20, 50, 100]
 
@@ -34,6 +38,8 @@ export function BankAccountBalanceEntryPage() {
 
   const { data, isLoading, isError, refetch } = useBankAccountBalances(accountCode)
   const save = useSaveBankAccountBalances()
+  const importXlsx = useImportBankAccountBalances()
+  const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
   const [rows, setRows] = useState<EditRow[]>([])
@@ -114,6 +120,30 @@ export function BankAccountBalanceEntryPage() {
     setAddOpen(true)
   }
   const cancelAdd = () => setAddOpen(false)
+
+  // Nhập khẩu số dư tiền gửi từ file Excel cho TK đang mở.
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // cho phép chọn lại cùng file
+    if (!file) return
+    importXlsx.mutate(
+      { accountCode, file },
+      {
+        onSuccess: (r) =>
+          toast({
+            variant: 'success',
+            title: 'Nhập khẩu thành công',
+            description: `${r.created} tài khoản mới, bỏ qua ${r.skipped} (tổng ${r.total}).`,
+          }),
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: 'Nhập khẩu thất bại',
+            description: 'Kiểm tra lại file Excel.',
+          }),
+      },
+    )
+  }
 
   // Ghi cả bảng (backend thay thế toàn bộ số dư TK ngân hàng của TK bằng payload).
   const persist = (next: EditRow[]) => {
@@ -202,12 +232,20 @@ export function BankAccountBalanceEntryPage() {
             className="h-8 w-full rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
-        <button
-          onClick={openAdd}
-          className="ml-auto h-8 rounded-md bg-primary px-3 text-sm font-medium text-white hover:bg-primary/90"
-        >
-          Nhập số dư
-        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={onPickFile}
+        />
+        <div className="ml-auto">
+          <AddMenu
+            actions={[{ label: 'Nhập số dư', onClick: openAdd }]}
+            onImportExcel={() => fileRef.current?.click()}
+            importing={importXlsx.isPending}
+          />
+        </div>
       </div>
 
       {/* Table */}
