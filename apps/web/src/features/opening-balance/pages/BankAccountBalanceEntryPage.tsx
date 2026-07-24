@@ -54,14 +54,20 @@ export function BankAccountBalanceEntryPage() {
     )
   }, [data])
 
+  // Chỉ hiện TK ngân hàng đã có số dư (record). TK số dư 0 chưa tính là 1 dòng.
+  const records = useMemo(
+    () => rows.filter((r) => r.debitAmount !== 0 || r.creditAmount !== 0),
+    [rows],
+  )
+
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter(
+    if (!q) return records
+    return records.filter(
       (r) =>
         r.accountNumber.toLowerCase().includes(q) || r.bankName.toLowerCase().includes(q),
     )
-  }, [rows, keyword])
+  }, [records, keyword])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const current = Math.min(page, pageCount)
@@ -82,6 +88,18 @@ export function BankAccountBalanceEntryPage() {
   const [editing, setEditing] = useState<EditRow | null>(null)
   const [draft, setDraft] = useState<{ debit: number; credit: number }>({ debit: 0, credit: 0 })
 
+  // Thêm mới: chọn 1 TK ngân hàng (đã có trong danh mục) chưa có số dư rồi nhập Dư Nợ/Dư Có.
+  const [addOpen, setAddOpen] = useState(false)
+  const [addBankAccountId, setAddBankAccountId] = useState<string | null>(null)
+  const [addDraft, setAddDraft] = useState<{ debit: number; credit: number }>({ debit: 0, credit: 0 })
+
+  // TK ngân hàng còn chọn được ở modal Thêm = có trong danh mục nhưng chưa có số dư (record).
+  const addOptions = useMemo(
+    () => rows.filter((r) => r.debitAmount === 0 && r.creditAmount === 0),
+    [rows],
+  )
+  const addBankAccount = rows.find((r) => r.bankAccountId === addBankAccountId) ?? null
+
   const close = useNavigateBack('/opening-balance/so-du-tai-khoan')
 
   const startEdit = (r: EditRow) => {
@@ -90,15 +108,16 @@ export function BankAccountBalanceEntryPage() {
   }
   const cancelEdit = () => setEditing(null)
 
-  // Lưu dòng đang sửa → cập nhật rows rồi ghi cả bảng (backend thay thế dữ liệu cũ của TK).
-  const saveEdit = (bankAccountId: string) => {
-    const next = rows.map((r) =>
-      r.bankAccountId === bankAccountId
-        ? { ...r, debitAmount: draft.debit, creditAmount: draft.credit }
-        : r,
-    )
+  const openAdd = () => {
+    setAddBankAccountId(null)
+    setAddDraft({ debit: 0, credit: 0 })
+    setAddOpen(true)
+  }
+  const cancelAdd = () => setAddOpen(false)
+
+  // Ghi cả bảng (backend thay thế toàn bộ số dư TK ngân hàng của TK bằng payload).
+  const persist = (next: EditRow[]) => {
     setRows(next)
-    setEditing(null)
     save.mutate(
       {
         accountCode,
@@ -114,6 +133,36 @@ export function BankAccountBalanceEntryPage() {
           toast({ variant: 'error', title: 'Lưu thất bại', description: 'Kiểm tra lại dữ liệu.' }),
       },
     )
+  }
+
+  // Lưu dòng đang sửa.
+  const saveEdit = (bankAccountId: string) => {
+    const next = rows.map((r) =>
+      r.bankAccountId === bankAccountId
+        ? { ...r, debitAmount: draft.debit, creditAmount: draft.credit }
+        : r,
+    )
+    setEditing(null)
+    persist(next)
+  }
+
+  // Lưu dòng mới thêm: gán số dư cho TK ngân hàng đã chọn → trở thành 1 record.
+  const saveAdd = () => {
+    if (!addBankAccountId) {
+      toast({ variant: 'error', title: 'Chưa chọn tài khoản', description: 'Chọn 1 TK ngân hàng.' })
+      return
+    }
+    if (addDraft.debit === 0 && addDraft.credit === 0) {
+      toast({ variant: 'error', title: 'Chưa nhập số dư', description: 'Nhập Dư Nợ hoặc Dư Có.' })
+      return
+    }
+    const next = rows.map((r) =>
+      r.bankAccountId === addBankAccountId
+        ? { ...r, debitAmount: addDraft.debit, creditAmount: addDraft.credit }
+        : r,
+    )
+    setAddOpen(false)
+    persist(next)
   }
 
   return (
@@ -137,7 +186,7 @@ export function BankAccountBalanceEntryPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="border-b border-border px-4 py-2">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
         <div className="relative w-72">
           <SearchIcon
             size={15}
@@ -153,6 +202,12 @@ export function BankAccountBalanceEntryPage() {
             className="h-8 w-full rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
+        <button
+          onClick={openAdd}
+          className="ml-auto h-8 rounded-md bg-primary px-3 text-sm font-medium text-white hover:bg-primary/90"
+        >
+          Nhập số dư
+        </button>
       </div>
 
       {/* Table */}
@@ -189,7 +244,7 @@ export function BankAccountBalanceEntryPage() {
             {!isLoading && !isError && pageRows.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
-                  Không có tài khoản ngân hàng nào. Thêm ở danh mục trước khi nhập số dư.
+                  Chưa có số dư. Bấm “Nhập số dư” để chọn tài khoản ngân hàng và nhập số dư.
                 </td>
               </tr>
             )}
@@ -215,7 +270,7 @@ export function BankAccountBalanceEntryPage() {
               </tr>
             ))}
           </tbody>
-          {rows.length > 0 && (
+          {records.length > 0 && (
             <tfoot className="sticky bottom-0 border-t border-border bg-slate-50 font-semibold text-slate-800">
               <tr>
                 <td colSpan={3} className="px-3 py-2">
@@ -348,6 +403,71 @@ export function BankAccountBalanceEntryPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal thêm số dư: chọn TK ngân hàng (đã có trong danh mục) + nhập Dư Nợ/Dư Có */}
+      <Modal open={addOpen} onClose={cancelAdd} size="md" title="Nhập số dư tài khoản ngân hàng">
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-600">Số tài khoản</label>
+            <input
+              value={accountCode}
+              disabled
+              className="h-9 w-full rounded-md border border-border bg-slate-50 px-2 text-sm text-slate-500"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-600">
+              Tài khoản ngân hàng
+            </label>
+            <Select value={addBankAccountId ?? ''} onValueChange={setAddBankAccountId}>
+              <SelectTrigger className="h-9 w-full">
+                <SelectValue placeholder="Chọn tài khoản ngân hàng" />
+              </SelectTrigger>
+              <SelectContent>
+                {addOptions.map((r) => (
+                  <SelectItem key={r.bankAccountId} value={r.bankAccountId}>
+                    {r.accountNumber} - {r.bankName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {addBankAccount && (
+              <p className="mt-1 text-sm text-slate-500">{addBankAccount.bankName}</p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">Dư Nợ</label>
+              <AmountInput
+                value={addDraft.debit}
+                onChange={(v) => setAddDraft((d) => ({ ...d, debit: v }))}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">Dư Có</label>
+              <AmountInput
+                value={addDraft.credit}
+                onChange={(v) => setAddDraft((d) => ({ ...d, credit: v }))}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={cancelAdd}
+              className="h-9 rounded-md border border-border px-5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Đóng
+            </button>
+            <button
+              onClick={saveAdd}
+              disabled={save.isPending}
+              className="h-9 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+            >
+              {save.isPending ? 'Đang lưu…' : 'Lưu'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   )
