@@ -65,17 +65,23 @@ export function InventoryBalancePage() {
     )
   }, [data])
 
+  // Chỉ hiện VTHH đã có tồn (record). VTHH tồn 0 chưa tính là 1 dòng.
+  const records = useMemo(
+    () => rows.filter((r) => r.quantity !== 0 || r.amount !== 0),
+    [rows],
+  )
+
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter(
+    if (!q) return records
+    return records.filter(
       (r) =>
         r.productCode.toLowerCase().includes(q) ||
         r.productName.toLowerCase().includes(q) ||
         r.groupCode.toLowerCase().includes(q) ||
         r.warehouseCode.toLowerCase().includes(q),
     )
-  }, [rows, keyword])
+  }, [records, keyword])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const current = Math.min(page, pageCount)
@@ -102,18 +108,38 @@ export function InventoryBalancePage() {
   })
   const editing = editingIdx !== null ? rows[editingIdx] : undefined
 
+  // Thêm mới: chọn 1 VTHH (đã có trong danh mục) chưa có tồn rồi nhập kho + số lượng/giá trị.
+  const [addOpen, setAddOpen] = useState(false)
+  const [addProductId, setAddProductId] = useState<string | null>(null)
+  const [addDraft, setAddDraft] = useState<{
+    warehouseCode: string
+    quantity: number
+    amount: number
+  }>({ warehouseCode: '', quantity: 0, amount: 0 })
+
+  // VTHH còn chọn được ở modal Thêm = có trong danh mục nhưng chưa có tồn (record).
+  const addOptions = useMemo(
+    () => rows.filter((r) => r.quantity === 0 && r.amount === 0),
+    [rows],
+  )
+  const addProduct = rows.find((r) => r.productId === addProductId) ?? null
+
   const startEdit = (r: StockRow) => {
     setEditingIdx(rows.indexOf(r))
     setDraft({ warehouseCode: r.warehouseCode, quantity: r.quantity, amount: r.amount })
   }
   const cancelEdit = () => setEditingIdx(null)
 
-  // Lưu dòng đang sửa → cập nhật rows rồi ghi cả bảng (backend thay thế toàn bộ dữ liệu cũ).
-  const saveEdit = () => {
-    if (editingIdx === null) return
-    const next = rows.map((r, i) => (i === editingIdx ? { ...r, ...draft } : r))
+  const openAdd = () => {
+    setAddProductId(null)
+    setAddDraft({ warehouseCode: '', quantity: 0, amount: 0 })
+    setAddOpen(true)
+  }
+  const cancelAdd = () => setAddOpen(false)
+
+  // Ghi cả bảng (backend thay thế toàn bộ dữ liệu cũ).
+  const persist = (next: StockRow[]) => {
     setRows(next)
-    setEditingIdx(null)
     save.mutate(
       {
         items: next.map((r) => ({
@@ -129,6 +155,31 @@ export function InventoryBalancePage() {
           toast({ variant: 'error', title: 'Lưu thất bại', description: 'Kiểm tra lại dữ liệu.' }),
       },
     )
+  }
+
+  // Lưu dòng đang sửa.
+  const saveEdit = () => {
+    if (editingIdx === null) return
+    const next = rows.map((r, i) => (i === editingIdx ? { ...r, ...draft } : r))
+    setEditingIdx(null)
+    persist(next)
+  }
+
+  // Lưu dòng mới thêm: gán kho + tồn cho VTHH đã chọn → trở thành 1 record.
+  const saveAdd = () => {
+    if (!addProductId) {
+      toast({ variant: 'error', title: 'Chưa chọn hàng', description: 'Chọn 1 vật tư, hàng hóa.' })
+      return
+    }
+    if (addDraft.quantity === 0 && addDraft.amount === 0) {
+      toast({ variant: 'error', title: 'Chưa nhập tồn', description: 'Nhập số lượng hoặc giá trị.' })
+      return
+    }
+    const idx = rows.findIndex((r) => r.productId === addProductId)
+    if (idx < 0) return
+    const next = rows.map((r, i) => (i === idx ? { ...r, ...addDraft } : r))
+    setAddOpen(false)
+    persist(next)
   }
 
   // Nhập khẩu từ file Excel MISA (Danh_sach_ton_kho_vthh.xlsx).
@@ -197,7 +248,7 @@ export function InventoryBalancePage() {
           />
           <div className="ml-auto flex items-center gap-2">
             <AddMenu
-              actions={[]}
+              actions={[{ label: 'Nhập tồn kho', onClick: openAdd }]}
               onImportExcel={() => fileRef.current?.click()}
               importing={importXlsx.isPending}
             />
@@ -247,7 +298,7 @@ export function InventoryBalancePage() {
               {!isLoading && !isError && pageRows.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
-                    Không có vật tư, hàng hóa nào. Thêm ở danh mục trước khi nhập tồn kho.
+                    Chưa có tồn kho. Bấm “Nhập tồn kho” để chọn vật tư, hàng hóa và nhập tồn.
                   </td>
                 </tr>
               )}
@@ -282,7 +333,7 @@ export function InventoryBalancePage() {
                 </tr>
               ))}
             </tbody>
-            {rows.length > 0 && (
+            {records.length > 0 && (
               <tfoot className="sticky bottom-0 border-t border-border bg-slate-50 font-semibold text-slate-800">
                 <tr>
                   <td colSpan={5} className="px-3 py-2">
@@ -424,6 +475,91 @@ export function InventoryBalancePage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal thêm tồn kho: chọn VTHH (đã có trong danh mục) + kho + số lượng/giá trị */}
+      <Modal open={addOpen} onClose={cancelAdd} size="md" title="Tồn kho vật tư, hàng hóa">
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-600">
+              Vật tư, hàng hóa
+            </label>
+            <Select value={addProductId ?? ''} onValueChange={setAddProductId}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Chọn vật tư, hàng hóa" />
+              </SelectTrigger>
+              <SelectContent>
+                {addOptions.map((r) => (
+                  <SelectItem key={r.productId} value={r.productId}>
+                    {r.productCode} — {r.productName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {addProduct?.unit && (
+              <p className="mt-1 text-sm text-slate-500">ĐVT: {addProduct.unit}</p>
+            )}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-600">Kho</label>
+            <Select
+              value={addDraft.warehouseCode || 'none'}
+              onValueChange={(v) =>
+                setAddDraft((d) => ({ ...d, warehouseCode: v === 'none' ? '' : v }))
+              }
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Chưa chọn kho —</SelectItem>
+                {data?.warehouses.map((w) => (
+                  <SelectItem key={w.code} value={w.code}>
+                    {w.code} — {w.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">Số lượng tồn</label>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={addDraft.quantity}
+                onChange={(e) =>
+                  setAddDraft((d) => ({ ...d, quantity: Number(e.target.value) || 0 }))
+                }
+                className="h-9 w-full rounded-md border border-border px-2 text-right text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">Giá trị tồn</label>
+              <AmountInput
+                value={addDraft.amount}
+                onChange={(v) => setAddDraft((d) => ({ ...d, amount: v }))}
+                className="h-9"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={cancelAdd}
+              className="h-9 rounded-md border border-border px-5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Đóng
+            </button>
+            <button
+              onClick={saveAdd}
+              disabled={save.isPending}
+              className="h-9 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+            >
+              {save.isPending ? 'Đang lưu…' : 'Lưu'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   )
