@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
 import { SearchIcon } from '@/shared/ui/icons'
@@ -55,7 +56,6 @@ interface EditRow {
 // Màn "Nhập số dư công nợ" — nhập Dư Nợ/Dư Có đầu kỳ theo từng đối tượng cho 1 TK công nợ.
 // Vào từ cột "Chi tiết số dư" của màn Nhập số dư tài khoản (?account=<số TK>). Full-page, đè shell.
 export function PartnerBalanceEntryPage() {
-  const navigate = useNavigate()
   const [params] = useSearchParams()
   const accountCode = params.get('account') ?? ''
   const labels = partnerLabels(accountCode)
@@ -112,7 +112,7 @@ export function PartnerBalanceEntryPage() {
   const [editing, setEditing] = useState<EditRow | null>(null)
   const [draft, setDraft] = useState<{ debit: number; credit: number }>({ debit: 0, credit: 0 })
 
-  const close = () => navigate('/opening-balance/so-du-tai-khoan')
+  const close = useNavigateBack('/opening-balance/so-du-tai-khoan')
 
   // Nhập khẩu từ file Excel MISA (Danh_sach_cong_no_khach_hang.xlsx…) cho TK đang mở.
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {

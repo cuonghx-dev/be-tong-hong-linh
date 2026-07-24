@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { SearchIcon } from '@/shared/ui/icons'
@@ -80,7 +81,7 @@ export function AccountBalanceEntryPage() {
     if (focus && focusRef.current) focusRef.current.scrollIntoView({ block: 'center' })
   }, [focus, pageRows])
 
-  const close = () => navigate('/opening-balance/so-du-tai-khoan')
+  const close = useNavigateBack('/opening-balance/so-du-tai-khoan')
 
   const notReady = () => toast({ title: 'Màn nhập chi tiết đang phát triển.' })
 

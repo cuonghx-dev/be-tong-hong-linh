@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { formatCurrency } from '@/shared/lib/currency'
 import { SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
@@ -28,7 +29,6 @@ interface EditRow {
 // Màn "Nhập số dư tài khoản ngân hàng" — nhập Dư Nợ/Dư Có đầu kỳ theo từng TK ngân hàng cho 1 TK tiền gửi.
 // Vào thẳng từ nút "Sửa" của TK tiền gửi (112x) ở trang Số dư tài khoản (?account=<số TK>). Full-page, đè shell.
 export function BankAccountBalanceEntryPage() {
-  const navigate = useNavigate()
   const [params] = useSearchParams()
   const accountCode = params.get('account') ?? ''
 
@@ -82,7 +82,7 @@ export function BankAccountBalanceEntryPage() {
   const [editing, setEditing] = useState<EditRow | null>(null)
   const [draft, setDraft] = useState<{ debit: number; credit: number }>({ debit: 0, credit: 0 })
 
-  const close = () => navigate('/opening-balance/so-du-tai-khoan')
+  const close = useNavigateBack('/opening-balance/so-du-tai-khoan')
 
   const startEdit = (r: EditRow) => {
     setEditing(r)
