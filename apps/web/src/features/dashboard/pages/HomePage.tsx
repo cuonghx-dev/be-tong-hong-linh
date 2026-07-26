@@ -10,7 +10,7 @@ import { InventoryWidget, TopSellingWidget } from '../components/TopListWidgets'
 // Tổng quan: lưới widget số liệu toàn doanh nghiệp (tham chiếu bố cục MISA AMIS).
 function OverviewTab() {
   return (
-    <div className="-m-4 min-h-full bg-[#daeeee] p-4">
+    <div className="-mx-6 -my-5 min-h-full bg-[#daeeee] px-6 py-5">
       <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-3 xl:grid-cols-4">
         <FinanceOverviewWidget className="xl:col-span-2" />
         <ReceivableAgingWidget />

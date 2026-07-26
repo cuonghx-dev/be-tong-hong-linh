@@ -28,7 +28,7 @@ export function RecordPageShell({
       {/* Page header */}
       <header
         className={cn(
-          'flex h-14 shrink-0 items-center gap-3 border-b border-border px-4',
+          'flex h-14 shrink-0 items-center gap-3 border-b border-border px-6',
           headerClassName,
         )}
       >
@@ -46,7 +46,7 @@ export function RecordPageShell({
       </header>
 
       {/* Thân giữa — form tự quản lý cuộn + action bar sticky bottom */}
-      <div className={cn('flex-1 overflow-hidden p-4', contentClassName)}>{children}</div>
+      <div className={cn('flex-1 overflow-hidden px-6 py-5', contentClassName)}>{children}</div>
     </div>
   )
 }

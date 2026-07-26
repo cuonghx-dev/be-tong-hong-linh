@@ -9,7 +9,7 @@ export function OpeningBalanceItemPage() {
   const item = slug ? findOpeningBalanceItem(slug) : undefined
 
   return (
-    <div className="p-4">
+    <div className="px-6 py-5">
       <div className="flex items-center gap-2">
         <Link
           to="/opening-balance"

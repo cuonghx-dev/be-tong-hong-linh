@@ -240,7 +240,7 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
     <form className="flex h-full flex-col">
       <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
         {/* Vùng thông tin chung — nền primary nhạt liền khối với page header (layout kiểu MISA) */}
-        <section className="space-y-3 bg-primary/5 px-4 pb-4 pt-1">
+        <section className="space-y-3 bg-primary/5 px-6 pb-5 pt-2">
           {/* Loại nghiệp vụ */}
           <Select
             value={watch('category')}
@@ -389,7 +389,7 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
         </section>
 
         {/* Bảng hạch toán — nền trắng */}
-        <section className="space-y-2 px-4 py-4">
+        <section className="space-y-2 px-6 py-5">
           <h2 className="text-base font-semibold text-slate-800">Hạch toán</h2>
           <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse text-sm">
@@ -544,7 +544,7 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
       </fieldset>
 
       {/* Thanh hành động — nền tối (cùng tông action bar khai báo số dư đầu kỳ) */}
-      <div className="flex h-14 shrink-0 items-center gap-2 bg-slate-900 px-4">
+      <div className="flex h-14 shrink-0 items-center gap-2 bg-slate-900 px-6">
         <Button
           type="button"
           variant="outline"

@@ -223,7 +223,7 @@ export function BankVoucherForm({
 
   return (
     <form className="flex h-full flex-col">
-      <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto p-4 disabled:opacity-90">
+      <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto px-6 py-5 disabled:opacity-90">
         {/* Loại nghiệp vụ + (thu) số UNC chi nhánh / (chi) phương thức TT */}
         <div className="flex flex-wrap items-center gap-3">
           <Select
@@ -490,7 +490,7 @@ export function BankVoucherForm({
       </fieldset>
 
       {/* Thanh hành động — nền tối (đồng bộ với CashVoucherForm) */}
-      <div className="flex h-14 shrink-0 items-center gap-2 bg-slate-900 px-4">
+      <div className="flex h-14 shrink-0 items-center gap-2 bg-slate-900 px-6">
         <Button
           type="button"
           variant="outline"

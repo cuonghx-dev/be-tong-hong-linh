@@ -5,7 +5,7 @@ import { OPENING_BALANCE_ICONS } from '../opening-balance-icons'
 // Trang hub Nhập số dư ban đầu: lưới thẻ các nghiệp vụ (theo MISA).
 export function OpeningBalancePage() {
   return (
-    <div className="p-4">
+    <div className="px-6 py-5">
       <h1 className="text-2xl font-bold text-slate-800">Nhập số dư ban đầu</h1>
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {OPENING_BALANCE_ITEMS.map((item) => {

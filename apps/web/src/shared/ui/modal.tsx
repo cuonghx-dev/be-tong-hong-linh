@@ -46,7 +46,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'lg' }: M
           sizeClass[size],
         )}
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <h2 className="text-base font-semibold text-slate-800">{title}</h2>
           <button
             onClick={onClose}
@@ -56,9 +56,9 @@ export function Modal({ open, onClose, title, children, footer, size = 'lg' }: M
             ✕
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">{children}</div>
+        <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
             {footer}
           </div>
         )}
