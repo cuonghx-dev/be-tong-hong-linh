@@ -31,7 +31,11 @@ export interface ProductDto {
   salePrice: string | null // Đơn giá bán 1 (Decimal → string)
   minStock: string | null // Số lượng tồn tối thiểu (Decimal → string)
   vatRate: string | null // Thuế suất GTGT (10/8/KCT/…)
+  taxReduction: string | null // Giảm thuế theo quy định (text MISA: "Chưa xác định"/…)
   isActive: boolean // Trạng thái: Đang sử dụng / Ngừng sử dụng
+  // Tồn hiện tại = tồn khai báo đầu kỳ + nhập kho − xuất kho (chỉ có ở API danh sách).
+  stockQty?: string // Số lượng tồn (Decimal → string)
+  stockAmount?: string // Giá trị tồn (Decimal → string)
   createdAt: string
   updatedAt: string
 }
@@ -56,6 +60,7 @@ export interface CreateProductInput {
   salePrice?: string | null
   minStock?: string | null
   vatRate?: string | null
+  taxReduction?: string | null
   isActive?: boolean
 }
 

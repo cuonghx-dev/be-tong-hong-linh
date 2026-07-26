@@ -1,7 +1,8 @@
 import { TRANSFER_SIDE_LABELS, TransferSide, type CreateTransferAccountInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
+import { AccountPicker } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import {
   Select,
@@ -43,7 +44,7 @@ export function TransferAccountForm({
   const create = useCreateTransferAccount()
   const update = useUpdateTransferAccount()
 
-  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<TransferAccountFormValues>({
+  const { control, register, handleSubmit, reset, watch, setValue, formState } = useForm<TransferAccountFormValues>({
     resolver: zodResolver(transferAccountSchema),
     defaultValues: DEFAULTS,
   })
@@ -86,10 +87,30 @@ export function TransferAccountForm({
             <input {...register('code')} className={inputCls} />
           </Field>
           <Field label="Kết chuyển từ" required error={formState.errors.fromAccount?.message}>
-            <input {...register('fromAccount')} className={inputCls} />
+            <Controller
+              control={control}
+              name="fromAccount"
+              render={({ field }) => (
+                <AccountPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName={inputCls}
+                />
+              )}
+            />
           </Field>
           <Field label="Kết chuyển đến" required error={formState.errors.toAccount?.message}>
-            <input {...register('toAccount')} className={inputCls} />
+            <Controller
+              control={control}
+              name="toAccount"
+              render={({ field }) => (
+                <AccountPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName={inputCls}
+                />
+              )}
+            />
           </Field>
           <Field label="Bên kết chuyển" required error={formState.errors.side?.message}>
             <Select

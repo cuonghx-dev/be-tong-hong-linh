@@ -5,6 +5,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
+import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import {
@@ -267,10 +268,30 @@ export function ReceiptForm({
                         <input {...register(`lines.${i}.warehouseId`)} className={cellCls} />
                       </td>
                       <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.debitAccount`)} className={cellCls} />
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.debitAccount`}
+                          render={({ field }) => (
+                            <AccountPicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              inputClassName={accountCellCls}
+                            />
+                          )}
+                        />
                       </td>
                       <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.creditAccount`)} className={cellCls} />
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.creditAccount`}
+                          render={({ field }) => (
+                            <AccountPicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              inputClassName={accountCellCls}
+                            />
+                          )}
+                        />
                       </td>
                       <td className="px-2 py-1">
                         <input {...register(`lines.${i}.unit`)} className={cellCls} />

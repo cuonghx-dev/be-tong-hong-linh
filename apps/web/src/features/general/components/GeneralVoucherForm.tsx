@@ -5,6 +5,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
+import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import { useToast } from '@/shared/ui/toast'
@@ -205,10 +206,30 @@ export function GeneralVoucherForm({
                       <input {...register(`lines.${i}.description`)} className={cellCls} />
                     </td>
                     <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.debitAccount`)} className={cellCls} />
+                      <Controller
+                        control={control}
+                        name={`lines.${i}.debitAccount`}
+                        render={({ field }) => (
+                          <AccountPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            inputClassName={accountCellCls}
+                          />
+                        )}
+                      />
                     </td>
                     <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.creditAccount`)} className={cellCls} />
+                      <Controller
+                        control={control}
+                        name={`lines.${i}.creditAccount`}
+                        render={({ field }) => (
+                          <AccountPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            inputClassName={accountCellCls}
+                          />
+                        )}
+                      />
                     </td>
                     <td className="px-2 py-1">
                       <Controller

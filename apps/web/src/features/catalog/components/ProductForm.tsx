@@ -2,7 +2,8 @@ import type { CreateProductInput } from '@app/shared'
 import { PRODUCT_TYPE_LABELS, ProductType } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
+import { AccountPicker } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import {
   Select,
@@ -17,6 +18,8 @@ import { productSchema, type ProductFormValues } from '../schema'
 
 interface Props {
   productId?: string | null
+  // Nhân bản: điền sẵn dữ liệu từ VTHH nguồn, để trống mã (mã phải duy nhất), Lưu tạo bản ghi mới.
+  duplicateFromId?: string | null
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
@@ -32,12 +35,19 @@ const DEFAULTS: ProductFormValues = {
 // '' → undefined để bỏ giá trị rỗng khi gửi (Decimal / cột optional).
 const clean = (v?: string) => (v && v.trim() !== '' ? v : undefined)
 
-export function ProductForm({ productId, readOnly = false, onSaved, onCancel }: Props) {
-  const editing = useProduct(productId ?? null)
+export function ProductForm({
+  productId,
+  duplicateFromId,
+  readOnly = false,
+  onSaved,
+  onCancel,
+}: Props) {
+  const duplicating = !productId && !!duplicateFromId
+  const editing = useProduct(productId ?? duplicateFromId ?? null)
   const create = useCreateProduct()
   const update = useUpdateProduct()
 
-  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<ProductFormValues>({
+  const { control, register, handleSubmit, reset, watch, setValue, formState } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: DEFAULTS,
   })
@@ -46,7 +56,8 @@ export function ProductForm({ productId, readOnly = false, onSaved, onCancel }: 
     const p = editing.data
     if (!p) return
     reset({
-      code: p.code,
+      // Nhân bản → mã để trống cho người dùng tự nhập (mã duy nhất).
+      code: duplicating ? '' : p.code,
       name: p.name,
       type: p.type,
       groupCode: p.groupCode ?? undefined,
@@ -65,9 +76,10 @@ export function ProductForm({ productId, readOnly = false, onSaved, onCancel }: 
       salePrice: p.salePrice ?? undefined,
       minStock: p.minStock ?? undefined,
       vatRate: p.vatRate ?? undefined,
+      taxReduction: p.taxReduction ?? undefined,
       isActive: p.isActive,
     })
-  }, [editing.data, reset])
+  }, [editing.data, reset, duplicating])
 
   const submit = handleSubmit(async (values) => {
     const dto: CreateProductInput = {
@@ -90,6 +102,7 @@ export function ProductForm({ productId, readOnly = false, onSaved, onCancel }: 
       salePrice: clean(values.salePrice),
       minStock: clean(values.minStock),
       vatRate: clean(values.vatRate),
+      taxReduction: clean(values.taxReduction),
       isActive: values.isActive,
     }
     if (productId) await update.mutateAsync({ id: productId, dto })
@@ -140,6 +153,13 @@ export function ProductForm({ productId, readOnly = false, onSaved, onCancel }: 
           <Field label="Thuế suất GTGT">
             <input {...register('vatRate')} placeholder="10 / 8 / KCT" className={inputCls} />
           </Field>
+          <Field label="Giảm thuế theo quy định">
+            <input
+              {...register('taxReduction')}
+              placeholder="Chưa xác định"
+              className={inputCls}
+            />
+          </Field>
           <Field label="Mô tả">
             <input {...register('description')} className={inputCls} />
           </Field>
@@ -167,19 +187,69 @@ export function ProductForm({ productId, readOnly = false, onSaved, onCancel }: 
         {/* Tài khoản ngầm định */}
         <Section title="Tài khoản ngầm định">
           <Field label="TK Kho">
-            <input {...register('inventoryAccount')} className={inputCls} />
+            <Controller
+              control={control}
+              name="inventoryAccount"
+              render={({ field }) => (
+                <AccountPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName={inputCls}
+                />
+              )}
+            />
           </Field>
           <Field label="TK Doanh thu">
-            <input {...register('revenueAccount')} className={inputCls} />
+            <Controller
+              control={control}
+              name="revenueAccount"
+              render={({ field }) => (
+                <AccountPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName={inputCls}
+                />
+              )}
+            />
           </Field>
           <Field label="TK chiết khấu">
-            <input {...register('discountAccount')} className={inputCls} />
+            <Controller
+              control={control}
+              name="discountAccount"
+              render={({ field }) => (
+                <AccountPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName={inputCls}
+                />
+              )}
+            />
           </Field>
           <Field label="TK Trả lại">
-            <input {...register('saleReturnAccount')} className={inputCls} />
+            <Controller
+              control={control}
+              name="saleReturnAccount"
+              render={({ field }) => (
+                <AccountPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName={inputCls}
+                />
+              )}
+            />
           </Field>
           <Field label="TK chi phí">
-            <input {...register('costAccount')} className={inputCls} />
+            <Controller
+              control={control}
+              name="costAccount"
+              render={({ field }) => (
+                <AccountPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName={inputCls}
+                />
+              )}
+            />
           </Field>
         </Section>
 

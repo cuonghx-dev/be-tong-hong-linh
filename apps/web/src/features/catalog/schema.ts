@@ -35,6 +35,7 @@ export const productSchema = z.object({
   salePrice: decimalString,
   minStock: decimalString,
   vatRate: z.string().optional(),
+  taxReduction: z.string().optional(),
   isActive: z.boolean().optional(),
 })
 

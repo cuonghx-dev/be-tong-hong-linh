@@ -13,6 +13,7 @@ import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { invalidToast } from '@/shared/lib/form'
+import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import { ChevronDownIcon, PlusIcon } from '@/shared/ui/icons'
 import { BankAccountPicker } from '@/shared/ui/bank-account-picker'
@@ -394,10 +395,30 @@ export function BankVoucherForm({
                         <input {...register(`lines.${i}.description`)} className={cellCls} />
                       </td>
                       <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.debitAccount`)} className={cellCls} />
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.debitAccount`}
+                          render={({ field }) => (
+                            <AccountPicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              inputClassName={accountCellCls}
+                            />
+                          )}
+                        />
                       </td>
                       <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.creditAccount`)} className={cellCls} />
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.creditAccount`}
+                          render={({ field }) => (
+                            <AccountPicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              inputClassName={accountCellCls}
+                            />
+                          )}
+                        />
                       </td>
                       <td className="px-2 py-1">
                         <Controller

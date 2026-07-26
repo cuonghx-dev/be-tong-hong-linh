@@ -14,6 +14,7 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { invalidToast } from '@/shared/lib/form'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
+import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
@@ -454,7 +455,17 @@ export function PurchaseVoucherForm({
                       </td>
                     )}
                     <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.stockAccount`)} className={cellCls} />
+                      <Controller
+                        control={control}
+                        name={`lines.${i}.stockAccount`}
+                        render={({ field }) => (
+                          <AccountPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            inputClassName={accountCellCls}
+                          />
+                        )}
+                      />
                     </td>
                     <td className="px-2 py-1">
                       <input {...register(`lines.${i}.unit`)} className={cellCls} />
@@ -494,10 +505,30 @@ export function PurchaseVoucherForm({
                       {formatCurrency(vat)}
                     </td>
                     <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.payableAccount`)} className={cellCls} />
+                      <Controller
+                        control={control}
+                        name={`lines.${i}.payableAccount`}
+                        render={({ field }) => (
+                          <AccountPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            inputClassName={accountCellCls}
+                          />
+                        )}
+                      />
                     </td>
                     <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.vatAccount`)} className={cellCls} />
+                      <Controller
+                        control={control}
+                        name={`lines.${i}.vatAccount`}
+                        render={({ field }) => (
+                          <AccountPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            inputClassName={accountCellCls}
+                          />
+                        )}
+                      />
                     </td>
                     <td className="px-2 py-1 text-center">
                       <button

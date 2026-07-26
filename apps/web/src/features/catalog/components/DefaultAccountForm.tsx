@@ -1,7 +1,8 @@
 import type { CreateDefaultAccountInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
+import { AccountPicker } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import { useDefaultAccount } from '../api/useDefaultAccounts'
 import {
@@ -29,7 +30,7 @@ export function DefaultAccountForm({ defaultAccountId, readOnly = false, onSaved
   const create = useCreateDefaultAccount()
   const update = useUpdateDefaultAccount()
 
-  const { register, handleSubmit, reset, formState } = useForm<DefaultAccountFormValues>({
+  const { control, register, handleSubmit, reset, formState } = useForm<DefaultAccountFormValues>({
     resolver: zodResolver(defaultAccountSchema),
     defaultValues: DEFAULTS,
   })
@@ -71,10 +72,30 @@ export function DefaultAccountForm({ defaultAccountId, readOnly = false, onSaved
         </Field>
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           <Field label="TK Nợ" error={formState.errors.debitAccount?.message}>
-            <input {...register('debitAccount')} className={inputCls} />
+            <Controller
+              control={control}
+              name="debitAccount"
+              render={({ field }) => (
+                <AccountPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName={inputCls}
+                />
+              )}
+            />
           </Field>
           <Field label="TK Có" error={formState.errors.creditAccount?.message}>
-            <input {...register('creditAccount')} className={inputCls} />
+            <Controller
+              control={control}
+              name="creditAccount"
+              render={({ field }) => (
+                <AccountPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName={inputCls}
+                />
+              )}
+            />
           </Field>
         </div>
 
