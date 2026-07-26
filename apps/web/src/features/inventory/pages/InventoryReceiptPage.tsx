@@ -3,7 +3,6 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { ReceiptForm } from '../components/ReceiptForm'
-import { RECEIPT_TYPE_LABEL } from '../types'
 
 type Mode = 'new' | 'view' | 'edit'
 
@@ -17,9 +16,10 @@ export function InventoryReceiptPage({ mode }: { mode: Mode }) {
 
   const close = useNavigateBack('/inventory')
 
+  // Loại chứng từ đổi được ngay trong form (Select "Loại chứng từ") → title tĩnh.
   const title =
     mode === 'new'
-      ? `Phiếu nhập kho — ${RECEIPT_TYPE_LABEL[type]}`
+      ? 'Phiếu nhập kho'
       : mode === 'edit'
         ? 'Sửa phiếu nhập kho'
         : 'Xem phiếu nhập kho'
