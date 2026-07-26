@@ -78,7 +78,7 @@ function ConfirmDialog({ pending, onClose }: { pending: Pending; onClose: (ok: b
       <div
         role="alertdialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+        className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
       >
         <h2 className="text-base font-semibold text-slate-800">{pending.title}</h2>
         {pending.description && (

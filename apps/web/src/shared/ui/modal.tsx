@@ -31,7 +31,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'lg' }: M
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-900/40 p-4 sm:p-6">
       <div
         className="absolute inset-0"
         onClick={onClose}
@@ -41,7 +41,8 @@ export function Modal({ open, onClose, title, children, footer, size = 'lg' }: M
         role="dialog"
         aria-modal="true"
         className={cn(
-          'relative z-10 my-4 flex max-h-[calc(100vh-2rem)] w-full flex-col rounded-lg bg-white shadow-xl',
+          // max-h khớp padding của overlay (p-4 / sm:p-6) để dialog luôn nằm gọn trong màn hình
+          'relative z-10 flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-lg bg-white shadow-xl sm:max-h-[calc(100dvh-3rem)]',
           sizeClass[size],
         )}
       >
