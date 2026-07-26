@@ -11,7 +11,12 @@ import { parseProductXlsx } from './product-import'
 export class ProductService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(filter: ProductFilterDto): Promise<Paginated<ReturnType<typeof toProductDto>>> {
+  // Danh sách kèm tồn hiện tại (stockQty/stockAmount) — cột "Số lượng tồn"/"Giá trị tồn" ở danh mục.
+  async list(
+    filter: ProductFilterDto,
+  ): Promise<
+    Paginated<ReturnType<typeof toProductDto> & { stockQty: string; stockAmount: string }>
+  > {
     const where: Prisma.ProductWhereInput = {}
     if (filter.isActive !== undefined) where.isActive = filter.isActive
     if (filter.type) where.type = filter.type
@@ -33,10 +38,49 @@ export class ProductService {
       this.prisma.product.count({ where }),
     ])
 
+    // Tồn hiện tại chỉ tính cho các VTHH của trang đang xem (tránh quét toàn bộ danh mục).
+    const stock = await this.stockByCode(rows.map((r) => r.code))
+
     return {
-      data: rows.map(toProductDto),
+      data: rows.map((r) => {
+        const s = stock.get(r.code)
+        return { ...toProductDto(r), stockQty: s?.qty ?? '0', stockAmount: s?.amount ?? '0' }
+      }),
       pagination: { page: filter.page, pageSize: filter.pageSize, total },
     }
+  }
+
+  // Tồn hiện tại theo mã VTHH = tồn khai báo đầu kỳ + nhập kho − xuất kho (chỉ chứng từ đã ghi sổ).
+  // Cùng nguồn dữ liệu với báo cáo tổng hợp tồn kho (InventoryReportService) nhưng không chặn kỳ.
+  // *VoucherLine.item_id lưu MÃ VTHH (tham chiếu lỏng), không phải id.
+  private async stockByCode(codes: string[]) {
+    const result = new Map<string, { qty: string; amount: string }>()
+    if (codes.length === 0) return result
+
+    const rows = await this.prisma.$queryRaw<
+      { item_code: string; qty: string; amount: string }[]
+    >(Prisma.sql`
+      SELECT t.item_code, SUM(t.qty)::text AS qty, SUM(t.amount)::text AS amount
+      FROM (
+        SELECT p.code AS item_code, b.quantity AS qty, b.amount AS amount
+        FROM inventory_opening_balances b
+        JOIN products p ON p.id = b.product_id
+        UNION ALL
+        SELECT l.item_id, l.quantity, l.amount
+        FROM inventory_receipt_lines l
+        JOIN inventory_receipts v ON v.id = l.receipt_id
+        WHERE v.posted
+        UNION ALL
+        SELECT l.item_id, -l.quantity, -l.amount
+        FROM goods_issue_lines l
+        JOIN goods_issue_vouchers v ON v.id = l.voucher_id
+        WHERE v.posted
+      ) t
+      WHERE t.item_code IN (${Prisma.join(codes)})
+      GROUP BY t.item_code
+    `)
+    for (const r of rows) result.set(r.item_code, { qty: r.qty, amount: r.amount })
+    return result
   }
 
   async findOne(id: string) {
@@ -78,6 +122,7 @@ export class ProductService {
         salePrice: dto.salePrice ?? undefined,
         minStock: dto.minStock ?? undefined,
         vatRate: dto.vatRate ?? undefined,
+        taxReduction: dto.taxReduction ?? undefined,
         isActive: dto.isActive ?? undefined,
       },
     })
@@ -120,6 +165,7 @@ export class ProductService {
         salePrice: p.salePrice,
         minStock: p.minStock,
         vatRate: p.vatRate,
+        taxReduction: p.taxReduction,
         isActive: p.isActive,
       })
     }
@@ -177,6 +223,7 @@ function toCreateData(dto: CreateProductDto): Prisma.ProductCreateInput {
     salePrice: dto.salePrice ?? null,
     minStock: dto.minStock ?? null,
     vatRate: dto.vatRate ?? null,
+    taxReduction: dto.taxReduction ?? null,
     isActive: dto.isActive ?? true,
   }
 }
@@ -203,6 +250,7 @@ function toProductDto(p: Product) {
     salePrice: p.salePrice?.toString() ?? null,
     minStock: p.minStock?.toString() ?? null,
     vatRate: p.vatRate,
+    taxReduction: p.taxReduction,
     isActive: p.isActive,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),

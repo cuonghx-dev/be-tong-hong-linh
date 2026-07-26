@@ -717,6 +717,8 @@ model Product {
   salePrice            Decimal?    @map("sale_price") @db.Decimal(18, 2) // Đơn giá bán 1
   minStock             Decimal?    @map("min_stock") @db.Decimal(18, 2) // Số lượng tồn tối thiểu
   vatRate              String?     @map("vat_rate") // Thuế suất GTGT (10/8/KCT/…)
+  // Giảm thuế theo quy định (NQ 43/2022 …). MISA xuất dạng text ("Chưa xác định"/…) → lưu nguyên.
+  taxReduction         String?     @map("tax_reduction")
   isActive             Boolean     @default(true) @map("is_active") // Trạng thái: Đang sử dụng
 
   createdAt DateTime @default(now()) @map("created_at")

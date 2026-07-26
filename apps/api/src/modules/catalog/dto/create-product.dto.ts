@@ -96,6 +96,11 @@ export class CreateProductDto {
   @IsString()
   vatRate?: string
 
+  @ApiPropertyOptional({ description: 'Giảm thuế theo quy định (text MISA)' })
+  @IsOptional()
+  @IsString()
+  taxReduction?: string
+
   @ApiPropertyOptional({ description: 'Trạng thái: Đang sử dụng' })
   @IsOptional()
   @IsBoolean()

@@ -21,6 +21,7 @@ export interface ParsedProduct {
   salePrice: string | null
   minStock: string | null
   vatRate: string | null
+  taxReduction: string | null
   isActive: boolean
 }
 
@@ -46,6 +47,7 @@ const COL = {
   salePrice: ['Đơn giá bán 1', 'Đơn giá bán cố định'],
   minStock: ['Số lượng tồn tối thiểu'],
   vatRate: ['Thuế suất GTGT'],
+  taxReduction: ['Giảm thuế theo quy định'],
   status: ['Trạng thái'],
 }
 
@@ -147,6 +149,7 @@ export function parseProductXlsx(buffer: Buffer): ParsedProduct[] {
       salePrice: map.salePrice >= 0 ? toNum(r[map.salePrice]) : null,
       minStock: map.minStock >= 0 ? toNum(r[map.minStock]) : null,
       vatRate: get(r, map.vatRate),
+      taxReduction: get(r, map.taxReduction),
       isActive: activeFromText(get(r, map.status)),
     })
   }

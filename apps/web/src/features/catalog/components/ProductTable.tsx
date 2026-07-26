@@ -2,7 +2,6 @@ import type { ProductFilter } from '@app/shared'
 import { PRODUCT_TYPE_LABELS, ProductType } from '@app/shared'
 import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
@@ -18,7 +17,11 @@ import {
 } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useProducts } from '../api/useProducts'
-import { useDeleteProduct, useImportProducts } from '../api/useProductMutations'
+import {
+  useDeleteProduct,
+  useImportProducts,
+  useUpdateProduct,
+} from '../api/useProductMutations'
 import { ProductForm } from './ProductForm'
 
 const PAGE_SIZE = 20
@@ -26,18 +29,27 @@ const PAGE_SIZE = 20
 // Query params riêng cho bảng hàng hóa (tránh đụng param bảng khác cùng trang).
 const P = { page: 'sp_page', q: 'sp_q', type: 'sp_type' }
 
-// Hiển thị giá Decimal-string; rỗng/0 → gạch ngang.
-function money(v: string | null) {
+// Hiển thị giá trị tiền Decimal-string; rỗng/0 → gạch ngang.
+function money(v: string | null | undefined) {
   const n = v ? Number(v) : 0
   return n ? formatCurrency(n) : '—'
 }
 
+// Số lượng tồn: giữ tới 4 chữ số thập phân (khớp Decimal(18,4) của dòng chứng từ kho).
+function qty(v: string | null | undefined) {
+  const n = v ? Number(v) : 0
+  return n ? n.toLocaleString('vi-VN', { maximumFractionDigits: 4 }) : '—'
+}
+
 export function ProductTable() {
   const [params, setParams] = useSearchParams()
-  const [formState, setFormState] = useState<{ productId?: string; readOnly?: boolean } | null>(
-    null,
-  )
+  const [formState, setFormState] = useState<{
+    productId?: string
+    duplicateFromId?: string
+    readOnly?: boolean
+  } | null>(null)
   const del = useDeleteProduct()
+  const upd = useUpdateProduct()
   const importXlsx = useImportProducts()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -150,20 +162,18 @@ export function ProductTable() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[1000px] border-collapse text-sm">
+        <table className="w-full min-w-[900px] border-collapse text-sm">
           <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="w-10 px-3 py-2 text-center">
                 <input type="checkbox" />
               </th>
-              <th className="px-3 py-2">Mã</th>
               <th className="px-3 py-2">Tên</th>
+              <th className="px-3 py-2">Mã</th>
+              <th className="px-3 py-2">Giảm&nbsp;thuế theo&nbsp;quy&nbsp;định</th>
               <th className="px-3 py-2">Tính&nbsp;chất</th>
-              <th className="px-3 py-2">Nhóm</th>
-              <th className="px-3 py-2">ĐVT</th>
-              <th className="px-3 py-2 text-right">Đơn&nbsp;giá mua</th>
-              <th className="px-3 py-2 text-right">Đơn&nbsp;giá bán</th>
-              <th className="px-3 py-2">Trạng&nbsp;thái</th>
+              <th className="px-3 py-2 text-right">Số&nbsp;lượng tồn</th>
+              <th className="px-3 py-2 text-right">Giá&nbsp;trị tồn</th>
               <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức&nbsp;năng
               </th>
@@ -172,14 +182,14 @@ export function ProductTable() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={10} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
                   Đang tải…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={10} className="px-3 py-10 text-center text-red-500">
+                <td colSpan={8} className="px-3 py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
@@ -189,7 +199,7 @@ export function ProductTable() {
             )}
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-3 py-10 text-center text-slate-400">
+                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
                   Chưa có hàng hóa nào.
                 </td>
               </tr>
@@ -199,34 +209,28 @@ export function ProductTable() {
                 <td className="px-3 py-2 text-center">
                   <input type="checkbox" />
                 </td>
-                <td className="px-3 py-2">
+                <td className="max-w-[320px] px-3 py-2">
                   <button
-                    className="text-primary hover:underline"
+                    className="block max-w-full truncate text-left text-primary hover:underline"
                     onClick={() => setFormState({ productId: r.id, readOnly: true })}
+                    title={r.name}
                   >
-                    {r.code}
+                    {r.name}
                   </button>
+                  {!r.isActive && (
+                    <span className="text-xs text-slate-400">Ngừng sử dụng</span>
+                  )}
                 </td>
-                <td className="max-w-[280px] truncate px-3 py-2 text-slate-700">{r.name}</td>
+                <td className="px-3 py-2 text-slate-600">{r.code}</td>
+                <td className="px-3 py-2 text-slate-600">{r.taxReduction ?? '—'}</td>
                 <td className="px-3 py-2 text-slate-600">{PRODUCT_TYPE_LABELS[r.type]}</td>
-                <td className="px-3 py-2 text-slate-600">{r.groupCode}</td>
-                <td className="px-3 py-2 text-slate-600">{r.unit}</td>
-                <td className="px-3 py-2 text-right text-slate-600">{money(r.purchasePrice)}</td>
-                <td className="px-3 py-2 text-right text-slate-600">{money(r.salePrice)}</td>
-                <td className="px-3 py-2">
-                  <span
-                    className={cn(
-                      'inline-block rounded-full px-2 py-0.5 text-xs',
-                      r.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500',
-                    )}
-                  >
-                    {r.isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'}
-                  </span>
-                </td>
+                <td className="px-3 py-2 text-right text-slate-600">{qty(r.stockQty)}</td>
+                <td className="px-3 py-2 text-right text-slate-600">{money(r.stockAmount)}</td>
                 <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
+                  {/* Thao tác chính: Sửa; menu ▾: Xóa, Nhân bản, Ngừng/Sử dụng lại. */}
                   <RowActionMenu
                     primaryLabel="Sửa"
-                    onPrimary={() => setFormState({ productId: r.id, readOnly: true })}
+                    onPrimary={() => setFormState({ productId: r.id })}
                     items={[
                       {
                         label: 'Sửa',
@@ -244,6 +248,14 @@ export function ProductTable() {
                           })
                           if (ok) del.mutate(r.id)
                         },
+                      },
+                      {
+                        label: 'Nhân bản',
+                        onClick: () => setFormState({ duplicateFromId: r.id }),
+                      },
+                      {
+                        label: r.isActive ? 'Ngừng sử dụng' : 'Sử dụng lại',
+                        onClick: () => upd.mutate({ id: r.id, dto: { isActive: !r.isActive } }),
                       },
                     ]}
                   />
@@ -293,13 +305,16 @@ export function ProductTable() {
             ? 'Xem hàng hóa'
             : formState?.productId
               ? 'Sửa hàng hóa'
-              : 'Thông tin hàng hóa, dịch vụ'
+              : formState?.duplicateFromId
+                ? 'Nhân bản hàng hóa'
+                : 'Thông tin hàng hóa, dịch vụ'
         }
       >
         {formState && (
           <ProductForm
-            key={formState.productId ?? 'new'}
+            key={formState.productId ?? formState.duplicateFromId ?? 'new'}
             productId={formState.productId ?? null}
+            duplicateFromId={formState.duplicateFromId ?? null}
             readOnly={formState.readOnly}
             onSaved={closeForm}
             onCancel={closeForm}
