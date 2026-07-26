@@ -9,7 +9,6 @@ import { useToast } from '@/shared/ui/toast'
 import { useSetPurchaseVoucherPosted } from '../api/usePurchaseVoucherMutations'
 import { usePurchaseVoucher } from '../api/usePurchaseVouchers'
 import { PurchaseVoucherForm } from '../components/PurchaseVoucherForm'
-import { VOUCHER_TYPE_LABEL } from '../types'
 
 type Mode = 'new' | 'view' | 'edit'
 
@@ -56,9 +55,10 @@ export function PurchaseVoucherPage({ mode }: { mode: Mode }) {
     )
   }
 
+  // Loại chứng từ đổi được ngay trong form (combobox "Lý do") → title tĩnh.
   const title =
     mode === 'new'
-      ? VOUCHER_TYPE_LABEL[type]
+      ? 'Chứng từ mua hàng'
       : mode === 'edit'
         ? 'Sửa chứng từ mua hàng'
         : 'Xem chứng từ mua hàng'
