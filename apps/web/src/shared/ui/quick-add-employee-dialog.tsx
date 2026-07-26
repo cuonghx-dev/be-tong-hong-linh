@@ -1,6 +1,6 @@
 import { PartnerType } from '@app/shared'
 import { useEffect, useState } from 'react'
-import { useCreateEmployee } from '@/features/catalog'
+import { useCreateEmployee, useOrganizationUnits } from '@/features/catalog'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
@@ -22,13 +22,17 @@ const empty = { code: '', name: '', title: '', department: '' }
 export function QuickAddEmployeeDialog({ open, onClose, initialCode, onCreated }: Props) {
   const [form, setForm] = useState(empty)
   const create = useCreateEmployee()
+  // Cơ cấu tổ chức cho combobox "Phòng ban".
+  const orgUnits = useOrganizationUnits({ page: 1, pageSize: 200, isActive: true })
   const { toast } = useToast()
 
   useEffect(() => {
     if (open) setForm({ ...empty, code: initialCode ?? '' })
   }, [open, initialCode])
 
-  const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const set =
+    (k: keyof typeof empty) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const submit = async () => {
@@ -83,7 +87,14 @@ export function QuickAddEmployeeDialog({ open, onClose, initialCode, onCreated }
           <input value={form.title} onChange={set('title')} className={cls} />
         </L>
         <L label="Phòng ban">
-          <input value={form.department} onChange={set('department')} className={cls} />
+          <select value={form.department} onChange={set('department')} className={cls}>
+            <option value="">-- Chọn đơn vị --</option>
+            {(orgUnits.data?.data ?? []).map((u) => (
+              <option key={u.id} value={u.name}>
+                {u.name}
+              </option>
+            ))}
+          </select>
         </L>
       </div>
     </Modal>

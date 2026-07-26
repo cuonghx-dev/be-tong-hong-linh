@@ -1,6 +1,6 @@
 import type { BankAccountDto } from '@app/shared'
 import { useEffect, useState } from 'react'
-import { useCreateBankAccount } from '@/features/catalog'
+import { useBanks, useCreateBankAccount } from '@/features/catalog'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
@@ -21,13 +21,17 @@ const empty = { accountNumber: '', bankName: '', bankBranch: '', accountHolder: 
 export function QuickAddBankAccountDialog({ open, onClose, initialAccountNumber, onCreated }: Props) {
   const [form, setForm] = useState(empty)
   const create = useCreateBankAccount()
+  // Danh mục ngân hàng cho combobox "Tên ngân hàng".
+  const banks = useBanks({ page: 1, pageSize: 200, isActive: true })
   const { toast } = useToast()
 
   useEffect(() => {
     if (open) setForm({ ...empty, accountNumber: initialAccountNumber ?? '' })
   }, [open, initialAccountNumber])
 
-  const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const set =
+    (k: keyof typeof empty) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const submit = async () => {
@@ -79,7 +83,14 @@ export function QuickAddBankAccountDialog({ open, onClose, initialAccountNumber,
           <input value={form.accountNumber} onChange={set('accountNumber')} autoFocus className={cls} />
         </L>
         <L label="Tên ngân hàng" required>
-          <input value={form.bankName} onChange={set('bankName')} className={cls} />
+          <select value={form.bankName} onChange={set('bankName')} className={cls}>
+            <option value="">-- Chọn ngân hàng --</option>
+            {(banks.data?.data ?? []).map((b) => (
+              <option key={b.id} value={b.shortName}>
+                {b.shortName} - {b.fullName}
+              </option>
+            ))}
+          </select>
         </L>
         <L label="Tên chi nhánh ngân hàng">
           <input value={form.bankBranch} onChange={set('bankBranch')} className={cls} />

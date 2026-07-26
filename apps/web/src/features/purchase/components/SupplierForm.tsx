@@ -2,6 +2,7 @@ import { SupplierType, type CreateSupplierInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { useEmployees, usePartnerGroups } from '@/features/catalog'
 import { Button } from '@/shared/ui/button'
 import { useSupplier } from '../api/useSuppliers'
 import { useCreateSupplier, useUpdateSupplier } from '../api/useSupplierMutations'
@@ -36,6 +37,9 @@ export function SupplierForm({
   const editing = useSupplier(supplierId ?? duplicateFromId ?? null)
   const create = useCreateSupplier()
   const update = useUpdateSupplier()
+  // Nguồn cho combobox nhóm NCC + nhân viên (chỉ bản ghi đang sử dụng).
+  const groups = usePartnerGroups({ page: 1, pageSize: 200, isActive: true })
+  const employees = useEmployees({ page: 1, pageSize: 200, isActive: true })
 
   const { register, handleSubmit, reset, formState } = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierSchema),
@@ -64,7 +68,12 @@ export function SupplierForm({
   }, [editing.data, reset, duplicating])
 
   const submit = handleSubmit(async (values) => {
-    const dto: CreateSupplierInput = values
+    // Combobox để trống trả '' → gửi undefined để không set khóa ngoại rỗng.
+    const dto: CreateSupplierInput = {
+      ...values,
+      groupId: values.groupId || undefined,
+      employeeId: values.employeeId || undefined,
+    }
     if (supplierId) await update.mutateAsync({ id: supplierId, dto })
     else await create.mutateAsync(dto)
     onSaved()
@@ -113,10 +122,24 @@ export function SupplierForm({
           <input {...register('address')} className={inputCls} />
         </Field>
         <Field label="Nhóm nhà cung cấp">
-          <input {...register('groupId')} className={inputCls} />
+          <select {...register('groupId')} className={inputCls}>
+            <option value="">-- Chọn nhóm nhà cung cấp --</option>
+            {(groups.data?.data ?? []).map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.code} - {g.name}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label="Nhân viên mua hàng">
-          <input {...register('employeeId')} className={inputCls} />
+          <select {...register('employeeId')} className={inputCls}>
+            <option value="">-- Chọn nhân viên --</option>
+            {(employees.data?.data ?? []).map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.code} - {e.name}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label="Rủi ro về hóa đơn">
           <input {...register('invoiceRisk')} className={inputCls} />

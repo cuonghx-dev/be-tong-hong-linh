@@ -3,8 +3,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/shared/ui/button'
+import { useBanks } from '../api/useBanks'
 import { useEmployee } from '../api/useEmployees'
 import { useCreateEmployee, useUpdateEmployee } from '../api/useEmployeeMutations'
+import { useOrganizationUnits } from '../api/useOrganizationUnits'
 import { employeeSchema, type EmployeeFormValues } from '../schema'
 
 interface Props {
@@ -25,10 +27,17 @@ export function EmployeeForm({ employeeId, readOnly = false, onSaved, onCancel }
   const create = useCreateEmployee()
   const update = useUpdateEmployee()
 
-  const { register, handleSubmit, reset, formState } = useForm<EmployeeFormValues>({
+  // Danh mục ngân hàng cho combobox "Tên ngân hàng".
+  const banks = useBanks({ page: 1, pageSize: 200, isActive: true })
+  // Cơ cấu tổ chức cho combobox "Đơn vị (phòng ban)".
+  const orgUnits = useOrganizationUnits({ page: 1, pageSize: 200, isActive: true })
+
+  const { register, handleSubmit, reset, watch, formState } = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
     defaultValues: DEFAULTS,
   })
+  const bankName = watch('bankName')
+  const department = watch('department')
 
   useEffect(() => {
     const e = editing.data
@@ -69,13 +78,35 @@ export function EmployeeForm({ employeeId, readOnly = false, onSaved, onCancel }
             <input {...register('title')} className={inputCls} />
           </Field>
           <Field label="Đơn vị (phòng ban)">
-            <input {...register('department')} className={inputCls} />
+            <select {...register('department')} className={inputCls}>
+              <option value="">-- Chọn đơn vị --</option>
+              {/* Giá trị cũ không còn trong cơ cấu tổ chức (nhập khẩu / ngừng dùng) vẫn hiển thị được. */}
+              {department && !orgUnits.data?.data.some((u) => u.name === department) && (
+                <option value={department}>{department}</option>
+              )}
+              {(orgUnits.data?.data ?? []).map((u) => (
+                <option key={u.id} value={u.name}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="Số tài khoản ngân hàng">
             <input {...register('bankAccount')} className={inputCls} />
           </Field>
           <Field label="Tên ngân hàng">
-            <input {...register('bankName')} className={inputCls} />
+            <select {...register('bankName')} className={inputCls}>
+              <option value="">-- Chọn ngân hàng --</option>
+              {/* Giá trị cũ không còn trong danh mục (ngừng sử dụng / nhập tay) vẫn hiển thị được. */}
+              {bankName && !banks.data?.data.some((b) => b.shortName === bankName) && (
+                <option value={bankName}>{bankName}</option>
+              )}
+              {(banks.data?.data ?? []).map((b) => (
+                <option key={b.id} value={b.shortName}>
+                  {b.shortName} - {b.fullName}
+                </option>
+              ))}
+            </select>
           </Field>
         </div>
 

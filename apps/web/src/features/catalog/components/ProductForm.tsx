@@ -12,8 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { useProductGroups } from '../api/useProductGroups'
 import { useProduct } from '../api/useProducts'
 import { useCreateProduct, useUpdateProduct } from '../api/useProductMutations'
+import { useUnits } from '../api/useUnits'
+import { useWarehouses } from '../api/useWarehouses'
 import { productSchema, type ProductFormValues } from '../schema'
 
 interface Props {
@@ -35,6 +38,16 @@ const DEFAULTS: ProductFormValues = {
 // '' → undefined để bỏ giá trị rỗng khi gửi (Decimal / cột optional).
 const clean = (v?: string) => (v && v.trim() !== '' ? v : undefined)
 
+// Thuế suất GTGT theo MISA: số % hoặc mã đặc biệt (KCT/KKKNT/KHAC).
+const VAT_RATE_OPTIONS = [
+  { value: '0', label: '0%' },
+  { value: '5', label: '5%' },
+  { value: '8', label: '8%' },
+  { value: '10', label: '10%' },
+  { value: 'KCT', label: 'KCT (Không chịu thuế)' },
+  { value: 'KKKNT', label: 'KKKNT (Không kê khai, nộp thuế)' },
+]
+
 export function ProductForm({
   productId,
   duplicateFromId,
@@ -46,6 +59,10 @@ export function ProductForm({
   const editing = useProduct(productId ?? duplicateFromId ?? null)
   const create = useCreateProduct()
   const update = useUpdateProduct()
+  // Nguồn cho combobox nhóm VTHH / ĐVT / kho ngầm định (chỉ bản ghi đang sử dụng).
+  const productGroups = useProductGroups({ page: 1, pageSize: 200, isActive: true })
+  const units = useUnits({ page: 1, pageSize: 200, isActive: true })
+  const warehouses = useWarehouses({ page: 1, pageSize: 200, isActive: true })
 
   const { control, register, handleSubmit, reset, watch, setValue, formState } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -145,13 +162,31 @@ export function ProductForm({
             </Select>
           </Field>
           <Field label="Nhóm VTHH">
-            <input {...register('groupCode')} className={inputCls} />
+            <PickSelect
+              value={watch('groupCode')}
+              onChange={(v) => setValue('groupCode', v)}
+              placeholder="Chọn nhóm VTHH"
+              options={(productGroups.data?.data ?? []).map((g) => ({
+                value: g.code,
+                label: `${g.code} - ${g.name}`,
+              }))}
+            />
           </Field>
           <Field label="Đơn vị tính chính">
-            <input {...register('unit')} className={inputCls} />
+            <PickSelect
+              value={watch('unit')}
+              onChange={(v) => setValue('unit', v)}
+              placeholder="Chọn đơn vị tính"
+              options={(units.data?.data ?? []).map((u) => ({ value: u.name, label: u.name }))}
+            />
           </Field>
           <Field label="Thuế suất GTGT">
-            <input {...register('vatRate')} placeholder="10 / 8 / KCT" className={inputCls} />
+            <PickSelect
+              value={watch('vatRate')}
+              onChange={(v) => setValue('vatRate', v)}
+              placeholder="Chọn thuế suất"
+              options={VAT_RATE_OPTIONS}
+            />
           </Field>
           <Field label="Giảm thuế theo quy định">
             <input
@@ -170,11 +205,21 @@ export function ProductForm({
 
         {/* Kho + đơn giá */}
         <Section title="Kho & đơn giá ngầm định">
-          <Field label="Mã kho ngầm định">
-            <input {...register('defaultWarehouseCode')} className={inputCls} />
-          </Field>
+          {/* Chọn 1 kho → điền cả mã và tên kho ngầm định. */}
           <Field label="Kho ngầm định">
-            <input {...register('defaultWarehouseName')} className={inputCls} />
+            <PickSelect
+              value={watch('defaultWarehouseCode')}
+              onChange={(v) => {
+                setValue('defaultWarehouseCode', v)
+                const w = warehouses.data?.data.find((x) => x.code === v)
+                setValue('defaultWarehouseName', w?.name ?? '')
+              }}
+              placeholder="Chọn kho"
+              options={(warehouses.data?.data ?? []).map((w) => ({
+                value: w.code,
+                label: `${w.code} - ${w.name}`,
+              }))}
+            />
           </Field>
           <Field label="Đơn giá mua gần nhất" error={formState.errors.purchasePrice?.message}>
             <input {...register('purchasePrice')} inputMode="decimal" className={inputCls} />
@@ -293,6 +338,40 @@ export function ProductForm({
 
 const inputCls =
   'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+
+// Combobox chọn 1 giá trị text từ danh mục; '' = bỏ trống.
+// Giá trị cũ không còn trong danh mục (ngừng sử dụng / nhập khẩu) vẫn hiển thị được.
+const NONE = '__none'
+
+function PickSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value?: string
+  onChange: (v: string) => void
+  options: { value: string; label: string }[]
+  placeholder: string
+}) {
+  const legacy = value && !options.some((o) => o.value === value) ? value : null
+  return (
+    <Select value={value || NONE} onValueChange={(v) => onChange(v === NONE ? '' : v)}>
+      <SelectTrigger className="h-9">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NONE}>{placeholder}</SelectItem>
+        {legacy && <SelectItem value={legacy}>{legacy}</SelectItem>}
+        {options.map((o) => (
+          <SelectItem key={o.value} value={o.value}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
