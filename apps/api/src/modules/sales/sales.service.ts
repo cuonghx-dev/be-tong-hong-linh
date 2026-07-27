@@ -1,5 +1,5 @@
 import { CHART_OF_ACCOUNTS, SalesPaymentStatus, type Paginated } from '@app/shared'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import {
   Prisma,
   SalesPaymentMode,
@@ -477,9 +477,15 @@ function defaultDebtAccount(ctx: NormalizeCtx): string {
 
 // Chuẩn hóa dòng hàng + tính thành tiền/thuế + gán TK mặc định (§11.4).
 function normalizeLines(ctx: NormalizeCtx, lines: CreateSalesVoucherLineDto[]) {
+  // Chặn chứng từ rỗng (mirror Zod FE): cần ≥ 1 dòng hàng thật; dòng ghi chú
+  // (SL 0) được trống tên, dòng SL > 0 bắt buộc có tên hàng.
+  if (!lines.some((l) => l.quantity > 0))
+    throw new BadRequestException('Cần ít nhất 1 dòng hàng có số lượng > 0')
   const debt = defaultDebtAccount(ctx)
   const revenue = CHART_OF_ACCOUNTS.REVENUE_GOODS
   return lines.map((line, i) => {
+    if (line.quantity > 0 && !line.itemName?.trim())
+      throw new BadRequestException(`Dòng ${i + 1}: thiếu tên hàng`)
     const quantity = new Prisma.Decimal(line.quantity)
     const unitPrice = new Prisma.Decimal(line.unitPrice)
     const tradeDiscount = new Prisma.Decimal(line.tradeDiscount ?? 0)

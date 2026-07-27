@@ -19,6 +19,7 @@ export function useItemOptions(keyword: string) {
           defaultWarehouseCode: p.defaultWarehouseCode,
           inventoryAccount: p.inventoryAccount,
           purchasePrice: p.purchasePrice,
+          salePrice: p.salePrice,
           vatRate: p.vatRate,
         }),
       ),

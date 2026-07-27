@@ -8,6 +8,7 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -119,10 +120,10 @@ export class CreateSalesVoucherDto {
   @IsString()
   customerId?: string
 
-  @ApiPropertyOptional()
-  @IsOptional()
+  @ApiProperty({ description: 'Tên khách hàng' })
   @IsString()
-  customerName?: string
+  @IsNotEmpty({ message: 'Tên khách hàng không được để trống' })
+  customerName!: string
 
   @ApiPropertyOptional({ description: 'MST/CCCD' })
   @IsOptional()

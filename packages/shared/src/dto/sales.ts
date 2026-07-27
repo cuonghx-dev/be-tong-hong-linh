@@ -99,7 +99,7 @@ export interface CreateSalesVoucherInput {
   postingDate: string
   voucherDate: string
   customerId?: string | null
-  customerName?: string | null
+  customerName: string // Bắt buộc — chứng từ bán hàng phải có tên KH
   taxCode?: string | null
   contactPerson?: string | null
   address?: string | null
@@ -183,6 +183,7 @@ export interface CustomerFilter {
   pageSize?: number
   keyword?: string
   groupId?: string
+  isActive?: boolean // true = chỉ KH đang theo dõi (picker chứng từ)
 }
 
 // ── Công nợ phải thu khách hàng (view/tổng hợp) ──────────────────────────────

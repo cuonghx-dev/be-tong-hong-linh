@@ -1,5 +1,4 @@
 import { useParams, useSearchParams } from 'react-router-dom'
-import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { SalesVoucherForm } from '../components/SalesVoucherForm'
 
@@ -24,23 +23,17 @@ export function SalesVoucherPage({ mode }: { mode: Mode }) {
 
   const close = useNavigateBack('/sales')
 
-  const title =
-    mode === 'new'
-      ? 'Chứng từ bán hàng'
-      : mode === 'edit'
-        ? 'Sửa chứng từ bán hàng'
-        : 'Xem chứng từ bán hàng'
-
+  // Form tự dựng cả page header / sub-header / action bar (§5 design.md) vì các
+  // control ở đó đọc-ghi trực tiếp state form (loại nghiệp vụ, tùy chọn thanh
+  // toán, tổng tiền) → không bọc RecordPageShell.
   return (
-    <RecordPageShell title={title} onClose={close}>
-      <SalesVoucherForm
-        voucherId={id ?? null}
-        duplicateFromId={duplicateFromId}
-        initialCustomer={initialCustomer}
-        readOnly={mode === 'view'}
-        onSaved={close}
-        onCancel={close}
-      />
-    </RecordPageShell>
+    <SalesVoucherForm
+      voucherId={id ?? null}
+      duplicateFromId={duplicateFromId}
+      initialCustomer={initialCustomer}
+      readOnly={mode === 'view'}
+      onSaved={close}
+      onCancel={close}
+    />
   )
 }
