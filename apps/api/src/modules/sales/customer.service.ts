@@ -14,6 +14,7 @@ export class CustomerService {
   async list(filter: CustomerFilterDto): Promise<Paginated<ReturnType<typeof toCustomerDto>>> {
     const where: Prisma.CustomerWhereInput = {}
     if (filter.groupId) where.groupId = filter.groupId
+    if (filter.isActive !== undefined) where.isActive = filter.isActive
     if (filter.keyword) {
       where.OR = [
         { code: { contains: filter.keyword, mode: 'insensitive' } },
