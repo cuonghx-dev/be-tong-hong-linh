@@ -1,14 +1,19 @@
 import { CustomerType } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Trim } from '../../../common/decorators/trim.decorator'
 
 export class CreateCustomerDto {
   @ApiProperty({ description: 'Mã khách hàng (duy nhất)' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Mã khách hàng không được để trống' })
   code!: string
 
   @ApiProperty({ description: 'Tên khách hàng' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Tên khách hàng không được để trống' })
   name!: string
 
   @ApiPropertyOptional({ enum: CustomerType })

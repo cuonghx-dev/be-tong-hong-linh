@@ -1,7 +1,8 @@
 import { TransferSide } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Trim } from '../../../common/decorators/trim.decorator'
 
 export class CreateTransferAccountDto {
   @ApiProperty({ description: 'Thứ tự kết chuyển (chạy tăng dần)' })
@@ -10,7 +11,9 @@ export class CreateTransferAccountDto {
   order!: number
 
   @ApiProperty({ description: 'Mã kết chuyển (VD "511-911")' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Mã kết chuyển không được để trống' })
   code!: string
 
   @ApiProperty({ description: 'Kết chuyển từ (mã TK)' })
@@ -21,10 +24,9 @@ export class CreateTransferAccountDto {
   @IsString()
   toAccount!: string
 
-  @ApiPropertyOptional({ description: 'Bên kết chuyển: Nợ / Có / Hai bên', enum: TransferSide })
-  @IsOptional()
+  @ApiProperty({ description: 'Bên kết chuyển: Nợ / Có / Hai bên', enum: TransferSide })
   @IsEnum(TransferSide)
-  side?: TransferSide
+  side!: TransferSide
 
   @ApiPropertyOptional({ description: 'Diễn giải' })
   @IsOptional()

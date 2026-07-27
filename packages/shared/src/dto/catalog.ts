@@ -43,7 +43,7 @@ export interface ProductDto {
 export interface CreateProductInput {
   code: string
   name: string
-  type?: ProductType
+  type: ProductType
   groupCode?: string | null
   unit?: string | null
   description?: string | null
@@ -266,7 +266,7 @@ export interface CostObjectDto {
 export interface CreateCostObjectInput {
   code: string
   name: string
-  type?: CostObjectType
+  type: CostObjectType
   description?: string | null
   isActive?: boolean
 }
@@ -366,7 +366,7 @@ export interface CreateTransferAccountInput {
   code: string
   fromAccount: string
   toAccount: string
-  side?: TransferSide
+  side: TransferSide
   description?: string | null
   isActive?: boolean
 }

@@ -1,14 +1,19 @@
 import { AccountNature } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Trim } from '../../../common/decorators/trim.decorator'
 
 export class CreateAccountDto {
   @ApiProperty({ description: 'Số tài khoản (phân cấp theo tiền tố, VD: 1111 thuộc 111)' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Số tài khoản không được để trống' })
   number!: string
 
   @ApiProperty({ description: 'Tên tài khoản' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Tên tài khoản không được để trống' })
   name!: string
 
   @ApiProperty({ enum: AccountNature, description: 'Tính chất: Dư Nợ / Dư Có / Lưỡng tính' })

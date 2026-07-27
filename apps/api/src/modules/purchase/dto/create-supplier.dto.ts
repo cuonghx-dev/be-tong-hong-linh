@@ -1,20 +1,24 @@
 import { SupplierType } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Trim } from '../../../common/decorators/trim.decorator'
 
 export class CreateSupplierDto {
   @ApiProperty({ description: 'Mã nhà cung cấp' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Mã nhà cung cấp không được để trống' })
   code!: string
 
   @ApiProperty({ description: 'Tên nhà cung cấp' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Tên nhà cung cấp không được để trống' })
   name!: string
 
-  @ApiPropertyOptional({ enum: SupplierType })
-  @IsOptional()
+  @ApiProperty({ enum: SupplierType })
   @IsEnum(SupplierType)
-  type?: SupplierType
+  type!: SupplierType
 
   @ApiPropertyOptional({ description: 'Là khách hàng (đối tượng dùng chung)' })
   @IsOptional()

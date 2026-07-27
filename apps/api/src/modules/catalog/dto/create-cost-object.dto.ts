@@ -1,20 +1,24 @@
 import { CostObjectType } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Trim } from '../../../common/decorators/trim.decorator'
 
 export class CreateCostObjectDto {
   @ApiProperty({ description: 'Mã đối tượng THCP' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Mã đối tượng THCP không được để trống' })
   code!: string
 
   @ApiProperty({ description: 'Tên đối tượng THCP' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Tên đối tượng THCP không được để trống' })
   name!: string
 
-  @ApiPropertyOptional({ description: 'Loại: Sản phẩm / Phân xưởng / Khác', enum: CostObjectType })
-  @IsOptional()
+  @ApiProperty({ description: 'Loại: Sản phẩm / Phân xưởng / Khác', enum: CostObjectType })
   @IsEnum(CostObjectType)
-  type?: CostObjectType
+  type!: CostObjectType
 
   @ApiPropertyOptional({ description: 'Diễn giải' })
   @IsOptional()

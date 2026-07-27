@@ -1,13 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsBoolean, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Trim } from '../../../common/decorators/trim.decorator'
 
 export class CreateWarehouseDto {
   @ApiProperty({ description: 'Mã kho' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Mã kho không được để trống' })
   code!: string
 
   @ApiProperty({ description: 'Tên kho' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Tên kho không được để trống' })
   name!: string
 
   @ApiPropertyOptional({ description: 'Địa chỉ' })

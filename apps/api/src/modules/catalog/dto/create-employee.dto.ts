@@ -1,13 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsBoolean, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Trim } from '../../../common/decorators/trim.decorator'
 
 export class CreateEmployeeDto {
   @ApiProperty({ description: 'Mã nhân viên' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Mã nhân viên không được để trống' })
   code!: string
 
   @ApiProperty({ description: 'Tên nhân viên' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Tên nhân viên không được để trống' })
   name!: string
 
   @ApiPropertyOptional({ description: 'Chức danh' })

@@ -1,20 +1,24 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { ProductType } from '@prisma/client'
-import { IsBoolean, IsEnum, IsNumberString, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsEnum, IsNotEmpty, IsNumberString, IsOptional, IsString } from 'class-validator'
+import { Trim } from '../../../common/decorators/trim.decorator'
 
 export class CreateProductDto {
   @ApiProperty({ description: 'Mã hàng hóa' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Mã hàng hóa không được để trống' })
   code!: string
 
   @ApiProperty({ description: 'Tên hàng hóa' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Tên hàng hóa không được để trống' })
   name!: string
 
-  @ApiPropertyOptional({ enum: ProductType, description: 'Tính chất' })
-  @IsOptional()
+  @ApiProperty({ enum: ProductType, description: 'Tính chất' })
   @IsEnum(ProductType)
-  type?: ProductType
+  type!: ProductType
 
   @ApiPropertyOptional({ description: 'Nhóm VTHH (mã nhóm)' })
   @IsOptional()

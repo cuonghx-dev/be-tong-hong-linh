@@ -1,5 +1,10 @@
 import { type Paginated } from '@app/shared'
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { Prisma, type Product } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { CreateProductDto } from './dto/create-product.dto'
@@ -89,8 +94,42 @@ export class ProductService {
     return toProductDto(product)
   }
 
+  // TK hạch toán ngầm định (nếu nhập) phải có trong hệ thống tài khoản — TK sai
+  // sẽ lan vào định khoản mặc định của mọi chứng từ dùng mặt hàng này.
+  private async assertAccountsExist(dto: {
+    inventoryAccount?: string | null
+    revenueAccount?: string | null
+    discountAccount?: string | null
+    saleReturnAccount?: string | null
+    costAccount?: string | null
+  }) {
+    const codes = [
+      ...new Set(
+        [
+          dto.inventoryAccount,
+          dto.revenueAccount,
+          dto.discountAccount,
+          dto.saleReturnAccount,
+          dto.costAccount,
+        ].filter((c): c is string => !!c?.trim()),
+      ),
+    ]
+    if (codes.length === 0) return
+    const found = await this.prisma.account.findMany({
+      where: { number: { in: codes } },
+      select: { number: true },
+    })
+    const known = new Set(found.map((a) => a.number))
+    const missing = codes.filter((c) => !known.has(c))
+    if (missing.length > 0)
+      throw new BadRequestException(
+        `TK không có trong hệ thống tài khoản: ${missing.join(', ')}`,
+      )
+  }
+
   async create(dto: CreateProductDto) {
     await this.ensureCodeFree(dto.code)
+    await this.assertAccountsExist(dto)
     const created = await this.prisma.product.create({ data: toCreateData(dto) })
     return toProductDto(created)
   }
@@ -99,6 +138,7 @@ export class ProductService {
     const existing = await this.prisma.product.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy hàng hóa ${id}`)
     if (dto.code && dto.code !== existing.code) await this.ensureCodeFree(dto.code)
+    await this.assertAccountsExist(dto)
 
     const updated = await this.prisma.product.update({
       where: { id },

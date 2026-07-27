@@ -1,14 +1,19 @@
 import { OrgUnitLevel } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Trim } from '../../../common/decorators/trim.decorator'
 
 export class CreateOrganizationUnitDto {
   @ApiProperty({ description: 'Mã đơn vị' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Mã đơn vị không được để trống' })
   code!: string
 
   @ApiProperty({ description: 'Tên đơn vị' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'Tên đơn vị không được để trống' })
   name!: string
 
   @ApiPropertyOptional({ description: 'Địa chỉ' })
