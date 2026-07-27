@@ -4,6 +4,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsDateString,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -20,15 +21,17 @@ export class CreateGeneralVoucherLineDto {
 
   @ApiProperty({ description: 'TK Nợ — tự nhập' })
   @IsString()
+  @IsNotEmpty({ message: 'TK Nợ không được để trống' })
   debitAccount!: string
 
   @ApiProperty({ description: 'TK Có — tự nhập' })
   @IsString()
+  @IsNotEmpty({ message: 'TK Có không được để trống' })
   creditAccount!: string
 
   @ApiProperty({ description: 'Số tiền dòng (đồng)' })
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
+  @Min(0.01, { message: 'Số tiền dòng phải > 0' })
   amount!: number
 
   @ApiPropertyOptional()

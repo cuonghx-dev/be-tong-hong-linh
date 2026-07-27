@@ -1,10 +1,11 @@
 import { z } from 'zod'
 
-// Dòng hạch toán chứng từ nghiệp vụ khác — TK Nợ/Có tự nhập.
+// Dòng hạch toán chứng từ nghiệp vụ khác — TK Nợ/Có tự nhập nhưng bắt buộc:
+// mỗi dòng là 1 bút toán, thiếu 1 vế là sổ sách lệch.
 export const generalLineSchema = z.object({
   description: z.string().optional(),
-  debitAccount: z.string().optional(),
-  creditAccount: z.string().optional(),
+  debitAccount: z.string().min(1, 'Chọn TK Nợ'),
+  creditAccount: z.string().min(1, 'Chọn TK Có'),
   amount: z.number().positive('Số tiền > 0'),
   partnerId: z.string().optional(),
   partnerName: z.string().optional(),

@@ -1,5 +1,5 @@
 import { type Paginated } from '@app/shared'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { Prisma, type GeneralVoucher, type GeneralVoucherLine } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
@@ -66,8 +66,29 @@ export class GeneralService {
     return { voucherNo }
   }
 
+  // Định khoản tự nhập: TK Nợ/Có phải khác nhau và có trong hệ thống tài khoản.
+  // Chỉ chạy ở create/update (đường import ghi TK trống chủ ý — bổ sung khi sửa).
+  private async assertLineAccountsValid(lines: { debitAccount: string; creditAccount: string }[]) {
+    for (const [i, l] of lines.entries()) {
+      if (l.debitAccount === l.creditAccount)
+        throw new BadRequestException(`Dòng ${i + 1}: TK Nợ và TK Có không được trùng nhau`)
+    }
+    const codes = [...new Set(lines.flatMap((l) => [l.debitAccount, l.creditAccount]))]
+    const found = await this.prisma.account.findMany({
+      where: { number: { in: codes } },
+      select: { number: true },
+    })
+    const known = new Set(found.map((a) => a.number))
+    const missing = codes.filter((c) => !known.has(c))
+    if (missing.length > 0)
+      throw new BadRequestException(
+        `TK không có trong hệ thống tài khoản: ${missing.join(', ')}`,
+      )
+  }
+
   async create(dto: CreateGeneralVoucherDto) {
     await this.bookLock.assertUnlocked(dto.postingDate)
+    await this.assertLineAccountsValid(dto.lines)
     const created = await this.prisma.$transaction(async (tx) => {
       const voucherNo = await nextVoucherNo(tx, new Date(dto.voucherDate))
       const lines = normalizeLines(dto.lines)
@@ -101,6 +122,7 @@ export class GeneralService {
       }
 
       if (dto.lines) {
+        await this.assertLineAccountsValid(dto.lines)
         const lines = normalizeLines(dto.lines)
         data.totalAmount = sumAmount(lines)
         await tx.generalVoucherLine.deleteMany({ where: { voucherId: id } })
