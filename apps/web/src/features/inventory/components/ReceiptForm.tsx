@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
+import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
@@ -144,7 +145,7 @@ export function ReceiptForm({
           description: getApiErrorMessage(e),
         })
       }
-    })
+    }, invalidToast(toast)) // toast lỗi validate — tránh bấm Lưu không thấy phản hồi
 
   const saving = create.isPending || update.isPending
 
@@ -262,7 +263,14 @@ export function ReceiptForm({
                         <input {...register(`lines.${i}.itemId`)} className={cellCls} />
                       </td>
                       <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.itemName`)} className={cellCls} />
+                        <input
+                          {...register(`lines.${i}.itemName`)}
+                          className={cn(
+                            cellCls,
+                            formState.errors.lines?.[i]?.itemName &&
+                              'rounded ring-1 ring-inset ring-red-500',
+                          )}
+                        />
                       </td>
                       <td className="px-2 py-1">
                         <input {...register(`lines.${i}.warehouseId`)} className={cellCls} />
@@ -350,9 +358,11 @@ export function ReceiptForm({
           </div>
         </div>
 
-        {typeof formState.errors.lines?.message === 'string' && (
-          <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
-        )}
+        {/* Lỗi cấp mảng (thiếu dòng hàng thật) nằm ở root khi có thêm lỗi từng dòng. */}
+        {(() => {
+          const msg = formState.errors.lines?.message ?? formState.errors.lines?.root?.message
+          return typeof msg === 'string' ? <p className="text-sm text-red-600">{msg}</p> : null
+        })()}
 
         {/* Tổng hợp */}
         <div className="ml-auto grid w-full max-w-sm grid-cols-2 gap-y-1.5 text-sm">

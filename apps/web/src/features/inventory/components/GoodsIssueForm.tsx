@@ -9,6 +9,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { useCustomers } from '@/features/sales'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
+import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
@@ -185,7 +186,7 @@ export function GoodsIssueForm({
           description: getApiErrorMessage(e),
         })
       }
-    })
+    }, invalidToast(toast)) // toast lỗi validate — tránh bấm Lưu không thấy phản hồi
 
   const saving = create.isPending || update.isPending
 
@@ -310,7 +311,14 @@ export function GoodsIssueForm({
                         <input {...register(`lines.${i}.itemId`)} className={cellCls} />
                       </td>
                       <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.itemName`)} className={cellCls} />
+                        <input
+                          {...register(`lines.${i}.itemName`)}
+                          className={cn(
+                            cellCls,
+                            formState.errors.lines?.[i]?.itemName &&
+                              'rounded ring-1 ring-inset ring-red-500',
+                          )}
+                        />
                       </td>
                       <td className="px-2 py-1">
                         <input {...register(`lines.${i}.warehouseId`)} className={cellCls} />
@@ -404,9 +412,11 @@ export function GoodsIssueForm({
           </div>
         </div>
 
-        {typeof formState.errors.lines?.message === 'string' && (
-          <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
-        )}
+        {/* Lỗi cấp mảng (thiếu dòng hàng thật) nằm ở root khi có thêm lỗi từng dòng. */}
+        {(() => {
+          const msg = formState.errors.lines?.message ?? formState.errors.lines?.root?.message
+          return typeof msg === 'string' ? <p className="text-sm text-red-600">{msg}</p> : null
+        })()}
 
         {/* Địa điểm giao hàng */}
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">

@@ -1,5 +1,5 @@
 import { CHART_OF_ACCOUNTS, type Paginated } from '@app/shared'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import {
   GoodsIssueCategory,
@@ -369,7 +369,13 @@ function defaultCreditAccount(category: GoodsIssueCategory): string {
 }
 
 function normalizeLines(category: GoodsIssueCategory, lines: CreateGoodsIssueLineDto[]) {
+  // Chặn chứng từ rỗng (mirror Zod FE): cần ≥ 1 dòng hàng thật; dòng ghi chú
+  // (SL 0) được trống tên, dòng SL > 0 bắt buộc có tên hàng.
+  if (!lines.some((l) => l.quantity > 0))
+    throw new BadRequestException('Cần ít nhất 1 dòng hàng có số lượng > 0')
   return lines.map((line, i) => {
+    if (line.quantity > 0 && !line.itemName?.trim())
+      throw new BadRequestException(`Dòng ${i + 1}: thiếu tên hàng`)
     const quantity = new Prisma.Decimal(line.quantity)
     const unitPrice = new Prisma.Decimal(line.unitPrice)
     return {
