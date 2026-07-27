@@ -19,41 +19,18 @@ export const PURCHASE_ORIGIN_LABEL: Record<PurchaseOrigin, string> = {
   [PurchaseOrigin.Domestic]: 'trong nước',
 }
 
-// "Lý do" (loại chứng từ) mua hàng — đúng 4 loại theo MISA, mã hóa cả tùy chọn
-// thanh toán: loại "- Tiền mặt" là trả ngay TM (tự sinh phiếu chi, số PC).
-export interface PurchaseReasonOption {
-  origin: PurchaseOrigin
-  type: PurchaseVoucherType
-  paymentMode: PurchasePaymentMode
-  label: string
-}
-
-export const PURCHASE_REASON_OPTIONS: PurchaseReasonOption[] = [
-  {
-    origin: PurchaseOrigin.Domestic,
-    type: PurchaseVoucherType.Stock,
-    paymentMode: PurchasePaymentMode.Unpaid,
-    label: 'Mua hàng trong nước nhập kho chưa thanh toán',
-  },
-  {
-    origin: PurchaseOrigin.Domestic,
-    type: PurchaseVoucherType.NonStock,
-    paymentMode: PurchasePaymentMode.Unpaid,
-    label: 'Mua hàng trong nước không qua kho chưa thanh toán',
-  },
-  {
-    origin: PurchaseOrigin.Domestic,
-    type: PurchaseVoucherType.NonStock,
-    paymentMode: PurchasePaymentMode.Immediate,
-    label: 'Mua hàng trong nước không qua kho - Tiền mặt',
-  },
-  {
-    origin: PurchaseOrigin.Domestic,
-    type: PurchaseVoucherType.Service,
-    paymentMode: PurchasePaymentMode.Unpaid,
-    label: 'Chứng từ mua dịch vụ chưa thanh toán',
-  },
+// Dropdown loại nghiệp vụ ở page header — 3 loại (§5). Tùy chọn thanh toán KHÔNG
+// nằm trong danh sách này: MISA để radio "Chưa thanh toán / Thanh toán ngay" +
+// dropdown phương thức riêng ở sub-header, nên mọi loại đều trả ngay được.
+export const PURCHASE_TYPE_OPTIONS: PurchaseVoucherType[] = [
+  PurchaseVoucherType.Stock,
+  PurchaseVoucherType.NonStock,
+  PurchaseVoucherType.Service,
 ]
+
+// Phương thức thanh toán khi "Thanh toán ngay" — hiện chỉ tiền mặt (backend sinh
+// phiếu chi tiền mặt); chuyển khoản/UNC chưa hỗ trợ.
+export const PURCHASE_PAYMENT_METHODS = [{ value: 'CASH', label: 'Tiền mặt' }] as const
 
 // Tổ hợp xác định 1 loại chứng từ (dòng bảng cũng có đủ các field này).
 export interface PurchaseReasonCombo {
@@ -62,25 +39,10 @@ export interface PurchaseReasonCombo {
   paymentMode: PurchasePaymentMode
 }
 
-// Mã hóa lựa chọn "Lý do" thành value cho <select> ("DOMESTIC:STOCK:UNPAID").
-export const reasonKey = (c: PurchaseReasonCombo) => `${c.origin}:${c.type}:${c.paymentMode}`
-
-export function parseReasonKey(key: string): PurchaseReasonCombo {
-  const [origin, type, paymentMode] = key.split(':') as [
-    PurchaseOrigin,
-    PurchaseVoucherType,
-    PurchasePaymentMode,
-  ]
-  return { origin, type, paymentMode }
-}
-
-// Nhãn loại chứng từ đầy đủ (dòng bảng). Tổ hợp ngoài 4 loại chuẩn (nếu còn
-// trong dữ liệu cũ) dựng nhãn theo công thức MISA thay vì rơi về nhãn cụt.
+// Nhãn loại chứng từ đầy đủ (dòng bảng) — dựng theo công thức MISA:
+// "Mua hàng <nguồn> <nhập kho|không qua kho>" | "Chứng từ mua dịch vụ",
+// hậu tố " - Tiền mặt" (trả ngay) hoặc " chưa thanh toán".
 export function purchaseReasonLabel(c: PurchaseReasonCombo): string {
-  const exact = PURCHASE_REASON_OPTIONS.find(
-    (o) => o.origin === c.origin && o.type === c.type && o.paymentMode === c.paymentMode,
-  )
-  if (exact) return exact.label
   const base =
     c.type === PurchaseVoucherType.Service
       ? 'Chứng từ mua dịch vụ'

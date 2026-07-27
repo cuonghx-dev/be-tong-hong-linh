@@ -1,6 +1,5 @@
 import { PurchaseVoucherType } from '@app/shared'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { Button } from '@/shared/ui/button'
@@ -55,17 +54,11 @@ export function PurchaseVoucherPage({ mode }: { mode: Mode }) {
     )
   }
 
-  // Loại chứng từ đổi được ngay trong form (combobox "Lý do") → title tĩnh.
-  const title =
-    mode === 'new'
-      ? 'Chứng từ mua hàng'
-      : mode === 'edit'
-        ? 'Sửa chứng từ mua hàng'
-        : 'Xem chứng từ mua hàng'
-
+  // Form tự dựng cả page header / sub-header / action bar (§5 design.md) vì các
+  // control ở đó đọc-ghi trực tiếp state form (loại nghiệp vụ, số hợp đồng,
+  // tùy chọn thanh toán, tổng tiền) → không bọc RecordPageShell.
   return (
-    <RecordPageShell title={title} onClose={close}>
-      <PurchaseVoucherForm
+    <PurchaseVoucherForm
         type={type}
         voucherId={id ?? null}
         duplicateFromId={duplicateFromId}
@@ -104,6 +97,5 @@ export function PurchaseVoucherPage({ mode }: { mode: Mode }) {
           ) : undefined
         }
       />
-    </RecordPageShell>
   )
 }
