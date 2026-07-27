@@ -36,7 +36,10 @@ export interface PurchaseVoucherDto {
   paymentMode: PurchasePaymentMode
   receiveWithInvoice: boolean // Nhận kèm hóa đơn
   voucherNo: string // vd NK07099, MH0326/2025
+  invoiceTemplate: string | null // Mẫu số hóa đơn (vd 01GTKT0/001)
+  invoiceSeries: string | null // Ký hiệu hóa đơn (vd 1C24TYY)
   invoiceNo: string | null // Số hóa đơn
+  invoiceDate: string | null // Ngày hóa đơn (ISO date-only)
   postingDate: string // Ngày hạch toán (ISO date-only)
   voucherDate: string // Ngày chứng từ
   supplierId: string | null
@@ -66,8 +69,34 @@ export interface PurchaseVoucherDto {
   posted: boolean // Đã ghi sổ / bỏ ghi (loại khỏi sổ sách, không xóa dữ liệu)
   branchId: string | null
   lines: PurchaseVoucherLineDto[]
+  // Tab Chi phí (§10.4) — chỉ trả ở API chi tiết; danh sách không kèm.
+  costAllocations?: PurchaseCostAllocationDto[]
   createdAt: string
   updatedAt: string
+}
+
+// Dòng phân bổ chi phí mua hàng (tab Chi phí, §10.4).
+export interface PurchaseCostAllocationDto {
+  costVoucherId: string // Chứng từ chi phí (mua dịch vụ)
+  voucherNo: string
+  postingDate: string
+  voucherDate: string
+  supplierName: string | null
+  totalCost: string // Tổng chi phí = tiền hàng chưa thuế của chứng từ CP
+  allocatedTotal: string // Lũy kế số đã phân bổ (mọi phiếu, gồm dòng này)
+  amount: string // Số phân bổ lần này
+}
+
+// Ứng viên chứng từ chi phí cho dialog "Chọn chứng từ CP".
+export interface CostVoucherOptionDto {
+  id: string
+  voucherNo: string
+  postingDate: string
+  voucherDate: string
+  supplierName: string | null
+  totalCost: string
+  allocatedTotal: string
+  remaining: string // Còn được phân bổ = totalCost − allocatedTotal
 }
 
 // Payload tạo dòng hàng tiền.
@@ -90,7 +119,10 @@ export interface CreatePurchaseVoucherInput {
   origin?: PurchaseOrigin // Mặc định trong nước (DOMESTIC)
   paymentMode: PurchasePaymentMode
   receiveWithInvoice?: boolean
+  invoiceTemplate?: string | null
+  invoiceSeries?: string | null
   invoiceNo?: string | null
+  invoiceDate?: string | null
   postingDate: string
   voucherDate: string
   supplierId?: string | null
@@ -105,6 +137,8 @@ export interface CreatePurchaseVoucherInput {
   creditDays?: number | null
   dueDate?: string | null
   purchaseCost?: number
+  // Phân bổ chi phí (tab Chi phí): gửi kèm → thay toàn bộ, purchaseCost = Σ amount.
+  costAllocations?: { costVoucherId: string; amount: number }[]
   einvoiceLookupCode?: string | null
   einvoiceLookupUrl?: string | null
   branchId?: string | null

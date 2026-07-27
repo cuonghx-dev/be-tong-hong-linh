@@ -71,6 +71,18 @@ export class CreatePurchaseVoucherLineDto {
   vatAccount?: string
 }
 
+// Dòng phân bổ chi phí mua hàng (tab Chi phí, §10.4).
+export class PurchaseCostAllocationInputDto {
+  @ApiProperty({ description: 'Id chứng từ chi phí (mua dịch vụ)' })
+  @IsString()
+  costVoucherId!: string
+
+  @ApiProperty({ description: 'Số phân bổ lần này' })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  amount!: number
+}
+
 export class CreatePurchaseVoucherDto {
   @ApiProperty({ enum: PurchaseVoucherType })
   @IsEnum(PurchaseVoucherType)
@@ -90,10 +102,25 @@ export class CreatePurchaseVoucherDto {
   @IsBoolean()
   receiveWithInvoice?: boolean
 
+  @ApiPropertyOptional({ description: 'Mẫu số hóa đơn' })
+  @IsOptional()
+  @IsString()
+  invoiceTemplate?: string
+
+  @ApiPropertyOptional({ description: 'Ký hiệu hóa đơn' })
+  @IsOptional()
+  @IsString()
+  invoiceSeries?: string
+
   @ApiPropertyOptional({ description: 'Số hóa đơn' })
   @IsOptional()
   @IsString()
   invoiceNo?: string
+
+  @ApiPropertyOptional({ description: 'Ngày hóa đơn (ISO)' })
+  @IsOptional()
+  @IsDateString()
+  invoiceDate?: string
 
   @ApiProperty({ description: 'Ngày hạch toán (ISO)' })
   @IsDateString()
@@ -165,6 +192,16 @@ export class CreatePurchaseVoucherDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   purchaseCost?: number
+
+  @ApiPropertyOptional({
+    type: [PurchaseCostAllocationInputDto],
+    description: 'Phân bổ chi phí mua hàng (tab Chi phí) — gửi kèm là thay toàn bộ',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PurchaseCostAllocationInputDto)
+  costAllocations?: PurchaseCostAllocationInputDto[]
 
   @ApiPropertyOptional({ description: 'Mã tra cứu HĐĐT' })
   @IsOptional()

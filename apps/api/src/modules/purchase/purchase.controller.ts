@@ -46,6 +46,14 @@ export class PurchaseController {
     return this.purchase.previewNextVoucherNo(type, voucherDate, paymentMode)
   }
 
+  // Đặt TRƯỚC @Get(':id') như next-no. Ứng viên chứng từ chi phí (mua dịch vụ)
+  // cho dialog "Chọn chứng từ CP" của tab Chi phí.
+  @Get('cost-vouchers')
+  @ApiOperation({ summary: 'Chứng từ chi phí (MDV) khả dụng để phân bổ vào phiếu nhập' })
+  costVouchers(@Query('keyword') keyword?: string) {
+    return this.purchase.listCostVouchers(keyword)
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Chi tiết 1 chứng từ mua hàng' })
   findOne(@Param('id') id: string) {

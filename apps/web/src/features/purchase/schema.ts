@@ -20,12 +20,29 @@ export const purchaseLineSchema = z.object({
   vatAccount: z.string().optional(),
 })
 
+// Dòng phân bổ chi phí (tab Chi phí, §10.4). Field hiển thị (số CT, NCC, tổng
+// chi phí, lũy kế phiếu khác) giữ trong form state để render bảng; submit chỉ
+// gửi costVoucherId + amount.
+export const purchaseCostAllocationSchema = z.object({
+  costVoucherId: z.string(),
+  voucherNo: z.string(),
+  postingDate: z.string(),
+  voucherDate: z.string(),
+  supplierName: z.string().nullable().optional(),
+  totalCost: z.coerce.number(),
+  allocatedOther: z.coerce.number(), // đã phân bổ cho các phiếu KHÁC
+  amount: z.coerce.number().min(0, 'Số phân bổ ≥ 0'),
+})
+
 export const purchaseVoucherSchema = z.object({
   type: z.nativeEnum(PurchaseVoucherType),
   origin: z.nativeEnum(PurchaseOrigin),
   paymentMode: z.nativeEnum(PurchasePaymentMode),
   receiveWithInvoice: z.boolean().optional(),
+  invoiceTemplate: z.string().optional(),
+  invoiceSeries: z.string().optional(),
   invoiceNo: z.string().optional(),
+  invoiceDate: z.string().optional(),
   postingDate: z.string().min(1, 'Chọn ngày hạch toán'),
   voucherDate: z.string().min(1, 'Chọn ngày chứng từ'),
   supplierId: z.string().optional(),
@@ -40,6 +57,7 @@ export const purchaseVoucherSchema = z.object({
   creditDays: z.coerce.number().int().min(0).optional(),
   dueDate: z.string().optional(),
   purchaseCost: z.coerce.number().min(0).optional(),
+  costAllocations: z.array(purchaseCostAllocationSchema).optional(),
   einvoiceLookupCode: z.string().optional(),
   einvoiceLookupUrl: z.string().optional(),
   branchId: z.string().optional(),
@@ -48,6 +66,7 @@ export const purchaseVoucherSchema = z.object({
 
 export type PurchaseVoucherFormValues = z.infer<typeof purchaseVoucherSchema>
 export type PurchaseLineFormValues = z.infer<typeof purchaseLineSchema>
+export type PurchaseCostAllocationFormValues = z.infer<typeof purchaseCostAllocationSchema>
 
 // Nhà cung cấp.
 export const supplierSchema = z.object({

@@ -1,5 +1,5 @@
 import { CHART_OF_ACCOUNTS, type Paginated } from '@app/shared'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import {
   CashVoucherCategory,
@@ -14,7 +14,11 @@ import { buildPartnerLookup } from '../../database/partner-lookup'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { CashService, type PurchasePaymentInput } from '../cash/cash.service'
 import { ReceiptService, type PurchaseReceiptInput } from '../inventory/receipt.service'
-import { CreatePurchaseVoucherDto, CreatePurchaseVoucherLineDto } from './dto/create-purchase-voucher.dto'
+import {
+  CreatePurchaseVoucherDto,
+  CreatePurchaseVoucherLineDto,
+  PurchaseCostAllocationInputDto,
+} from './dto/create-purchase-voucher.dto'
 import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
 import { parsePurchaseXlsx } from './purchase-import'
 import { UpdatePurchaseVoucherDto } from './dto/update-purchase-voucher.dto'
@@ -77,13 +81,88 @@ export class PurchaseService {
     return this.toDetailDto(voucher)
   }
 
-  // DTO chi tiết kèm số các chứng từ tự sinh (hiện link tham chiếu trên form).
+  // DTO chi tiết kèm số các chứng từ tự sinh (hiện link tham chiếu trên form)
+  // + bảng phân bổ chi phí (tab Chi phí) — danh sách không kèm để nhẹ query.
   private async toDetailDto(v: VoucherWithLines) {
-    const [paymentNo, receiptNo] = await Promise.all([
+    const [paymentNo, receiptNo, allocRows] = await Promise.all([
       v.paymentId ? this.cash.findVoucherNo(v.paymentId) : null,
       v.receiptId ? this.receipt.findVoucherNo(v.receiptId) : null,
+      this.prisma.purchaseCostAllocation.findMany({
+        where: { voucherId: v.id },
+        include: {
+          costVoucher: {
+            select: {
+              voucherNo: true,
+              postingDate: true,
+              voucherDate: true,
+              supplierName: true,
+              totalGoods: true,
+              allocationsAsCost: { select: { amount: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
     ])
-    return { ...toVoucherDto(v), paymentNo, receiptNo }
+    const costAllocations = allocRows.map((a) => ({
+      costVoucherId: a.costVoucherId,
+      voucherNo: a.costVoucher.voucherNo,
+      postingDate: toDateOnly(a.costVoucher.postingDate)!,
+      voucherDate: toDateOnly(a.costVoucher.voucherDate)!,
+      supplierName: a.costVoucher.supplierName,
+      totalCost: a.costVoucher.totalGoods.toString(),
+      // Lũy kế = tổng đã phân bổ cho MỌI phiếu (gồm dòng này) — cột MISA.
+      allocatedTotal: a.costVoucher.allocationsAsCost
+        .reduce((s, x) => s.add(x.amount), new Prisma.Decimal(0))
+        .toString(),
+      amount: a.amount.toString(),
+    }))
+    return { ...toVoucherDto(v), paymentNo, receiptNo, costAllocations }
+  }
+
+  // Ứng viên cho dialog "Chọn chứng từ CP": chứng từ mua dịch vụ đã ghi sổ,
+  // kèm lũy kế đã phân bổ để tính số còn được phân bổ.
+  async listCostVouchers(keyword?: string) {
+    const where: Prisma.PurchaseVoucherWhereInput = {
+      type: PurchaseVoucherType.SERVICE,
+      posted: true,
+    }
+    if (keyword) {
+      where.OR = [
+        { voucherNo: { contains: keyword, mode: 'insensitive' } },
+        { supplierName: { contains: keyword, mode: 'insensitive' } },
+      ]
+    }
+    const rows = await this.prisma.purchaseVoucher.findMany({
+      where,
+      select: {
+        id: true,
+        voucherNo: true,
+        postingDate: true,
+        voucherDate: true,
+        supplierName: true,
+        totalGoods: true,
+        allocationsAsCost: { select: { amount: true } },
+      },
+      orderBy: [{ postingDate: 'desc' }, { createdAt: 'desc' }],
+      take: 50,
+    })
+    return rows.map((v) => {
+      const allocated = v.allocationsAsCost.reduce(
+        (s, x) => s.add(x.amount),
+        new Prisma.Decimal(0),
+      )
+      return {
+        id: v.id,
+        voucherNo: v.voucherNo,
+        postingDate: toDateOnly(v.postingDate)!,
+        voucherDate: toDateOnly(v.voucherDate)!,
+        supplierName: v.supplierName,
+        totalCost: v.totalGoods.toString(),
+        allocatedTotal: allocated.toString(),
+        remaining: v.totalGoods.sub(allocated).toString(),
+      }
+    })
   }
 
   // Xem trước số chứng từ kế tiếp để hiển thị trên form — KHÔNG giữ chỗ;
@@ -115,13 +194,23 @@ export class PurchaseService {
         ? await this.cash.nextPaymentNo(tx, vDate)
         : await nextVoucherNo(tx, dto.type, vDate)
       const lines = normalizeLines(dto.type, dto.lines, wantsCash)
-      const totals = computeTotals(lines, dto.purchaseCost ?? 0)
+      // Chi phí mua hàng = Σ phân bổ (tab Chi phí); không phân bổ thì lấy số
+      // scalar (dữ liệu nhập khẩu Excel chỉ có số tổng).
+      const allocs = dto.costAllocations ?? []
+      if (allocs.length > 0) await assertCostAllocationsValid(tx, null, allocs)
+      const cost = allocs.length
+        ? allocs.reduce((s, a) => s + a.amount, 0)
+        : dto.purchaseCost ?? 0
+      const totals = computeTotals(lines, cost)
       const voucher = await tx.purchaseVoucher.create({
         data: {
           type: dto.type,
           origin: dto.origin ?? 'DOMESTIC',
           paymentMode: dto.paymentMode,
           receiveWithInvoice: dto.receiveWithInvoice ?? false,
+        invoiceTemplate: dto.invoiceTemplate ?? null,
+        invoiceSeries: dto.invoiceSeries ?? null,
+        invoiceDate: dto.invoiceDate ? new Date(dto.invoiceDate) : null,
           voucherNo,
           invoiceNo: dto.invoiceNo ?? null,
           postingDate: new Date(dto.postingDate),
@@ -137,7 +226,7 @@ export class PurchaseService {
           paymentTermId: dto.paymentTermId ?? null,
           creditDays: dto.creditDays ?? null,
           dueDate: resolveDueDate(dto),
-          purchaseCost: new Prisma.Decimal(dto.purchaseCost ?? 0),
+          purchaseCost: new Prisma.Decimal(cost),
           ...totals,
           receiveStatus: dto.receiveWithInvoice ? 'RECEIVED' : 'NOT_RECEIVED',
           paymentStatus: dto.paymentMode === 'IMMEDIATE' ? 'PAID' : 'UNPAID',
@@ -145,6 +234,12 @@ export class PurchaseService {
           einvoiceLookupCode: dto.einvoiceLookupCode ?? null,
           einvoiceLookupUrl: dto.einvoiceLookupUrl ?? null,
           lines: { create: lines },
+          costAllocations: {
+            create: allocs.map((a) => ({
+              costVoucherId: a.costVoucherId,
+              amount: new Prisma.Decimal(a.amount),
+            })),
+          },
         },
         include: { lines: { orderBy: { lineNo: 'asc' } } },
       })
@@ -190,7 +285,10 @@ export class PurchaseService {
         origin: dto.origin ?? undefined,
         paymentMode: dto.paymentMode ?? undefined,
         receiveWithInvoice: dto.receiveWithInvoice ?? undefined,
+        invoiceTemplate: dto.invoiceTemplate ?? undefined,
+        invoiceSeries: dto.invoiceSeries ?? undefined,
         invoiceNo: dto.invoiceNo ?? undefined,
+        invoiceDate: dto.invoiceDate ? new Date(dto.invoiceDate) : undefined,
         postingDate: dto.postingDate ? new Date(dto.postingDate) : undefined,
         voucherDate: dto.voucherDate ? new Date(dto.voucherDate) : undefined,
         supplierId: dto.supplierId ?? undefined,
@@ -215,16 +313,37 @@ export class PurchaseService {
 
       const wantsCash = paysCashNow(dto.paymentMode ?? existing.paymentMode)
 
+      // Tab Chi phí: gửi costAllocations là thay toàn bộ (xóa hết tạo lại, như lines).
+      // Chi phí ưu tiên Σ phân bổ; mảng rỗng → rơi về số scalar (giữ chi phí của
+      // chứng từ nhập khẩu Excel không có phân bổ).
+      let cost: number | undefined
+      if (dto.costAllocations !== undefined) {
+        if (dto.costAllocations.length > 0)
+          await assertCostAllocationsValid(tx, id, dto.costAllocations)
+        await tx.purchaseCostAllocation.deleteMany({ where: { voucherId: id } })
+        data.costAllocations = {
+          create: dto.costAllocations.map((a) => ({
+            costVoucherId: a.costVoucherId,
+            amount: new Prisma.Decimal(a.amount),
+          })),
+        }
+        cost = dto.costAllocations.length
+          ? dto.costAllocations.reduce((s, a) => s + a.amount, 0)
+          : dto.purchaseCost ?? Number(existing.purchaseCost)
+      } else if (dto.purchaseCost !== undefined) {
+        cost = dto.purchaseCost
+      }
+
       if (dto.lines) {
         const lines = normalizeLines(existing.type, dto.lines, wantsCash)
-        const cost = dto.purchaseCost ?? Number(existing.purchaseCost)
-        Object.assign(data, computeTotals(lines, cost))
-        data.purchaseCost = new Prisma.Decimal(cost)
+        const resolvedCost = cost ?? Number(existing.purchaseCost)
+        Object.assign(data, computeTotals(lines, resolvedCost))
+        data.purchaseCost = new Prisma.Decimal(resolvedCost)
         await tx.purchaseVoucherLine.deleteMany({ where: { voucherId: id } })
         data.lines = { create: lines }
-      } else if (dto.purchaseCost !== undefined) {
-        data.purchaseCost = new Prisma.Decimal(dto.purchaseCost)
-        data.stockValue = new Prisma.Decimal(dto.purchaseCost).add(existing.totalGoods)
+      } else if (cost !== undefined) {
+        data.purchaseCost = new Prisma.Decimal(cost)
+        data.stockValue = new Prisma.Decimal(cost).add(existing.totalGoods)
       }
 
       // Đổi tùy chọn thanh toán không kèm dòng mới → đổi vế Có mặc định của dòng
@@ -398,6 +517,16 @@ export class PurchaseService {
     const existing = await this.prisma.purchaseVoucher.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
     await this.bookLock.assertUnlocked(existing.postingDate)
+    // Chứng từ chi phí đang được phân bổ vào phiếu khác: xóa sẽ âm thầm đổi giá
+    // trị nhập kho của phiếu đó (FK Restrict cũng chặn) → báo lỗi rõ ràng.
+    const usedAsCost = await this.prisma.purchaseCostAllocation.count({
+      where: { costVoucherId: id },
+    })
+    if (usedAsCost > 0) {
+      throw new BadRequestException(
+        `Chứng từ ${existing.voucherNo} đã phân bổ chi phí cho ${usedAsCost} chứng từ mua hàng — gỡ phân bổ trước khi xóa`,
+      )
+    }
     await this.prisma.$transaction(async (tx) => {
       await tx.purchaseVoucher.delete({ where: { id } })
       // Xóa kèm mọi chứng từ tự sinh — không để chứng từ mồ côi khi mất chứng từ gốc.
@@ -539,6 +668,44 @@ function normalizeLines(
   })
 }
 
+// Kiểm tra phân bổ chi phí (§10.4): chứng từ CP phải là mua dịch vụ, và
+// Σ phân bổ (mọi phiếu, trừ chính phiếu đang sửa) không vượt tổng chi phí.
+async function assertCostAllocationsValid(
+  tx: Prisma.TransactionClient,
+  voucherId: string | null,
+  allocs: PurchaseCostAllocationInputDto[],
+) {
+  const ids = allocs.map((a) => a.costVoucherId)
+  if (new Set(ids).size !== ids.length)
+    throw new BadRequestException('Chứng từ chi phí bị chọn trùng')
+  const rows = await tx.purchaseVoucher.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      type: true,
+      voucherNo: true,
+      totalGoods: true,
+      allocationsAsCost: { select: { voucherId: true, amount: true } },
+    },
+  })
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  for (const a of allocs) {
+    const cv = byId.get(a.costVoucherId)
+    if (!cv) throw new NotFoundException(`Không tìm thấy chứng từ chi phí ${a.costVoucherId}`)
+    if (cv.type !== PurchaseVoucherType.SERVICE)
+      throw new BadRequestException(`${cv.voucherNo} không phải chứng từ mua dịch vụ`)
+    const allocatedOther = cv.allocationsAsCost
+      .filter((x) => x.voucherId !== voucherId)
+      .reduce((s, x) => s.add(x.amount), new Prisma.Decimal(0))
+    if (allocatedOther.add(a.amount).gt(cv.totalGoods)) {
+      const remaining = cv.totalGoods.sub(allocatedOther)
+      throw new BadRequestException(
+        `Số phân bổ vượt chi phí còn lại của ${cv.voucherNo} (còn ${remaining.toString()})`,
+      )
+    }
+  }
+}
+
 // §10.2: Tổng tiền hàng = Σ thành tiền; Thuế = Σ tiền thuế;
 // Tổng TT = hàng + thuế; Giá trị nhập kho = tiền hàng + chi phí mua hàng phân bổ (§10.4).
 function computeTotals(
@@ -631,7 +798,10 @@ function toVoucherDto(v: VoucherWithLines) {
     paymentMode: v.paymentMode,
     receiveWithInvoice: v.receiveWithInvoice,
     voucherNo: v.voucherNo,
+    invoiceTemplate: v.invoiceTemplate,
+    invoiceSeries: v.invoiceSeries,
     invoiceNo: v.invoiceNo,
+    invoiceDate: toDateOnly(v.invoiceDate),
     postingDate: toDateOnly(v.postingDate)!,
     voucherDate: toDateOnly(v.voucherDate)!,
     supplierId: v.supplierId,

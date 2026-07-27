@@ -16,6 +16,7 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { invalidToast } from '@/shared/lib/form'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
+import { formatDate } from '@/shared/lib/report-period'
 import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon, TrashIcon, XIcon } from '@/shared/ui/icons'
@@ -23,14 +24,9 @@ import { ItemPicker, type ItemOption } from '@/shared/ui/item-picker'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
 import { QuickAddEmployeeDialog } from '@/shared/ui/quick-add-employee-dialog'
 import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
+import { CostVoucherPickerDialog } from './CostVoucherPickerDialog'
 import { WarehousePicker, warehouseCellCls } from '@/shared/ui/warehouse-picker'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { useSuppliers } from '../api/useSuppliers'
 import { useNextPurchaseVoucherNo, usePurchaseVoucher } from '../api/usePurchaseVouchers'
@@ -99,6 +95,7 @@ function defaultValues(type: PurchaseVoucherType): PurchaseVoucherFormValues {
     voucherDate: today(),
     description: 'Mua hàng',
     purchaseCost: 0,
+    costAllocations: [],
     lines: [emptyLine(type)],
   }
 }
@@ -146,11 +143,15 @@ export function PurchaseVoucherForm({
   })
   const { control, register, handleSubmit, reset, watch, setValue, getValues, formState } = form
   const { fields, append, remove, replace } = useFieldArray({ control, name: 'lines' })
+  // Bảng phân bổ chi phí (tab Chi phí, §10.4).
+  const costArray = useFieldArray({ control, name: 'costAllocations' })
 
-  // Tab bản ghi (§5.4) + tab bảng dòng hàng (§5.6) + toggle cột tài khoản (§5.7).
+  // Tab bản ghi (§5.4) + toggle cột tài khoản (§5.7).
   const [tab, setTab] = useState<'main' | 'invoice'>('main')
-  const [lineTab, setLineTab] = useState<'goods' | 'cost'>('goods')
   const [showAccounts, setShowAccounts] = useState(true)
+  // Sub-tab vùng bảng (MISA): Hàng tiền | Chi phí (chỉ loại nhập kho).
+  const [lineTab, setLineTab] = useState<'money' | 'cost'>('money')
+  const [costDialog, setCostDialog] = useState(false)
 
   // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
   // Số đổi theo tùy chọn thanh toán: MH/MDV trả ngay tiền mặt → PC, còn lại → NK/MH/MDV.
@@ -224,7 +225,10 @@ export function PurchaseVoucherForm({
       origin: v.origin,
       paymentMode: v.paymentMode,
       receiveWithInvoice: v.receiveWithInvoice,
+      invoiceTemplate: v.invoiceTemplate ?? undefined,
+      invoiceSeries: v.invoiceSeries ?? undefined,
       invoiceNo: v.invoiceNo ?? undefined,
+      invoiceDate: v.invoiceDate ?? undefined,
       // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
       postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
@@ -239,7 +243,21 @@ export function PurchaseVoucherForm({
       paymentTermId: v.paymentTermId ?? undefined,
       creditDays: v.creditDays ?? undefined,
       dueDate: v.dueDate ?? undefined,
-      purchaseCost: Number(v.purchaseCost),
+      purchaseCost: duplicating ? 0 : Number(v.purchaseCost),
+      // Nhân bản KHÔNG copy phân bổ chi phí: lũy kế của chứng từ CP sẽ vượt
+      // tổng chi phí → lưu bị từ chối; người dùng tự phân bổ lại nếu cần.
+      costAllocations: duplicating
+        ? []
+        : (v.costAllocations ?? []).map((a) => ({
+            costVoucherId: a.costVoucherId,
+            voucherNo: a.voucherNo,
+            postingDate: a.postingDate,
+            voucherDate: a.voucherDate,
+            supplierName: a.supplierName,
+            totalCost: Number(a.totalCost),
+            allocatedOther: Number(a.allocatedTotal) - Number(a.amount),
+            amount: Number(a.amount),
+          })),
       einvoiceLookupCode: v.einvoiceLookupCode ?? undefined,
       einvoiceLookupUrl: v.einvoiceLookupUrl ?? undefined,
       branchId: v.branchId ?? undefined,
@@ -259,9 +277,14 @@ export function PurchaseVoucherForm({
   }, [editing.data, reset, duplicating])
 
   const lines = watch('lines')
-  const purchaseCost = watch('purchaseCost') ?? 0
   const paymentMode = watch('paymentMode')
   const receiveWithInvoice = watch('receiveWithInvoice')
+  // Chi phí mua hàng = Σ phân bổ (tab Chi phí); chứng từ nhập khẩu Excel không
+  // có phân bổ → rơi về số scalar đã lưu.
+  const costAllocs = watch('costAllocations')
+  const purchaseCostValue = costAllocs?.length
+    ? costAllocs.reduce((s, a) => s + (a.amount || 0), 0)
+    : watch('purchaseCost') || 0
 
   // Trả ngay tiền mặt → TK công nợ dòng hàng đổi 331 → 1111 và ngược lại (MISA
   // đổi tự động); chỉ đè giá trị mặc định, giữ TK người dùng đã sửa tay.
@@ -300,7 +323,7 @@ export function PurchaseVoucherForm({
       0,
     ) ?? 0
   const totalPayment = totalGoods + totalVat
-  const stockValue = totalGoods + (purchaseCost || 0)
+  const stockValue = totalGoods + purchaseCostValue
 
   // Số cột trước "Thành tiền" (dòng Tổng cộng) — đổi theo cột Kho / cột TK đang hiện.
   const leadCols = 3 + (showWarehouse ? 1 : 0) + (showAccounts ? 2 : 0) + 1 // #, mã, tên, [kho], [TK Kho, TK CN], ĐVT
@@ -309,6 +332,14 @@ export function PurchaseVoucherForm({
     handleSubmit(async (values) => {
       const dto: CreatePurchaseVoucherInput = {
         ...values,
+        // Input date bỏ trống trả chuỗi rỗng — backend @IsDateString từ chối "".
+        invoiceDate: values.invoiceDate || undefined,
+        dueDate: values.dueDate || undefined,
+        // Chỉ gửi costVoucherId + amount — field hiển thị (số CT, NCC…) backend từ chối.
+        costAllocations: values.costAllocations?.map((a) => ({
+          costVoucherId: a.costVoucherId,
+          amount: a.amount,
+        })),
         lines: values.lines.map((l) => ({
           itemId: l.itemId,
           itemName: l.itemName,
@@ -483,10 +514,24 @@ export function PurchaseVoucherForm({
         )}
 
         {tab === 'invoice' ? (
-          // Tab Hóa đơn — thông tin hóa đơn mua hàng (chỉ có nghĩa khi nhận kèm HĐ).
+          // Tab Hóa đơn — thông tin hóa đơn NCC nhận kèm hàng (theo MISA: mẫu số,
+          // ký hiệu, số, ngày hóa đơn); chỉ có nghĩa khi nhận kèm HĐ.
           <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-3">
+            <Field label="Mẫu số hóa đơn">
+              <input
+                {...register('invoiceTemplate')}
+                placeholder="VD: 01GTKT0/001"
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Ký hiệu hóa đơn">
+              <input {...register('invoiceSeries')} placeholder="VD: 1C24TYY" className={inputCls} />
+            </Field>
             <Field label="Số hóa đơn">
               <input {...register('invoiceNo')} className={inputCls} />
+            </Field>
+            <Field label="Ngày hóa đơn">
+              <input type="date" {...register('invoiceDate')} className={inputCls} />
             </Field>
             {!receiveWithInvoice && (
               <p className="self-end pb-2 text-xs text-slate-500 md:col-span-2">
@@ -552,7 +597,12 @@ export function PurchaseVoucherForm({
               </Field>
 
               <Field label="Kèm theo (chứng từ gốc)">
-                <input type="number" min={0} {...register('attachmentCount')} className={inputCls} />
+                <input
+                  type="number"
+                  min={0}
+                  {...register('attachmentCount')}
+                  className={inputCls}
+                />
               </Field>
             </div>
 
@@ -574,24 +624,20 @@ export function PurchaseVoucherForm({
             {/* ── Line section (§5.6): sub-tabs + toolbar + bảng dòng hàng ── */}
             <div className="rounded-md border border-border">
               <div className="flex items-center gap-1 border-b border-border bg-slate-50 px-2">
-                {(
-                  [
-                    { key: 'goods', label: 'Hàng tiền' },
-                    { key: 'cost', label: 'Chi phí' },
-                  ] as const
-                ).map((t) => (
+                {/* Sub-tabs MISA: Hàng tiền | Chi phí (phân bổ CP chỉ có ở loại nhập kho). */}
+                {(showWarehouse ? (['money', 'cost'] as const) : (['money'] as const)).map((t) => (
                   <button
-                    key={t.key}
+                    key={t}
                     type="button"
-                    onClick={() => setLineTab(t.key)}
+                    onClick={() => setLineTab(t)}
                     className={cn(
                       'border-b-2 px-3 py-1.5 text-sm transition-colors',
-                      lineTab === t.key
+                      lineTab === t
                         ? 'border-primary font-medium text-primary'
                         : 'border-transparent text-slate-500 hover:text-slate-700',
                     )}
                   >
-                    {t.label}
+                    {t === 'money' ? 'Hàng tiền' : 'Chi phí'}
                   </button>
                 ))}
                 {/* Chiết khấu chưa hỗ trợ — giữ chỗ đúng vị trí toolbar của MISA. */}
@@ -608,150 +654,66 @@ export function PurchaseVoucherForm({
                 </div>
               </div>
 
-              {lineTab === 'cost' ? (
-                <div className="px-3 py-6 text-center text-sm text-slate-500">
-                  Phân bổ chi phí mua hàng theo dòng đang phát triển — nhập tổng ở ô{' '}
-                  <span className="font-medium">Chi phí mua hàng</span> bên dưới.
-                </div>
-              ) : (
+              {showWarehouse && lineTab === 'cost' ? (
+                // ── Tab Chi phí (§10.4): bảng phân bổ chi phí từ chứng từ mua dịch vụ ──
                 <>
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1000px] border-collapse text-sm">
+                    <table className="w-full min-w-[900px] border-collapse text-sm">
                       <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                         <tr>
                           <th className="w-8 px-2 py-1.5 text-center">#</th>
-                          <th className="px-2 py-1.5">Mã hàng</th>
-                          <th className="px-2 py-1.5">Tên hàng</th>
-                          {showWarehouse && <th className="px-2 py-1.5">Kho</th>}
-                          {showAccounts && <th className="w-24 px-2 py-1.5">TK Kho</th>}
-                          {showAccounts && <th className="w-24 px-2 py-1.5">TK Công nợ</th>}
-                          <th className="w-16 px-2 py-1.5">ĐVT</th>
-                          <th className="w-20 px-2 py-1.5 text-right">Số&nbsp;lượng</th>
-                          <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
-                          <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
-                          <th className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</th>
-                          <th className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</th>
-                          {showAccounts && <th className="w-24 px-2 py-1.5">TK thuế GTGT</th>}
+                          <th className="px-2 py-1.5">Ngày hạch toán</th>
+                          <th className="px-2 py-1.5">Ngày chứng từ</th>
+                          <th className="px-2 py-1.5">Số chứng từ</th>
+                          <th className="px-2 py-1.5">Nhà cung cấp</th>
+                          <th className="w-32 px-2 py-1.5 text-right">Tổng chi phí</th>
+                          <th className="w-40 px-2 py-1.5 text-right">Lũy kế số đã phân bổ</th>
+                          <th className="w-36 px-2 py-1.5 text-right">Số phân bổ lần này</th>
                           <th className="w-8 px-2 py-1.5" />
                         </tr>
                       </thead>
                       <tbody>
-                        {fields.map((f, i) => {
-                          const l = lines?.[i]
-                          const amount = (l?.quantity || 0) * (l?.unitPrice || 0)
-                          const vat = (amount * (l?.vatRate || 0)) / 100
+                        {costArray.fields.length === 0 && (
+                          <tr>
+                            <td colSpan={9} className="px-2 py-6 text-center text-slate-500">
+                              Chưa có chi phí phân bổ — bấm “Chọn chứng từ CP” để thêm.
+                            </td>
+                          </tr>
+                        )}
+                        {costArray.fields.map((f, i) => {
+                          const a = costAllocs?.[i]
                           return (
                             <tr key={f.id} className="border-t border-border">
                               <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
                               <td className="px-2 py-1">
-                                <ItemCell value={l?.itemId} onPick={(item) => pickItem(i, item)} />
+                                {a?.postingDate ? formatDate(a.postingDate) : ''}
                               </td>
                               <td className="px-2 py-1">
-                                <input {...register(`lines.${i}.itemName`)} className={cellCls} />
+                                {a?.voucherDate ? formatDate(a.voucherDate) : ''}
                               </td>
-                              {showWarehouse && (
-                                <td className="px-2 py-1">
-                                  <Controller
-                                    control={control}
-                                    name={`lines.${i}.warehouseId`}
-                                    render={({ field }) => (
-                                      <WarehousePicker
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        inputClassName={warehouseCellCls}
-                                      />
-                                    )}
-                                  />
-                                </td>
-                              )}
-                              {showAccounts && (
-                                <td className="px-2 py-1">
-                                  <Controller
-                                    control={control}
-                                    name={`lines.${i}.stockAccount`}
-                                    render={({ field }) => (
-                                      <AccountPicker
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        inputClassName={accountCellCls}
-                                      />
-                                    )}
-                                  />
-                                </td>
-                              )}
-                              {showAccounts && (
-                                <td className="px-2 py-1">
-                                  <Controller
-                                    control={control}
-                                    name={`lines.${i}.payableAccount`}
-                                    render={({ field }) => (
-                                      <AccountPicker
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        inputClassName={accountCellCls}
-                                      />
-                                    )}
-                                  />
-                                </td>
-                              )}
-                              <td className="px-2 py-1">
-                                <input {...register(`lines.${i}.unit`)} className={cellCls} />
+                              <td className="px-2 py-1 font-medium text-primary">{a?.voucherNo}</td>
+                              <td className="max-w-56 truncate px-2 py-1">{a?.supplierName ?? ''}</td>
+                              <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                                {formatCurrency(a?.totalCost ?? 0)}
                               </td>
-                              <td className="px-2 py-1">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  step="any"
-                                  {...register(`lines.${i}.quantity`)}
-                                  className={cn(cellCls, 'text-right')}
-                                />
+                              <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                                {formatCurrency((a?.allocatedOther || 0) + (a?.amount || 0))}
                               </td>
                               <td className="px-2 py-1">
                                 <Controller
                                   control={control}
-                                  name={`lines.${i}.unitPrice`}
+                                  name={`costAllocations.${i}.amount`}
                                   render={({ field }) => (
-                                    <MoneyInput value={field.value} onChange={field.onChange} />
+                                    <MoneyInput value={field.value ?? 0} onChange={field.onChange} />
                                   )}
                                 />
                               </td>
-                              <td className="px-2 py-1 text-right tabular-nums text-slate-700">
-                                {formatCurrency(amount)}
-                              </td>
-                              <td className="px-2 py-1">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={100}
-                                  step="any"
-                                  {...register(`lines.${i}.vatRate`)}
-                                  className={cn(cellCls, 'text-right')}
-                                />
-                              </td>
-                              <td className="px-2 py-1 text-right tabular-nums text-slate-700">
-                                {formatCurrency(vat)}
-                              </td>
-                              {showAccounts && (
-                                <td className="px-2 py-1">
-                                  <Controller
-                                    control={control}
-                                    name={`lines.${i}.vatAccount`}
-                                    render={({ field }) => (
-                                      <AccountPicker
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        inputClassName={accountCellCls}
-                                      />
-                                    )}
-                                  />
-                                </td>
-                              )}
                               <td className="px-2 py-1 text-center">
                                 <button
                                   type="button"
-                                  onClick={() => fields.length > 1 && remove(i)}
+                                  onClick={() => costArray.remove(i)}
                                   className="text-slate-400 hover:text-red-600"
-                                  aria-label="Xóa dòng"
+                                  aria-label="Xóa dòng phân bổ"
                                 >
                                   <TrashIcon size={14} />
                                 </button>
@@ -760,64 +722,254 @@ export function PurchaseVoucherForm({
                           )
                         })}
                       </tbody>
-                      <tfoot className="bg-slate-100 font-medium">
-                        <tr className="border-t border-border">
-                          <td className="px-2 py-1.5" colSpan={leadCols}>
-                            Tổng cộng
-                          </td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">{totalQty}</td>
-                          <td />
-                          <td className="px-2 py-1.5 text-right tabular-nums">
-                            {formatCurrency(totalGoods)}
-                          </td>
-                          <td />
-                          <td className="px-2 py-1.5 text-right tabular-nums">
-                            {formatCurrency(totalVat)}
-                          </td>
-                          <td colSpan={showAccounts ? 2 : 1} />
-                        </tr>
-                      </tfoot>
+                      {costArray.fields.length > 0 && (
+                        <tfoot className="bg-slate-100 font-medium">
+                          <tr className="border-t border-border">
+                            <td className="px-2 py-1.5" colSpan={5}>
+                              Cộng
+                            </td>
+                            <td className="px-2 py-1.5 text-right tabular-nums">
+                              {formatCurrency(
+                                (costAllocs ?? []).reduce((s, a) => s + (a.totalCost || 0), 0),
+                              )}
+                            </td>
+                            <td className="px-2 py-1.5 text-right tabular-nums">
+                              {formatCurrency(
+                                (costAllocs ?? []).reduce(
+                                  (s, a) => s + (a.allocatedOther || 0) + (a.amount || 0),
+                                  0,
+                                ),
+                              )}
+                            </td>
+                            <td className="px-2 py-1.5 text-right tabular-nums">
+                              {formatCurrency(purchaseCostValue)}
+                            </td>
+                            <td />
+                          </tr>
+                        </tfoot>
+                      )}
                     </table>
                   </div>
 
-                  {/* Nút dòng (§5.6) */}
                   <div className="flex flex-wrap items-center gap-2 border-t border-border px-2 py-1.5">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => append(emptyLine(currentType, linePayableDefault))}
+                      onClick={() => setCostDialog(true)}
                     >
-                      <PlusIcon size={14} /> Thêm dòng
-                    </Button>
-                    {/* Ghi chú = dòng chỉ có Tên hàng, SL/đơn giá 0 → không đổi tổng tiền. */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        append({
-                          ...emptyLine(currentType, linePayableDefault),
-                          quantity: 0,
-                          unitPrice: 0,
-                          vatRate: 0,
-                        })
-                      }
-                    >
-                      Thêm ghi chú
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => replace([emptyLine(currentType, linePayableDefault)])}
-                    >
-                      Xóa hết dòng
+                      <PlusIcon size={14} /> Chọn chứng từ CP
                     </Button>
                     <span className="ml-auto text-xs text-slate-500">
-                      Tổng số: {fields.length} bản ghi
+                      Tổng số: {costArray.fields.length} bản ghi
                     </span>
                   </div>
+                </>
+              ) : (
+                <>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1000px] border-collapse text-sm">
+                  <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="w-8 px-2 py-1.5 text-center">#</th>
+                      <th className="px-2 py-1.5">Mã hàng</th>
+                      <th className="px-2 py-1.5">Tên hàng</th>
+                      {showWarehouse && <th className="px-2 py-1.5">Kho</th>}
+                      {showAccounts && <th className="w-24 px-2 py-1.5">TK Kho</th>}
+                      {showAccounts && <th className="w-24 px-2 py-1.5">TK Công nợ</th>}
+                      <th className="w-16 px-2 py-1.5">ĐVT</th>
+                      <th className="w-20 px-2 py-1.5 text-right">Số&nbsp;lượng</th>
+                      <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
+                      <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
+                      <th className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</th>
+                      <th className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</th>
+                      {showAccounts && <th className="w-24 px-2 py-1.5">TK thuế GTGT</th>}
+                      <th className="w-8 px-2 py-1.5" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fields.map((f, i) => {
+                      const l = lines?.[i]
+                      const amount = (l?.quantity || 0) * (l?.unitPrice || 0)
+                      const vat = (amount * (l?.vatRate || 0)) / 100
+                      return (
+                        <tr key={f.id} className="border-t border-border">
+                          <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
+                          <td className="px-2 py-1">
+                            <ItemCell value={l?.itemId} onPick={(item) => pickItem(i, item)} />
+                          </td>
+                          <td className="px-2 py-1">
+                            <input {...register(`lines.${i}.itemName`)} className={cellCls} />
+                          </td>
+                          {showWarehouse && (
+                            <td className="px-2 py-1">
+                              <Controller
+                                control={control}
+                                name={`lines.${i}.warehouseId`}
+                                render={({ field }) => (
+                                  <WarehousePicker
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    inputClassName={warehouseCellCls}
+                                  />
+                                )}
+                              />
+                            </td>
+                          )}
+                          {showAccounts && (
+                            <td className="px-2 py-1">
+                              <Controller
+                                control={control}
+                                name={`lines.${i}.stockAccount`}
+                                render={({ field }) => (
+                                  <AccountPicker
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    inputClassName={accountCellCls}
+                                  />
+                                )}
+                              />
+                            </td>
+                          )}
+                          {showAccounts && (
+                            <td className="px-2 py-1">
+                              <Controller
+                                control={control}
+                                name={`lines.${i}.payableAccount`}
+                                render={({ field }) => (
+                                  <AccountPicker
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    inputClassName={accountCellCls}
+                                  />
+                                )}
+                              />
+                            </td>
+                          )}
+                          <td className="px-2 py-1">
+                            <input {...register(`lines.${i}.unit`)} className={cellCls} />
+                          </td>
+                          <td className="px-2 py-1">
+                            <input
+                              type="number"
+                              min={0}
+                              step="any"
+                              {...register(`lines.${i}.quantity`)}
+                              className={cn(cellCls, 'text-right')}
+                            />
+                          </td>
+                          <td className="px-2 py-1">
+                            <Controller
+                              control={control}
+                              name={`lines.${i}.unitPrice`}
+                              render={({ field }) => (
+                                <MoneyInput value={field.value} onChange={field.onChange} />
+                              )}
+                            />
+                          </td>
+                          <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                            {formatCurrency(amount)}
+                          </td>
+                          <td className="px-2 py-1">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step="any"
+                              {...register(`lines.${i}.vatRate`)}
+                              className={cn(cellCls, 'text-right')}
+                            />
+                          </td>
+                          <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                            {formatCurrency(vat)}
+                          </td>
+                          {showAccounts && (
+                            <td className="px-2 py-1">
+                              <Controller
+                                control={control}
+                                name={`lines.${i}.vatAccount`}
+                                render={({ field }) => (
+                                  <AccountPicker
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    inputClassName={accountCellCls}
+                                  />
+                                )}
+                              />
+                            </td>
+                          )}
+                          <td className="px-2 py-1 text-center">
+                            <button
+                              type="button"
+                              onClick={() => fields.length > 1 && remove(i)}
+                              className="text-slate-400 hover:text-red-600"
+                              aria-label="Xóa dòng"
+                            >
+                              <TrashIcon size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                  <tfoot className="bg-slate-100 font-medium">
+                    <tr className="border-t border-border">
+                      <td className="px-2 py-1.5" colSpan={leadCols}>
+                        Tổng cộng
+                      </td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">{totalQty}</td>
+                      <td />
+                      <td className="px-2 py-1.5 text-right tabular-nums">
+                        {formatCurrency(totalGoods)}
+                      </td>
+                      <td />
+                      <td className="px-2 py-1.5 text-right tabular-nums">
+                        {formatCurrency(totalVat)}
+                      </td>
+                      <td colSpan={showAccounts ? 2 : 1} />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Nút dòng (§5.6) */}
+              <div className="flex flex-wrap items-center gap-2 border-t border-border px-2 py-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append(emptyLine(currentType, linePayableDefault))}
+                >
+                  <PlusIcon size={14} /> Thêm dòng
+                </Button>
+                {/* Ghi chú = dòng chỉ có Tên hàng, SL/đơn giá 0 → không đổi tổng tiền. */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    append({
+                      ...emptyLine(currentType, linePayableDefault),
+                      quantity: 0,
+                      unitPrice: 0,
+                      vatRate: 0,
+                    })
+                  }
+                >
+                  Thêm ghi chú
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => replace([emptyLine(currentType, linePayableDefault)])}
+                >
+                  Xóa hết dòng
+                </Button>
+                <span className="ml-auto text-xs text-slate-500">
+                  Tổng số: {fields.length} bản ghi
+                </span>
+              </div>
                 </>
               )}
             </div>
@@ -846,22 +998,17 @@ export function PurchaseVoucherForm({
                 <span className="text-right font-semibold tabular-nums text-primary">
                   {formatCurrency(totalPayment)}
                 </span>
-                <span className="text-slate-500">Chi phí mua hàng</span>
-                <span className="text-right">
-                  <Controller
-                    control={control}
-                    name="purchaseCost"
-                    render={({ field }) => (
-                      <MoneyInput
-                        value={field.value ?? 0}
-                        onChange={field.onChange}
-                        className="h-7 w-32 ml-auto"
-                      />
-                    )}
-                  />
-                </span>
-                <span className="text-slate-500">Giá trị nhập kho</span>
-                <span className="text-right tabular-nums">{formatCurrency(stockValue)}</span>
+                {/* Chi phí mua hàng đến từ tab Chi phí (Σ phân bổ) — chỉ loại nhập kho. */}
+                {showWarehouse && (
+                  <>
+                    <span className="text-slate-500">Chi phí mua hàng</span>
+                    <span className="text-right tabular-nums">
+                      {formatCurrency(purchaseCostValue)}
+                    </span>
+                    <span className="text-slate-500">Giá trị nhập kho</span>
+                    <span className="text-right tabular-nums">{formatCurrency(stockValue)}</span>
+                  </>
+                )}
               </div>
             </div>
           </>
@@ -922,6 +1069,26 @@ export function PurchaseVoucherForm({
         onCreated={(p) => {
           setSupplierKw('')
           selectSupplier(p)
+        }}
+      />
+
+      <CostVoucherPickerDialog
+        open={costDialog}
+        onClose={() => setCostDialog(false)}
+        pickedIds={(costAllocs ?? []).map((a) => a.costVoucherId)}
+        onPick={(o) => {
+          // Mặc định phân bổ toàn bộ số còn lại — sửa được ngay trên bảng.
+          costArray.append({
+            costVoucherId: o.id,
+            voucherNo: o.voucherNo,
+            postingDate: o.postingDate,
+            voucherDate: o.voucherDate,
+            supplierName: o.supplierName,
+            totalCost: Number(o.totalCost),
+            allocatedOther: Number(o.allocatedTotal),
+            amount: Number(o.remaining),
+          })
+          setCostDialog(false)
         }}
       />
     </form>

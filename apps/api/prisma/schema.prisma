@@ -286,7 +286,11 @@ model PurchaseVoucher {
   paymentMode        PurchasePaymentMode   @default(UNPAID) @map("payment_mode")
   receiveWithInvoice Boolean               @default(false) @map("receive_with_invoice")
   voucherNo          String                @unique @map("voucher_no")
+  // Thông tin hóa đơn NCC nhận kèm hàng (tab Hóa đơn, §4): mẫu số / ký hiệu / số / ngày.
+  invoiceTemplate    String?               @map("invoice_template")
+  invoiceSeries      String?               @map("invoice_series")
   invoiceNo          String?               @map("invoice_no")
+  invoiceDate        DateTime?             @map("invoice_date") @db.Date
   postingDate        DateTime              @map("posting_date") @db.Date
   voucherDate        DateTime              @map("voucher_date") @db.Date
   supplierId         String?               @map("supplier_id")
@@ -318,6 +322,9 @@ model PurchaseVoucher {
   posted             Boolean               @default(true)
   branchId           String?               @map("branch_id")
   lines              PurchaseVoucherLine[]
+  // Tab Chi phí (§10.4): chi phí phân bổ VÀO chứng từ này / chứng từ này ĐEM phân bổ.
+  costAllocations    PurchaseCostAllocation[] @relation("VoucherCostAllocations")
+  allocationsAsCost  PurchaseCostAllocation[] @relation("CostVoucherAllocations")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -354,6 +361,25 @@ model PurchaseVoucherLine {
   // Báo cáo tồn kho/tra cứu theo mặt hàng lọc trực tiếp trên bảng line.
   @@index([itemId, warehouseId])
   @@map("purchase_voucher_lines")
+}
+
+// Phân bổ chi phí mua hàng (tab Chi phí, §10.4): chứng từ mua dịch vụ (MDV)
+// phân bổ vào chứng từ mua hàng nhập kho. purchaseCost của phiếu nhận = Σ amount.
+// Xóa phiếu nhận → xóa phân bổ (Cascade); xóa chứng từ chi phí đang được phân bổ
+// → chặn (Restrict) để không âm thầm đổi giá trị nhập kho của phiếu khác.
+model PurchaseCostAllocation {
+  id            String          @id @default(uuid())
+  voucherId     String          @map("voucher_id")
+  voucher       PurchaseVoucher @relation("VoucherCostAllocations", fields: [voucherId], references: [id], onDelete: Cascade)
+  costVoucherId String          @map("cost_voucher_id")
+  costVoucher   PurchaseVoucher @relation("CostVoucherAllocations", fields: [costVoucherId], references: [id], onDelete: Restrict)
+  amount        Decimal         @db.Decimal(18, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([voucherId, costVoucherId])
+  @@index([costVoucherId])
+  @@map("purchase_cost_allocations")
 }
 
 // ── Kho — Nhập kho (05-kho) ──────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import type {
+  CostVoucherOptionDto,
   Paginated,
   PurchaseVoucherDto,
   PurchaseVoucherFilter,
@@ -38,6 +39,21 @@ export function useNextPurchaseVoucherNo(
         })
         .then((r) => r.data.voucherNo),
     enabled,
+  })
+}
+
+// Chứng từ chi phí (mua dịch vụ) khả dụng cho dialog "Chọn chứng từ CP" (tab Chi phí).
+export function useCostVouchers(keyword: string, enabled = true) {
+  return useQuery({
+    queryKey: purchaseKeys.costVouchers(keyword),
+    queryFn: () =>
+      api
+        .get<CostVoucherOptionDto[]>('/purchase/vouchers/cost-vouchers', {
+          params: keyword ? { keyword } : undefined,
+        })
+        .then((r) => r.data),
+    enabled,
+    placeholderData: keepPreviousData,
   })
 }
 
