@@ -2,11 +2,12 @@ import { BankPaymentMethod, BankVoucherCategory, BankVoucherType, PartnerType } 
 import { z } from 'zod'
 import { optionalEnum } from '@/shared/lib/form'
 
-// Dòng hạch toán.
+// Dòng hạch toán. TK Nợ/Có bắt buộc — vế quỹ form tự điền 1121, vế đối ứng
+// người dùng phải chọn (backend cũng chặn, xem normalizeLines bank.service).
 export const bankLineSchema = z.object({
   description: z.string().optional(),
-  debitAccount: z.string().optional(),
-  creditAccount: z.string().optional(),
+  debitAccount: z.string().min(1, 'Chọn TK Nợ'),
+  creditAccount: z.string().min(1, 'Chọn TK Có'),
   amount: z.number().positive('Số tiền > 0'),
   partnerId: z.string().optional(),
   partnerName: z.string().optional(),

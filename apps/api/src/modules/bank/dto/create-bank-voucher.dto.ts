@@ -8,6 +8,7 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -32,7 +33,7 @@ export class CreateBankVoucherLineDto {
 
   @ApiProperty({ description: 'Số tiền dòng (đồng)' })
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
+  @Min(0.01, { message: 'Số tiền dòng phải > 0' })
   amount!: number
 
   @ApiPropertyOptional()
@@ -78,10 +79,10 @@ export class CreateBankVoucherDto {
   @IsDateString()
   voucherDate!: string
 
-  @ApiPropertyOptional({ description: 'TK ngân hàng của đơn vị (nộp vào / tài khoản chi)' })
-  @IsOptional()
+  @ApiProperty({ description: 'TK ngân hàng của đơn vị (nộp vào / tài khoản chi)' })
   @IsString()
-  bankAccountNo?: string
+  @IsNotEmpty({ message: 'Chọn tài khoản ngân hàng' })
+  bankAccountNo!: string
 
   @ApiPropertyOptional({ description: 'Tên ngân hàng (auto theo TK)' })
   @IsOptional()

@@ -398,11 +398,14 @@ export function BankVoucherForm({
                         <Controller
                           control={control}
                           name={`lines.${i}.debitAccount`}
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <AccountPicker
                               value={field.value}
                               onChange={field.onChange}
-                              inputClassName={accountCellCls}
+                              inputClassName={cn(
+                                accountCellCls,
+                                fieldState.error && 'rounded ring-1 ring-inset ring-red-500',
+                              )}
                             />
                           )}
                         />
@@ -411,11 +414,14 @@ export function BankVoucherForm({
                         <Controller
                           control={control}
                           name={`lines.${i}.creditAccount`}
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <AccountPicker
                               value={field.value}
                               onChange={field.onChange}
-                              inputClassName={accountCellCls}
+                              inputClassName={cn(
+                                accountCellCls,
+                                fieldState.error && 'rounded ring-1 ring-inset ring-red-500',
+                              )}
                             />
                           )}
                         />
@@ -424,8 +430,15 @@ export function BankVoucherForm({
                         <Controller
                           control={control}
                           name={`lines.${i}.amount`}
-                          render={({ field }) => (
-                            <AmountInput value={field.value} onChange={field.onChange} />
+                          render={({ field, fieldState }) => (
+                            <AmountInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              className={cn(
+                                fieldState.error &&
+                                  'border-red-400 focus:border-red-400 focus:ring-red-200',
+                              )}
+                            />
                           )}
                         />
                       </td>
@@ -457,6 +470,10 @@ export function BankVoucherForm({
                 </tfoot>
               </table>
           </div>
+
+          {typeof formState.errors.lines?.message === 'string' && (
+            <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
+          )}
 
           <div className="flex items-center justify-between text-sm text-slate-500">
             <span>

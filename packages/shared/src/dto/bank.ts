@@ -62,7 +62,7 @@ export interface CreateBankVoucherInput {
   internalRef?: string | null
   postingDate: string
   voucherDate: string
-  bankAccountNo?: string | null
+  bankAccountNo: string // Bắt buộc — chứng từ tiền gửi phải gắn TK ngân hàng
   bankName?: string | null
   receiverAccountNo?: string | null
   partnerType?: PartnerType | null
