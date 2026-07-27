@@ -4,7 +4,7 @@ import {
   CHART_OF_ACCOUNTS,
   type Paginated,
 } from '@app/shared'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import {
   CashVoucherCategory,
@@ -571,25 +571,32 @@ function purchasePaymentLines(input: PurchasePaymentInput) {
 
 // Định khoản mặc định: Thu → TK Nợ 1111; Chi → TK Có 1111 (§8.3).
 function normalizeLines(type: CashVoucherType, lines: CreateCashVoucherLineDto[]) {
-  return lines.map((line, i) => ({
-    lineNo: i + 1,
-    description: line.description ?? null,
-    debitAccount:
+  return lines.map((line, i) => {
+    const debitAccount =
       type === CashVoucherType.RECEIPT
         ? line.debitAccount || CHART_OF_ACCOUNTS.CASH_ON_HAND
-        : line.debitAccount,
-    creditAccount:
+        : line.debitAccount
+    const creditAccount =
       type === CashVoucherType.PAYMENT
         ? line.creditAccount || CHART_OF_ACCOUNTS.CASH_ON_HAND
-        : line.creditAccount,
-    amount: new Prisma.Decimal(line.amount),
-    operation: line.operation ?? null,
-    partnerId: line.partnerId ?? null,
-    partnerName: line.partnerName ?? null,
-    costItemId: line.costItemId ?? null,
-    bankAccountNo: line.bankAccountNo ?? null,
-    bankName: line.bankName ?? null,
-  }))
+        : line.creditAccount
+    // Vế còn lại (TK đối ứng) người dùng phải chọn — thiếu là bút toán lệch sổ.
+    if (!debitAccount?.trim() || !creditAccount?.trim())
+      throw new BadRequestException(`Dòng ${i + 1}: thiếu TK Nợ/Có`)
+    return {
+      lineNo: i + 1,
+      description: line.description ?? null,
+      debitAccount,
+      creditAccount,
+      amount: new Prisma.Decimal(line.amount),
+      operation: line.operation ?? null,
+      partnerId: line.partnerId ?? null,
+      partnerName: line.partnerName ?? null,
+      costItemId: line.costItemId ?? null,
+      bankAccountNo: line.bankAccountNo ?? null,
+      bankName: line.bankName ?? null,
+    }
+  })
 }
 
 function sumAmount(lines: { amount: Prisma.Decimal }[]) {

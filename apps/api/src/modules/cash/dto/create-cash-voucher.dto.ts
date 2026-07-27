@@ -31,7 +31,7 @@ export class CreateCashVoucherLineDto {
 
   @ApiProperty({ description: 'Số tiền dòng (đồng)' })
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
+  @Min(0.01, { message: 'Số tiền dòng phải > 0' })
   amount!: number
 
   @ApiPropertyOptional()

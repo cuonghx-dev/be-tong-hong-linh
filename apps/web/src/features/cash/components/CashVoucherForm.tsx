@@ -423,11 +423,14 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
                         <Controller
                           control={control}
                           name={`lines.${i}.debitAccount`}
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <AccountPicker
                               value={field.value}
                               onChange={field.onChange}
-                              inputClassName={accountCellCls}
+                              inputClassName={cn(
+                                accountCellCls,
+                                fieldState.error && 'rounded ring-1 ring-inset ring-red-500',
+                              )}
                             />
                           )}
                         />
@@ -436,11 +439,14 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
                         <Controller
                           control={control}
                           name={`lines.${i}.creditAccount`}
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <AccountPicker
                               value={field.value}
                               onChange={field.onChange}
-                              inputClassName={accountCellCls}
+                              inputClassName={cn(
+                                accountCellCls,
+                                fieldState.error && 'rounded ring-1 ring-inset ring-red-500',
+                              )}
                             />
                           )}
                         />
