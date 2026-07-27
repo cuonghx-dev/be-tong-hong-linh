@@ -93,6 +93,7 @@ function defaultValues(type: PurchaseVoucherType): PurchaseVoucherFormValues {
     receiveWithInvoice: false,
     postingDate: today(),
     voucherDate: today(),
+    supplierName: '',
     description: 'Mua hàng',
     purchaseCost: 0,
     costAllocations: [],
@@ -233,7 +234,7 @@ export function PurchaseVoucherForm({
       postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       supplierId: v.supplierId ?? undefined,
-      supplierName: v.supplierName ?? undefined,
+      supplierName: v.supplierName ?? '',
       deliverer: v.deliverer ?? undefined,
       address: v.address ?? undefined,
       employeeId: v.employeeId ?? undefined,
@@ -555,7 +556,7 @@ export function PurchaseVoucherForm({
                   onAddNew={() => setSupplierDialog(true)}
                 />
               </Field>
-              <Field label="Tên nhà cung cấp">
+              <Field label="Tên nhà cung cấp" error={formState.errors.supplierName?.message}>
                 <input {...register('supplierName')} className={inputCls} />
               </Field>
               <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
@@ -764,6 +765,15 @@ export function PurchaseVoucherForm({
                       Tổng số: {costArray.fields.length} bản ghi
                     </span>
                   </div>
+                  {(() => {
+                    const errs = formState.errors.costAllocations
+                    const msg = Array.isArray(errs)
+                      ? errs.find(Boolean)?.amount?.message
+                      : errs?.message
+                    return typeof msg === 'string' ? (
+                      <p className="px-2 pb-1.5 text-sm text-red-600">{msg}</p>
+                    ) : null
+                  })()}
                 </>
               ) : (
                 <>
@@ -799,7 +809,14 @@ export function PurchaseVoucherForm({
                             <ItemCell value={l?.itemId} onPick={(item) => pickItem(i, item)} />
                           </td>
                           <td className="px-2 py-1">
-                            <input {...register(`lines.${i}.itemName`)} className={cellCls} />
+                            <input
+                              {...register(`lines.${i}.itemName`)}
+                              className={cn(
+                                cellCls,
+                                formState.errors.lines?.[i]?.itemName &&
+                                  'rounded ring-1 ring-inset ring-red-500',
+                              )}
+                            />
                           </td>
                           {showWarehouse && (
                             <td className="px-2 py-1">
@@ -974,9 +991,14 @@ export function PurchaseVoucherForm({
               )}
             </div>
 
-            {typeof formState.errors.lines?.message === 'string' && (
-              <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
-            )}
+            {/* Lỗi cấp mảng (thiếu dòng hàng thật) nằm ở root khi có thêm lỗi từng dòng. */}
+            {(() => {
+              const msg =
+                formState.errors.lines?.message ?? formState.errors.lines?.root?.message
+              return typeof msg === 'string' ? (
+                <p className="text-sm text-red-600">{msg}</p>
+              ) : null
+            })()}
 
             {/* Tra cứu HĐĐT (trái) + summary (phải) — thứ tự số như MISA (§5.6) */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

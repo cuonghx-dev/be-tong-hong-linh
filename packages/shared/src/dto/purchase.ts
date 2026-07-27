@@ -126,7 +126,7 @@ export interface CreatePurchaseVoucherInput {
   postingDate: string
   voucherDate: string
   supplierId?: string | null
-  supplierName?: string | null
+  supplierName: string // Bắt buộc — chứng từ mua hàng phải có tên NCC
   deliverer?: string | null
   address?: string | null
   employeeId?: string | null
@@ -187,7 +187,7 @@ export interface SupplierDto {
 export interface CreateSupplierInput {
   code: string
   name: string
-  type?: SupplierType
+  type: SupplierType
   isCustomer?: boolean
   taxCode?: string | null
   budgetRelationCode?: string | null

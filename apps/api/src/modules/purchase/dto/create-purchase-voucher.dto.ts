@@ -8,6 +8,7 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -135,10 +136,10 @@ export class CreatePurchaseVoucherDto {
   @IsString()
   supplierId?: string
 
-  @ApiPropertyOptional()
-  @IsOptional()
+  @ApiProperty({ description: 'Tên nhà cung cấp' })
   @IsString()
-  supplierName?: string
+  @IsNotEmpty({ message: 'Tên nhà cung cấp không được để trống' })
+  supplierName!: string
 
   @ApiPropertyOptional({ description: 'Người giao hàng' })
   @IsOptional()
