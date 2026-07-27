@@ -18,6 +18,7 @@ export class SaveAccountBalanceLineDto {
 
   @ApiProperty({ description: 'Tên tài khoản' })
   @IsString()
+  @IsNotEmpty({ message: 'Tên tài khoản không được để trống' })
   accountName!: string
 
   @ApiProperty({ description: 'Dư Nợ (đồng)' })

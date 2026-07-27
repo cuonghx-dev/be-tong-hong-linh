@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { CHART_OF_ACCOUNTS } from '@app/shared'
+import { BookLockService } from '../book-lock/book-lock.service'
 import {
   PartnerType,
   Prisma,
@@ -24,7 +25,21 @@ import { SavePartnerBalancesDto } from './dto/save-partner-balances.dto'
 
 @Injectable()
 export class OpeningBalanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bookLock: BookLockService,
+  ) {}
+
+  // Số dư đầu kỳ là dữ liệu gốc của cả sổ sách: đã khóa sổ thì không cho sửa/nhập
+  // (mọi thay đổi sẽ làm lệch báo cáo của kỳ đã khóa).
+  private async assertBookUnlocked() {
+    const lockDate = await this.bookLock.getLockDate()
+    if (lockDate) {
+      throw new BadRequestException(
+        `Đã khóa sổ đến ${lockDate.toISOString().slice(0, 10)} — bỏ khóa sổ trước khi sửa số dư đầu kỳ`,
+      )
+    }
+  }
 
   // Danh sách số dư tài khoản, sắp theo số TK (cha đứng trước con vì cùng prefix).
   async listAccountBalances() {
@@ -36,17 +51,28 @@ export class OpeningBalanceService {
 
   // Lưu cả bảng: thay thế toàn bộ dữ liệu cũ (như update line chứng từ — xóa hết tạo lại).
   async saveAccountBalances(dto: SaveAccountBalancesDto) {
+    await this.assertBookUnlocked()
+    // 1 TK chỉ dư 1 vế — vừa Nợ vừa Có là nhập sai (các bảng công nợ/tiền gửi cùng luật).
+    for (const item of dto.items) {
+      if (item.debitAmount > 0 && item.creditAmount > 0)
+        throw new BadRequestException(
+          `TK ${item.accountCode}: chỉ được nhập 1 vế Dư Nợ hoặc Dư Có`,
+        )
+    }
     // Trùng số TK trong payload → giữ dòng cuối (người dùng sửa sau cùng).
+    // Dòng 0/0 bỏ qua như các bảng số dư khác (công nợ/tiền gửi/tồn kho).
     const byCode = new Map(
-      dto.items.map((item) => [
-        item.accountCode.trim(),
-        {
-          accountCode: item.accountCode.trim(),
-          accountName: item.accountName.trim(),
-          debitAmount: new Prisma.Decimal(item.debitAmount),
-          creditAmount: new Prisma.Decimal(item.creditAmount),
-        },
-      ]),
+      dto.items
+        .filter((item) => item.debitAmount > 0 || item.creditAmount > 0)
+        .map((item) => [
+          item.accountCode.trim(),
+          {
+            accountCode: item.accountCode.trim(),
+            accountName: item.accountName.trim(),
+            debitAmount: new Prisma.Decimal(item.debitAmount),
+            creditAmount: new Prisma.Decimal(item.creditAmount),
+          },
+        ]),
     )
     const items = [...byCode.values()]
 
@@ -62,6 +88,7 @@ export class OpeningBalanceService {
 
   // Nhập khẩu từ file Excel — bỏ qua dòng trùng số TK đã có.
   async importAccountBalancesXlsx(buffer: Buffer) {
+    await this.assertBookUnlocked()
     const parsed = parseAccountBalanceXlsx(buffer)
     if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
 
@@ -139,8 +166,16 @@ export class OpeningBalanceService {
   // Lưu số dư công nợ của 1 TK: thay thế dữ liệu cũ của TK đó, rồi cập nhật số dư
   // của chính TK công nợ trong bảng số dư tài khoản = tổng cộng các dòng chi tiết.
   async savePartnerBalances(dto: SavePartnerBalancesDto) {
+    await this.assertBookUnlocked()
     const accountCode = dto.accountCode.trim()
     const partnerType = this.partnerTypeFor(accountCode)
+    // 1 đối tượng chỉ dư 1 vế (như bảng số dư tài khoản).
+    for (const item of dto.items) {
+      if (item.debitAmount > 0 && item.creditAmount > 0)
+        throw new BadRequestException(
+          `Đối tượng ${item.partnerId}: chỉ được nhập 1 vế Dư Nợ hoặc Dư Có`,
+        )
+    }
 
     // Trùng đối tượng trong payload → giữ dòng cuối. Bỏ dòng số dư 0 cả 2 vế.
     const byPartner = new Map(
@@ -181,6 +216,7 @@ export class OpeningBalanceService {
   // Nhập khẩu số dư công nợ của 1 TK từ file Excel MISA (Danh_sach_cong_no_khach_hang.xlsx…).
   // Bỏ qua mã không có trong danh mục và đối tượng đã có số dư của TK này (như import số dư TK).
   async importPartnerBalancesXlsx(accountCode: string, buffer: Buffer) {
+    await this.assertBookUnlocked()
     const code = accountCode.trim()
     const partnerType = this.partnerTypeFor(code)
     const parsed = parsePartnerBalanceXlsx(buffer)
@@ -269,8 +305,16 @@ export class OpeningBalanceService {
   // Lưu số dư tiền gửi của 1 TK: thay thế dữ liệu cũ của TK đó, rồi cập nhật số dư
   // của chính TK tiền gửi trong bảng số dư tài khoản = tổng cộng các dòng chi tiết.
   async saveBankAccountBalances(dto: SaveBankAccountBalancesDto) {
+    await this.assertBookUnlocked()
     const accountCode = dto.accountCode.trim()
 
+    // 1 TK ngân hàng chỉ dư 1 vế (như bảng số dư tài khoản).
+    for (const item of dto.items) {
+      if (item.debitAmount > 0 && item.creditAmount > 0)
+        throw new BadRequestException(
+          `TK ngân hàng ${item.bankAccountId}: chỉ được nhập 1 vế Dư Nợ hoặc Dư Có`,
+        )
+    }
     // Trùng TK NH trong payload → giữ dòng cuối. Bỏ dòng số dư 0 cả 2 vế.
     const byBankAccount = new Map(
       dto.items.map((item) => [
@@ -309,6 +353,7 @@ export class OpeningBalanceService {
   // Nhập khẩu số dư tiền gửi của 1 TK từ file Excel (bỏ qua số TK không có trong danh mục
   // và TK ngân hàng đã có số dư của TK này — như import số dư công nợ).
   async importBankAccountBalancesXlsx(accountCode: string, buffer: Buffer) {
+    await this.assertBookUnlocked()
     const code = accountCode.trim()
     const parsed = parseBankAccountBalanceXlsx(buffer)
     if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
@@ -372,6 +417,16 @@ export class OpeningBalanceService {
   // Lưu cả danh sách: thay thế toàn bộ dữ liệu cũ (như bảng số dư tài khoản), rồi đồng bộ
   // số dư TK nguyên giá (Dư Nợ) / TK khấu hao (Dư Có) trong bảng số dư tài khoản.
   async saveFixedAssetBalances(dto: SaveFixedAssetBalancesDto) {
+    await this.assertBookUnlocked()
+    // Ràng buộc nhất quán: TSCĐ phải có nguyên giá > 0, hao mòn không vượt nguyên giá.
+    for (const item of dto.items) {
+      if (item.originalCost <= 0)
+        throw new BadRequestException(`Tài sản ${item.code}: nguyên giá phải > 0`)
+      if (item.accumulatedDepreciation > item.originalCost)
+        throw new BadRequestException(
+          `Tài sản ${item.code}: hao mòn lũy kế không được vượt nguyên giá`,
+        )
+    }
     // Trùng mã tài sản trong payload → giữ dòng cuối (người dùng sửa sau cùng).
     const byCode = new Map(
       dto.items.map((item) => [item.code.trim(), toFixedAssetCreateInput(item)]),
@@ -395,6 +450,7 @@ export class OpeningBalanceService {
 
   // Nhập khẩu từ file Excel — bỏ qua dòng trùng mã tài sản đã có, rồi đồng bộ số dư TK.
   async importFixedAssetBalancesXlsx(buffer: Buffer) {
+    await this.assertBookUnlocked()
     const parsed = parseFixedAssetXlsx(buffer)
     if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
 
@@ -523,6 +579,7 @@ export class OpeningBalanceService {
   // Lưu cả bảng tồn kho: thay thế toàn bộ dữ liệu cũ, rồi đồng bộ số dư TK kho
   // (152/153/155/156… Dư Nợ) trong bảng số dư tài khoản = tổng Giá trị tồn theo TK.
   async saveInventoryBalances(dto: SaveInventoryBalancesDto) {
+    await this.assertBookUnlocked()
     // Trùng VTHH+kho trong payload → giữ dòng cuối. Bỏ dòng 0 cả số lượng lẫn giá trị.
     const byKey = new Map(
       dto.items.map((item) => [
@@ -557,6 +614,7 @@ export class OpeningBalanceService {
   // Nhập khẩu tồn kho từ file Excel MISA — bỏ qua mã hàng không có trong danh mục và
   // VTHH+kho đã có số tồn, rồi đồng bộ số dư TK kho.
   async importInventoryBalancesXlsx(buffer: Buffer) {
+    await this.assertBookUnlocked()
     const parsed = parseInventoryBalanceXlsx(buffer)
     if (parsed.length === 0) return { total: 0, created: 0, skipped: 0 }
 
