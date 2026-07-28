@@ -132,16 +132,26 @@ export function BankVoucherForm({
     target: 'from' | 'to'
   } | null>(null)
 
+  // CTNB: tự sinh Lý do chuyển + Diễn giải các dòng khi đã biết tên ngân hàng 2 đầu.
+  const applyTransferReason = (fromBank?: string, toBank?: string) => {
+    if (!isTransfer || !fromBank || !toBank) return
+    const reason = `Chuyển tiền từ tài khoản ngân hàng ${fromBank} sang ngân hàng ${toBank}`
+    setValue('reason', reason)
+    ;(watch('lines') ?? []).forEach((_, i) => setValue(`lines.${i}.description`, reason))
+  }
+
   // Chọn TKNH từ danh mục: điền số TK + tự điền Tên ngân hàng.
   const selectBankAccount = (a: { accountNumber: string; bankName: string }) => {
     setValue('bankAccountNo', a.accountNumber)
     setValue('bankName', a.bankName)
+    applyTransferReason(a.bankName, watch('receiverBankName'))
   }
 
   // Tài khoản đến (chỉ CTNB): điền số TK nhận + tên ngân hàng nhận.
   const selectReceiverAccount = (a: { accountNumber: string; bankName: string }) => {
     setValue('receiverAccountNo', a.accountNumber)
     setValue('receiverBankName', a.bankName)
+    applyTransferReason(watch('bankName'), a.bankName)
   }
 
   // Chọn đối tượng: điền header + tự điền Lý do/Diễn giải + Đối tượng cho mọi dòng.
@@ -275,39 +285,36 @@ export function BankVoucherForm({
             </SelectContent>
           </Select>
 
-          {isReceipt ? (
-            <input
-              {...register('internalRef')}
-              placeholder="Nhập số UNC từ chi nhánh khác chuyển đến"
-              className="h-9 w-80 rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-slate-600">Phương thức TT</label>
-                <Select
-                  value={watch('paymentMethod')}
-                  onValueChange={(v) => setValue('paymentMethod', v as BankPaymentMethod)}
-                >
-                  <SelectTrigger className="h-9 w-auto bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(BankPaymentMethod).map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {PAYMENT_METHOD_LABEL[m]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <label className="flex items-center gap-1.5 text-sm text-slate-600">
-                <input type="checkbox" {...register('isBatchTransfer')} />
-                Là UNC chuyển tiền theo lô
-              </label>
-            </>
+          {/* Thu: tạm bỏ ô "Nhập số UNC từ chi nhánh khác chuyển đến" (internalRef vẫn giữ trong schema/DTO). */}
+          {!isReceipt && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-slate-600">Phương thức thanh toán</label>
+              <Select
+                value={watch('paymentMethod')}
+                onValueChange={(v) => setValue('paymentMethod', v as BankPaymentMethod)}
+              >
+                <SelectTrigger className="h-9 w-auto bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(BankPaymentMethod).map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {PAYMENT_METHOD_LABEL[m]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
         </div>
+        )}
+
+        {/* Chi: checkbox UNC theo lô ở hàng riêng dưới dropdown (MISA) */}
+        {type === BankVoucherType.Payment && (
+          <label className="flex w-fit items-center gap-1.5 text-sm text-slate-600">
+            <input type="checkbox" {...register('isBatchTransfer')} />
+            Là UNC chuyển tiền theo lô
+          </label>
         )}
 
         {/* Thông tin chung: cột trái (đối tượng/tài khoản) | cột phải (ngày) | tổng tiền */}
@@ -348,6 +355,22 @@ export function BankVoucherForm({
               </>
             ) : (
               <>
+                {/* Chi (MISA): Tài khoản chi đứng ĐẦU, trước Mã đối tượng. */}
+                {!isReceipt && (
+                  <>
+                    <Field label="Tài khoản chi" error={formState.errors.bankAccountNo?.message}>
+                      <BankAccountPicker
+                        value={watch('bankAccountNo')}
+                        onSelect={selectBankAccount}
+                        onAddNew={(kw) => setBankAccountDialog({ keyword: kw, target: 'from' })}
+                      />
+                    </Field>
+                    <Field label="Tên ngân hàng">
+                      <input {...register('bankName')} className={inputCls} placeholder="Tự điền theo số TK" />
+                    </Field>
+                  </>
+                )}
+
                 <Field label="Mã đối tượng" error={formState.errors.partnerId?.message}>
                   <PartnerPicker
                     value={watch('partnerId')}
@@ -367,22 +390,19 @@ export function BankVoucherForm({
                   <input {...register('address')} className={inputCls} />
                 </Field>
 
-                <Field
-                  label={isReceipt ? 'Nộp vào tài khoản' : 'Tài khoản chi'}
-                  error={formState.errors.bankAccountNo?.message}
-                >
-                  <BankAccountPicker
-                    value={watch('bankAccountNo')}
-                    onSelect={selectBankAccount}
-                    onAddNew={(kw) => setBankAccountDialog({ keyword: kw, target: 'from' })}
-                  />
-                </Field>
-                <Field label="Tên ngân hàng">
-                  <input {...register('bankName')} className={inputCls} placeholder="Tự điền theo số TK" />
-                </Field>
-
                 {isReceipt ? (
                   <>
+                    <Field label="Nộp vào tài khoản" error={formState.errors.bankAccountNo?.message}>
+                      <BankAccountPicker
+                        value={watch('bankAccountNo')}
+                        onSelect={selectBankAccount}
+                        onAddNew={(kw) => setBankAccountDialog({ keyword: kw, target: 'from' })}
+                      />
+                    </Field>
+                    <Field label="Tên ngân hàng">
+                      <input {...register('bankName')} className={inputCls} placeholder="Tự điền theo số TK" />
+                    </Field>
+
                     <Field label="Nhân viên thu nợ">
                       <LookupInput {...register('employeeId')} withAdd onAdd={() => setEmployeeDialog(true)} />
                     </Field>
@@ -392,23 +412,30 @@ export function BankVoucherForm({
                   </>
                 ) : (
                   <>
-                    <Field label="Nội dung thanh toán">
-                      <input {...register('reason')} className={inputCls} />
+                    {/* Tài khoản nhận của đối tượng: số TK + tên ngân hàng nhận (MISA 2 ô cạnh nhau). */}
+                    <Field label="Tài khoản nhận">
+                      <input {...register('receiverAccountNo')} className={inputCls} />
                     </Field>
+                    <Field label="Tên ngân hàng">
+                      <input {...register('receiverBankName')} className={inputCls} />
+                    </Field>
+
                     <Field label="Nhân viên">
                       <LookupInput {...register('employeeId')} withAdd onAdd={() => setEmployeeDialog(true)} />
                     </Field>
-                    <Field label="Tài khoản nhận" className="col-span-2">
-                      <input {...register('receiverAccountNo')} className={inputCls} />
+                    <Field label="Nội dung thanh toán">
+                      <input {...register('reason')} className={inputCls} />
                     </Field>
                   </>
                 )}
               </>
             )}
 
-            <Field label="Tham chiếu" className="col-span-2">
-              <input {...register('reference')} className={inputCls} />
-            </Field>
+            {/* Tham chiếu — chứng từ nguồn liên quan (placeholder, chưa liên kết — đồng bộ cash/MISA) */}
+            <div className="col-span-2 flex items-center gap-1 text-[13px] text-slate-500">
+              <span className="font-semibold text-slate-700">Tham chiếu</span>
+              <span className="text-slate-400">…</span>
+            </div>
           </div>
 
           {/* Cột phải: ngày + số chứng từ */}

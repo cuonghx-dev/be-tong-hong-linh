@@ -27,7 +27,7 @@ export interface BankVoucherDto {
   bankAccountNo: string | null // TK ngân hàng của đơn vị (nộp vào / tài khoản chi / tài khoản đi)
   bankName: string | null // Tên ngân hàng (auto theo TK)
   receiverAccountNo: string | null // Tài khoản nhận (chi) / tài khoản đến (CTNB)
-  receiverBankName: string | null // Tên ngân hàng tài khoản đến — chỉ CTNB
+  receiverBankName: string | null // Tên ngân hàng tài khoản nhận (chi) / tài khoản đến (CTNB)
   partnerType: PartnerType | null
   partnerId: string | null
   partnerName: string | null
