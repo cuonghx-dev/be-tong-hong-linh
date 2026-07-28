@@ -11,6 +11,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:e2e": "pnpm --filter @app/shared build && pnpm --filter @app/e2e test",
+    "test:e2e:install": "pnpm --filter @app/e2e exec playwright install chromium",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "docker:up": "docker compose up -d",
