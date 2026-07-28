@@ -192,10 +192,9 @@ export function GoodsIssueForm({
 
   return (
     <form className="flex h-full flex-col">
-      <fieldset
-        disabled={readOnly}
-        className="flex-1 space-y-4 overflow-y-auto pr-1 disabled:opacity-90"
-      >
+      <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
+        {/* Vùng thông tin chung — nền primary nhạt liền khối với page header (2 lớp màu, đồng bộ cash) */}
+        <section className="space-y-3 bg-primary/5 px-6 pb-5 pt-2">
         {/* Lý do xuất (loại nghiệp vụ) */}
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm">
@@ -267,7 +266,10 @@ export function GoodsIssueForm({
             <input type="number" min={0} {...register('attachmentCount')} className={inputCls} />
           </Field>
         </div>
+        </section>
 
+        {/* Lớp nền trắng: bảng hàng tiền + địa điểm giao hàng + tổng hợp */}
+        <section className="space-y-4 px-6 py-5">
         {/* Bảng hàng tiền */}
         <div className="rounded-md border border-border">
           <div className="flex items-center gap-2 border-b border-border bg-slate-50 px-2 py-1.5">
@@ -432,10 +434,11 @@ export function GoodsIssueForm({
             {formatCurrency(totalAmount)}
           </span>
         </div>
+        </section>
       </fieldset>
 
       {/* Nút hành động — footer cố định */}
-      <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-border pt-3">
+      <div className="flex shrink-0 justify-end gap-2 border-t border-border px-6 py-3">
         {readOnly ? (
           <Button type="button" variant="outline" onClick={onCancel}>
             Đóng
@@ -471,7 +474,7 @@ export function GoodsIssueForm({
 }
 
 const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+  'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 const cellCls =
   'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 

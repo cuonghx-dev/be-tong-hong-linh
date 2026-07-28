@@ -143,7 +143,9 @@ export function GeneralVoucherForm({
 
   return (
     <form className="flex h-full flex-col">
-      <fieldset disabled={readOnly} className="flex-1 space-y-4 overflow-y-auto disabled:opacity-90">
+      <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
+        {/* Vùng thông tin chung — nền primary nhạt liền khối với page header (2 lớp màu, đồng bộ cash) */}
+        <section className="space-y-3 bg-primary/5 px-6 pb-5 pt-2">
         {/* Thông tin chung: diễn giải | ngày + số chứng từ | tổng tiền */}
         <div className="flex flex-wrap gap-6">
           <div className="min-w-[520px] flex-1 space-y-3">
@@ -180,9 +182,10 @@ export function GeneralVoucherForm({
             </div>
           </div>
         </div>
+        </section>
 
-        {/* Bảng hạch toán */}
-        <div className="space-y-2">
+        {/* Bảng hạch toán — lớp nền trắng */}
+        <section className="space-y-2 px-6 py-5">
           <span className="text-base font-semibold text-slate-700">Hạch toán</span>
           <div className="overflow-x-auto rounded-md border border-border">
             <table className="w-full border-collapse text-sm">
@@ -294,15 +297,15 @@ export function GeneralVoucherForm({
               Xóa hết dòng
             </Button>
           </div>
-        </div>
 
-        {typeof formState.errors.lines?.message === 'string' && (
-          <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
-        )}
+          {typeof formState.errors.lines?.message === 'string' && (
+            <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
+          )}
+        </section>
       </fieldset>
 
       {/* Thanh hành động */}
-      <div className="mt-3 flex items-center border-t border-border pt-3">
+      <div className="flex items-center border-t border-border px-6 py-3">
         <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
           {readOnly ? 'Đóng' : 'Hủy'}
         </Button>
@@ -324,7 +327,7 @@ export function GeneralVoucherForm({
 
 // ── Local UI bits ─────────────────────────────────────────────────────────
 const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+  'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 const cellCls =
   'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 

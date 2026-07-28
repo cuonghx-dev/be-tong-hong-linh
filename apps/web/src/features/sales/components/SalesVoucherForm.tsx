@@ -293,8 +293,8 @@ export function SalesVoucherForm({
 
   return (
     <form className="flex h-screen flex-col bg-white">
-      {/* ── Page header (§5.2): tiêu đề + số CT · loại nghiệp vụ · ✕ ── */}
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
+      {/* ── Page header (§5.2): tiêu đề + số CT · loại nghiệp vụ · ✕ — nền primary nhạt (2 lớp màu, đồng bộ cash) ── */}
+      <header className="flex h-14 shrink-0 items-center gap-3 bg-primary/5 px-4">
         <h1 className="shrink-0 whitespace-nowrap text-lg font-bold text-slate-800">
           Chứng từ bán hàng <span className="text-primary">{displayNo}</span>
         </h1>
@@ -303,7 +303,7 @@ export function SalesVoucherForm({
           disabled={readOnly || !!voucherId}
           onValueChange={(v) => setValue('voucherType', v as SalesVoucherType)}
         >
-          <SelectTrigger className="h-9 w-72 shrink-0" title="Loại nghiệp vụ">
+          <SelectTrigger className="h-9 w-72 shrink-0 bg-white" title="Loại nghiệp vụ">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -325,7 +325,7 @@ export function SalesVoucherForm({
       </header>
 
       {/* ── Sub-header (§5.3): tùy chọn thanh toán · kiêm phiếu xuất/hóa đơn | tổng tiền ── */}
-      <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-border bg-slate-50 px-4 py-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-4 bg-primary/5 px-4 py-2">
         <fieldset disabled={readOnly} className="flex flex-wrap items-center gap-4">
           {[SalesPaymentMode.Unpaid, SalesPaymentMode.PaidNow].map((m) => (
             <label key={m} className="flex items-center gap-1.5 text-sm">
@@ -357,8 +357,8 @@ export function SalesVoucherForm({
         </div>
       </div>
 
-      {/* ── Tabs bản ghi (§5.4) ── */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-border px-4">
+      {/* ── Tabs bản ghi (§5.4) — vẫn thuộc lớp tint ── */}
+      <div className="flex shrink-0 items-center gap-1 border-b border-border bg-primary/5 px-4">
         {(
           [
             { key: 'main', label: isUnpaid ? 'Chứng từ ghi nợ' : 'Chứng từ bán hàng' },
@@ -381,11 +381,9 @@ export function SalesVoucherForm({
         ))}
       </div>
 
-      {/* ── Form body (§5.5) — cuộn dọc ── */}
-      <fieldset
-        disabled={readOnly}
-        className="flex-1 space-y-4 overflow-y-auto px-4 py-3 disabled:opacity-90"
-      >
+      {/* ── Form body (§5.5) — cuộn dọc, 2 lớp màu: thông tin chung tint / bảng hàng trắng ── */}
+      <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
+        <section className="space-y-4 bg-primary/5 px-4 pb-4 pt-3">
         {/* Chứng từ tự sinh: Phiếu thu (thu tiền mặt ngay) / Phiếu xuất kho. */}
         {!!voucherId && !!(editing.data?.receiptId || editing.data?.issueId) && (
           <p className="space-x-3 text-sm text-slate-600">
@@ -497,7 +495,13 @@ export function SalesVoucherForm({
                 </Field>
               </div>
             )}
+          </>
+        )}
+        </section>
 
+        {/* ── Lớp nền trắng: bảng dòng hàng + tổng hợp (chỉ tab chứng từ) ── */}
+        {tab !== 'invoice' && (
+          <section className="space-y-4 px-4 py-3">
             {/* ── Line section (§5.6): toolbar + bảng dòng hàng ── */}
             <div className="rounded-md border border-border">
               <div className="flex items-center gap-1 border-b border-border bg-slate-50 px-2">
@@ -742,7 +746,7 @@ export function SalesVoucherForm({
                 {formatCurrency(totalPayment)}
               </span>
             </div>
-          </>
+          </section>
         )}
       </fieldset>
 
@@ -823,7 +827,7 @@ function ItemCell({ value, onPick }: { value?: string; onPick: (item: ItemOption
 }
 
 const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+  'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 const cellCls =
   'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 

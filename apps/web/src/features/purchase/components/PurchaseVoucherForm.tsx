@@ -382,8 +382,8 @@ export function PurchaseVoucherForm({
 
   return (
     <form className="flex h-screen flex-col bg-white">
-      {/* ── Page header (§5.2): tiêu đề + số CT · loại nghiệp vụ · số hợp đồng · ✕ ── */}
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
+      {/* ── Page header (§5.2): tiêu đề + số CT · loại nghiệp vụ · số hợp đồng · ✕ — nền primary nhạt (2 lớp màu, đồng bộ cash) ── */}
+      <header className="flex h-14 shrink-0 items-center gap-3 bg-primary/5 px-4">
         <h1 className="shrink-0 whitespace-nowrap text-lg font-bold text-slate-800">
           Chứng từ mua hàng <span className="text-primary">{displayNo}</span>
         </h1>
@@ -392,7 +392,7 @@ export function PurchaseVoucherForm({
           disabled={readOnly || !!voucherId}
           onValueChange={(v) => setValue('type', v as PurchaseVoucherType)}
         >
-          <SelectTrigger className="h-9 w-80 shrink-0" title="Loại nghiệp vụ">
+          <SelectTrigger className="h-9 w-80 shrink-0 bg-white" title="Loại nghiệp vụ">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -420,7 +420,7 @@ export function PurchaseVoucherForm({
       </header>
 
       {/* ── Sub-header (§5.3): tùy chọn thanh toán · phương thức · nhận kèm HĐ | tổng tiền ── */}
-      <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-border bg-slate-50 px-4 py-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-4 bg-primary/5 px-4 py-2">
         <fieldset disabled={readOnly} className="flex flex-wrap items-center gap-4">
           {[PurchasePaymentMode.Unpaid, PurchasePaymentMode.Immediate].map((m) => (
             <label key={m} className="flex items-center gap-1.5 text-sm">
@@ -462,8 +462,8 @@ export function PurchaseVoucherForm({
         </div>
       </div>
 
-      {/* ── Tabs bản ghi (§5.4) ── */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-border px-4">
+      {/* ── Tabs bản ghi (§5.4) — vẫn thuộc lớp tint ── */}
+      <div className="flex shrink-0 items-center gap-1 border-b border-border bg-primary/5 px-4">
         {(
           [
             { key: 'main', label: mainTabLabel(currentType) },
@@ -486,11 +486,9 @@ export function PurchaseVoucherForm({
         ))}
       </div>
 
-      {/* ── Form body (§5.5) — cuộn dọc ── */}
-      <fieldset
-        disabled={readOnly}
-        className="flex-1 space-y-4 overflow-y-auto px-4 py-3 disabled:opacity-90"
-      >
+      {/* ── Form body (§5.5) — cuộn dọc, 2 lớp màu: thông tin chung tint / bảng hàng trắng ── */}
+      <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
+        <section className="space-y-4 bg-primary/5 px-4 pb-4 pt-3">
         {/* Chứng từ tự sinh: Phiếu chi (trả ngay tiền mặt) / Phiếu nhập kho. */}
         {!!voucherId && !!(editing.data?.paymentId || editing.data?.receiptId) && (
           <p className="space-x-3 text-sm text-slate-600">
@@ -621,7 +619,13 @@ export function PurchaseVoucherForm({
                 </Field>
               </div>
             )}
+          </>
+        )}
+        </section>
 
+        {/* ── Lớp nền trắng: bảng dòng hàng + tra cứu HĐĐT + tổng hợp (chỉ tab chứng từ) ── */}
+        {tab !== 'invoice' && (
+          <section className="space-y-4 px-4 py-3">
             {/* ── Line section (§5.6): sub-tabs + toolbar + bảng dòng hàng ── */}
             <div className="rounded-md border border-border">
               <div className="flex items-center gap-1 border-b border-border bg-slate-50 px-2">
@@ -1033,7 +1037,7 @@ export function PurchaseVoucherForm({
                 )}
               </div>
             </div>
-          </>
+          </section>
         )}
       </fieldset>
 
@@ -1137,7 +1141,7 @@ function ItemCell({ value, onPick }: { value?: string; onPick: (item: ItemOption
 }
 
 const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+  'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 const cellCls =
   'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 

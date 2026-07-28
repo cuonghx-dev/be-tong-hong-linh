@@ -25,7 +25,13 @@ export function InventoryReceiptPage({ mode }: { mode: Mode }) {
         : 'Xem phiếu nhập kho'
 
   return (
-    <RecordPageShell title={title} onClose={close}>
+    // Header nền primary nhạt liền khối với vùng thông tin chung của form (2 lớp màu, đồng bộ cash).
+    <RecordPageShell
+      title={title}
+      onClose={close}
+      headerClassName="border-b-0 bg-primary/5"
+      contentClassName="p-0"
+    >
       <ReceiptForm
         type={type}
         receiptId={id ?? null}
