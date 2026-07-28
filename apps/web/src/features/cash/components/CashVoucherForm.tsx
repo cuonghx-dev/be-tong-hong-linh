@@ -9,7 +9,7 @@ import {
 } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState, type ReactNode } from 'react'
-import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { Controller, useFieldArray, useForm, type UseFormRegister } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
@@ -33,8 +33,13 @@ import {
 } from '../api/useCashVoucherMutations'
 import { useEmployeeOptions } from '@/shared/api/useEmployeeOptions'
 import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
-import { cashVoucherSchema, type CashLineFormValues, type CashVoucherFormValues } from '../schema'
-import { CATEGORY_LABEL, CATEGORY_OPTIONS, defaultReason, lineColumns } from '../types'
+import {
+  cashVoucherSchema,
+  type CashLineFormValues,
+  type CashTaxLineFormValues,
+  type CashVoucherFormValues,
+} from '../schema'
+import { CATEGORY_LABEL, CATEGORY_OPTIONS, defaultReason, headerConfig, lineColumns } from '../types'
 import { AmountInput } from './AmountInput'
 import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
 import { QuickAddEmployeeDialog } from '@/shared/ui/quick-add-employee-dialog'
@@ -73,10 +78,27 @@ function normalizeCategory(type: CashVoucherType, category?: CashVoucherCategory
 }
 
 // Dòng mặc định — định khoản theo loại nghiệp vụ (§8.3, map dùng chung ở @app/shared).
+// Riêng "Chi khác" MISA để TK Nợ trống cho tự nhập — map vẫn giữ 811 làm
+// fallback khi nhập khẩu Excel (dòng import không được rỗng TK đối ứng).
 function emptyLine(category: CashVoucherCategory, type: CashVoucherType): CashLineFormValues {
-  return type === CashVoucherType.Receipt
-    ? { amount: 0, debitAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND, creditAccount: CASH_RECEIPT_CREDIT_ACCOUNT[category] ?? '' }
-    : { amount: 0, debitAccount: CASH_PAYMENT_DEBIT_ACCOUNT[category] ?? '', creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND }
+  if (type === CashVoucherType.Receipt) {
+    return { amount: 0, debitAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND, creditAccount: CASH_RECEIPT_CREDIT_ACCOUNT[category] ?? '' }
+  }
+  const debitAccount =
+    category === CashVoucherCategory.Payment ? '' : (CASH_PAYMENT_DEBIT_ACCOUNT[category] ?? '')
+  return { amount: 0, debitAccount, creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND }
+}
+
+// Dòng thuế GTGT mặc định (tab thuế): Có hóa đơn, 10%, TK 1331, ngày HĐ = ngày phiếu.
+function defaultTaxLine(reason: string | undefined, invoiceDate: string): CashTaxLineFormValues {
+  return {
+    description: reason ? `Thuế GTGT - ${reason}` : 'Thuế GTGT',
+    hasInvoice: true,
+    vatRate: 10,
+    amount: 0,
+    vatAccount: CHART_OF_ACCOUNTS.VAT_INPUT_DEDUCTIBLE,
+    invoiceDate,
+  }
 }
 
 function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): CashVoucherFormValues {
@@ -93,6 +115,11 @@ function defaultValues(type: CashVoucherType, prefill?: CashVoucherPrefill): Cas
     reason,
     // Dòng hạch toán đầu tiên kế thừa Diễn giải từ Lý do nộp/chi (MISA tự điền).
     lines: [{ ...emptyLine(category, type), amount: prefill?.amount ?? 0, description: reason, partnerId: prefill?.partnerId, partnerName: prefill?.partnerName }],
+    // Chi mua ngoài có hóa đơn: mở sẵn 1 dòng kê khai thuế.
+    taxLines:
+      category === CashVoucherCategory.PaymentPurchaseWithInvoice
+        ? [defaultTaxLine(reason, today())]
+        : [],
   }
 }
 
@@ -111,6 +138,10 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
   })
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+  const taxArray = useFieldArray({ control, name: 'taxLines' })
+
+  // Tab hiện hành khi loại nghiệp vụ có tab thuế (Chi mua ngoài có hóa đơn).
+  const [tab, setTab] = useState<'acc' | 'tax'>('acc')
 
   // Picker "Mã đối tượng" (nguồn tạm: khách hàng + nhà cung cấp).
   const [partnerKw, setPartnerKw] = useState('')
@@ -129,6 +160,8 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
     setValue('partnerId', p.code)
     setValue('partnerName', p.name)
     setValue('partnerType', p.type)
+    // Đối tượng là nhân viên (Trả lương tạm ứng) → đồng bộ luôn trường Nhân viên.
+    if (p.type === PartnerType.Employee) setValue('employeeId', p.code)
     if (p.address) setValue('address', p.address)
     const reason = defaultReason(watch('category'), p.name)
     setValue('reason', reason)
@@ -162,24 +195,44 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
       reason: v.reason ?? undefined,
       attachmentCount: v.attachmentCount,
       branchId: v.branchId ?? undefined,
-      lines: v.lines.map((l) => ({
-        description: l.description ?? undefined,
-        debitAccount: l.debitAccount,
-        creditAccount: l.creditAccount,
-        amount: Number(l.amount),
-        operation: l.operation ?? undefined,
-        partnerId: l.partnerId ?? undefined,
-        partnerName: l.partnerName ?? undefined,
-        costItemId: l.costItemId ?? undefined,
-        bankAccountNo: l.bankAccountNo ?? undefined,
-        bankName: l.bankName ?? undefined,
-      })),
+      // Dòng thuế GTGT (isVatLine) tách sang tab "Kê khai hóa đơn và hạch toán thuế".
+      lines: v.lines
+        .filter((l) => !l.isVatLine)
+        .map((l) => ({
+          description: l.description ?? undefined,
+          debitAccount: l.debitAccount,
+          creditAccount: l.creditAccount,
+          amount: Number(l.amount),
+          operation: l.operation ?? undefined,
+          partnerId: l.partnerId ?? undefined,
+          partnerName: l.partnerName ?? undefined,
+          costItemId: l.costItemId ?? undefined,
+          bankAccountNo: l.bankAccountNo ?? undefined,
+          bankName: l.bankName ?? undefined,
+        })),
+      taxLines: v.lines
+        .filter((l) => l.isVatLine)
+        .map((l) => ({
+          description: l.description ?? undefined,
+          hasInvoice: l.hasInvoice ?? undefined,
+          vatRate: l.vatRate != null ? Number(l.vatRate) : undefined,
+          amount: Number(l.amount),
+          vatAccount: l.debitAccount,
+          invoiceDate: l.invoiceDate ?? undefined,
+          invoiceNo: l.invoiceNo ?? undefined,
+          goodsServiceGroup: l.goodsServiceGroup ?? undefined,
+          partnerId: l.partnerId ?? undefined,
+          partnerName: l.partnerName ?? undefined,
+          supplierTaxCode: l.supplierTaxCode ?? undefined,
+        })),
     })
   }, [editing.data, reset, duplicating])
 
   const category = watch('category')
   const lines = watch('lines')
+  const taxLines = watch('taxLines')
   const cols = lineColumns(category)
+  const header = headerConfig(category)
 
   // Preview số phiếu kế tiếp khi tạo mới (PT####/YYYY) — số thật vẫn cấp lúc Lưu.
   const voucherDate = watch('voucherDate')
@@ -192,28 +245,58 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
     partnerId: watch('partnerId'),
     partnerName: watch('partnerName'),
   })
-  const total = lines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
+  const linesTotal = lines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
+  const taxTotal = taxLines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
+  // Tổng tiền = tiền hàng (hạch toán) + thuế GTGT (tab thuế).
+  const total = linesTotal + taxTotal
 
   const submit = (goNext: boolean) =>
     handleSubmit(async (values) => {
       // Phiếu thu nhập tên đối tượng mà không chọn mã → mặc định mã "KHACH LE".
       const walkIn = isReceipt && !values.partnerId && !!values.partnerName
+      // Dòng thuế GTGT (chỉ Chi mua ngoài có hóa đơn) → bút toán Nợ TK thuế / Có 1111;
+      // dòng 0 đồng bị loại (backend chặn amount ≤ 0).
+      const vatLineDtos =
+        values.category === CashVoucherCategory.PaymentPurchaseWithInvoice
+          ? (values.taxLines ?? [])
+              .filter((t) => t.amount > 0)
+              .map((t) => ({
+                description: t.description,
+                debitAccount: t.vatAccount,
+                creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND,
+                amount: t.amount,
+                isVatLine: true,
+                hasInvoice: t.hasInvoice ?? true,
+                vatRate: t.vatRate,
+                invoiceDate: t.invoiceDate || undefined,
+                invoiceNo: t.invoiceNo || undefined,
+                goodsServiceGroup: t.goodsServiceGroup || undefined,
+                partnerId: t.partnerId || undefined,
+                partnerName: t.partnerName || undefined,
+                supplierTaxCode: t.supplierTaxCode || undefined,
+              }))
+          : []
+      // taxLines là field FE — không gửi lên API (forbidNonWhitelisted).
+      const { taxLines: _taxLines, ...rest } = values
       const dto: CreateCashVoucherInput = {
-        ...values,
+        ...rest,
         partnerId: walkIn ? WALK_IN_PARTNER_CODE : values.partnerId,
         partnerType: walkIn ? PartnerType.Customer : values.partnerType,
-        lines: values.lines.map((l) => ({
-          description: l.description,
-          debitAccount: l.debitAccount ?? '',
-          creditAccount: l.creditAccount ?? '',
-          amount: l.amount,
-          operation: l.operation,
-          partnerId: l.partnerId,
-          partnerName: l.partnerName,
-          costItemId: cols.showCostItem ? l.costItemId : undefined,
-          bankAccountNo: cols.showBank ? l.bankAccountNo : undefined,
-          bankName: cols.showBank ? l.bankName : undefined,
-        })),
+        lines: [
+          ...values.lines.map((l) => ({
+            description: l.description,
+            debitAccount: l.debitAccount ?? '',
+            creditAccount: l.creditAccount ?? '',
+            amount: l.amount,
+            operation: l.operation,
+            partnerId: l.partnerId,
+            partnerName: l.partnerName,
+            costItemId: cols.showCostItem ? l.costItemId : undefined,
+            bankAccountNo: cols.showBank ? l.bankAccountNo : undefined,
+            bankName: cols.showBank ? l.bankName : undefined,
+          })),
+          ...vatLineDtos,
+        ],
       }
       try {
         if (voucherId) {
@@ -256,6 +339,15 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
               ;(watch('lines') ?? []).forEach((_, i) => {
                 setValue(`lines.${i}.description`, reason)
               })
+              // Chi mua ngoài có hóa đơn → mở sẵn 1 dòng kê khai thuế; loại khác → bỏ tab thuế.
+              if (next === CashVoucherCategory.PaymentPurchaseWithInvoice) {
+                if ((watch('taxLines') ?? []).length === 0) {
+                  setValue('taxLines', [defaultTaxLine(reason, watch('voucherDate'))])
+                }
+              } else {
+                setValue('taxLines', [])
+                setTab('acc')
+              }
             }}
           >
             <SelectTrigger className="h-9 w-auto min-w-[240px] border-slate-300 bg-white transition-colors hover:border-primary/50 focus:ring-primary/30">
@@ -274,18 +366,22 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
           <div className="flex flex-wrap gap-x-10 gap-y-3">
             {/* Cột trái */}
             <div className="grid min-w-0 flex-1 basis-[520px] grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-            <Field label="Mã đối tượng">
+            {/* Trả lương tạm ứng: đối tượng là nhân viên (tra danh mục Nhân viên) — theo form MISA */}
+            <Field label={header.employeeAsPartner ? 'Mã nhân viên' : 'Mã đối tượng'}>
               <PartnerPicker
                 value={watch('partnerId')}
-                items={partnerItems}
-                loading={partnerLoading}
-                keyword={partnerKw}
-                onKeywordChange={setPartnerKw}
+                items={header.employeeAsPartner ? employeeItems : partnerItems}
+                loading={header.employeeAsPartner ? employeeLoading : partnerLoading}
+                keyword={header.employeeAsPartner ? employeeKw : partnerKw}
+                onKeywordChange={header.employeeAsPartner ? setEmployeeKw : setPartnerKw}
+                placeholder={header.employeeAsPartner ? 'Mã nhân viên' : undefined}
                 onSelect={selectPartner}
-                onAddNew={() => setPartnerDialog(true)}
+                onAddNew={() =>
+                  header.employeeAsPartner ? setEmployeeDialog(true) : setPartnerDialog(true)
+                }
               />
             </Field>
-            <Field label="Tên đối tượng">
+            <Field label={header.employeeAsPartner ? 'Tên nhân viên' : 'Tên đối tượng'}>
               <input {...register('partnerName')} className={inputCls} />
             </Field>
 
@@ -321,37 +417,33 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
                 <Field label="Địa chỉ">
                   <input {...register('address')} className={inputCls} />
                 </Field>
-                {/* PC: Lý do chi nằm TRÊN Nhân viên (§4), trải rộng 2 cột như MISA */}
-                <Field label="Lý do chi" className="sm:col-span-2">
-                  <input {...register('reason')} className={inputCls} />
-                </Field>
-                <Field label="Nhân viên">
-                  <PartnerPicker
-                    value={watch('employeeId')}
-                    items={employeeItems}
-                    loading={employeeLoading}
-                    keyword={employeeKw}
-                    onKeywordChange={setEmployeeKw}
-                    placeholder="Mã nhân viên"
-                    onSelect={selectEmployee}
-                    onAddNew={() => setEmployeeDialog(true)}
-                  />
-                </Field>
+                {/* PC: Lý do chi (rộng) + Kèm theo (hẹp) trên cùng 1 hàng (theo form MISA) */}
+                <div className="flex flex-wrap items-start gap-x-6 gap-y-3 sm:col-span-2">
+                  <Field label="Lý do chi" className="min-w-[240px] flex-1">
+                    <input {...register('reason')} className={inputCls} />
+                  </Field>
+                  <AttachmentField register={register} />
+                </div>
+                {/* Gửi tiền vào NH / Trả lương tạm ứng: MISA không có trường Nhân viên riêng */}
+                {header.showEmployee && (
+                  <Field label="Nhân viên">
+                    <PartnerPicker
+                      value={watch('employeeId')}
+                      items={employeeItems}
+                      loading={employeeLoading}
+                      keyword={employeeKw}
+                      onKeywordChange={setEmployeeKw}
+                      placeholder="Mã nhân viên"
+                      onSelect={selectEmployee}
+                      onAddNew={() => setEmployeeDialog(true)}
+                    />
+                  </Field>
+                )}
               </>
             )}
 
-            <Field label="Kèm theo">
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="Số lượng"
-                  {...register('attachmentCount')}
-                  className={cn(inputCls, 'w-32')}
-                />
-                <span className="text-sm text-slate-500">chứng từ gốc</span>
-              </div>
-            </Field>
+            {/* PT: Kèm theo nằm sau Nhân viên như cũ */}
+            {isReceipt && <AttachmentField register={register} />}
             </div>
 
             {/* Cột phải: ngày + số phiếu */}
@@ -390,7 +482,22 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
 
         {/* Bảng hạch toán — nền trắng */}
         <section className="space-y-2 px-6 py-5">
-          <h2 className="text-base font-semibold text-slate-800">Hạch toán</h2>
+          {header.showVatTab ? (
+            // Chi mua ngoài có hóa đơn: 2 tab như MISA — Hạch toán | Kê khai hóa đơn và hạch toán thuế
+            <div className="flex items-center gap-5 border-b border-border">
+              <TabButton active={tab === 'acc'} onClick={() => setTab('acc')}>
+                Hạch toán
+              </TabButton>
+              <TabButton active={tab === 'tax'} onClick={() => setTab('tax')}>
+                Kê khai hóa đơn và hạch toán thuế
+              </TabButton>
+            </div>
+          ) : (
+            <h2 className="text-base font-semibold text-slate-800">Hạch toán</h2>
+          )}
+
+          {(!header.showVatTab || tab === 'acc') && (
+          <>
           <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse text-sm">
                 <thead className="bg-slate-100 text-left text-[13px] text-slate-700">
@@ -401,8 +508,16 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
                     <th className="w-24 px-2 py-2 font-semibold">TK Có</th>
                     <th className="w-36 px-2 py-2 text-right font-semibold">Số&nbsp;tiền</th>
                     <th className="px-2 py-2 font-semibold">Nghiệp&nbsp;vụ</th>
-                    {cols.showPartner && <th className="px-2 py-2 font-semibold">Đối&nbsp;tượng</th>}
-                    {cols.showPartner && <th className="min-w-[160px] px-2 py-2 font-semibold">Tên đối&nbsp;tượng</th>}
+                    {cols.showPartner && (
+                      <th className="px-2 py-2 font-semibold">
+                        {cols.employeeAsPartner ? 'Mã nhân viên' : 'Đối tượng'}
+                      </th>
+                    )}
+                    {cols.showPartner && (
+                      <th className="min-w-[160px] px-2 py-2 font-semibold">
+                        {cols.employeeAsPartner ? 'Tên nhân viên' : 'Tên đối tượng'}
+                      </th>
+                    )}
                     {cols.showCostItem && <th className="px-2 py-2 font-semibold">Khoản&nbsp;mục CP</th>}
                     {cols.showBank && <th className="px-2 py-2 font-semibold">TK ngân&nbsp;hàng</th>}
                     {cols.showBank && <th className="px-2 py-2 font-semibold">Tên ngân&nbsp;hàng</th>}
@@ -513,7 +628,7 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
                 <tfoot className="bg-slate-100 font-semibold text-slate-800">
                   <tr className="border-t border-border">
                     <td colSpan={4} />
-                    <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(total)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(linesTotal)}</td>
                     <td colSpan={Math.max(colSpan - 3, 1)} />
                   </tr>
                 </tfoot>
@@ -542,6 +657,181 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
               Xóa hết dòng
             </Button>
           </div>
+          </>
+          )}
+
+          {/* Tab Kê khai hóa đơn và hạch toán thuế — chỉ Chi mua ngoài có hóa đơn */}
+          {header.showVatTab && tab === 'tax' && (
+            <>
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-slate-100 text-left text-[13px] text-slate-700">
+                    <tr>
+                      <th className="w-8 px-2 py-2 text-center font-semibold">#</th>
+                      <th className="min-w-[180px] px-2 py-2 font-semibold">Diễn giải thuế</th>
+                      <th className="w-20 px-2 py-2 text-center font-semibold">Có hóa đơn</th>
+                      <th className="w-24 px-2 py-2 text-right font-semibold">% thuế GTGT</th>
+                      <th className="w-32 px-2 py-2 text-right font-semibold">Tiền thuế GTGT</th>
+                      <th className="w-24 px-2 py-2 font-semibold">TK thuế GTGT</th>
+                      <th className="w-32 px-2 py-2 font-semibold">Ngày hóa đơn</th>
+                      <th className="w-28 px-2 py-2 font-semibold">Số hóa đơn</th>
+                      <th className="w-36 px-2 py-2 font-semibold">Nhóm HHDV mua vào</th>
+                      <th className="w-28 px-2 py-2 font-semibold">Mã NCC</th>
+                      <th className="min-w-[140px] px-2 py-2 font-semibold">Tên NCC</th>
+                      <th className="w-32 px-2 py-2 font-semibold">Mã số thuế NCC</th>
+                      <th className="w-10 px-2 py-2" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {taxArray.fields.map((f, i) => (
+                      <tr
+                        key={f.id}
+                        className="group border-t border-border/70 transition-colors hover:bg-slate-50/60 focus-within:bg-primary/[0.04]"
+                      >
+                        <td className="px-2 py-1 text-center text-xs tabular-nums text-slate-400">{i + 1}</td>
+                        <td className="px-2 py-1">
+                          <input {...register(`taxLines.${i}.description`)} className={cellCls} />
+                        </td>
+                        <td className="px-2 py-1 text-center">
+                          <Controller
+                            control={control}
+                            name={`taxLines.${i}.hasInvoice`}
+                            render={({ field }) => (
+                              <input
+                                type="checkbox"
+                                checked={!!field.value}
+                                onChange={(e) => field.onChange(e.target.checked)}
+                                className="h-4 w-4 accent-primary"
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Controller
+                            control={control}
+                            name={`taxLines.${i}.vatRate`}
+                            render={({ field }) => (
+                              <input
+                                type="number"
+                                min={0}
+                                value={field.value ?? ''}
+                                onChange={(e) => {
+                                  const rate = e.target.value === '' ? undefined : Number(e.target.value)
+                                  field.onChange(rate)
+                                  // Đổi thuế suất → gợi ý tiền thuế = tổng tiền hàng × %.
+                                  if (rate != null && !Number.isNaN(rate)) {
+                                    const base = (watch('lines') ?? []).reduce(
+                                      (s, l) => s + (l.amount || 0),
+                                      0,
+                                    )
+                                    setValue(`taxLines.${i}.amount`, Math.round((base * rate) / 100))
+                                  }
+                                }}
+                                className={cn(cellCls, 'text-right')}
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Controller
+                            control={control}
+                            name={`taxLines.${i}.amount`}
+                            render={({ field, fieldState }) => (
+                              <AmountInput
+                                value={field.value ?? 0}
+                                onChange={field.onChange}
+                                className={cn(
+                                  cellCls,
+                                  'text-right font-medium',
+                                  fieldState.error && 'border-red-400 focus:border-red-400 focus:ring-red-200',
+                                )}
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Controller
+                            control={control}
+                            name={`taxLines.${i}.vatAccount`}
+                            render={({ field, fieldState }) => (
+                              <AccountPicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                inputClassName={cn(
+                                  accountCellCls,
+                                  fieldState.error && 'rounded ring-1 ring-inset ring-red-500',
+                                )}
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <input type="date" {...register(`taxLines.${i}.invoiceDate`)} className={cellCls} />
+                        </td>
+                        <td className="px-2 py-1">
+                          <input {...register(`taxLines.${i}.invoiceNo`)} className={cellCls} />
+                        </td>
+                        <td className="px-2 py-1">
+                          <input {...register(`taxLines.${i}.goodsServiceGroup`)} className={cellCls} />
+                        </td>
+                        <td className="px-2 py-1">
+                          <input {...register(`taxLines.${i}.partnerId`)} className={cellCls} />
+                        </td>
+                        <td className="px-2 py-1">
+                          <input {...register(`taxLines.${i}.partnerName`)} className={cellCls} />
+                        </td>
+                        <td className="px-2 py-1">
+                          <input {...register(`taxLines.${i}.supplierTaxCode`)} className={cellCls} />
+                        </td>
+                        <td className="px-2 py-1 text-center">
+                          <button
+                            type="button"
+                            onClick={() => taxArray.remove(i)}
+                            className="grid h-7 w-7 place-items-center rounded-md text-slate-300 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                            aria-label="Xóa dòng thuế"
+                          >
+                            <TrashIcon size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-100 font-semibold text-slate-800">
+                    <tr className="border-t border-border">
+                      <td colSpan={4} />
+                      <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(taxTotal)}</td>
+                      <td colSpan={8} />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <p className="text-sm text-slate-600">
+                Tổng số: <b className="font-semibold text-slate-800">{taxArray.fields.length}</b> bản ghi
+              </p>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    taxArray.append(defaultTaxLine(watch('reason'), watch('voucherDate')))
+                  }
+                >
+                  <PlusIcon size={14} /> Thêm dòng
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setValue('taxLines', [])}
+                >
+                  Xóa hết dòng
+                </Button>
+              </div>
+            </>
+          )}
 
           {typeof formState.errors.lines?.message === 'string' && (
             <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
@@ -605,7 +895,9 @@ export function CashVoucherForm({ type, voucherId, duplicateFromId, readOnly = f
         initialCode={employeeKw.trim() || undefined}
         onCreated={(p) => {
           setEmployeeKw('')
-          selectEmployee(p)
+          // Trả lương tạm ứng: nhân viên là đối tượng chính của phiếu.
+          if (header.employeeAsPartner) selectPartner(p)
+          else selectEmployee(p)
         }}
       />
     </form>
@@ -618,6 +910,50 @@ const inputCls =
 // Ô nhập trong bảng: kiểu spreadsheet — viền ẩn, hiện khi hover/focus.
 const cellCls =
   'h-8 w-full rounded border border-transparent bg-transparent px-2 text-sm transition-colors hover:border-slate-200 focus:border-primary/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary/20'
+
+// Trường "Kèm theo … chứng từ gốc" — dùng chung PT (sau Nhân viên) / PC (cạnh Lý do chi).
+function AttachmentField({ register }: { register: UseFormRegister<CashVoucherFormValues> }) {
+  return (
+    <Field label="Kèm theo">
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min={0}
+          placeholder="Số lượng"
+          {...register('attachmentCount')}
+          className={cn(inputCls, 'w-32')}
+        />
+        <span className="text-sm text-slate-500">chứng từ gốc</span>
+      </div>
+    </Field>
+  )
+}
+
+// Nút tab kiểu MISA (gạch chân tab đang chọn) — dùng cho Hạch toán | Kê khai thuế.
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        '-mb-px border-b-2 pb-2 text-base transition-colors',
+        active
+          ? 'border-primary font-semibold text-slate-800'
+          : 'border-transparent font-medium text-slate-500 hover:text-slate-700',
+      )}
+    >
+      {children}
+    </button>
+  )
+}
 
 function Field({
   label,

@@ -15,6 +15,14 @@ export interface CashVoucherLineDto {
   costItemId: string | null // Khoản mục CP (chỉ PC - Chi khác)
   bankAccountNo: string | null // TK ngân hàng (gửi tiền vào NH)
   bankName: string | null
+  // Dòng thuế GTGT (tab "Kê khai hóa đơn và hạch toán thuế" — Chi mua ngoài có hóa đơn).
+  isVatLine: boolean
+  hasInvoice: boolean | null
+  vatRate: string | null // % thuế GTGT (Decimal serialize)
+  invoiceDate: string | null // Ngày hóa đơn (ISO date)
+  invoiceNo: string | null
+  goodsServiceGroup: string | null // Nhóm HHDV mua vào
+  supplierTaxCode: string | null // Mã số thuế NCC
 }
 
 // Phiếu thu/chi.
@@ -58,6 +66,13 @@ export interface CreateCashVoucherLineInput {
   costItemId?: string | null
   bankAccountNo?: string | null
   bankName?: string | null
+  isVatLine?: boolean
+  hasInvoice?: boolean | null
+  vatRate?: number | null
+  invoiceDate?: string | null
+  invoiceNo?: string | null
+  goodsServiceGroup?: string | null
+  supplierTaxCode?: string | null
 }
 
 // Payload tạo phiếu thu/chi.

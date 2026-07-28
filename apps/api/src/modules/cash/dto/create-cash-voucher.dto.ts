@@ -4,6 +4,7 @@ import { Type } from 'class-transformer'
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -63,6 +64,44 @@ export class CreateCashVoucherLineDto {
   @IsOptional()
   @IsString()
   bankName?: string
+
+  // ── Dòng thuế GTGT (tab "Kê khai hóa đơn và hạch toán thuế") ──────────────
+
+  @ApiPropertyOptional({ description: 'Dòng thuế GTGT (Nợ 1331) — Chi mua ngoài có hóa đơn' })
+  @IsOptional()
+  @IsBoolean()
+  isVatLine?: boolean
+
+  @ApiPropertyOptional({ description: 'Có hóa đơn' })
+  @IsOptional()
+  @IsBoolean()
+  hasInvoice?: boolean
+
+  @ApiPropertyOptional({ description: '% thuế GTGT' })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  vatRate?: number
+
+  @ApiPropertyOptional({ description: 'Ngày hóa đơn (ISO)' })
+  @IsOptional()
+  @IsDateString()
+  invoiceDate?: string
+
+  @ApiPropertyOptional({ description: 'Số hóa đơn' })
+  @IsOptional()
+  @IsString()
+  invoiceNo?: string
+
+  @ApiPropertyOptional({ description: 'Nhóm HHDV mua vào' })
+  @IsOptional()
+  @IsString()
+  goodsServiceGroup?: string
+
+  @ApiPropertyOptional({ description: 'Mã số thuế NCC' })
+  @IsOptional()
+  @IsString()
+  supplierTaxCode?: string
 }
 
 export class CreateCashVoucherDto {

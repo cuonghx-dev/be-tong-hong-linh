@@ -52,6 +52,7 @@ enum CashVoucherCategory {
   PAYMENT_EMPLOYEE_ADVANCE
   PAYMENT_PURCHASE_WITH_INVOICE
   DEPOSIT_TO_BANK
+  PAYMENT_SALARY_ADVANCE
   PAYMENT
   PURCHASE_SERVICE_CASH
   PURCHASE_GOODS_CASH
@@ -115,6 +116,15 @@ model CashVoucherLine {
   costItemId    String?     @map("cost_item_id")
   bankAccountNo String?     @map("bank_account_no")
   bankName      String?     @map("bank_name")
+  // Dòng thuế GTGT (tab "Kê khai hóa đơn và hạch toán thuế" — Chi mua ngoài có hóa đơn).
+  // Vẫn là bút toán thường (Nợ 1331 / Có 1111) → sổ quỹ/nhật ký/journal tự gộp.
+  isVatLine         Boolean   @default(false) @map("is_vat_line")
+  hasInvoice        Boolean?  @map("has_invoice")
+  vatRate           Decimal?  @map("vat_rate") @db.Decimal(5, 2)
+  invoiceDate       DateTime? @map("invoice_date") @db.Date
+  invoiceNo         String?   @map("invoice_no")
+  goodsServiceGroup String?   @map("goods_service_group")
+  supplierTaxCode   String?   @map("supplier_tax_code")
 
   // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
   @@unique([voucherId, lineNo])

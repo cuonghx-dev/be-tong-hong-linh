@@ -25,9 +25,10 @@ import { UpdateCashVoucherDto } from './dto/update-cash-voucher.dto'
 
 type VoucherWithLines = CashVoucher & { lines: CashVoucherLine[] }
 
-// Loại nghiệp vụ mà đối tượng là nhân viên (tạm ứng).
+// Loại nghiệp vụ mà đối tượng là nhân viên (tạm ứng / trả lương tạm ứng).
 const EMPLOYEE_CATEGORIES = new Set<CashVoucherCategory>([
   CashVoucherCategory.PAYMENT_EMPLOYEE_ADVANCE,
+  CashVoucherCategory.PAYMENT_SALARY_ADVANCE,
 ])
 
 @Injectable()
@@ -595,6 +596,13 @@ function normalizeLines(type: CashVoucherType, lines: CreateCashVoucherLineDto[]
       costItemId: line.costItemId ?? null,
       bankAccountNo: line.bankAccountNo ?? null,
       bankName: line.bankName ?? null,
+      isVatLine: line.isVatLine ?? false,
+      hasInvoice: line.hasInvoice ?? null,
+      vatRate: line.vatRate != null ? new Prisma.Decimal(line.vatRate) : null,
+      invoiceDate: line.invoiceDate ? new Date(line.invoiceDate) : null,
+      invoiceNo: line.invoiceNo ?? null,
+      goodsServiceGroup: line.goodsServiceGroup ?? null,
+      supplierTaxCode: line.supplierTaxCode ?? null,
     }
   })
 }
@@ -671,6 +679,13 @@ function toVoucherDto(v: VoucherWithLines) {
       costItemId: l.costItemId,
       bankAccountNo: l.bankAccountNo,
       bankName: l.bankName,
+      isVatLine: l.isVatLine,
+      hasInvoice: l.hasInvoice,
+      vatRate: l.vatRate?.toString() ?? null,
+      invoiceDate: l.invoiceDate ? toDateOnly(l.invoiceDate) : null,
+      invoiceNo: l.invoiceNo,
+      goodsServiceGroup: l.goodsServiceGroup,
+      supplierTaxCode: l.supplierTaxCode,
     })),
     createdAt: v.createdAt.toISOString(),
     updatedAt: v.updatedAt.toISOString(),

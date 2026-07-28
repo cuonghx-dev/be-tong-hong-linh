@@ -23,8 +23,8 @@ const CATEGORY_MAP: Record<string, CashVoucherCategory> = {
   'Gửi tiền vào ngân hàng': CashVoucherCategory.DEPOSIT_TO_BANK,
   'Chi mua ngoài có hóa đơn': CashVoucherCategory.PAYMENT_PURCHASE_WITH_INVOICE,
   'Tạm ứng cho nhân viên': CashVoucherCategory.PAYMENT_EMPLOYEE_ADVANCE,
+  'Trả lương tạm ứng cho nhân viên': CashVoucherCategory.PAYMENT_SALARY_ADVANCE,
   // Loại đã bỏ khỏi danh mục → quy về Chi khác khi nhập file cũ.
-  'Trả lương tạm ứng cho nhân viên': CashVoucherCategory.PAYMENT,
   'Trả tiền nhà cung cấp (không theo hóa đơn)': CashVoucherCategory.PAYMENT,
   'Trả lương nhân viên': CashVoucherCategory.PAYMENT,
   'Chuyển tiền cho chi nhánh khác': CashVoucherCategory.PAYMENT,

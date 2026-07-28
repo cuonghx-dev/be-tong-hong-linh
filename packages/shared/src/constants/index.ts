@@ -12,6 +12,7 @@ export const CHART_OF_ACCOUNTS = {
   ADVANCE: '141', // Tạm ứng (thu hoàn ứng / tạm ứng cho nhân viên)
   LOAN: '1283', // Cho vay (thu hồi / chi cho vay)
   SALARY_PAYABLE: '334', // Phải trả người lao động (trả lương)
+  SALARY_PAYABLE_EMPLOYEE: '3341', // Phải trả công nhân viên (trả lương tạm ứng)
   INTERNAL_RECEIVABLE: '1368', // Phải thu nội bộ khác (chuyển tiền chi nhánh)
   CIT_PAYABLE: '3334', // Thuế thu nhập doanh nghiệp
   INVENTORY: '156', // Hàng hóa
@@ -53,6 +54,7 @@ export const CASH_RECEIPT_CREDIT_ACCOUNT: Readonly<Record<string, string>> = {
 export const CASH_PAYMENT_DEBIT_ACCOUNT: Readonly<Record<string, string>> = {
   PAYMENT_EMPLOYEE_ADVANCE: CHART_OF_ACCOUNTS.ADVANCE, // 141
   DEPOSIT_TO_BANK: CHART_OF_ACCOUNTS.BANK_DEPOSIT, // 1121
+  PAYMENT_SALARY_ADVANCE: CHART_OF_ACCOUNTS.SALARY_PAYABLE_EMPLOYEE, // 3341 (trả lương tạm ứng)
   PURCHASE_SERVICE_CASH: CHART_OF_ACCOUNTS.SERVICE_EXPENSE, // 642 (mua dịch vụ trả tiền mặt)
   PURCHASE_GOODS_CASH: CHART_OF_ACCOUNTS.GOODS, // 156 (mua hàng không qua kho trả tiền mặt)
   PAYMENT: CHART_OF_ACCOUNTS.OTHER_EXPENSE, // 811 (phiếu chi / chi khác không phân loại)
