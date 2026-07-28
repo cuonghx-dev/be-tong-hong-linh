@@ -22,6 +22,7 @@ export function BankVoucherPage({ mode }: { mode: Mode }) {
   const [sp] = useSearchParams()
   const type = (sp.get('type') as BankVoucherType) ?? BankVoucherType.Receipt
   const isReceipt = type === BankVoucherType.Receipt
+  const isTransfer = type === BankVoucherType.Transfer
   const { toast } = useToast()
   const setPosted = useSetBankVoucherPosted()
 
@@ -33,12 +34,18 @@ export function BankVoucherPage({ mode }: { mode: Mode }) {
   // Trạng thái ghi sổ cho action nổi — query dedupe với form.
   const { data: voucher } = useBankVoucher(mode === 'new' ? null : (id ?? null))
 
-  const noun = isReceipt ? 'phiếu thu tiền gửi' : 'ủy nhiệm chi'
+  const noun = isTransfer
+    ? 'chuyển tiền nội bộ'
+    : isReceipt
+      ? 'phiếu thu tiền gửi'
+      : 'ủy nhiệm chi'
   const title =
     mode === 'new'
-      ? isReceipt
-        ? 'Thu tiền gửi'
-        : 'Ủy nhiệm chi'
+      ? isTransfer
+        ? 'Chuyển tiền nội bộ'
+        : isReceipt
+          ? 'Thu tiền gửi'
+          : 'Ủy nhiệm chi'
       : mode === 'edit'
         ? `Sửa ${noun}`
         : `Xem ${noun}`
@@ -62,7 +69,13 @@ export function BankVoucherPage({ mode }: { mode: Mode }) {
 
   return (
     // p-0 để form tự quản padding — action bar tối dính đáy, tràn hết bề ngang (đồng bộ cash).
-    <RecordPageShell title={title} onClose={close} contentClassName="p-0">
+    // Header nền primary nhạt liền khối với vùng thông tin chung của form (2 lớp màu kiểu MISA).
+    <RecordPageShell
+      title={title}
+      onClose={close}
+      headerClassName="border-b-0 bg-primary/5"
+      contentClassName="p-0"
+    >
       <BankVoucherForm
         type={type}
         voucherId={id ?? null}

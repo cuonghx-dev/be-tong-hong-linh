@@ -29,6 +29,11 @@ export function BankProcessTab() {
           icon: <ProcessReceiptIcon kind="chi" motif="bank" />,
           onClick: () => openNew(BankVoucherType.Payment),
         },
+        {
+          label: 'Chuyển tiền nội bộ',
+          icon: <ProcessCompareIcon />,
+          onClick: () => openNew(BankVoucherType.Transfer),
+        },
       ]}
       center={{ label: 'Đối chiếu ngân hàng', icon: <ProcessCompareIcon />, disabled: true }}
       shortcuts={[

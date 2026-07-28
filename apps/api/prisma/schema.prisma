@@ -133,10 +133,12 @@ model CashVoucherLine {
 
 // ── Tiền gửi (02-tien-gui) ──────────────────────────────────────────────────
 
-// Loại chứng từ tiền gửi: Thu tiền gửi (NTTK) / Ủy nhiệm chi (UNC).
+// Loại chứng từ tiền gửi: Thu tiền gửi (NTTK) / Ủy nhiệm chi (UNC) /
+// Chuyển tiền nội bộ (CTNB) giữa 2 TKNH của đơn vị.
 enum BankVoucherType {
   RECEIPT
   PAYMENT
+  TRANSFER
 }
 
 // Loại nghiệp vụ (§5) — quyết định định khoản mặc định + nguồn sinh phiếu.
@@ -167,6 +169,8 @@ model BankVoucher {
   bankAccountNo     String?             @map("bank_account_no")
   bankName          String?             @map("bank_name")
   receiverAccountNo String?             @map("receiver_account_no")
+  // Tên ngân hàng của tài khoản nhận — chỉ chuyển tiền nội bộ (CTNB).
+  receiverBankName  String?             @map("receiver_bank_name")
   partnerType       PartnerType?        @map("partner_type")
   partnerId         String?             @map("partner_id")
   partnerName       String?             @map("partner_name")

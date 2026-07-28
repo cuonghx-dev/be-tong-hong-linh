@@ -24,9 +24,10 @@ export interface BankVoucherDto {
   internalRef: string | null // Số UNC từ chi nhánh khác chuyển đến — chỉ thu
   postingDate: string // Ngày hạch toán (ISO)
   voucherDate: string // Ngày chứng từ (ISO)
-  bankAccountNo: string | null // TK ngân hàng của đơn vị (nộp vào / tài khoản chi)
+  bankAccountNo: string | null // TK ngân hàng của đơn vị (nộp vào / tài khoản chi / tài khoản đi)
   bankName: string | null // Tên ngân hàng (auto theo TK)
-  receiverAccountNo: string | null // Tài khoản nhận — chỉ chi
+  receiverAccountNo: string | null // Tài khoản nhận (chi) / tài khoản đến (CTNB)
+  receiverBankName: string | null // Tên ngân hàng tài khoản đến — chỉ CTNB
   partnerType: PartnerType | null
   partnerId: string | null
   partnerName: string | null
@@ -62,9 +63,10 @@ export interface CreateBankVoucherInput {
   internalRef?: string | null
   postingDate: string
   voucherDate: string
-  bankAccountNo: string // Bắt buộc — chứng từ tiền gửi phải gắn TK ngân hàng
+  bankAccountNo: string // Bắt buộc — chứng từ tiền gửi phải gắn TK ngân hàng (CTNB: tài khoản đi)
   bankName?: string | null
-  receiverAccountNo?: string | null
+  receiverAccountNo?: string | null // Tài khoản nhận (chi) / tài khoản đến (CTNB — bắt buộc)
+  receiverBankName?: string | null
   partnerType?: PartnerType | null
   partnerId?: string | null
   partnerName?: string | null

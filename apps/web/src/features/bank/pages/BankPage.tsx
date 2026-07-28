@@ -133,6 +133,7 @@ function BankTable() {
             actions={[
               { label: 'Thu tiền', onClick: () => openNew(BankVoucherType.Receipt) },
               { label: 'Chi tiền', onClick: () => openNew(BankVoucherType.Payment) },
+              { label: 'Chuyển tiền nội bộ', onClick: () => openNew(BankVoucherType.Transfer) },
             ]}
             onImportExcel={() => fileRef.current?.click()}
             importing={importXlsx.isPending}

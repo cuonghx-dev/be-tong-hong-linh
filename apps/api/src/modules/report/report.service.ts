@@ -19,6 +19,7 @@ const VOUCHER_KIND_LABELS: Record<string, string> = {
   CASH_PAYMENT: 'Phiếu chi',
   BANK_RECEIPT: 'Thu tiền gửi',
   BANK_PAYMENT: 'Chi tiền gửi',
+  BANK_TRANSFER: 'Chuyển tiền nội bộ',
   PURCHASE: 'Mua hàng',
   SALES: 'Bán hàng',
   INVENTORY_RECEIPT: 'Nhập kho',
@@ -251,7 +252,9 @@ export class ReportService {
         ))
       UNION ALL
       SELECT v.posting_date, v.voucher_date, v.voucher_no,
-             CASE WHEN v.type = 'RECEIPT' THEN 'BANK_RECEIPT' ELSE 'BANK_PAYMENT' END,
+             CASE WHEN v.type = 'RECEIPT' THEN 'BANK_RECEIPT'
+                  WHEN v.type = 'TRANSFER' THEN 'BANK_TRANSFER'
+                  ELSE 'BANK_PAYMENT' END,
              COALESCE(l.description, v.reason),
              l.debit_account, l.credit_account, l.amount, l.line_no, 0
       FROM bank_voucher_lines l JOIN bank_vouchers v ON v.id = l.voucher_id

@@ -21,7 +21,7 @@ const BANK_LIKE = `${CHART_OF_ACCOUNTS.BANK}%`
 interface RawLine {
   voucher_id: string
   source: 'BANK' | 'CASH'
-  voucher_type: 'RECEIPT' | 'PAYMENT'
+  voucher_type: 'RECEIPT' | 'PAYMENT' | 'TRANSFER'
   posting_date: string
   voucher_date: string
   voucher_no: string
@@ -223,6 +223,8 @@ export class BankReportService {
 
   // Dòng hạch toán chạm TK 112x trong kỳ, thứ tự ghi sổ. Dòng chuyển giữa
   // 2 TK 112x sinh ra cả dòng thu lẫn dòng chi (đúng bản chất sổ tiền gửi).
+  // Chuyển tiền nội bộ (TRANSFER): vế thu gắn tài khoản đến (receiver_account_no),
+  // vế chi gắn tài khoản đi (bank_account_no).
   private async linesInRange(from: Date, to: Date): Promise<RawLine[]> {
     return this.prisma.$queryRaw<RawLine[]>(Prisma.sql`
       SELECT v.id AS voucher_id,
@@ -232,8 +234,12 @@ export class BankReportService {
              v.voucher_date::text AS voucher_date,
              v.voucher_no,
              COALESCE(l.description, v.reason) AS description,
-             COALESCE(v.bank_account_no, '') AS bank_account_no,
-             v.bank_name,
+             CASE WHEN v.type = 'TRANSFER' AND k.kind = 'RECEIPT'
+                  THEN COALESCE(v.receiver_account_no, '')
+                  ELSE COALESCE(v.bank_account_no, '') END AS bank_account_no,
+             CASE WHEN v.type = 'TRANSFER' AND k.kind = 'RECEIPT'
+                  THEN v.receiver_bank_name
+                  ELSE v.bank_name END AS bank_name,
              CASE WHEN k.kind = 'RECEIPT' THEN l.credit_account ELSE l.debit_account END AS counter_account,
              k.kind,
              l.amount::text AS amount,
@@ -320,22 +326,30 @@ export class BankReportService {
   }
 
   // Net phát sinh TK 112x theo từng TKNH với điều kiện thời gian tùy chọn.
+  // Nhánh bank tách vế Nợ/Có riêng (CROSS JOIN kind) vì chuyển tiền nội bộ chạm
+  // 112x cả 2 vế nhưng thuộc 2 TKNH khác nhau (đến +, đi −).
   private async movementByAccount(dateCond: Prisma.Sql): Promise<AccountAmount[]> {
-    const delta = (accountFrom: Prisma.Sql) => Prisma.sql`
-      SELECT ${accountFrom} AS bank_account_no,
-             CASE WHEN l.debit_account LIKE ${BANK_LIKE} THEN l.amount ELSE 0 END
-             - CASE WHEN l.credit_account LIKE ${BANK_LIKE} THEN l.amount ELSE 0 END AS delta
-    `
     const rows = await this.prisma.$queryRaw<{ bank_account_no: string; s: string }[]>(Prisma.sql`
       SELECT t.bank_account_no, SUM(t.delta)::text AS s
       FROM (
-        ${delta(Prisma.sql`COALESCE(v.bank_account_no, '')`)}
+        SELECT CASE WHEN v.type = 'TRANSFER' AND k.kind = 'RECEIPT'
+                    THEN COALESCE(v.receiver_account_no, '')
+                    ELSE COALESCE(v.bank_account_no, '') END AS bank_account_no,
+               CASE WHEN k.kind = 'RECEIPT' THEN l.amount ELSE -l.amount END AS delta
         FROM bank_voucher_lines l
         JOIN bank_vouchers v ON v.id = l.voucher_id
+        CROSS JOIN LATERAL (
+          VALUES ('RECEIPT'), ('PAYMENT')
+        ) AS k(kind)
         WHERE v.posted AND ${dateCond}
-          AND (l.debit_account LIKE ${BANK_LIKE} OR l.credit_account LIKE ${BANK_LIKE})
+          AND (
+            (k.kind = 'RECEIPT' AND l.debit_account LIKE ${BANK_LIKE})
+            OR (k.kind = 'PAYMENT' AND l.credit_account LIKE ${BANK_LIKE})
+          )
         UNION ALL
-        ${delta(Prisma.sql`COALESCE(l.bank_account_no, '')`)}
+        SELECT COALESCE(l.bank_account_no, ''),
+               CASE WHEN l.debit_account LIKE ${BANK_LIKE} THEN l.amount ELSE 0 END
+               - CASE WHEN l.credit_account LIKE ${BANK_LIKE} THEN l.amount ELSE 0 END
         FROM cash_voucher_lines l
         JOIN cash_vouchers v ON v.id = l.voucher_id
         WHERE v.posted AND ${dateCond}

@@ -45,16 +45,18 @@ export enum PartnerType {
 
 // Tiền gửi (02-tien-gui) ------------------------------------------------------
 
-// Loại chứng từ tiền gửi: Thu tiền gửi (NTTK) tăng / Ủy nhiệm chi (UNC) giảm.
+// Loại chứng từ tiền gửi: Thu tiền gửi (NTTK) tăng / Ủy nhiệm chi (UNC) giảm /
+// Chuyển tiền nội bộ (CTNB) giữa 2 TKNH của đơn vị.
 export enum BankVoucherType {
   Receipt = 'RECEIPT', // Thu tiền gửi (NTTK)
   Payment = 'PAYMENT', // Ủy nhiệm chi (UNC)
+  Transfer = 'TRANSFER', // Chuyển tiền nội bộ (CTNB)
 }
 
 // Loại nghiệp vụ (§5) — quyết định định khoản mặc định + nguồn sinh phiếu.
 export enum BankVoucherCategory {
   Receipt = 'RECEIPT', // Thu khác (thu tiền gửi nhập tay)
-  InternalTransfer = 'INTERNAL_TRANSFER', // Chuyển tiền nội bộ giữa các TKNH
+  InternalTransfer = 'INTERNAL_TRANSFER', // Chuyển tiền nội bộ — chỉ dùng cho chứng từ CTNB
   Payment = 'PAYMENT', // Ủy nhiệm chi nhập tay (chi khác)
 }
 

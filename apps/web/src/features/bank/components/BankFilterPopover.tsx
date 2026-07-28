@@ -62,15 +62,13 @@ export function BankFilterPopover({ value, onApply, onReset }: Props) {
   // Đồng bộ lại khi filter ngoài đổi (vd back/forward).
   useEffect(() => setDraft(value), [value])
 
-  // Lý do thu/chi thu hẹp theo loại chứng từ đang chọn; chưa chọn loại
-  // → gộp 2 danh sách (khử trùng Chuyển tiền nội bộ có ở cả thu lẫn chi).
+  // Lý do thu/chi thu hẹp theo loại chứng từ đang chọn; chưa chọn loại → gộp cả 3 danh sách.
   const categoryOptions = draft.type
     ? CATEGORY_OPTIONS[draft.type as BankVoucherType]
     : [
-        ...new Set([
-          ...CATEGORY_OPTIONS[BankVoucherType.Receipt],
-          ...CATEGORY_OPTIONS[BankVoucherType.Payment],
-        ]),
+        ...CATEGORY_OPTIONS[BankVoucherType.Receipt],
+        ...CATEGORY_OPTIONS[BankVoucherType.Payment],
+        ...CATEGORY_OPTIONS[BankVoucherType.Transfer],
       ]
 
   const activeCount =
@@ -120,6 +118,7 @@ export function BankFilterPopover({ value, onApply, onReset }: Props) {
                   <SelectItem value="all">Tất cả</SelectItem>
                   <SelectItem value={BankVoucherType.Receipt}>Thu tiền gửi</SelectItem>
                   <SelectItem value={BankVoucherType.Payment}>Ủy nhiệm chi</SelectItem>
+                  <SelectItem value={BankVoucherType.Transfer}>Chuyển tiền nội bộ</SelectItem>
                 </SelectContent>
               </Select>
             </Field>

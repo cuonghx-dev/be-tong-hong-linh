@@ -19,7 +19,7 @@ export interface BankBalanceFilter {
 export interface BankBookRowDto {
   voucherId: string
   voucherSource: 'BANK' | 'CASH' // chứng từ tiền gửi hay phiếu thu/chi (gửi/rút tiền NH)
-  voucherType: 'RECEIPT' | 'PAYMENT' // loại chứng từ gốc — FE truyền ?type= khi mở trang xem
+  voucherType: 'RECEIPT' | 'PAYMENT' | 'TRANSFER' // loại chứng từ gốc — FE truyền ?type= khi mở trang xem
   postingDate: string // Ngày hạch toán
   voucherDate: string // Ngày chứng từ
   voucherNo: string

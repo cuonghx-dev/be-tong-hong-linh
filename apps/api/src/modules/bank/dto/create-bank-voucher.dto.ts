@@ -89,10 +89,15 @@ export class CreateBankVoucherDto {
   @IsString()
   bankName?: string
 
-  @ApiPropertyOptional({ description: 'Tài khoản nhận — chỉ chi' })
+  @ApiPropertyOptional({ description: 'Tài khoản nhận (chi) / tài khoản đến (CTNB)' })
   @IsOptional()
   @IsString()
   receiverAccountNo?: string
+
+  @ApiPropertyOptional({ description: 'Tên ngân hàng tài khoản đến — chỉ CTNB' })
+  @IsOptional()
+  @IsString()
+  receiverBankName?: string
 
   @ApiPropertyOptional({ enum: PartnerType })
   @IsOptional()

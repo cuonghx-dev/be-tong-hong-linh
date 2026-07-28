@@ -92,6 +92,9 @@ export class BankService {
 
   async create(dto: CreateBankVoucherDto) {
     await this.bookLock.assertUnlocked(dto.postingDate)
+    // CTNB phải có đủ 2 đầu tài khoản (đi = bankAccountNo, đến = receiverAccountNo).
+    if (dto.type === BankVoucherType.TRANSFER && !dto.receiverAccountNo?.trim())
+      throw new BadRequestException('Chuyển tiền nội bộ phải chọn tài khoản đến')
     const created = await this.prisma.$transaction(async (tx) => {
       const voucherNo = await nextVoucherNo(tx, dto.type, new Date(dto.voucherDate))
       const lines = normalizeLines(dto.type, dto.lines)
@@ -107,7 +110,8 @@ export class BankService {
           voucherDate: new Date(dto.voucherDate),
           bankAccountNo: dto.bankAccountNo ?? null,
           bankName: dto.bankName ?? null,
-          receiverAccountNo: dto.type === BankVoucherType.PAYMENT ? dto.receiverAccountNo ?? null : null,
+          receiverAccountNo: dto.type !== BankVoucherType.RECEIPT ? dto.receiverAccountNo ?? null : null,
+          receiverBankName: dto.type === BankVoucherType.TRANSFER ? dto.receiverBankName ?? null : null,
           partnerType: dto.partnerType ?? null,
           partnerId: dto.partnerId ?? null,
           partnerName: dto.partnerName ?? null,
@@ -132,17 +136,19 @@ export class BankService {
     await this.bookLock.assertUnlocked(existing.postingDate, dto.postingDate)
 
     const isPayment = existing.type === BankVoucherType.PAYMENT
+    const isTransfer = existing.type === BankVoucherType.TRANSFER
     const updated = await this.prisma.$transaction(async (tx) => {
       const data: Prisma.BankVoucherUpdateInput = {
         category: dto.category ?? undefined,
         paymentMethod: isPayment ? dto.paymentMethod ?? undefined : undefined,
         isBatchTransfer: isPayment ? dto.isBatchTransfer ?? undefined : undefined,
-        internalRef: isPayment ? undefined : dto.internalRef ?? undefined,
+        internalRef: existing.type === BankVoucherType.RECEIPT ? dto.internalRef ?? undefined : undefined,
         postingDate: dto.postingDate ? new Date(dto.postingDate) : undefined,
         voucherDate: dto.voucherDate ? new Date(dto.voucherDate) : undefined,
         bankAccountNo: dto.bankAccountNo ?? undefined,
         bankName: dto.bankName ?? undefined,
-        receiverAccountNo: isPayment ? dto.receiverAccountNo ?? undefined : undefined,
+        receiverAccountNo: isPayment || isTransfer ? dto.receiverAccountNo ?? undefined : undefined,
+        receiverBankName: isTransfer ? dto.receiverBankName ?? undefined : undefined,
         partnerType: dto.partnerType ?? undefined,
         partnerId: dto.partnerId ?? undefined,
         partnerName: dto.partnerName ?? undefined,
@@ -335,15 +341,15 @@ function customerReceiptLines(input: BankCustomerReceiptInput) {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-// Định khoản mặc định: Thu → TK Nợ 1121; Chi → TK Có 1121 (§8.3).
+// Định khoản mặc định: Thu → TK Nợ 1121; Chi → TK Có 1121; CTNB → cả 2 vế 1121 (§8.3).
 function normalizeLines(type: BankVoucherType, lines: CreateBankVoucherLineDto[]) {
   return lines.map((line, i) => {
     const debitAccount =
-      type === BankVoucherType.RECEIPT
+      type !== BankVoucherType.PAYMENT
         ? line.debitAccount || CHART_OF_ACCOUNTS.BANK_DEPOSIT
         : line.debitAccount
     const creditAccount =
-      type === BankVoucherType.PAYMENT
+      type !== BankVoucherType.RECEIPT
         ? line.creditAccount || CHART_OF_ACCOUNTS.BANK_DEPOSIT
         : line.creditAccount
     // Vế còn lại (TK đối ứng) người dùng phải chọn — thiếu là bút toán lệch sổ.
@@ -366,7 +372,7 @@ function sumAmount(lines: { amount: Prisma.Decimal }[]) {
 }
 
 // Số chứng từ auto tăng theo prefix + năm (§8.1):
-//   Thu: NTTK####/YYYY   Chi: UNC####/YYYY
+//   Thu: NTTK####/YYYY   Chi: UNC####/YYYY   Chuyển tiền nội bộ: CTNB####/YYYY
 async function nextVoucherNo(
   tx: Prisma.TransactionClient,
   type: BankVoucherType,
@@ -388,7 +394,8 @@ async function nextVoucherNo(
     return Number.isNaN(n) ? max : Math.max(max, n)
   }, 0)
   const seq = String(maxSeq + 1).padStart(4, '0')
-  const prefix = type === BankVoucherType.RECEIPT ? 'NTTK' : 'UNC'
+  const prefix =
+    type === BankVoucherType.RECEIPT ? 'NTTK' : type === BankVoucherType.TRANSFER ? 'CTNB' : 'UNC'
   return `${prefix}${seq}/${year}`
 }
 
@@ -410,6 +417,7 @@ function toVoucherDto(v: VoucherWithLines) {
     bankAccountNo: v.bankAccountNo,
     bankName: v.bankName,
     receiverAccountNo: v.receiverAccountNo,
+    receiverBankName: v.receiverBankName,
     partnerType: v.partnerType,
     partnerId: v.partnerId,
     partnerName: v.partnerName,
