@@ -182,6 +182,20 @@ export class PurchaseService {
     return { voucherNo }
   }
 
+  // FE gửi MÃ nhà cung cấp (code) từ picker, còn FK supplier_id tham chiếu suppliers(id) —
+  // chấp nhận cả hai: uuid dùng thẳng, còn lại tra theo mã.
+  private async resolveSupplierRowId(supplierId?: string | null): Promise<string | null> {
+    if (!supplierId) return null
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(supplierId)
+    const supplier = await this.prisma.supplier.findUnique({
+      where: isUuid ? { id: supplierId } : { code: supplierId },
+    })
+    if (!supplier) {
+      throw new BadRequestException(`Nhà cung cấp "${supplierId}" không tồn tại trong danh mục`)
+    }
+    return supplier.id
+  }
+
   async create(dto: CreatePurchaseVoucherDto) {
     await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {
@@ -215,7 +229,7 @@ export class PurchaseService {
           invoiceNo: dto.invoiceNo ?? null,
           postingDate: new Date(dto.postingDate),
           voucherDate: new Date(dto.voucherDate),
-          supplierId: dto.supplierId ?? null,
+          supplierId: await this.resolveSupplierRowId(dto.supplierId),
           supplierName: dto.supplierName ?? null,
           deliverer: dto.deliverer ?? null,
           address: dto.address ?? null,
@@ -291,7 +305,10 @@ export class PurchaseService {
         invoiceDate: dto.invoiceDate ? new Date(dto.invoiceDate) : undefined,
         postingDate: dto.postingDate ? new Date(dto.postingDate) : undefined,
         voucherDate: dto.voucherDate ? new Date(dto.voucherDate) : undefined,
-        supplierId: dto.supplierId ?? undefined,
+        supplierId:
+          dto.supplierId !== undefined
+            ? await this.resolveSupplierRowId(dto.supplierId)
+            : undefined,
         supplierName: dto.supplierName ?? undefined,
         deliverer: dto.deliverer ?? undefined,
         address: dto.address ?? undefined,
