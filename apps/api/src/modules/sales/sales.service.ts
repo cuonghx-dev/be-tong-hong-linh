@@ -152,6 +152,23 @@ export class SalesService {
     return { voucherNo: await nextVoucherNo(this.prisma, date) }
   }
 
+  // FE gửi MÃ khách hàng (code) từ picker, còn FK customer_id tham chiếu customers(id) —
+  // chấp nhận cả hai: uuid dùng thẳng, còn lại tra theo mã.
+  private async resolveCustomerRowId(
+    tx: Prisma.TransactionClient,
+    customerId?: string | null,
+  ): Promise<string | null> {
+    if (!customerId) return null
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(customerId)
+    const customer = await tx.customer.findUnique({
+      where: isUuid ? { id: customerId } : { code: customerId },
+    })
+    if (!customer) {
+      throw new BadRequestException(`Khách hàng "${customerId}" không tồn tại trong danh mục`)
+    }
+    return customer.id
+  }
+
   async create(dto: CreateSalesVoucherDto) {
     await this.bookLock.assertUnlocked(dto.postingDate)
     const created = await this.prisma.$transaction(async (tx) => {
@@ -176,7 +193,7 @@ export class SalesService {
           isPosInvoice: dto.isPosInvoice ?? false,
           postingDate: new Date(dto.postingDate),
           voucherDate: new Date(dto.voucherDate),
-          customerId: dto.customerId ?? null,
+          customerId: await this.resolveCustomerRowId(tx, dto.customerId),
           customerName: dto.customerName ?? null,
           taxCode: dto.taxCode ?? null,
           contactPerson: dto.contactPerson ?? null,
@@ -252,9 +269,8 @@ export class SalesService {
         branchId: dto.branchId ?? undefined,
       }
       if (dto.customerId !== undefined) {
-        data.customer = dto.customerId
-          ? { connect: { id: dto.customerId } }
-          : { disconnect: true }
+        const customerRowId = await this.resolveCustomerRowId(tx, dto.customerId)
+        data.customer = customerRowId ? { connect: { id: customerRowId } } : { disconnect: true }
       }
 
       let totals: ReturnType<typeof sumTotals> | null = null
