@@ -930,6 +930,8 @@ function AttachmentField({ register }: { register: UseFormRegister<CashVoucherFo
 }
 
 // Nút tab kiểu MISA (gạch chân tab đang chọn) — dùng cho Hạch toán | Kê khai thuế.
+// KHÔNG dùng <button>: form ở mode Xem bọc fieldset disabled sẽ khóa button,
+// trong khi chuyển tab phải luôn bấm được (chỉ xem, không sửa dữ liệu).
 function TabButton({
   active,
   onClick,
@@ -940,18 +942,21 @@ function TabButton({
   children: ReactNode
 }) {
   return (
-    <button
-      type="button"
+    <span
+      role="tab"
+      aria-selected={active}
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick()}
       className={cn(
-        '-mb-px border-b-2 pb-2 text-base transition-colors',
+        '-mb-px cursor-pointer select-none border-b-2 pb-2 text-base transition-colors',
         active
           ? 'border-primary font-semibold text-slate-800'
           : 'border-transparent font-medium text-slate-500 hover:text-slate-700',
       )}
     >
       {children}
-    </button>
+    </span>
   )
 }
 
