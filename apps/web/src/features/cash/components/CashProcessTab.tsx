@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   ProcessChecklistIcon,
   ProcessDashboard,
-  ProcessGearIcon,
   ProcessPeopleIcon,
   ProcessPersonBoxIcon,
   ProcessPersonIcon,
@@ -35,7 +34,6 @@ export function CashProcessTab() {
         { label: 'Khách hàng', to: '/catalog/khach-hang', icon: <ProcessPersonIcon /> },
         { label: 'Nhà cung cấp', to: '/catalog/nha-cung-cap', icon: <ProcessPersonBoxIcon /> },
         { label: 'Nhân viên', to: '/catalog/nhan-vien', icon: <ProcessPeopleIcon /> },
-        { label: 'Tùy chọn', icon: <ProcessGearIcon /> },
       ]}
       reports={[
         { label: 'Bảng kê số dư tiền theo ngày', to: '/cash/reports/daily-balance' },

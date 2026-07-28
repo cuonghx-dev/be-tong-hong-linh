@@ -4,7 +4,6 @@ import {
   ProcessCardIcon,
   ProcessCompareIcon,
   ProcessDashboard,
-  ProcessGearIcon,
   ProcessPeopleIcon,
   ProcessPersonBoxIcon,
   ProcessPersonIcon,
@@ -37,7 +36,6 @@ export function BankProcessTab() {
         { label: 'Khách hàng', to: '/catalog/khach-hang', icon: <ProcessPersonIcon /> },
         { label: 'Nhà cung cấp', to: '/catalog/nha-cung-cap', icon: <ProcessPersonBoxIcon /> },
         { label: 'Nhân viên', to: '/catalog/nhan-vien', icon: <ProcessPeopleIcon /> },
-        { label: 'Tùy chọn', icon: <ProcessGearIcon /> },
       ]}
       reports={[
         'Bảng kê chứng từ theo khế ước cho vay',

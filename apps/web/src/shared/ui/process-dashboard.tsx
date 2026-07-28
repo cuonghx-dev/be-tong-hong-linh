@@ -88,17 +88,6 @@ export function ProcessDashboard({
               </svg>
 
               {center && <FlowNode {...center} />}
-
-              <svg
-                width="150"
-                height="12"
-                viewBox="0 0 150 12"
-                className="shrink-0 text-emerald-600/40"
-                aria-hidden
-              >
-                <line x1="0" y1="6" x2="136" y2="6" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M136 1 L148 6 L136 11 Z" fill="currentColor" />
-              </svg>
             </div>
           )}
         </section>
