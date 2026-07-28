@@ -11,6 +11,7 @@ import { UserRole } from '@prisma/client'
 import { hash } from 'bcryptjs'
 import * as XLSX from 'xlsx'
 import { PrismaService } from '../src/database/prisma.service'
+import { BookLockService } from '../src/modules/book-lock/book-lock.service'
 import { AccountService } from '../src/modules/catalog/account.service'
 import { BankService } from '../src/modules/catalog/bank.service'
 import { CostObjectService } from '../src/modules/catalog/cost-object.service'
@@ -103,7 +104,7 @@ async function seedCatalogsFromXlsx() {
 // Đọc từ seed-data/Danh_sach_so_du_tai_khoan.xlsx (bản zero hóa), nhập qua chính
 // importAccountBalancesXlsx — bỏ qua số TK đã có (idempotent). Chạy sau hệ thống TK.
 async function seedAccountBalances() {
-  const service = new OpeningBalanceService(prisma)
+  const service = new OpeningBalanceService(prisma, new BookLockService(prisma))
   const buffer = readFileSync(join(__dirname, 'seed-data', 'Danh_sach_so_du_tai_khoan.xlsx'))
   const { created, skipped } = await service.importAccountBalancesXlsx(buffer)
   console.log(`✓ Số dư tài khoản (balance 0): tạo ${created}, bỏ qua ${skipped}`)
