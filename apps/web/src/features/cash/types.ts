@@ -38,10 +38,8 @@ export const PARTNER_TYPE_LABEL: Record<PartnerType, string> = {
 
 // Loại nghiệp vụ chọn được theo loại phiếu (dropdown đầu form) — thứ tự theo MISA §5.
 export const CATEGORY_OPTIONS: Record<CashVoucherType, CashVoucherCategory[]> = {
-  [CashVoucherType.Receipt]: [
-    CashVoucherCategory.Receipt,
-    CashVoucherCategory.SalesCash,
-  ],
+  // Phiếu thu chỉ tạo tay được "Thu khác" — bán hàng tiền mặt tự sinh từ phân hệ Bán hàng.
+  [CashVoucherType.Receipt]: [CashVoucherCategory.Receipt],
   [CashVoucherType.Payment]: [
     CashVoucherCategory.PaymentEmployeeAdvance,
     CashVoucherCategory.PaymentPurchaseWithInvoice,
@@ -53,7 +51,10 @@ export const CATEGORY_OPTIONS: Record<CashVoucherType, CashVoucherCategory[]> = 
 // Lý do lọc theo loại phiếu — khác CATEGORY_OPTIONS (chỉ loại nhập tay) ở chỗ
 // gồm cả loại tự sinh (bán hàng/mua hàng tiền mặt) để lọc được phiếu tự sinh.
 export const FILTER_CATEGORY_OPTIONS: Record<CashVoucherType, CashVoucherCategory[]> = {
-  [CashVoucherType.Receipt]: CATEGORY_OPTIONS[CashVoucherType.Receipt],
+  [CashVoucherType.Receipt]: [
+    ...CATEGORY_OPTIONS[CashVoucherType.Receipt],
+    CashVoucherCategory.SalesCash,
+  ],
   [CashVoucherType.Payment]: [
     ...CATEGORY_OPTIONS[CashVoucherType.Payment],
     CashVoucherCategory.PurchaseGoodsCash,
