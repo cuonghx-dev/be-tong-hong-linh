@@ -79,10 +79,11 @@ export function QuickAddPartnerDialog({ open, onClose, kind = 'customer', initia
       title={isSupplier ? 'Thêm nhà cung cấp' : 'Thêm đối tượng'}
       footer={
         <>
-          <Button variant="outline" onClick={onClose} disabled={create.isPending}>
+          {/* Dialog render bên trong <form> chứng từ — thiếu type="button" sẽ kích submit form cha. */}
+          <Button type="button" variant="outline" onClick={onClose} disabled={create.isPending}>
             Hủy
           </Button>
-          <Button onClick={submit} disabled={create.isPending}>
+          <Button type="button" onClick={submit} disabled={create.isPending}>
             {create.isPending ? 'Đang lưu…' : 'Lưu'}
           </Button>
         </>

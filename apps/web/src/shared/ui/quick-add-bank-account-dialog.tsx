@@ -69,10 +69,11 @@ export function QuickAddBankAccountDialog({ open, onClose, initialAccountNumber,
       title="Thêm tài khoản ngân hàng"
       footer={
         <>
-          <Button variant="outline" onClick={onClose} disabled={create.isPending}>
+          {/* Dialog render bên trong <form> chứng từ — thiếu type="button" sẽ kích submit form cha. */}
+          <Button type="button" variant="outline" onClick={onClose} disabled={create.isPending}>
             Hủy
           </Button>
-          <Button onClick={submit} disabled={create.isPending}>
+          <Button type="button" onClick={submit} disabled={create.isPending}>
             {create.isPending ? 'Đang lưu…' : 'Lưu'}
           </Button>
         </>
