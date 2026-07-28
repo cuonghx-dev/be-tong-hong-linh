@@ -73,7 +73,16 @@ export function PartnerPicker({
         setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
-    const close = () => setOpen(false)
+    // Chỉ đóng khi scroll NGOÀI picker — text tràn ô input hay cuộn danh sách
+    // trong panel cũng phát scroll (capture), không được làm đóng panel.
+    const close = (e: Event) => {
+      if (
+        e.target instanceof Node &&
+        (wrapRef.current?.contains(e.target) || panelRef.current?.contains(e.target))
+      )
+        return
+      setOpen(false)
+    }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
     window.addEventListener('scroll', close, true)

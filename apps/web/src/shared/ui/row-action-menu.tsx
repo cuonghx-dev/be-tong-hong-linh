@@ -45,7 +45,15 @@ export function RowActionMenu({ primaryLabel = 'Xem', onPrimary, items: allItems
 
   useEffect(() => {
     if (!open) return
-    const close = () => setOpen(false)
+    // Chỉ đóng khi scroll NGOÀI menu — cuộn bên trong menu không làm đóng.
+    const close = (e: Event) => {
+      if (
+        e.target instanceof Node &&
+        (btnRef.current?.contains(e.target) || menuRef.current?.contains(e.target))
+      )
+        return
+      setOpen(false)
+    }
     const onDown = (e: MouseEvent) => {
       if (
         !menuRef.current?.contains(e.target as Node) &&
