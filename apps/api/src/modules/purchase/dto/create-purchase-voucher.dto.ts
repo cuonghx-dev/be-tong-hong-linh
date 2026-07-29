@@ -103,6 +103,11 @@ export class CreatePurchaseVoucherDto {
   @IsBoolean()
   receiveWithInvoice?: boolean
 
+  @ApiPropertyOptional({ description: 'Là chi phí mua hàng (chỉ mua dịch vụ) — được chọn phân bổ CP' })
+  @IsOptional()
+  @IsBoolean()
+  isPurchaseCost?: boolean
+
   @ApiPropertyOptional({ description: 'Mẫu số hóa đơn' })
   @IsOptional()
   @IsString()

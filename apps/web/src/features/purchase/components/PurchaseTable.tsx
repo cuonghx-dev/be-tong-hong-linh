@@ -53,7 +53,8 @@ export function PurchaseTable() {
       category: CashVoucherCategory.Payment,
       amount: r.totalPayment,
     })
-    if (r.supplierId) q.set('partnerId', r.supplierId)
+    // partnerId của phiếu chi là MÃ đối tượng (danh mục), không phải row id.
+    if (r.supplierCode) q.set('partnerId', r.supplierCode)
     if (r.supplierName) q.set('partnerName', r.supplierName)
     navigate(`/cash/vouchers/new?${q.toString()}`)
   }
@@ -161,6 +162,10 @@ export function PurchaseTable() {
           <AddMenu
             actions={[
               { label: 'Chứng từ mua hàng', onClick: () => openNew(PurchaseVoucherType.Stock) },
+              {
+                label: 'Chứng từ mua dịch vụ',
+                onClick: () => openNew(PurchaseVoucherType.Service),
+              },
             ]}
             onImportExcel={() => fileRef.current?.click()}
             importing={importXlsx.isPending}

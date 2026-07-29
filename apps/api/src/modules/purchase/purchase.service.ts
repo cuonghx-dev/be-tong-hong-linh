@@ -23,7 +23,11 @@ import { PurchaseVoucherFilterDto } from './dto/purchase-voucher-filter.dto'
 import { parsePurchaseXlsx } from './purchase-import'
 import { UpdatePurchaseVoucherDto } from './dto/update-purchase-voucher.dto'
 
-type VoucherWithLines = PurchaseVoucher & { lines: PurchaseVoucherLine[] }
+type VoucherWithLines = PurchaseVoucher & {
+  lines: PurchaseVoucherLine[]
+  // Mã NCC (danh mục) — supplierId là row id, FE cần code cho picker/điều hướng.
+  supplier?: { code: string } | null
+}
 
 @Injectable()
 export class PurchaseService {
@@ -58,7 +62,7 @@ export class PurchaseService {
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.purchaseVoucher.findMany({
         where,
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: { lines: { orderBy: { lineNo: 'asc' } }, supplier: { select: { code: true } } },
         orderBy: [{ postingDate: 'desc' }, { createdAt: 'desc' }],
         skip: (filter.page - 1) * filter.pageSize,
         take: filter.pageSize,
@@ -75,7 +79,7 @@ export class PurchaseService {
   async findOne(id: string) {
     const voucher = await this.prisma.purchaseVoucher.findUnique({
       where: { id },
-      include: { lines: { orderBy: { lineNo: 'asc' } } },
+      include: { lines: { orderBy: { lineNo: 'asc' } }, supplier: { select: { code: true } } },
     })
     if (!voucher) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
     return this.toDetailDto(voucher)
@@ -120,12 +124,13 @@ export class PurchaseService {
     return { ...toVoucherDto(v), paymentNo, receiptNo, costAllocations }
   }
 
-  // Ứng viên cho dialog "Chọn chứng từ CP": chứng từ mua dịch vụ đã ghi sổ,
-  // kèm lũy kế đã phân bổ để tính số còn được phân bổ.
+  // Ứng viên cho dialog "Chọn chứng từ CP": chứng từ mua dịch vụ đã ghi sổ và
+  // được đánh dấu "Là chi phí mua hàng", kèm lũy kế đã phân bổ.
   async listCostVouchers(keyword?: string) {
     const where: Prisma.PurchaseVoucherWhereInput = {
       type: PurchaseVoucherType.SERVICE,
       posted: true,
+      isPurchaseCost: true,
     }
     if (keyword) {
       where.OR = [
@@ -222,6 +227,7 @@ export class PurchaseService {
           origin: dto.origin ?? 'DOMESTIC',
           paymentMode: dto.paymentMode,
           receiveWithInvoice: dto.receiveWithInvoice ?? false,
+          isPurchaseCost: dto.isPurchaseCost ?? false,
         invoiceTemplate: dto.invoiceTemplate ?? null,
         invoiceSeries: dto.invoiceSeries ?? null,
         invoiceDate: dto.invoiceDate ? new Date(dto.invoiceDate) : null,
@@ -255,7 +261,7 @@ export class PurchaseService {
             })),
           },
         },
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: { lines: { orderBy: { lineNo: 'asc' } }, supplier: { select: { code: true } } },
       })
 
       // Chứng từ tự sinh kèm theo (mirror §11 bán hàng): trả ngay tiền mặt → PC
@@ -280,7 +286,7 @@ export class PurchaseService {
         return tx.purchaseVoucher.update({
           where: { id: voucher.id },
           data: links,
-          include: { lines: { orderBy: { lineNo: 'asc' } } },
+          include: { lines: { orderBy: { lineNo: 'asc' } }, supplier: { select: { code: true } } },
         })
       }
 
@@ -299,6 +305,7 @@ export class PurchaseService {
         origin: dto.origin ?? undefined,
         paymentMode: dto.paymentMode ?? undefined,
         receiveWithInvoice: dto.receiveWithInvoice ?? undefined,
+        isPurchaseCost: dto.isPurchaseCost ?? undefined,
         invoiceTemplate: dto.invoiceTemplate ?? undefined,
         invoiceSeries: dto.invoiceSeries ?? undefined,
         invoiceNo: dto.invoiceNo ?? undefined,
@@ -382,7 +389,7 @@ export class PurchaseService {
       const voucher = await tx.purchaseVoucher.update({
         where: { id },
         data,
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: { lines: { orderBy: { lineNo: 'asc' } }, supplier: { select: { code: true } } },
       })
 
       // Đồng bộ chứng từ tự sinh theo tùy chọn mới (mirror §11 bán hàng). Số chứng
@@ -417,7 +424,7 @@ export class PurchaseService {
         return tx.purchaseVoucher.update({
           where: { id },
           data: links,
-          include: { lines: { orderBy: { lineNo: 'asc' } } },
+          include: { lines: { orderBy: { lineNo: 'asc' } }, supplier: { select: { code: true } } },
         })
       }
 
@@ -519,7 +526,7 @@ export class PurchaseService {
       const voucher = await tx.purchaseVoucher.update({
         where: { id },
         data: { posted },
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: { lines: { orderBy: { lineNo: 'asc' } }, supplier: { select: { code: true } } },
       })
       // Ghi sổ / bỏ ghi lan sang mọi chứng từ tự sinh — cùng trạng thái sổ.
       if (voucher.paymentId) await this.cash.setPurchasePaymentPosted(tx, voucher.paymentId, posted)
@@ -706,6 +713,7 @@ async function assertCostAllocationsValid(
     select: {
       id: true,
       type: true,
+      isPurchaseCost: true,
       voucherNo: true,
       totalGoods: true,
       allocationsAsCost: { select: { voucherId: true, amount: true } },
@@ -717,6 +725,8 @@ async function assertCostAllocationsValid(
     if (!cv) throw new NotFoundException(`Không tìm thấy chứng từ chi phí ${a.costVoucherId}`)
     if (cv.type !== PurchaseVoucherType.SERVICE)
       throw new BadRequestException(`${cv.voucherNo} không phải chứng từ mua dịch vụ`)
+    if (!cv.isPurchaseCost)
+      throw new BadRequestException(`${cv.voucherNo} chưa đánh dấu "Là chi phí mua hàng"`)
     const allocatedOther = cv.allocationsAsCost
       .filter((x) => x.voucherId !== voucherId)
       .reduce((s, x) => s.add(x.amount), new Prisma.Decimal(0))
@@ -820,6 +830,7 @@ function toVoucherDto(v: VoucherWithLines) {
     origin: v.origin,
     paymentMode: v.paymentMode,
     receiveWithInvoice: v.receiveWithInvoice,
+    isPurchaseCost: v.isPurchaseCost,
     voucherNo: v.voucherNo,
     invoiceTemplate: v.invoiceTemplate,
     invoiceSeries: v.invoiceSeries,
@@ -828,6 +839,7 @@ function toVoucherDto(v: VoucherWithLines) {
     postingDate: toDateOnly(v.postingDate)!,
     voucherDate: toDateOnly(v.voucherDate)!,
     supplierId: v.supplierId,
+    supplierCode: v.supplier?.code ?? null,
     supplierName: v.supplierName,
     deliverer: v.deliverer,
     address: v.address,

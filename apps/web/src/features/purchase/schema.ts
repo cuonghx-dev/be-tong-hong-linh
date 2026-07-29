@@ -58,6 +58,8 @@ export const purchaseVoucherSchema = z.object({
   origin: z.nativeEnum(PurchaseOrigin),
   paymentMode: z.nativeEnum(PurchasePaymentMode),
   receiveWithInvoice: z.boolean().optional(),
+  // Là chi phí mua hàng (chỉ mua dịch vụ) — được chọn khi phân bổ CP (§10.4).
+  isPurchaseCost: z.boolean().optional(),
   invoiceTemplate: z.string().optional(),
   invoiceSeries: z.string().optional(),
   invoiceNo: z.string().optional(),

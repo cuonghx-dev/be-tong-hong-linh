@@ -40,6 +40,7 @@ import {
   type PurchaseVoucherFormValues,
 } from '../schema'
 import {
+  FORM_VARIANT,
   PAYMENT_MODE_LABEL,
   PURCHASE_PAYMENT_METHODS,
   PURCHASE_TYPE_OPTIONS,
@@ -91,21 +92,16 @@ function defaultValues(type: PurchaseVoucherType): PurchaseVoucherFormValues {
     origin: PurchaseOrigin.Domestic,
     paymentMode: PurchasePaymentMode.Unpaid,
     receiveWithInvoice: false,
+    isPurchaseCost: false,
     postingDate: today(),
     voucherDate: today(),
     supplierName: '',
-    description: 'Mua hàng',
+    description: FORM_VARIANT[type].descriptionDefault,
     purchaseCost: 0,
     costAllocations: [],
     lines: [emptyLine(type)],
   }
 }
-
-// Nhãn số chứng từ + tab đầu theo loại (MISA: nhập kho gọi là "Phiếu nhập").
-const voucherNoLabel = (t: PurchaseVoucherType) =>
-  t === PurchaseVoucherType.Stock ? 'Số phiếu nhập' : 'Số chứng từ'
-const mainTabLabel = (t: PurchaseVoucherType) =>
-  t === PurchaseVoucherType.Stock ? 'Phiếu nhập' : 'Chứng từ'
 
 // Trang chứng từ mua hàng — bố cục §5 design.md: page header (loại nghiệp vụ) →
 // sub-header (tùy chọn TT + tổng tiền) → tabs → form body cuộn → action bar sticky.
@@ -147,11 +143,11 @@ export function PurchaseVoucherForm({
   // Bảng phân bổ chi phí (tab Chi phí, §10.4).
   const costArray = useFieldArray({ control, name: 'costAllocations' })
 
-  // Tab bản ghi (§5.4) + toggle cột tài khoản (§5.7).
+  // Tab bản ghi (§5.4). Cột tài khoản luôn hiện (đã bỏ toggle "Hiển thị tài khoản").
   const [tab, setTab] = useState<'main' | 'invoice'>('main')
-  const [showAccounts, setShowAccounts] = useState(true)
-  // Sub-tab vùng bảng (MISA): Hàng tiền | Chi phí (chỉ loại nhập kho).
-  const [lineTab, setLineTab] = useState<'money' | 'cost'>('money')
+  const showAccounts = true
+  // Sub-tab vùng bảng (MISA): Hàng tiền/Hạch toán | Chi phí (mua hàng) | Thuế (mua dịch vụ).
+  const [lineTab, setLineTab] = useState<'money' | 'cost' | 'tax'>('money')
   const [costDialog, setCostDialog] = useState(false)
 
   // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
@@ -197,6 +193,8 @@ export function PurchaseVoucherForm({
     setValue('supplierId', p.code)
     setValue('supplierName', p.name)
     if (p.address) setValue('address', p.address)
+    // Tự sinh Diễn giải theo NCC ("Mua hàng của X") — như MISA, cùng pattern BankVoucherForm.
+    setValue('description', `${FORM_VARIANT[getValues('type')].descriptionDefault} của ${p.name}`)
   }
 
   // Chọn VTHH ở ô Mã hàng → điền dòng hàng theo dữ liệu ngầm định của danh mục
@@ -226,6 +224,7 @@ export function PurchaseVoucherForm({
       origin: v.origin,
       paymentMode: v.paymentMode,
       receiveWithInvoice: v.receiveWithInvoice,
+      isPurchaseCost: v.isPurchaseCost,
       invoiceTemplate: v.invoiceTemplate ?? undefined,
       invoiceSeries: v.invoiceSeries ?? undefined,
       invoiceNo: v.invoiceNo ?? undefined,
@@ -233,7 +232,8 @@ export function PurchaseVoucherForm({
       // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
       postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
-      supplierId: v.supplierId ?? undefined,
+      // Picker Mã NCC làm việc bằng MÃ danh mục — supplierId của DTO là row id.
+      supplierId: v.supplierCode ?? undefined,
       supplierName: v.supplierName ?? '',
       deliverer: v.deliverer ?? undefined,
       address: v.address ?? undefined,
@@ -302,6 +302,15 @@ export function PurchaseVoucherForm({
   // Loại chứng từ là trạng thái form (đổi qua dropdown loại nghiệp vụ), không dùng prop cố định.
   const currentType = watch('type')
   const showWarehouse = hasWarehouse(currentType)
+  // Nhãn/trường hiển thị theo loại (3 màn hình MISA: nhập kho / ghi nợ / dịch vụ).
+  const variant = FORM_VARIANT[currentType]
+  // Có tab Thuế riêng (dịch vụ) → tab Hạch toán ẩn cột thuế GTGT (MISA tách 2 view).
+  const vatInline = !variant.hasTaxTab
+  const lineTabs: ('money' | 'cost' | 'tax')[] = [
+    'money',
+    ...(variant.hasCostTab ? (['cost'] as const) : []),
+    ...(variant.hasTaxTab ? (['tax'] as const) : []),
+  ]
 
   // Đổi loại nghiệp vụ → TK Kho/chi phí mặc định của dòng hàng đổi theo
   // (156 nhập kho ↔ 642 dịch vụ); giữ TK người dùng đã sửa tay.
@@ -385,28 +394,31 @@ export function PurchaseVoucherForm({
       {/* ── Page header (§5.2): tiêu đề + số CT · loại nghiệp vụ · số hợp đồng · ✕ — nền primary nhạt (2 lớp màu, đồng bộ cash) ── */}
       <header className="flex h-14 shrink-0 items-center gap-3 bg-primary/5 px-4">
         <h1 className="shrink-0 whitespace-nowrap text-lg font-bold text-slate-800">
-          Chứng từ mua hàng <span className="text-primary">{displayNo}</span>
+          {variant.title} <span className="text-primary">{displayNo}</span>
         </h1>
-        <Select
-          value={currentType}
-          disabled={readOnly || !!voucherId}
-          onValueChange={(v) => setValue('type', v as PurchaseVoucherType)}
-        >
-          <SelectTrigger className="h-9 w-80 shrink-0 bg-white" title="Loại nghiệp vụ">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PURCHASE_TYPE_OPTIONS.map((t) => (
-              <SelectItem key={t} value={t}>
-                {VOUCHER_TYPE_LABEL[t]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Mua dịch vụ là loại chứng từ riêng — không có dropdown lý do như mua hàng. */}
+        {currentType !== PurchaseVoucherType.Service && (
+          <Select
+            value={currentType}
+            disabled={readOnly || !!voucherId}
+            onValueChange={(v) => setValue('type', v as PurchaseVoucherType)}
+          >
+            <SelectTrigger className="h-9 w-80 shrink-0 bg-white" title="Loại nghiệp vụ">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PURCHASE_TYPE_OPTIONS.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {VOUCHER_TYPE_LABEL[t]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <input
           {...register('contractNo')}
           disabled={readOnly}
-          placeholder="Nhập số hợp đồng mua …"
+          placeholder={variant.contractPlaceholder}
           className={cn(inputCls, 'w-56 shrink-0')}
         />
         <button
@@ -433,10 +445,11 @@ export function PurchaseVoucherForm({
               {PAYMENT_MODE_LABEL[m]}
             </label>
           ))}
-          {/* Phương thức TT chỉ có nghĩa khi trả ngay; hiện chỉ hỗ trợ tiền mặt. */}
+          {/* Phương thức TT chỉ có nghĩa khi trả ngay; hiện chỉ hỗ trợ tiền mặt.
+              MISA luôn hiện dropdown, xám khi "Chưa thanh toán". */}
           <Select value="CASH" disabled>
             <SelectTrigger
-              className={cn('h-8 w-40 bg-white', paysCash ? '' : 'invisible')}
+              className={cn('h-8 w-40', paysCash ? 'bg-white' : 'bg-slate-100 text-slate-500')}
               title="Hiện chỉ hỗ trợ thanh toán ngay bằng tiền mặt"
             >
               <SelectValue />
@@ -449,10 +462,28 @@ export function PurchaseVoucherForm({
               ))}
             </SelectContent>
           </Select>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input type="checkbox" {...register('receiveWithInvoice')} />
-            Nhận kèm hóa đơn
-          </label>
+          {/* MISA để dropdown (Nhận kèm / Không kèm / Không có hóa đơn); backend mới có
+              boolean nhận kèm nên chỉ 2 lựa chọn — "Không có hóa đơn" cần enum riêng. */}
+          <Select
+            value={receiveWithInvoice ? 'WITH' : 'WITHOUT'}
+            disabled={readOnly}
+            onValueChange={(v) => setValue('receiveWithInvoice', v === 'WITH')}
+          >
+            <SelectTrigger className="h-8 w-48 bg-white" title="Hóa đơn nhận kèm chứng từ">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="WITH">Nhận kèm hóa đơn</SelectItem>
+              <SelectItem value="WITHOUT">Không kèm hóa đơn</SelectItem>
+            </SelectContent>
+          </Select>
+          {/* MISA: chỉ chứng từ dịch vụ đánh dấu cờ này mới được chọn phân bổ CP (§10.4). */}
+          {variant.hasCostFlag && (
+            <label className="flex items-center gap-1.5 text-sm">
+              <input type="checkbox" {...register('isPurchaseCost')} />
+              Là chi phí mua hàng
+            </label>
+          )}
         </fieldset>
         <div className="ml-auto text-right">
           <div className="text-xs text-slate-500">Tổng tiền thanh toán</div>
@@ -462,29 +493,32 @@ export function PurchaseVoucherForm({
         </div>
       </div>
 
-      {/* ── Tabs bản ghi (§5.4) — vẫn thuộc lớp tint ── */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-border bg-primary/5 px-4">
-        {(
-          [
-            { key: 'main', label: mainTabLabel(currentType) },
-            { key: 'invoice', label: 'Hóa đơn' },
-          ] as const
-        ).map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={cn(
-              'border-b-2 px-3 py-2 text-sm transition-colors',
-              tab === t.key
-                ? 'border-primary font-medium text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-700',
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {/* ── Tabs bản ghi (§5.4) — vẫn thuộc lớp tint; mua dịch vụ không có tab
+          Hóa đơn (MISA: thông tin HĐ nằm trong sub-tab Thuế) ── */}
+      {variant.hasInvoiceTab && (
+        <div className="flex shrink-0 items-center gap-1 border-b border-border bg-primary/5 px-4">
+          {(
+            [
+              { key: 'main', label: variant.mainTab },
+              { key: 'invoice', label: 'Hóa đơn' },
+            ] as const
+          ).map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              className={cn(
+                'border-b-2 px-3 py-2 text-sm transition-colors',
+                tab === t.key
+                  ? 'border-primary font-medium text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-700',
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Form body (§5.5) — cuộn dọc, 2 lớp màu: thông tin chung tint / bảng hàng trắng ── */}
       <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
@@ -534,7 +568,7 @@ export function PurchaseVoucherForm({
             </Field>
             {!receiveWithInvoice && (
               <p className="self-end pb-2 text-xs text-slate-500 md:col-span-2">
-                Bật “Nhận kèm hóa đơn” ở dải trên nếu hóa đơn về cùng hàng.
+                Chọn “Nhận kèm hóa đơn” ở dải trên nếu hóa đơn về cùng hàng.
               </p>
             )}
           </div>
@@ -561,10 +595,14 @@ export function PurchaseVoucherForm({
                 <input type="date" {...register('postingDate')} className={inputCls} />
               </Field>
 
-              <Field label="Người giao hàng">
-                <input {...register('deliverer')} className={inputCls} />
-              </Field>
-              <Field label="Địa chỉ">
+              {/* Cột deliverer: nhập kho "Người giao hàng", dịch vụ "Người nhận";
+                  không qua kho không có — Địa chỉ giãn 2 cột. */}
+              {variant.delivererLabel && (
+                <Field label={variant.delivererLabel}>
+                  <input {...register('deliverer')} className={inputCls} />
+                </Field>
+              )}
+              <Field label="Địa chỉ" className={variant.delivererLabel ? undefined : 'md:col-span-2'}>
                 <input {...register('address')} className={inputCls} />
               </Field>
               <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
@@ -586,7 +624,7 @@ export function PurchaseVoucherForm({
               <Field label="Diễn giải">
                 <input {...register('description')} className={inputCls} />
               </Field>
-              <Field label={voucherNoLabel(currentType)}>
+              <Field label={variant.voucherNoLabel}>
                 <input
                   value={displayNo || 'Tự động'}
                   readOnly
@@ -595,17 +633,20 @@ export function PurchaseVoucherForm({
                 />
               </Field>
 
-              <Field label="Kèm theo (chứng từ gốc)">
-                <input
-                  type="number"
-                  min={0}
-                  {...register('attachmentCount')}
-                  className={inputCls}
-                />
-              </Field>
+              {variant.hasAttachment && (
+                <Field label="Kèm theo (chứng từ gốc)">
+                  <input
+                    type="number"
+                    min={0}
+                    {...register('attachmentCount')}
+                    className={inputCls}
+                  />
+                </Field>
+              )}
             </div>
 
-            {/* Điều khoản thanh toán chỉ có nghĩa khi còn nợ (chưa thanh toán) */}
+            {/* Điều khoản thanh toán chỉ có nghĩa khi còn nợ (chưa thanh toán).
+                Ô điều khoản là input tự do — chưa có danh mục điều khoản để chọn. */}
             {isUnpaid && (
               <div className="grid grid-cols-1 gap-x-6 gap-y-3 rounded-md bg-slate-50 px-3 py-2 md:grid-cols-3">
                 <Field label="Điều khoản thanh toán">
@@ -629,8 +670,8 @@ export function PurchaseVoucherForm({
             {/* ── Line section (§5.6): sub-tabs + toolbar + bảng dòng hàng ── */}
             <div className="rounded-md border border-border">
               <div className="flex items-center gap-1 border-b border-border bg-slate-50 px-2">
-                {/* Sub-tabs MISA: Hàng tiền | Chi phí (phân bổ CP chỉ có ở loại nhập kho). */}
-                {(showWarehouse ? (['money', 'cost'] as const) : (['money'] as const)).map((t) => (
+                {/* Sub-tabs MISA: Hàng tiền/Hạch toán | Chi phí (mua hàng) | Thuế (mua dịch vụ). */}
+                {lineTabs.map((t) => (
                   <button
                     key={t}
                     type="button"
@@ -642,7 +683,7 @@ export function PurchaseVoucherForm({
                         : 'border-transparent text-slate-500 hover:text-slate-700',
                     )}
                   >
-                    {t === 'money' ? 'Hàng tiền' : 'Chi phí'}
+                    {t === 'money' ? variant.lineTab : t === 'cost' ? 'Chi phí' : 'Thuế'}
                   </button>
                 ))}
                 {/* Chiết khấu chưa hỗ trợ — giữ chỗ đúng vị trí toolbar của MISA. */}
@@ -659,7 +700,7 @@ export function PurchaseVoucherForm({
                 </div>
               </div>
 
-              {showWarehouse && lineTab === 'cost' ? (
+              {variant.hasCostTab && lineTab === 'cost' ? (
                 // ── Tab Chi phí (§10.4): bảng phân bổ chi phí từ chứng từ mua dịch vụ ──
                 <>
                   <div className="overflow-x-auto">
@@ -779,6 +820,132 @@ export function PurchaseVoucherForm({
                     ) : null
                   })()}
                 </>
+              ) : variant.hasTaxTab && lineTab === 'tax' ? (
+                // ── Tab Thuế (MISA mua dịch vụ): thuế GTGT + hóa đơn theo dòng — cùng
+                // dòng dữ liệu với tab Hạch toán. Số/Ngày hóa đơn là field header (mọi
+                // dòng đồng bộ — Controller controlled); xóa dòng = xóa cả dòng hạch toán. ──
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1000px] border-collapse text-sm">
+                    <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="w-8 px-2 py-1.5 text-center">#</th>
+                        <th className="px-2 py-1.5">{variant.itemCodeLabel}</th>
+                        <th className="px-2 py-1.5">{variant.itemNameLabel}</th>
+                        <th className="w-24 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</th>
+                        <th className="w-32 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</th>
+                        {showAccounts && <th className="w-28 px-2 py-1.5">TK thuế GTGT</th>}
+                        <th className="w-32 px-2 py-1.5">Số hóa đơn</th>
+                        <th className="w-36 px-2 py-1.5">Ngày hóa đơn</th>
+                        <th className="w-8 px-2 py-1.5" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fields.map((f, i) => {
+                        const l = lines?.[i]
+                        const amount = (l?.quantity || 0) * (l?.unitPrice || 0)
+                        const vat = (amount * (l?.vatRate || 0)) / 100
+                        return (
+                          <tr key={f.id} className="border-t border-border">
+                            <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
+                            <td className="px-2 py-1">
+                              <ItemCell
+                                value={l?.itemId}
+                                placeholder={variant.itemCodeLabel}
+                                onPick={(item) => pickItem(i, item)}
+                              />
+                            </td>
+                            <td className="px-2 py-1">
+                              <input
+                                {...register(`lines.${i}.itemName`)}
+                                className={cn(
+                                  cellCls,
+                                  formState.errors.lines?.[i]?.itemName &&
+                                    'rounded ring-1 ring-inset ring-red-500',
+                                )}
+                              />
+                            </td>
+                            <td className="px-2 py-1">
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step="any"
+                                {...register(`lines.${i}.vatRate`)}
+                                className={cn(cellCls, 'text-right')}
+                              />
+                            </td>
+                            <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                              {formatCurrency(vat)}
+                            </td>
+                            {showAccounts && (
+                              <td className="px-2 py-1">
+                                <Controller
+                                  control={control}
+                                  name={`lines.${i}.vatAccount`}
+                                  render={({ field }) => (
+                                    <AccountPicker
+                                      value={field.value}
+                                      onChange={field.onChange}
+                                      inputClassName={accountCellCls}
+                                    />
+                                  )}
+                                />
+                              </td>
+                            )}
+                            <td className="px-2 py-1">
+                              <Controller
+                                control={control}
+                                name="invoiceNo"
+                                render={({ field }) => (
+                                  <input
+                                    {...field}
+                                    value={field.value ?? ''}
+                                    className={cellCls}
+                                  />
+                                )}
+                              />
+                            </td>
+                            <td className="px-2 py-1">
+                              <Controller
+                                control={control}
+                                name="invoiceDate"
+                                render={({ field }) => (
+                                  <input
+                                    type="date"
+                                    {...field}
+                                    value={field.value ?? ''}
+                                    className={cellCls}
+                                  />
+                                )}
+                              />
+                            </td>
+                            <td className="px-2 py-1 text-center">
+                              <button
+                                type="button"
+                                onClick={() => fields.length > 1 && remove(i)}
+                                className="text-slate-400 hover:text-red-600"
+                                aria-label="Xóa dòng"
+                              >
+                                <TrashIcon size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                    <tfoot className="bg-slate-100 font-medium">
+                      <tr className="border-t border-border">
+                        <td className="px-2 py-1.5" colSpan={4}>
+                          Tổng cộng
+                        </td>
+                        <td className="px-2 py-1.5 text-right tabular-nums">
+                          {formatCurrency(totalVat)}
+                        </td>
+                        <td colSpan={showAccounts ? 4 : 3} />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
               ) : (
                 <>
               <div className="overflow-x-auto">
@@ -786,18 +953,24 @@ export function PurchaseVoucherForm({
                   <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="w-8 px-2 py-1.5 text-center">#</th>
-                      <th className="px-2 py-1.5">Mã hàng</th>
-                      <th className="px-2 py-1.5">Tên hàng</th>
+                      <th className="px-2 py-1.5">{variant.itemCodeLabel}</th>
+                      <th className="px-2 py-1.5">{variant.itemNameLabel}</th>
                       {showWarehouse && <th className="px-2 py-1.5">Kho</th>}
-                      {showAccounts && <th className="w-24 px-2 py-1.5">TK Kho</th>}
+                      {showAccounts && <th className="w-24 px-2 py-1.5">{variant.stockAccountLabel}</th>}
                       {showAccounts && <th className="w-24 px-2 py-1.5">TK Công nợ</th>}
                       <th className="w-16 px-2 py-1.5">ĐVT</th>
                       <th className="w-20 px-2 py-1.5 text-right">Số&nbsp;lượng</th>
                       <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
                       <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
-                      <th className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</th>
-                      <th className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</th>
-                      {showAccounts && <th className="w-24 px-2 py-1.5">TK thuế GTGT</th>}
+                      {vatInline && (
+                        <th className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</th>
+                      )}
+                      {vatInline && (
+                        <th className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</th>
+                      )}
+                      {vatInline && showAccounts && (
+                        <th className="w-24 px-2 py-1.5">TK thuế GTGT</th>
+                      )}
                       <th className="w-8 px-2 py-1.5" />
                     </tr>
                   </thead>
@@ -810,7 +983,11 @@ export function PurchaseVoucherForm({
                         <tr key={f.id} className="border-t border-border">
                           <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
                           <td className="px-2 py-1">
-                            <ItemCell value={l?.itemId} onPick={(item) => pickItem(i, item)} />
+                            <ItemCell
+                              value={l?.itemId}
+                              placeholder={variant.itemCodeLabel}
+                              onPick={(item) => pickItem(i, item)}
+                            />
                           </td>
                           <td className="px-2 py-1">
                             <input
@@ -891,20 +1068,24 @@ export function PurchaseVoucherForm({
                           <td className="px-2 py-1 text-right tabular-nums text-slate-700">
                             {formatCurrency(amount)}
                           </td>
-                          <td className="px-2 py-1">
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              step="any"
-                              {...register(`lines.${i}.vatRate`)}
-                              className={cn(cellCls, 'text-right')}
-                            />
-                          </td>
-                          <td className="px-2 py-1 text-right tabular-nums text-slate-700">
-                            {formatCurrency(vat)}
-                          </td>
-                          {showAccounts && (
+                          {vatInline && (
+                            <td className="px-2 py-1">
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step="any"
+                                {...register(`lines.${i}.vatRate`)}
+                                className={cn(cellCls, 'text-right')}
+                              />
+                            </td>
+                          )}
+                          {vatInline && (
+                            <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                              {formatCurrency(vat)}
+                            </td>
+                          )}
+                          {vatInline && showAccounts && (
                             <td className="px-2 py-1">
                               <Controller
                                 control={control}
@@ -943,11 +1124,13 @@ export function PurchaseVoucherForm({
                       <td className="px-2 py-1.5 text-right tabular-nums">
                         {formatCurrency(totalGoods)}
                       </td>
-                      <td />
-                      <td className="px-2 py-1.5 text-right tabular-nums">
-                        {formatCurrency(totalVat)}
-                      </td>
-                      <td colSpan={showAccounts ? 2 : 1} />
+                      {vatInline && <td />}
+                      {vatInline && (
+                        <td className="px-2 py-1.5 text-right tabular-nums">
+                          {formatCurrency(totalVat)}
+                        </td>
+                      )}
+                      <td colSpan={vatInline && showAccounts ? 2 : 1} />
                     </tr>
                   </tfoot>
                 </table>
@@ -1004,19 +1187,11 @@ export function PurchaseVoucherForm({
               ) : null
             })()}
 
-            {/* Tra cứu HĐĐT (trái) + summary (phải) — thứ tự số như MISA (§5.6) */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div className="grid w-full max-w-xl grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
-                <Field label="Mã tra cứu HĐĐT">
-                  <input {...register('einvoiceLookupCode')} className={inputCls} />
-                </Field>
-                <Field label="Đường dẫn tra cứu HĐĐT">
-                  <input {...register('einvoiceLookupUrl')} className={inputCls} />
-                </Field>
-              </div>
-
+            {/* Summary (phải) — thứ tự số như MISA (§5.6). Tra cứu HĐĐT đã bỏ khỏi UI,
+                field einvoiceLookup* vẫn giữ trong schema (dữ liệu nhập khẩu Excel). */}
+            <div className="flex md:justify-end">
               <div className="grid w-full max-w-sm grid-cols-2 gap-y-1.5 text-sm">
-                <span className="text-slate-500">Tổng tiền hàng</span>
+                <span className="text-slate-500">{variant.totalGoodsLabel}</span>
                 <span className="text-right tabular-nums">{formatCurrency(totalGoods)}</span>
                 <span className="text-slate-500">Thuế GTGT</span>
                 <span className="text-right tabular-nums">{formatCurrency(totalVat)}</span>
@@ -1024,14 +1199,15 @@ export function PurchaseVoucherForm({
                 <span className="text-right font-semibold tabular-nums text-primary">
                   {formatCurrency(totalPayment)}
                 </span>
-                {/* Chi phí mua hàng đến từ tab Chi phí (Σ phân bổ) — chỉ loại nhập kho. */}
-                {showWarehouse && (
+                {/* Chi phí mua hàng đến từ tab Chi phí (Σ phân bổ); nhập kho gọi
+                    "Giá trị nhập kho", không qua kho gọi "Tổng giá trị" (MISA). */}
+                {variant.totalValueLabel && (
                   <>
                     <span className="text-slate-500">Chi phí mua hàng</span>
                     <span className="text-right tabular-nums">
                       {formatCurrency(purchaseCostValue)}
                     </span>
-                    <span className="text-slate-500">Giá trị nhập kho</span>
+                    <span className="text-slate-500">{variant.totalValueLabel}</span>
                     <span className="text-right tabular-nums">{formatCurrency(stockValue)}</span>
                   </>
                 )}
@@ -1041,16 +1217,8 @@ export function PurchaseVoucherForm({
         )}
       </fieldset>
 
-      {/* ── Action bar (§5.7): toggle cột tài khoản | nút hành động ── */}
+      {/* ── Action bar (§5.7): nút hành động ── */}
       <div className="flex shrink-0 items-center gap-3 border-t border-border px-4 py-2.5">
-        <label className="flex items-center gap-1.5 text-sm text-slate-600">
-          <input
-            type="checkbox"
-            checked={showAccounts}
-            onChange={(e) => setShowAccounts(e.target.checked)}
-          />
-          Hiển thị tài khoản
-        </label>
         <div className="ml-auto flex gap-2">
           {readOnly ? (
             <>
@@ -1121,8 +1289,16 @@ export function PurchaseVoucherForm({
   )
 }
 
-// Ô Mã hàng: combobox tra cứu VTHH, keyword riêng theo từng dòng.
-function ItemCell({ value, onPick }: { value?: string; onPick: (item: ItemOption) => void }) {
+// Ô Mã hàng/Mã dịch vụ: combobox tra cứu VTHH, keyword riêng theo từng dòng.
+function ItemCell({
+  value,
+  placeholder,
+  onPick,
+}: {
+  value?: string
+  placeholder: string
+  onPick: (item: ItemOption) => void
+}) {
   const [keyword, setKeyword] = useState('')
   const { items, loading } = useItemOptions(keyword)
   return (
@@ -1133,7 +1309,7 @@ function ItemCell({ value, onPick }: { value?: string; onPick: (item: ItemOption
       keyword={keyword}
       onKeywordChange={setKeyword}
       onSelect={onPick}
-      placeholder="Mã hàng"
+      placeholder={placeholder}
       inputClassName={cellCls}
       allowFreeText
     />
@@ -1148,14 +1324,16 @@ const cellCls =
 function Field({
   label,
   error,
+  className,
   children,
 }: {
   label: string
   error?: string
+  className?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-1">
+    <div className={cn('space-y-1', className)}>
       <label className="text-xs font-medium text-slate-500">{label}</label>
       {children}
       {error && <p className="text-xs text-red-600">{error}</p>}

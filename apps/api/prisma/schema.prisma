@@ -299,6 +299,9 @@ model PurchaseVoucher {
   origin             PurchaseOrigin        @default(DOMESTIC)
   paymentMode        PurchasePaymentMode   @default(UNPAID) @map("payment_mode")
   receiveWithInvoice Boolean               @default(false) @map("receive_with_invoice")
+  // MISA (mua dịch vụ): cờ "Là chi phí mua hàng" — chỉ chứng từ dịch vụ được đánh
+  // dấu mới xuất hiện trong dialog "Chọn chứng từ CP" để phân bổ (§10.4).
+  isPurchaseCost     Boolean               @default(false) @map("is_purchase_cost")
   voucherNo          String                @unique @map("voucher_no")
   // Thông tin hóa đơn NCC nhận kèm hàng (tab Hóa đơn, §4): mẫu số / ký hiệu / số / ngày.
   invoiceTemplate    String?               @map("invoice_template")

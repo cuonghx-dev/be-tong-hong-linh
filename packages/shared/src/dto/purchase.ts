@@ -35,6 +35,7 @@ export interface PurchaseVoucherDto {
   origin: PurchaseOrigin // Nguồn gốc: trong nước
   paymentMode: PurchasePaymentMode
   receiveWithInvoice: boolean // Nhận kèm hóa đơn
+  isPurchaseCost: boolean // Là chi phí mua hàng (chỉ mua dịch vụ) — được chọn phân bổ CP
   voucherNo: string // vd NK07099, MH0326/2025
   invoiceTemplate: string | null // Mẫu số hóa đơn (vd 01GTKT0/001)
   invoiceSeries: string | null // Ký hiệu hóa đơn (vd 1C24TYY)
@@ -42,7 +43,8 @@ export interface PurchaseVoucherDto {
   invoiceDate: string | null // Ngày hóa đơn (ISO date-only)
   postingDate: string // Ngày hạch toán (ISO date-only)
   voucherDate: string // Ngày chứng từ
-  supplierId: string | null
+  supplierId: string | null // row id trong DB
+  supplierCode: string | null // mã NCC danh mục — dùng cho picker / điều hướng trả tiền
   supplierName: string | null
   deliverer: string | null // Người giao hàng
   address: string | null
@@ -119,6 +121,7 @@ export interface CreatePurchaseVoucherInput {
   origin?: PurchaseOrigin // Mặc định trong nước (DOMESTIC)
   paymentMode: PurchasePaymentMode
   receiveWithInvoice?: boolean
+  isPurchaseCost?: boolean // Là chi phí mua hàng (chỉ có nghĩa với mua dịch vụ)
   invoiceTemplate?: string | null
   invoiceSeries?: string | null
   invoiceNo?: string | null
