@@ -15,6 +15,7 @@ import { useItemOptions } from '@/shared/api/useItemOptions'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { invalidToast } from '@/shared/lib/form'
 import { cn } from '@/shared/lib/cn'
+import { num } from '@/shared/lib/num'
 import { formatCurrency } from '@/shared/lib/currency'
 import { formatDate } from '@/shared/lib/report-period'
 import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
@@ -284,8 +285,8 @@ export function PurchaseVoucherForm({
   // có phân bổ → rơi về số scalar đã lưu.
   const costAllocs = watch('costAllocations')
   const purchaseCostValue = costAllocs?.length
-    ? costAllocs.reduce((s, a) => s + (a.amount || 0), 0)
-    : watch('purchaseCost') || 0
+    ? costAllocs.reduce((s, a) => s + num(a.amount), 0)
+    : num(watch('purchaseCost'))
 
   // Trả ngay tiền mặt → TK công nợ dòng hàng đổi 331 → 1111 và ngược lại (MISA
   // đổi tự động); chỉ đè giá trị mặc định, giữ TK người dùng đã sửa tay.
@@ -325,11 +326,11 @@ export function PurchaseVoucherForm({
   const isUnpaid = paymentMode === PurchasePaymentMode.Unpaid
 
   // §10.2 tổng hợp.
-  const totalQty = lines?.reduce((s, l) => s + (l.quantity || 0), 0) ?? 0
-  const totalGoods = lines?.reduce((s, l) => s + (l.quantity || 0) * (l.unitPrice || 0), 0) ?? 0
+  const totalQty = lines?.reduce((s, l) => s + num(l.quantity), 0) ?? 0
+  const totalGoods = lines?.reduce((s, l) => s + num(l.quantity) * num(l.unitPrice), 0) ?? 0
   const totalVat =
     lines?.reduce(
-      (s, l) => s + ((l.quantity || 0) * (l.unitPrice || 0) * (l.vatRate || 0)) / 100,
+      (s, l) => s + (num(l.quantity) * num(l.unitPrice) * num(l.vatRate)) / 100,
       0,
     ) ?? 0
   const totalPayment = totalGoods + totalVat
@@ -783,13 +784,13 @@ export function PurchaseVoucherForm({
                           </td>
                           <td className="px-2 py-1.5 text-right tabular-nums">
                             {formatCurrency(
-                              (costAllocs ?? []).reduce((s, a) => s + (a.totalCost || 0), 0),
+                              (costAllocs ?? []).reduce((s, a) => s + num(a.totalCost), 0),
                             )}
                           </td>
                           <td className="px-2 py-1.5 text-right tabular-nums">
                             {formatCurrency(
                               (costAllocs ?? []).reduce(
-                                (s, a) => s + (a.allocatedOther || 0) + (a.amount || 0),
+                                (s, a) => s + num(a.allocatedOther) + num(a.amount),
                                 0,
                               ),
                             )}

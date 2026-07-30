@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
+import { num } from '@/shared/lib/num'
 import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
 import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
@@ -129,7 +130,7 @@ export function ReceiptForm({
 
   const lines = watch('lines')
   const currentType = watch('receiptType')
-  const totalAmount = lines?.reduce((s, l) => s + (l.quantity || 0) * (l.unitPrice || 0), 0) ?? 0
+  const totalAmount = lines?.reduce((s, l) => s + num(l.quantity) * num(l.unitPrice), 0) ?? 0
 
   const submit = (goNext: boolean) =>
     handleSubmit(async (values) => {

@@ -9,6 +9,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { useCustomers } from '@/features/sales'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
+import { num } from '@/shared/lib/num'
 import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
@@ -157,7 +158,7 @@ export function GoodsIssueForm({
   const currentCategory = watch('category')
 
   // Tổng tiền = Σ thành tiền.
-  const totalAmount = lines?.reduce((s, l) => s + (l.quantity || 0) * (l.unitPrice || 0), 0) ?? 0
+  const totalAmount = lines?.reduce((s, l) => s + num(l.quantity) * num(l.unitPrice), 0) ?? 0
 
   const submit = (goNext: boolean) =>
     handleSubmit(async (values) => {

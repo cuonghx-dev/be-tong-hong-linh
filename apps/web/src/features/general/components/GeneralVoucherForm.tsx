@@ -13,6 +13,7 @@ import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
 import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
+import { num } from '@/shared/lib/num'
 import { useGeneralVoucher, useNextGeneralVoucherNo } from '../api/useGeneralVouchers'
 import {
   useCreateGeneralVoucher,
@@ -108,7 +109,7 @@ export function GeneralVoucherForm({
   }, [editing.data, reset, duplicating])
 
   const lines = watch('lines')
-  const total = lines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
+  const total = lines?.reduce((s, l) => s + num(l.amount), 0) ?? 0
 
   // Dòng mới kế thừa Diễn giải từ header (MISA tự điền).
   const newLine = (): GeneralLineFormValues => ({

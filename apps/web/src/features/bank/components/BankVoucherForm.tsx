@@ -30,6 +30,7 @@ import {
 } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
+import { num } from '@/shared/lib/num'
 import { useBankVoucher, useNextBankVoucherNo } from '../api/useBankVouchers'
 import { useCreateBankVoucher, useUpdateBankVoucher } from '../api/useBankVoucherMutations'
 import { bankVoucherSchema, type BankLineFormValues, type BankVoucherFormValues } from '../schema'
@@ -217,7 +218,7 @@ export function BankVoucherForm({
   }, [editing.data, reset, duplicating])
 
   const lines = watch('lines')
-  const total = lines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
+  const total = lines?.reduce((s, l) => s + num(l.amount), 0) ?? 0
 
   const submit = (goNext: boolean) =>
     handleSubmit(

@@ -16,6 +16,7 @@ import { useItemOptions } from '@/shared/api/useItemOptions'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { invalidToast } from '@/shared/lib/form'
 import { cn } from '@/shared/lib/cn'
+import { num } from '@/shared/lib/num'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
@@ -101,14 +102,14 @@ function defaultValues(): SalesVoucherFormValues {
 // Thành tiền dòng = SL × Đơn giá − Chiết khấu TM; tiền thuế = thành tiền × %VAT
 // (khớp cách backend tính amount/vatAmount).
 function lineAmount(l: SalesLineFormValues): number {
-  return Math.max(0, (l.quantity || 0) * (l.unitPrice || 0) - (l.tradeDiscount || 0))
+  return Math.max(0, num(l.quantity) * num(l.unitPrice) - num(l.tradeDiscount))
 }
 function lineVat(l: SalesLineFormValues): number {
-  return Math.round((lineAmount(l) * (l.vatRate || 0)) / 100)
+  return Math.round((lineAmount(l) * num(l.vatRate)) / 100)
 }
 // Tiền vốn dòng = SL × Đơn giá vốn (tab Giá vốn).
 function lineCost(l?: SalesLineFormValues): number {
-  return (l?.quantity || 0) * (l?.costPrice || 0)
+  return num(l?.quantity) * num(l?.costPrice)
 }
 
 // Trang chứng từ bán hàng — bố cục §5 design.md (mirror PurchaseVoucherForm):
@@ -284,8 +285,8 @@ export function SalesVoucherForm({
   const isInventoryIssue = watch('isInventoryIssue')
   const paymentMode = watch('paymentMode')
   const lines = watch('lines')
-  const totalQty = lines?.reduce((s, l) => s + (l.quantity || 0), 0) ?? 0
-  const totalDiscount = lines?.reduce((s, l) => s + (l.tradeDiscount || 0), 0) ?? 0
+  const totalQty = lines?.reduce((s, l) => s + num(l.quantity), 0) ?? 0
+  const totalDiscount = lines?.reduce((s, l) => s + num(l.tradeDiscount), 0) ?? 0
   const totalGoods = lines?.reduce((s, l) => s + lineAmount(l), 0) ?? 0
   const totalVat = lines?.reduce((s, l) => s + lineVat(l), 0) ?? 0
   const totalPayment = totalGoods + totalVat

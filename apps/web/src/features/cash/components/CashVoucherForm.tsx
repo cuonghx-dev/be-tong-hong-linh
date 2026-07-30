@@ -20,6 +20,7 @@ import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
+import { num } from '@/shared/lib/num'
 import { useCashVoucher, useNextCashVoucherNo } from '../api/useCashVouchers'
 import { useCreateCashVoucher, useUpdateCashVoucher } from '../api/useCashVoucherMutations'
 import { useEmployeeOptions } from '@/shared/api/useEmployeeOptions'
@@ -264,8 +265,8 @@ export function CashVoucherForm({
     partnerId: watch('partnerId'),
     partnerName: watch('partnerName'),
   })
-  const linesTotal = lines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
-  const taxTotal = taxLines?.reduce((s, l) => s + (l.amount || 0), 0) ?? 0
+  const linesTotal = lines?.reduce((s, l) => s + num(l.amount), 0) ?? 0
+  const taxTotal = taxLines?.reduce((s, l) => s + num(l.amount), 0) ?? 0
   // Tổng tiền = tiền hàng (hạch toán) + thuế GTGT (tab thuế).
   const total = linesTotal + taxTotal
 
@@ -738,7 +739,7 @@ export function CashVoucherForm({
                                   // Đổi thuế suất → gợi ý tiền thuế = tổng tiền hàng × %.
                                   if (rate != null && !Number.isNaN(rate)) {
                                     const base = (watch('lines') ?? []).reduce(
-                                      (s, l) => s + (l.amount || 0),
+                                      (s, l) => s + num(l.amount),
                                       0,
                                     )
                                     setValue(
