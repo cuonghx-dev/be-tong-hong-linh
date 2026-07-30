@@ -1,8 +1,8 @@
 import { InventoryReceiptType } from '@app/shared'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { ReceiptForm } from '../components/ReceiptForm'
+import { DEFAULT_RECEIPT_TYPE } from '../types'
 
 type Mode = 'new' | 'view' | 'edit'
 
@@ -10,36 +10,23 @@ type Mode = 'new' | 'view' | 'edit'
 export function InventoryReceiptPage({ mode }: { mode: Mode }) {
   const { id } = useParams()
   const [sp] = useSearchParams()
-  const type = (sp.get('type') as InventoryReceiptType) ?? InventoryReceiptType.Purchase
+  // Lập tay chỉ có "Nhập kho thành phẩm sản xuất"; loại mua hàng do chứng từ mua hàng tự sinh.
+  const type = (sp.get('type') as InventoryReceiptType) ?? DEFAULT_RECEIPT_TYPE
   // Nhân bản: tạo mới nhưng nạp sẵn dữ liệu từ phiếu nguồn.
   const duplicateFromId = mode === 'new' ? sp.get('duplicateFrom') : null
 
   const close = useNavigateBack('/inventory')
 
-  // Loại chứng từ đổi được ngay trong form (Select "Loại chứng từ") → title tĩnh.
-  const title =
-    mode === 'new'
-      ? 'Phiếu nhập kho'
-      : mode === 'edit'
-        ? 'Sửa phiếu nhập kho'
-        : 'Xem phiếu nhập kho'
-
+  // Form tự dựng page header / action bar (§5 design.md) vì các control ở đó đọc-ghi
+  // trực tiếp state form (loại chứng từ, số phiếu, tổng tiền) → không bọc RecordPageShell.
   return (
-    // Header nền primary nhạt liền khối với vùng thông tin chung của form (2 lớp màu, đồng bộ cash).
-    <RecordPageShell
-      title={title}
-      onClose={close}
-      headerClassName="border-b-0 bg-primary/5"
-      contentClassName="p-0"
-    >
-      <ReceiptForm
-        type={type}
-        receiptId={id ?? null}
-        duplicateFromId={duplicateFromId}
-        readOnly={mode === 'view'}
-        onSaved={close}
-        onCancel={close}
-      />
-    </RecordPageShell>
+    <ReceiptForm
+      type={type}
+      receiptId={id ?? null}
+      duplicateFromId={duplicateFromId}
+      readOnly={mode === 'view'}
+      onSaved={close}
+      onCancel={close}
+    />
   )
 }

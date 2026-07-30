@@ -30,6 +30,7 @@ import {
 import {
   GOODS_ISSUE_CATEGORY_LABEL,
   GOODS_ISSUE_CATEGORY_OPTIONS,
+  GOODS_ISSUE_VARIANT,
   issueDefaultCreditAccount,
   issueDefaultDebitAccount,
 } from '../types'
@@ -129,10 +130,40 @@ export function GoodsIssueForm({
     setValue('description', `${GOODS_ISSUE_CATEGORY_LABEL[watch('category')]} cho ${p.name}`)
   }
 
-  // Picker nhân viên bán hàng (+ tạo nhanh) — cùng pattern chứng từ bán hàng.
+  // Picker nhân viên (NV bán hàng khi xuất bán hàng / người nhận khi xuất sản xuất).
   const [employeeKw, setEmployeeKw] = useState('')
   const { items: employeeItems, loading: employeeLoading } = useEmployeeOptions(employeeKw)
   const [employeeDialog, setEmployeeDialog] = useState(false)
+  const selectReceiver = (p: PartnerOption) => {
+    setValue('receiverId', p.code)
+    setValue('receiver', p.name)
+    // PartnerOption.address của nhân viên mang phòng ban → điền sẵn Bộ phận.
+    if (p.address) setValue('department', p.address)
+  }
+
+  // Đổi lý do xuất → xóa dữ liệu của cụm không còn hiển thị (tránh gửi field lạc)
+  // + đưa TK định khoản các dòng về ngầm định của lý do mới, như MISA.
+  const changeCategory = (next: GoodsIssueCategory) => {
+    setValue('category', next)
+    setValue('description', GOODS_ISSUE_CATEGORY_LABEL[next])
+    const toProduction = next === GoodsIssueCategory.Production
+    if (toProduction) {
+      setValue('customerId', undefined)
+      setValue('customerName', undefined)
+      setValue('address', undefined)
+      setValue('salesEmployeeId', undefined)
+      setValue('deliveryLocation', undefined)
+    } else {
+      setValue('receiverId', undefined)
+      setValue('department', undefined)
+    }
+    getValues('lines')?.forEach((_l, i) => {
+      setValue(`lines.${i}.debitAccount`, issueDefaultDebitAccount(next))
+      setValue(`lines.${i}.creditAccount`, issueDefaultCreditAccount(next))
+      setValue(`lines.${i}.lotNo`, undefined)
+      setValue(`lines.${i}.finishedProduct`, undefined)
+    })
+  }
 
   // Chọn VTHH ở ô Mã hàng → điền dòng hàng theo dữ liệu ngầm định của danh mục
   // (tên, ĐVT, kho ngầm định, TK giá vốn/TK kho, đơn giá mua gần nhất) — như MISA.
@@ -165,6 +196,8 @@ export function GoodsIssueForm({
       receiver: v.receiver ?? undefined,
       address: v.address ?? undefined,
       salesEmployeeId: v.salesEmployeeId ?? undefined,
+      receiverId: v.receiverId ?? undefined,
+      department: v.department ?? undefined,
       description: v.description ?? undefined,
       attachmentCount: v.attachmentCount,
       deliveryLocation: v.deliveryLocation ?? undefined,
@@ -179,12 +212,15 @@ export function GoodsIssueForm({
         unitPrice: Number(l.unitPrice),
         lotNo: l.lotNo ?? undefined,
         expiryDate: l.expiryDate ?? undefined,
+        finishedProduct: l.finishedProduct ?? undefined,
       })),
     })
   }, [editing.data, duplicating, reset])
 
   const lines = watch('lines')
   const currentCategory = watch('category')
+  // Cấu hình trường/cột theo lý do xuất (bán hàng vs sản xuất) — xem types.ts.
+  const variant = GOODS_ISSUE_VARIANT[currentCategory]
 
   // Tổng tiền = Σ thành tiền; tổng SL cho dòng tổng cộng của bảng (như MISA).
   const totalAmount = lines?.reduce((s, l) => s + num(l.quantity) * num(l.unitPrice), 0) ?? 0
@@ -197,6 +233,8 @@ export function GoodsIssueForm({
         receiver: blank(values.receiver),
         address: blank(values.address),
         salesEmployeeId: blank(values.salesEmployeeId),
+        receiverId: blank(values.receiverId),
+        department: blank(values.department),
         description: blank(values.description),
         deliveryLocation: blank(values.deliveryLocation),
         lines: values.lines.map((l) => ({
@@ -211,6 +249,7 @@ export function GoodsIssueForm({
           lotNo: l.lotNo,
           // Input date bỏ trống trả chuỗi rỗng — backend @IsDateString từ chối "".
           expiryDate: l.expiryDate || undefined,
+          finishedProduct: blank(l.finishedProduct),
         })),
       }
       try {
@@ -240,7 +279,7 @@ export function GoodsIssueForm({
         <Select
           value={currentCategory}
           disabled={readOnly || !!voucherId}
-          onValueChange={(v) => setValue('category', v as GoodsIssueCategory)}
+          onValueChange={(v) => changeCategory(v as GoodsIssueCategory)}
         >
           <SelectTrigger className="h-9 w-64 shrink-0 bg-white" title="Lý do xuất">
             <SelectValue />
@@ -253,11 +292,12 @@ export function GoodsIssueForm({
             ))}
           </SelectContent>
         </Select>
-        {/* Lập phiếu xuất từ chứng từ bán hàng đã có — chưa hỗ trợ, giữ chỗ đúng vị trí MISA. */}
+        {/* Lập phiếu xuất từ chứng từ nguồn (CT bán hàng / lệnh sản xuất) — chưa hỗ trợ,
+            giữ chỗ đúng vị trí MISA; placeholder đổi theo lý do xuất. */}
         <input
           disabled
-          placeholder="Nhập số chứng từ bán hàng"
-          title="Lập phiếu xuất từ chứng từ bán hàng — chưa hỗ trợ"
+          placeholder={variant.sourcePlaceholder}
+          title={`Lập phiếu xuất từ ${variant.sourcePlaceholder.replace('Nhập ', '')} — chưa hỗ trợ`}
           className={cn(inputCls, 'w-60 shrink-0 disabled:bg-white disabled:text-slate-400')}
         />
         <button
@@ -271,96 +311,129 @@ export function GoodsIssueForm({
       </header>
 
       <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
-        {/* ── Thông tin chung (§5.5) — lưới 4 cụm như MISA: mã KH | tên/địa chỉ/lý do | ngày + số phiếu ── */}
+        {/* ── Thông tin chung (§5.5) — 3 cụm như MISA: đối tượng/diễn giải | ngày + số phiếu | tổng tiền.
+            Cụm bên trái đổi theo lý do xuất (bán hàng: khách hàng; sản xuất: người nhận + bộ phận). ── */}
         <section className="space-y-3 bg-primary/5 px-4 pb-4 pt-3">
           <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-12">
-            {/* Hàng 1 */}
-            <Field label="Mã khách hàng" className="md:col-span-3">
-              <PartnerPicker
-                value={watch('customerId')}
-                items={customerItems}
-                loading={customers.isLoading}
-                keyword={customerKw}
-                onKeywordChange={setCustomerKw}
-                placeholder="Mã KH"
-                disabled={readOnly}
-                onSelect={selectCustomer}
-                onAddNew={readOnly ? undefined : () => setCustomerDialog(true)}
-              />
-            </Field>
-            <Field label="Tên khách hàng" className="md:col-span-4">
-              <input {...register('customerName')} className={inputCls} />
-            </Field>
-            <div className="hidden md:col-span-2 md:block" />
-            <Field
-              label="Ngày hạch toán"
-              error={formState.errors.postingDate?.message}
-              className="md:col-span-3"
-            >
-              <input type="date" {...register('postingDate')} className={inputCls} />
-            </Field>
+            {/* Cụm trái */}
+            <div className="grid grid-cols-1 content-start gap-x-6 gap-y-3 md:col-span-7 md:grid-cols-7">
+              {variant.partner === 'customer' ? (
+                <>
+                  <Field label="Mã khách hàng" className="md:col-span-3">
+                    <PartnerPicker
+                      value={watch('customerId')}
+                      items={customerItems}
+                      loading={customers.isLoading}
+                      keyword={customerKw}
+                      onKeywordChange={setCustomerKw}
+                      placeholder="Mã KH"
+                      disabled={readOnly}
+                      onSelect={selectCustomer}
+                      onAddNew={readOnly ? undefined : () => setCustomerDialog(true)}
+                    />
+                  </Field>
+                  <Field label="Tên khách hàng" className="md:col-span-4">
+                    <input {...register('customerName')} className={inputCls} />
+                  </Field>
+                  {/* Người nhận bỏ trống thì phiếu in lấy tên KH. */}
+                  <Field label="Người nhận" className="md:col-span-3">
+                    <input
+                      {...register('receiver')}
+                      placeholder={watch('customerName') || undefined}
+                      className={inputCls}
+                    />
+                  </Field>
+                </>
+              ) : (
+                <>
+                  {/* Sản xuất: người nhận là nhân viên nội bộ (picker danh mục Nhân viên). */}
+                  <Field label="Mã người nhận" className="md:col-span-3">
+                    <PartnerPicker
+                      value={watch('receiverId')}
+                      items={employeeItems}
+                      loading={employeeLoading}
+                      keyword={employeeKw}
+                      onKeywordChange={setEmployeeKw}
+                      placeholder="Mã người nhận"
+                      disabled={readOnly}
+                      onSelect={selectReceiver}
+                      onAddNew={readOnly ? undefined : () => setEmployeeDialog(true)}
+                    />
+                  </Field>
+                  <Field label="Tên người nhận" className="md:col-span-4">
+                    <input {...register('receiver')} className={inputCls} />
+                  </Field>
+                </>
+              )}
 
-            {/* Hàng 2 — người nhận bỏ trống thì phiếu in lấy tên KH. */}
-            <Field label="Người nhận" className="md:col-span-3">
-              <input
-                {...register('receiver')}
-                placeholder={watch('customerName') || undefined}
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Địa chỉ" className="md:col-span-4">
-              <input {...register('address')} className={inputCls} />
-            </Field>
-            <div className="hidden md:col-span-2 md:block" />
-            <Field
-              label="Ngày chứng từ"
-              error={formState.errors.voucherDate?.message}
-              className="md:col-span-3"
-            >
-              <input type="date" {...register('voucherDate')} className={inputCls} />
-            </Field>
+              {variant.showAddress && (
+                <Field label="Địa chỉ" className="md:col-span-4">
+                  <input {...register('address')} className={inputCls} />
+                </Field>
+              )}
+              {variant.showDepartment && (
+                <Field label="Bộ phận" className="md:col-span-3">
+                  <input {...register('department')} className={inputCls} />
+                </Field>
+              )}
+              {variant.showSalesEmployee && (
+                <Field label="Nhân viên bán hàng" className="md:col-span-3">
+                  <PartnerPicker
+                    value={watch('salesEmployeeId')}
+                    items={employeeItems}
+                    loading={employeeLoading}
+                    keyword={employeeKw}
+                    onKeywordChange={setEmployeeKw}
+                    placeholder="Mã nhân viên"
+                    disabled={readOnly}
+                    onSelect={(p) => setValue('salesEmployeeId', p.code)}
+                    onAddNew={readOnly ? undefined : () => setEmployeeDialog(true)}
+                  />
+                </Field>
+              )}
+              <Field label="Lý do xuất" className="md:col-span-4">
+                <input {...register('description')} className={inputCls} />
+              </Field>
+            </div>
 
-            {/* Hàng 3 */}
-            <Field label="Nhân viên bán hàng" className="md:col-span-3">
-              <PartnerPicker
-                value={watch('salesEmployeeId')}
-                items={employeeItems}
-                loading={employeeLoading}
-                keyword={employeeKw}
-                onKeywordChange={setEmployeeKw}
-                placeholder="Mã nhân viên"
-                disabled={readOnly}
-                onSelect={(p) => setValue('salesEmployeeId', p.code)}
-                onAddNew={readOnly ? undefined : () => setEmployeeDialog(true)}
-              />
-            </Field>
-            <Field label="Lý do xuất" className="md:col-span-4">
-              <input {...register('description')} className={inputCls} />
-            </Field>
-            <div className="hidden md:col-span-2 md:block" />
-            <Field label="Số chứng từ" className="md:col-span-3">
-              <input
-                value={displayNo || 'Tự động'}
-                readOnly
-                title="Số dự kiến — cấp chính thức khi Cất"
-                className={cn(inputCls, 'bg-slate-50 text-slate-500')}
-              />
-            </Field>
+            {/* Cụm ngày + số chứng từ */}
+            <div className="space-y-3 md:col-span-3">
+              <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
+                <input type="date" {...register('postingDate')} className={inputCls} />
+              </Field>
+              <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
+                <input type="date" {...register('voucherDate')} className={inputCls} />
+              </Field>
+              <Field label="Số chứng từ">
+                <input
+                  value={displayNo || 'Tự động'}
+                  readOnly
+                  title="Số dự kiến — cấp chính thức khi Cất"
+                  className={cn(inputCls, 'bg-slate-50 text-slate-500')}
+                />
+              </Field>
+            </div>
 
-            {/* Hàng 4 — kèm theo N chứng từ gốc + địa điểm giao hàng; tổng tiền cỡ lớn góc phải như MISA. */}
-            <Field label="Kèm theo (chứng từ gốc)" className="md:col-span-3">
-              <input type="number" min={0} {...register('attachmentCount')} className={inputCls} />
-            </Field>
-            <Field label="Địa điểm giao hàng" className="md:col-span-4">
-              <input {...register('deliveryLocation')} className={inputCls} />
-            </Field>
-            <div className="hidden md:col-span-2 md:block" />
-            <div className="md:col-span-3 md:self-end md:text-right">
+            {/* Tổng tiền cỡ lớn cột ngoài cùng phải như MISA. */}
+            <div className="md:col-span-2 md:text-right">
               <div className="text-xs text-slate-500">Tổng tiền</div>
               <div className="text-2xl font-bold tabular-nums text-primary">
                 {formatCurrency(totalAmount)}
               </div>
             </div>
+          </div>
+
+          {/* Kèm theo N chứng từ gốc — cùng dòng như MISA (ô số lượng + nhãn phía sau). */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-xs font-medium text-slate-500">Kèm theo</span>
+            <input
+              type="number"
+              min={0}
+              placeholder="Số lượng"
+              {...register('attachmentCount')}
+              className={cn(inputCls, 'w-28')}
+            />
+            <span className="text-slate-600">chứng từ gốc</span>
           </div>
         </section>
 
@@ -384,8 +457,16 @@ export function GoodsIssueForm({
                     <th className="w-24 px-2 py-1.5 text-right">Số&nbsp;lượng</th>
                     <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
                     <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
-                    <th className="w-24 px-2 py-1.5">Số&nbsp;lô</th>
-                    <th className="w-32 px-2 py-1.5">Hạn sử&nbsp;dụng</th>
+                    {/* Cột cuối đổi theo lý do xuất: bán hàng → Số lô + Hạn sử dụng; sản xuất → Thành phẩm. */}
+                    {variant.showLot && (
+                      <>
+                        <th className="w-24 px-2 py-1.5">Số&nbsp;lô</th>
+                        <th className="w-32 px-2 py-1.5">Hạn sử&nbsp;dụng</th>
+                      </>
+                    )}
+                    {variant.showFinishedProduct && (
+                      <th className="w-32 px-2 py-1.5">Thành&nbsp;phẩm</th>
+                    )}
                     <th className="w-8 px-2 py-1.5" />
                   </tr>
                 </thead>
@@ -472,16 +553,29 @@ export function GoodsIssueForm({
                         <td className="px-2 py-1 text-right tabular-nums text-slate-700">
                           {formatCurrency(amount)}
                         </td>
-                        <td className="px-2 py-1">
-                          <input {...register(`lines.${i}.lotNo`)} className={cellCls} />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input
-                            type="date"
-                            {...register(`lines.${i}.expiryDate`)}
-                            className={cellCls}
-                          />
-                        </td>
+                        {variant.showLot && (
+                          <>
+                            <td className="px-2 py-1">
+                              <input {...register(`lines.${i}.lotNo`)} className={cellCls} />
+                            </td>
+                            <td className="px-2 py-1">
+                              <input
+                                type="date"
+                                {...register(`lines.${i}.expiryDate`)}
+                                className={cellCls}
+                              />
+                            </td>
+                          </>
+                        )}
+                        {variant.showFinishedProduct && (
+                          <td className="px-2 py-1">
+                            <input
+                              {...register(`lines.${i}.finishedProduct`)}
+                              placeholder="Mã thành phẩm"
+                              className={cellCls}
+                            />
+                          </td>
+                        )}
                         <td className="px-2 py-1 text-center">
                           <button
                             type="button"
@@ -508,8 +602,8 @@ export function GoodsIssueForm({
                     <td className="px-2 py-1.5 text-right tabular-nums">
                       {formatCurrency(totalAmount)}
                     </td>
-                    {/* Số lô, Hạn sử dụng, cột xóa dòng */}
-                    <td colSpan={3} />
+                    {/* [Số lô, Hạn sử dụng] / [Thành phẩm] + cột xóa dòng */}
+                    <td colSpan={(variant.showLot ? 2 : 0) + (variant.showFinishedProduct ? 1 : 0) + 1} />
                   </tr>
                 </tfoot>
               </table>
@@ -554,13 +648,14 @@ export function GoodsIssueForm({
             return typeof msg === 'string' ? <p className="text-sm text-red-600">{msg}</p> : null
           })()}
 
-          {/* Summary (phải) */}
-          <div className="ml-auto grid w-full max-w-sm grid-cols-2 gap-y-1.5 text-sm">
-            <span className="font-semibold text-slate-700">Tổng tiền</span>
-            <span className="text-right font-semibold tabular-nums text-primary">
-              {formatCurrency(totalAmount)}
-            </span>
-          </div>
+          {/* Địa điểm giao hàng — dưới bảng dòng hàng như MISA; chỉ có khi xuất bán hàng. */}
+          {variant.showDeliveryLocation && (
+            <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-12">
+              <Field label="Địa điểm giao hàng" className="md:col-span-4">
+                <input {...register('deliveryLocation')} className={inputCls} />
+              </Field>
+            </div>
+          )}
         </section>
       </fieldset>
 

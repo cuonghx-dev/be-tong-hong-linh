@@ -56,6 +56,8 @@ export const goodsIssueLineSchema = z
     unitPrice: z.coerce.number().min(0, 'Đơn giá ≥ 0'),
     lotNo: z.string().optional(),
     expiryDate: z.string().optional(),
+    // Lý do xuất sản xuất: mã thành phẩm mà NVL này dùng để sản xuất.
+    finishedProduct: z.string().optional(),
   })
   .superRefine((l, ctx) => {
     if (l.quantity > 0 && !l.itemName?.trim()) {
@@ -72,6 +74,9 @@ export const goodsIssueSchema = z.object({
   receiver: z.string().optional(),
   address: z.string().optional(),
   salesEmployeeId: z.string().optional(),
+  // Lý do xuất sản xuất: mã người nhận (nhân viên) + bộ phận.
+  receiverId: z.string().optional(),
+  department: z.string().optional(),
   description: z.string().optional(),
   attachmentCount: z.coerce.number().int().min(0).optional(),
   deliveryLocation: z.string().optional(),

@@ -482,6 +482,9 @@ model GoodsIssueVoucher {
   receiver           String?
   address            String?
   salesEmployeeId    String?            @map("sales_employee_id")
+  // Xuất kho sản xuất (MISA): Mã người nhận (nhân viên) + Bộ phận thay cụm khách hàng.
+  receiverId         String?            @map("receiver_id")
+  department         String?
   description        String?
   attachmentCount    Int                @default(0) @map("attachment_count")
   deliveryLocation   String?            @map("delivery_location")
@@ -521,6 +524,8 @@ model GoodsIssueLine {
   amount        Decimal           @default(0) @db.Decimal(18, 2)
   lotNo         String?           @map("lot_no")
   expiryDate    DateTime?         @map("expiry_date") @db.Date
+  // Xuất kho sản xuất (MISA): mã thành phẩm mà NVL này dùng để sản xuất.
+  finishedProduct String?         @map("finished_product")
 
   // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
   @@unique([voucherId, lineNo])

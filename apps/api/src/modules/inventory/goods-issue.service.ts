@@ -91,6 +91,8 @@ export class GoodsIssueService {
           receiver: dto.receiver ?? null,
           address: dto.address ?? null,
           salesEmployeeId: dto.salesEmployeeId ?? null,
+          receiverId: dto.receiverId ?? null,
+          department: dto.department ?? null,
           description: dto.description ?? 'Xuất kho',
           attachmentCount: dto.attachmentCount ?? 0,
           deliveryLocation: dto.deliveryLocation ?? null,
@@ -117,6 +119,8 @@ export class GoodsIssueService {
         receiver: dto.receiver ?? undefined,
         address: dto.address ?? undefined,
         salesEmployeeId: dto.salesEmployeeId ?? undefined,
+        receiverId: dto.receiverId ?? undefined,
+        department: dto.department ?? undefined,
         description: dto.description ?? undefined,
         attachmentCount: dto.attachmentCount ?? undefined,
         deliveryLocation: dto.deliveryLocation ?? undefined,
@@ -353,10 +357,10 @@ function salesIssueLines(input: SalesIssueInput) {
 }
 
 // Định khoản TK Nợ mặc định theo lý do xuất:
-//   bán hàng → 632 (giá vốn); sản xuất → 621 (CP NVL trực tiếp).
+//   bán hàng → 632 (giá vốn); sản xuất → 154 (CP SXKD dở dang, như MISA TT133).
 function defaultDebitAccount(category: GoodsIssueCategory): string {
   return category === GoodsIssueCategory.PRODUCTION
-    ? CHART_OF_ACCOUNTS.DIRECT_MATERIAL_COST
+    ? CHART_OF_ACCOUNTS.WIP
     : CHART_OF_ACCOUNTS.COGS
 }
 
@@ -391,6 +395,7 @@ function normalizeLines(category: GoodsIssueCategory, lines: CreateGoodsIssueLin
       amount: quantity.mul(unitPrice),
       lotNo: line.lotNo ?? null,
       expiryDate: line.expiryDate ? new Date(line.expiryDate) : null,
+      finishedProduct: line.finishedProduct ?? null,
     }
   })
 }
@@ -433,6 +438,8 @@ function toIssueDto(v: IssueWithLines) {
     receiver: v.receiver,
     address: v.address,
     salesEmployeeId: v.salesEmployeeId,
+    receiverId: v.receiverId,
+    department: v.department,
     description: v.description,
     attachmentCount: v.attachmentCount,
     deliveryLocation: v.deliveryLocation,
@@ -455,6 +462,7 @@ function toIssueDto(v: IssueWithLines) {
       amount: l.amount.toString(),
       lotNo: l.lotNo,
       expiryDate: toDateOnly(l.expiryDate),
+      finishedProduct: l.finishedProduct,
     })),
     createdAt: v.createdAt.toISOString(),
     updatedAt: v.updatedAt.toISOString(),

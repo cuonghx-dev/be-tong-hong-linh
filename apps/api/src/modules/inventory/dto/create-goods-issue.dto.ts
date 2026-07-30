@@ -56,7 +56,7 @@ export class CreateGoodsIssueLineDto {
   @Min(0)
   unitPrice!: number
 
-  @ApiPropertyOptional({ description: 'Số lô' })
+  @ApiPropertyOptional({ description: 'Số lô (lý do xuất bán hàng)' })
   @IsOptional()
   @IsString()
   lotNo?: string
@@ -65,6 +65,11 @@ export class CreateGoodsIssueLineDto {
   @IsOptional()
   @IsDateString()
   expiryDate?: string
+
+  @ApiPropertyOptional({ description: 'Thành phẩm (lý do xuất sản xuất)' })
+  @IsOptional()
+  @IsString()
+  finishedProduct?: string
 }
 
 export class CreateGoodsIssueDto {
@@ -104,6 +109,16 @@ export class CreateGoodsIssueDto {
   @IsOptional()
   @IsString()
   salesEmployeeId?: string
+
+  @ApiPropertyOptional({ description: 'Mã người nhận (lý do xuất sản xuất)' })
+  @IsOptional()
+  @IsString()
+  receiverId?: string
+
+  @ApiPropertyOptional({ description: 'Bộ phận (lý do xuất sản xuất)' })
+  @IsOptional()
+  @IsString()
+  department?: string
 
   @ApiPropertyOptional({ description: 'Lý do xuất / Diễn giải' })
   @IsOptional()

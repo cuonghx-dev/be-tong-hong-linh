@@ -94,14 +94,15 @@ export interface GoodsIssueLineDto {
   itemId: string | null // Mã hàng
   itemName: string | null // Tên hàng
   warehouseId: string | null // Kho
-  debitAccount: string // TK Nợ (giá vốn 632 / chi phí 621…)
+  debitAccount: string // TK Nợ (giá vốn 632 / CP SXKD dở dang 154…)
   creditAccount: string // TK Có (kho 152/155/156)
   unit: string | null // ĐVT
   quantity: string // Số lượng (Decimal → string)
   unitPrice: string // Đơn giá
   amount: string // Thành tiền
-  lotNo: string | null // Số lô
+  lotNo: string | null // Số lô (lý do xuất bán hàng)
   expiryDate: string | null // Hạn sử dụng (ISO date-only)
+  finishedProduct: string | null // Thành phẩm (lý do xuất sản xuất)
 }
 
 // Phiếu xuất kho.
@@ -113,9 +114,11 @@ export interface GoodsIssueDto {
   voucherDate: string // Ngày chứng từ
   customerId: string | null // Mã khách hàng
   customerName: string | null // Tên khách hàng
-  receiver: string | null // Người nhận
+  receiver: string | null // Người nhận (sản xuất: Tên người nhận)
   address: string | null // Địa chỉ
   salesEmployeeId: string | null // Nhân viên bán hàng
+  receiverId: string | null // Mã người nhận (lý do xuất sản xuất)
+  department: string | null // Bộ phận (lý do xuất sản xuất)
   description: string | null // Lý do xuất / Diễn giải
   attachmentCount: number // Kèm theo (chứng từ gốc)
   deliveryLocation: string | null // Địa điểm giao hàng
@@ -141,6 +144,7 @@ export interface CreateGoodsIssueLineInput {
   unitPrice: number
   lotNo?: string | null
   expiryDate?: string | null
+  finishedProduct?: string | null
 }
 
 // Payload tạo phiếu xuất kho.
@@ -153,6 +157,8 @@ export interface CreateGoodsIssueInput {
   receiver?: string | null
   address?: string | null
   salesEmployeeId?: string | null
+  receiverId?: string | null
+  department?: string | null
   description?: string | null
   attachmentCount?: number
   deliveryLocation?: string | null

@@ -8,23 +8,26 @@ import { num } from '@/shared/lib/num'
 import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
 import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
+import { useItemOptions } from '@/shared/api/useItemOptions'
 import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
-import { PlusIcon } from '@/shared/ui/icons'
+import { PlusIcon, TrashIcon, XIcon } from '@/shared/ui/icons'
+import { ItemPicker, type ItemOption } from '@/shared/ui/item-picker'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
 import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
+import { WarehousePicker, warehouseCellCls } from '@/shared/ui/warehouse-picker'
 import { useToast } from '@/shared/ui/toast'
 import { useNextReceiptNo, useReceipt } from '../api/useReceipts'
 import { useCreateReceipt, useUpdateReceipt } from '../api/useReceiptMutations'
 import { receiptSchema, type ReceiptFormValues, type ReceiptLineFormValues } from '../schema'
-import { RECEIPT_TYPE_OPTIONS, defaultCreditAccount, defaultDebitAccount } from '../types'
+import {
+  MANUAL_RECEIPT_TYPES,
+  RECEIPT_TYPE_OPTIONS,
+  defaultCreditAccount,
+  defaultDebitAccount,
+  RECEIPT_VARIANT,
+} from '../types'
 import { MoneyInput } from './MoneyInput'
 
 interface Props {
@@ -78,10 +81,10 @@ export function ReceiptForm({
     resolver: zodResolver(receiptSchema),
     defaultValues: defaultValues(type),
   })
-  const { control, register, handleSubmit, reset, watch, setValue, formState } = form
-  const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+  const { control, register, handleSubmit, reset, watch, setValue, getValues, formState } = form
+  const { fields, append, remove, replace } = useFieldArray({ control, name: 'lines' })
 
-  // Preview số phiếu kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu (dãy NK chạy toàn cục).
+  // Preview số phiếu kế tiếp khi tạo mới — số thật vẫn cấp lúc Cất (dãy NK chạy toàn cục).
   const nextNo = useNextReceiptNo(!receiptId)
 
   // Picker đối tượng (+ tạo nhanh) — cùng pattern chứng từ thu/chi.
@@ -94,6 +97,19 @@ export function ReceiptForm({
     setValue('partnerName', p.name)
     if (p.address) setValue('address', p.address)
     setValue('description', `Nhập kho của ${p.name}`)
+  }
+
+  // Chọn VTHH ở ô Mã hàng: điền tên/ĐVT/kho + TK kho (Nợ); TK Có giữ theo loại phiếu.
+  const pickItem = (i: number, item: ItemOption) => {
+    setValue(`lines.${i}.itemId`, item.code)
+    if (item.name) setValue(`lines.${i}.itemName`, item.name)
+    if (item.unit) setValue(`lines.${i}.unit`, item.unit)
+    if (item.defaultWarehouseCode) setValue(`lines.${i}.warehouseId`, item.defaultWarehouseCode)
+    if (item.inventoryAccount) setValue(`lines.${i}.debitAccount`, item.inventoryAccount)
+    // Đơn giá nhập gợi ý = đơn giá mua gần nhất; chỉ điền khi dòng còn trống.
+    const price = Number(item.purchasePrice)
+    if (Number.isFinite(price) && price > 0 && !getValues(`lines.${i}.unitPrice`))
+      setValue(`lines.${i}.unitPrice`, price)
   }
 
   // Nạp dữ liệu khi xem/sửa.
@@ -130,7 +146,18 @@ export function ReceiptForm({
 
   const lines = watch('lines')
   const currentType = watch('receiptType')
+  // Chỉ liệt kê loại lập tay; phiếu do mua hàng sinh ra vẫn hiện đúng nhãn khi xem/sửa
+  // nhưng không đổi sang được (và ngược lại).
+  const typeOptions = RECEIPT_TYPE_OPTIONS.filter(
+    (o) => MANUAL_RECEIPT_TYPES.includes(o.type) || o.type === currentType,
+  )
+  const typeLocked = readOnly || !!receiptId || !MANUAL_RECEIPT_TYPES.includes(currentType)
+  // Trường/cột hiển thị đổi theo loại phiếu (form MISA khác nhau giữa mua hàng và thành phẩm SX).
+  const variant = RECEIPT_VARIANT[currentType]
+
+  // Tổng tiền = Σ thành tiền; tổng SL cho dòng tổng cộng của bảng (như MISA).
   const totalAmount = lines?.reduce((s, l) => s + num(l.quantity) * num(l.unitPrice), 0) ?? 0
+  const totalQty = lines?.reduce((s, l) => s + num(l.quantity), 0) ?? 0
 
   const submit = (goNext: boolean) =>
     handleSubmit(async (values) => {
@@ -161,266 +188,373 @@ export function ReceiptForm({
           description: getApiErrorMessage(e),
         })
       }
-    }, invalidToast(toast)) // toast lỗi validate — tránh bấm Lưu không thấy phản hồi
+    }, invalidToast(toast)) // toast lỗi validate — tránh bấm Cất không thấy phản hồi
 
   const saving = create.isPending || update.isPending
+  const displayNo = editing.data?.voucherNo ?? nextNo.data ?? ''
 
   return (
-    <form className="flex h-full flex-col">
-      <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
-        {/* Vùng thông tin chung — nền primary nhạt liền khối với page header (2 lớp màu, đồng bộ cash) */}
-        <section className="space-y-3 bg-primary/5 px-6 pb-5 pt-2">
-        {/* Loại chứng từ */}
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-slate-500">Loại chứng từ</span>
-            <Select
-              value={currentType}
-              onValueChange={(v) => setValue('receiptType', v as InventoryReceiptType)}
-              disabled={readOnly}
-            >
-              <SelectTrigger className="h-9 w-72 bg-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RECEIPT_TYPE_OPTIONS.map((o) => (
-                  <SelectItem key={o.type} value={o.type}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-        </div>
+    <form className="flex h-screen flex-col bg-white">
+      {/* ── Page header (§5.2): tiêu đề + số phiếu · loại chứng từ · ✕ — nền primary nhạt (2 lớp màu) ── */}
+      <header className="flex h-14 shrink-0 items-center gap-3 bg-primary/5 px-4">
+        <h1 className="shrink-0 whitespace-nowrap text-lg font-bold text-slate-800">
+          Phiếu nhập kho <span className="text-primary">{displayNo}</span>
+        </h1>
+        <Select
+          value={currentType}
+          disabled={typeLocked}
+          onValueChange={(v) => setValue('receiptType', v as InventoryReceiptType)}
+        >
+          <SelectTrigger className="h-9 w-72 shrink-0 bg-white" title="Loại chứng từ">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {typeOptions.map((o) => (
+              <SelectItem key={o.type} value={o.type}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {/* Lập phiếu từ chứng từ nguồn (lệnh SX / phiếu xuất CN khác) — chưa hỗ trợ, giữ chỗ như MISA. */}
+        <input
+          disabled
+          placeholder={variant.sourcePlaceholder}
+          title={`${variant.sourcePlaceholder} — chưa hỗ trợ`}
+          className={cn(inputCls, 'w-80 shrink-0 disabled:bg-white disabled:text-slate-400')}
+        />
+        <button
+          type="button"
+          onClick={onCancel}
+          className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          aria-label="Đóng"
+        >
+          <XIcon size={18} />
+        </button>
+      </header>
 
-        {/* Thông tin chung */}
-        <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
-          <Field label="Mã đối tượng">
-            <PartnerPicker
-              value={watch('partnerId')}
-              items={partnerItems}
-              loading={partnerLoading}
-              keyword={partnerKw}
-              onKeywordChange={setPartnerKw}
-              onSelect={selectPartner}
-              onAddNew={() => setPartnerDialog(true)}
-            />
-          </Field>
-          <Field label="Tên đối tượng">
-            <input {...register('partnerName')} className={inputCls} />
-          </Field>
-          <Field label="Người giao hàng">
-            <input {...register('deliverer')} className={inputCls} />
-          </Field>
-          <Field label="Địa chỉ">
-            <input {...register('address')} className={inputCls} />
-          </Field>
-          <Field label="Diễn giải">
-            <input {...register('description')} className={inputCls} />
-          </Field>
-          <Field label="Tham chiếu">
-            <input {...register('reference')} className={inputCls} />
-          </Field>
-          <Field label="Số chứng từ">
-            <input
-              value={receiptId ? (editing.data?.voucherNo ?? '…') : (nextNo.data ?? 'Tự động')}
-              readOnly
-              title="Số dự kiến — cấp chính thức khi Lưu"
-              className={cn(inputCls, 'bg-slate-50 text-slate-500')}
-            />
-          </Field>
-          <Field label="Chi nhánh">
-            <input {...register('branchName')} className={inputCls} />
-          </Field>
-          <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
-            <input type="date" {...register('postingDate')} className={inputCls} />
-          </Field>
-          <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
-            <input type="date" {...register('voucherDate')} className={inputCls} />
-          </Field>
-          <Field label="Kèm theo (chứng từ gốc)">
-            <input type="number" min={0} {...register('attachmentCount')} className={inputCls} />
-          </Field>
-        </div>
+      <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
+        {/* ── Thông tin chung (§5.5) — lưới như MISA: đối tượng | diễn giải | ngày + số phiếu | tổng tiền ── */}
+        <section className="space-y-3 bg-primary/5 px-4 pb-4 pt-3">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-12">
+            {/* Hàng 1 */}
+            <Field label={variant.partnerLabel} className="md:col-span-3">
+              <PartnerPicker
+                value={watch('partnerId')}
+                items={partnerItems}
+                loading={partnerLoading}
+                keyword={partnerKw}
+                onKeywordChange={setPartnerKw}
+                placeholder={variant.partnerLabel}
+                disabled={readOnly}
+                onSelect={selectPartner}
+                onAddNew={readOnly ? undefined : () => setPartnerDialog(true)}
+              />
+            </Field>
+            <Field label={variant.partnerNameLabel} className="md:col-span-4">
+              <input {...register('partnerName')} className={inputCls} />
+            </Field>
+            <Field
+              label="Ngày hạch toán"
+              error={formState.errors.postingDate?.message}
+              className="md:col-span-3"
+            >
+              <input type="date" {...register('postingDate')} className={inputCls} />
+            </Field>
+            {/* Tổng tiền cỡ lớn cột ngoài cùng phải như MISA (chỉ hàng 1). */}
+            <div className="md:col-span-2 md:text-right">
+              <div className="text-xs text-slate-500">Tổng tiền</div>
+              <div className="text-2xl font-bold tabular-nums text-primary">
+                {formatCurrency(totalAmount)}
+              </div>
+            </div>
+
+            {/* Hàng 2 — Địa chỉ (rộng) + Ngày chứng từ. */}
+            <Field label="Địa chỉ" className="md:col-span-7">
+              <input {...register('address')} className={inputCls} />
+            </Field>
+            <Field
+              label="Ngày chứng từ"
+              error={formState.errors.voucherDate?.message}
+              className="md:col-span-3"
+            >
+              <input type="date" {...register('voucherDate')} className={inputCls} />
+            </Field>
+            <div className="hidden md:col-span-2 md:block" />
+
+            {/* Hàng 3 — Người giao hàng (nếu cụm đối tượng không phải người giao hàng) + Diễn giải. */}
+            {variant.showDeliverer && (
+              <Field label="Người giao hàng" className="md:col-span-3">
+                <input {...register('deliverer')} className={inputCls} />
+              </Field>
+            )}
+            <Field
+              label="Diễn giải"
+              className={variant.showDeliverer ? 'md:col-span-4' : 'md:col-span-7'}
+            >
+              <input {...register('description')} className={inputCls} />
+            </Field>
+            <Field label="Số chứng từ" className="md:col-span-3">
+              <input
+                value={displayNo || 'Tự động'}
+                readOnly
+                title="Số dự kiến — cấp chính thức khi Cất"
+                className={cn(inputCls, 'bg-slate-50 text-slate-500')}
+              />
+            </Field>
+            <div className="hidden md:col-span-2 md:block" />
+
+            {/* Hàng 4 — Kèm theo N chứng từ gốc + Tham chiếu cùng dòng như MISA. */}
+            <div className="flex flex-wrap items-end gap-3 md:col-span-7">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">Kèm theo</label>
+                <div className="flex items-center gap-2 text-sm">
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="Số lượng"
+                    {...register('attachmentCount')}
+                    className={cn(inputCls, 'w-28')}
+                  />
+                  <span className="text-slate-600">chứng từ gốc</span>
+                </div>
+              </div>
+              <Field label="Tham chiếu" className="min-w-[12rem] flex-1">
+                <input {...register('reference')} className={inputCls} />
+              </Field>
+            </div>
+            {variant.showBranch && (
+              <Field label="Chi nhánh" className="md:col-span-3">
+                <input {...register('branchName')} className={inputCls} />
+              </Field>
+            )}
+            <div className="hidden md:col-span-2 md:block" />
+          </div>
         </section>
 
-        {/* Lớp nền trắng: bảng hàng tiền + tổng hợp */}
-        <section className="space-y-4 px-6 py-5">
-        {/* Bảng hàng tiền */}
-        <div className="rounded-md border border-border">
-          <div className="flex items-center gap-2 border-b border-border bg-slate-50 px-2 py-1.5">
-            <span className="text-sm font-medium text-slate-600">Hàng tiền</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => append(emptyLine(currentType))}
-            >
-              <PlusIcon size={14} /> Thêm dòng
-            </Button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] border-collapse text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="w-8 px-2 py-1.5 text-center">#</th>
-                  <th className="px-2 py-1.5">Mã hàng</th>
-                  <th className="px-2 py-1.5">Tên hàng</th>
-                  <th className="px-2 py-1.5">Kho</th>
-                  <th className="w-20 px-2 py-1.5">TK Nợ</th>
-                  <th className="w-20 px-2 py-1.5">TK Có</th>
-                  <th className="w-16 px-2 py-1.5">ĐVT</th>
-                  <th className="w-20 px-2 py-1.5 text-right">SL</th>
-                  <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
-                  <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
-                  <th className="w-24 px-2 py-1.5">Số&nbsp;lô</th>
-                  <th className="w-32 px-2 py-1.5">Hạn sử&nbsp;dụng</th>
-                  <th className="w-8 px-2 py-1.5" />
-                </tr>
-              </thead>
-              <tbody>
-                {fields.map((f, i) => {
-                  const l = lines?.[i]
-                  const amount = (l?.quantity || 0) * (l?.unitPrice || 0)
-                  return (
-                    <tr key={f.id} className="border-t border-border">
-                      <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.itemId`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input
-                          {...register(`lines.${i}.itemName`)}
-                          className={cn(
-                            cellCls,
-                            formState.errors.lines?.[i]?.itemName &&
-                              'rounded ring-1 ring-inset ring-red-500',
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.warehouseId`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1">
-                        <Controller
-                          control={control}
-                          name={`lines.${i}.debitAccount`}
-                          render={({ field }) => (
-                            <AccountPicker
-                              value={field.value}
-                              onChange={field.onChange}
-                              inputClassName={accountCellCls}
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <Controller
-                          control={control}
-                          name={`lines.${i}.creditAccount`}
-                          render={({ field }) => (
-                            <AccountPicker
-                              value={field.value}
-                              onChange={field.onChange}
-                              inputClassName={accountCellCls}
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.unit`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input
-                          type="number"
-                          min={0}
-                          step="any"
-                          {...register(`lines.${i}.quantity`)}
-                          className={cn(cellCls, 'text-right')}
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <Controller
-                          control={control}
-                          name={`lines.${i}.unitPrice`}
-                          render={({ field }) => (
-                            <MoneyInput value={field.value} onChange={field.onChange} />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1 text-right tabular-nums text-slate-700">
-                        {formatCurrency(amount)}
-                      </td>
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.lotNo`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input type="date" {...register(`lines.${i}.expiryDate`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1 text-center">
-                        <button
-                          type="button"
-                          onClick={() => fields.length > 1 && remove(i)}
-                          className="text-slate-400 hover:text-red-600"
-                          aria-label="Xóa dòng"
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-              <tfoot className="bg-slate-100 font-medium">
-                <tr className="border-t border-border">
-                  <td className="px-2 py-1.5" colSpan={9}>
-                    Tổng cộng
-                  </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(totalAmount)}</td>
-                  <td colSpan={3} />
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
+        {/* ── Lớp nền trắng: bảng hàng tiền + nút dòng ── */}
+        <section className="space-y-4 px-4 py-3">
+          <div className="rounded-md border border-border">
+            <div className="flex items-center gap-2 border-b border-border bg-slate-50 px-3 py-1.5">
+              <span className="text-sm font-medium text-slate-600">Hàng tiền</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1080px] border-collapse text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="w-8 px-2 py-1.5 text-center">#</th>
+                    <th className="px-2 py-1.5">Mã hàng</th>
+                    <th className="px-2 py-1.5">Tên hàng</th>
+                    <th className="w-28 px-2 py-1.5">Kho</th>
+                    <th className="w-24 px-2 py-1.5">TK Nợ</th>
+                    <th className="w-24 px-2 py-1.5">TK Có</th>
+                    <th className="w-16 px-2 py-1.5">ĐVT</th>
+                    <th className="w-24 px-2 py-1.5 text-right">Số&nbsp;lượng</th>
+                    <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
+                    <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
+                    {variant.showLot && (
+                      <>
+                        <th className="w-24 px-2 py-1.5">Số&nbsp;lô</th>
+                        <th className="w-32 px-2 py-1.5">Hạn sử&nbsp;dụng</th>
+                      </>
+                    )}
+                    <th className="w-8 px-2 py-1.5" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {fields.map((f, i) => {
+                    const l = lines?.[i]
+                    const amount = num(l?.quantity) * num(l?.unitPrice)
+                    return (
+                      <tr key={f.id} className="border-t border-border">
+                        <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
+                        <td className="px-2 py-1">
+                          <ItemCell value={l?.itemId} onPick={(item) => pickItem(i, item)} />
+                        </td>
+                        <td className="px-2 py-1">
+                          <input
+                            {...register(`lines.${i}.itemName`)}
+                            className={cn(
+                              cellCls,
+                              formState.errors.lines?.[i]?.itemName &&
+                                'rounded ring-1 ring-inset ring-red-500',
+                            )}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Controller
+                            control={control}
+                            name={`lines.${i}.warehouseId`}
+                            render={({ field }) => (
+                              <WarehousePicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                inputClassName={warehouseCellCls}
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Controller
+                            control={control}
+                            name={`lines.${i}.debitAccount`}
+                            render={({ field }) => (
+                              <AccountPicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                inputClassName={accountCellCls}
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Controller
+                            control={control}
+                            name={`lines.${i}.creditAccount`}
+                            render={({ field }) => (
+                              <AccountPicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                inputClassName={accountCellCls}
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <input {...register(`lines.${i}.unit`)} className={cellCls} />
+                        </td>
+                        <td className="px-2 py-1">
+                          <input
+                            type="number"
+                            min={0}
+                            step="any"
+                            {...register(`lines.${i}.quantity`)}
+                            className={cn(cellCls, 'text-right')}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Controller
+                            control={control}
+                            name={`lines.${i}.unitPrice`}
+                            render={({ field }) => (
+                              <MoneyInput value={field.value} onChange={field.onChange} />
+                            )}
+                          />
+                        </td>
+                        <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                          {formatCurrency(amount)}
+                        </td>
+                        {variant.showLot && (
+                          <>
+                            <td className="px-2 py-1">
+                              <input {...register(`lines.${i}.lotNo`)} className={cellCls} />
+                            </td>
+                            <td className="px-2 py-1">
+                              <input
+                                type="date"
+                                {...register(`lines.${i}.expiryDate`)}
+                                className={cellCls}
+                              />
+                            </td>
+                          </>
+                        )}
+                        <td className="px-2 py-1 text-center">
+                          <button
+                            type="button"
+                            onClick={() => fields.length > 1 && remove(i)}
+                            className="text-slate-400 hover:text-red-600"
+                            aria-label="Xóa dòng"
+                          >
+                            <TrashIcon size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+                <tfoot className="bg-slate-100 font-medium">
+                  <tr className="border-t border-border">
+                    {/* #, Mã hàng, Tên hàng, Kho, TK Nợ, TK Có, ĐVT */}
+                    <td className="px-2 py-1.5" colSpan={7}>
+                      Tổng cộng
+                    </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">{totalQty}</td>
+                    {/* Đơn giá */}
+                    <td />
+                    <td className="px-2 py-1.5 text-right tabular-nums">
+                      {formatCurrency(totalAmount)}
+                    </td>
+                    {/* Số lô, Hạn sử dụng (nếu có) + cột xóa dòng */}
+                    <td colSpan={variant.showLot ? 3 : 1} />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
 
-        {/* Lỗi cấp mảng (thiếu dòng hàng thật) nằm ở root khi có thêm lỗi từng dòng. */}
-        {(() => {
-          const msg = formState.errors.lines?.message ?? formState.errors.lines?.root?.message
-          return typeof msg === 'string' ? <p className="text-sm text-red-600">{msg}</p> : null
-        })()}
+            {/* Nút dòng (§5.6) — như MISA: Thêm dòng · Thêm ghi chú · Xóa hết dòng */}
+            <div className="flex flex-wrap items-center gap-2 border-t border-border px-2 py-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append(emptyLine(currentType))}
+              >
+                <PlusIcon size={14} /> Thêm dòng
+              </Button>
+              {/* Ghi chú = dòng chỉ có Tên hàng, SL/đơn giá 0 → không đổi tổng tiền. */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({ ...emptyLine(currentType), quantity: 0, unitPrice: 0 })}
+              >
+                Thêm ghi chú
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => replace([emptyLine(currentType)])}
+              >
+                Xóa hết dòng
+              </Button>
+              <span className="ml-auto text-xs text-slate-500">
+                Tổng số: {fields.length} bản ghi
+              </span>
+            </div>
+          </div>
 
-        {/* Tổng hợp */}
-        <div className="ml-auto grid w-full max-w-sm grid-cols-2 gap-y-1.5 text-sm">
-          <span className="font-semibold text-slate-700">Tổng tiền</span>
-          <span className="text-right font-semibold tabular-nums text-primary">
-            {formatCurrency(totalAmount)}
-          </span>
-        </div>
+          {/* Lỗi cấp mảng (thiếu dòng hàng thật) nằm ở root khi có thêm lỗi từng dòng. */}
+          {(() => {
+            const msg = formState.errors.lines?.message ?? formState.errors.lines?.root?.message
+            return typeof msg === 'string' ? <p className="text-sm text-red-600">{msg}</p> : null
+          })()}
         </section>
       </fieldset>
 
-      {/* Nút hành động — footer cố định */}
-      <div className="flex shrink-0 justify-end gap-2 border-t border-border px-6 py-3">
-        {readOnly ? (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Đóng
-          </Button>
-        ) : (
-          <>
-            <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
-              Hủy
+      {/* ── Action bar (§5.7): nút hành động ── */}
+      <div className="flex shrink-0 items-center gap-3 border-t border-border px-4 py-2.5">
+        <div className="ml-auto flex gap-2">
+          {readOnly ? (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Đóng
             </Button>
-            <Button type="button" onClick={submit(false)} disabled={saving}>
-              {saving ? 'Đang lưu…' : 'Lưu'}
-            </Button>
-            {!receiptId && (
-              <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
-                Lưu và Thêm
+          ) : (
+            <>
+              <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+                Hủy
               </Button>
-            )}
-          </>
-        )}
+              {!receiptId && (
+                <Button type="button" variant="secondary" onClick={submit(true)} disabled={saving}>
+                  Cất và Thêm
+                </Button>
+              )}
+              <Button type="button" onClick={submit(false)} disabled={saving}>
+                {saving ? 'Đang cất…' : 'Cất'}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <QuickAddPartnerDialog
@@ -436,6 +570,25 @@ export function ReceiptForm({
   )
 }
 
+// Ô Mã hàng: combobox tra cứu VTHH, keyword riêng theo từng dòng.
+function ItemCell({ value, onPick }: { value?: string; onPick: (item: ItemOption) => void }) {
+  const [keyword, setKeyword] = useState('')
+  const { items, loading } = useItemOptions(keyword)
+  return (
+    <ItemPicker
+      value={value}
+      items={items}
+      loading={loading}
+      keyword={keyword}
+      onKeywordChange={setKeyword}
+      onSelect={onPick}
+      placeholder="Mã hàng"
+      inputClassName={cellCls}
+      allowFreeText
+    />
+  )
+}
+
 const inputCls =
   'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 const cellCls =
@@ -444,14 +597,16 @@ const cellCls =
 function Field({
   label,
   error,
+  className,
   children,
 }: {
   label: string
   error?: string
+  className?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-1">
+    <div className={cn('space-y-1', className)}>
       <label className="text-xs font-medium text-slate-500">{label}</label>
       {children}
       {error && <p className="text-xs text-red-600">{error}</p>}
