@@ -14,7 +14,7 @@ import {
   useImportReceipts,
   useSetReceiptPosted,
 } from '../api/useReceiptMutations'
-import { RECEIPT_TYPE_LABEL, RECEIPT_TYPE_OPTIONS } from '../types'
+import { RECEIPT_TYPE_LABEL } from '../types'
 import { ReceiptFilterPopover, type ReceiptFilterValue } from './ReceiptFilterPopover'
 
 const PAGE_SIZE = 20
@@ -35,8 +35,8 @@ export function ReceiptTable() {
   const confirm = useConfirm()
 
   // Điều hướng sang trang phiếu full-page (§5).
-  const openNew = (type: InventoryReceiptType) =>
-    navigate(`/inventory/receipts/new?type=${type}`)
+  // Loại phiếu (mua hàng / thành phẩm SX) chọn trong form → menu Thêm chỉ 1 mục.
+  const openNew = () => navigate('/inventory/receipts/new')
   const openView = (id: string) => navigate(`/inventory/receipts/${id}`)
   const openEdit = (id: string) => navigate(`/inventory/receipts/${id}/edit`)
   // Nhân bản: mở form tạo mới, điền sẵn dữ liệu phiếu nguồn (số chứng từ cấp lại khi Lưu).
@@ -127,10 +127,7 @@ export function ReceiptTable() {
 
         <div className="ml-auto flex items-center gap-2">
           <AddMenu
-            actions={RECEIPT_TYPE_OPTIONS.map((o) => ({
-              label: o.label,
-              onClick: () => openNew(o.type),
-            }))}
+            actions={[{ label: 'Phiếu nhập kho', onClick: openNew }]}
             onImportExcel={() => fileRef.current?.click()}
             importing={importXlsx.isPending}
           />

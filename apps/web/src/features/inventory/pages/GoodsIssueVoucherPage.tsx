@@ -1,6 +1,5 @@
 import { GoodsIssueCategory } from '@app/shared'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
 import { GoodsIssueForm } from '../components/GoodsIssueForm'
 
@@ -16,29 +15,16 @@ export function GoodsIssueVoucherPage({ mode }: { mode: Mode }) {
 
   const close = useNavigateBack('/inventory')
 
-  const title =
-    mode === 'new'
-      ? 'Phiếu xuất kho'
-      : mode === 'edit'
-        ? 'Sửa phiếu xuất kho'
-        : 'Xem phiếu xuất kho'
-
+  // Form tự dựng page header / action bar (§5 design.md) vì các control ở đó đọc-ghi
+  // trực tiếp state form (lý do xuất, số phiếu, tổng tiền) → không bọc RecordPageShell.
   return (
-    // Header nền primary nhạt liền khối với vùng thông tin chung của form (2 lớp màu, đồng bộ cash).
-    <RecordPageShell
-      title={title}
-      onClose={close}
-      headerClassName="border-b-0 bg-primary/5"
-      contentClassName="p-0"
-    >
-      <GoodsIssueForm
-        category={category}
-        voucherId={id ?? null}
-        duplicateFromId={duplicateFromId}
-        readOnly={mode === 'view'}
-        onSaved={close}
-        onCancel={close}
-      />
-    </RecordPageShell>
+    <GoodsIssueForm
+      category={category}
+      voucherId={id ?? null}
+      duplicateFromId={duplicateFromId}
+      readOnly={mode === 'view'}
+      onSaved={close}
+      onCancel={close}
+    />
   )
 }
