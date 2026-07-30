@@ -33,11 +33,11 @@ test.describe('Mua hàng', () => {
   })
 
   test('mua dịch vụ thanh toán ngay (PC tự sinh bên Tiền mặt)', async ({ page }) => {
-    await openNewPurchaseVoucher(page)
-
-    // Đổi loại nghiệp vụ sang Mua dịch vụ.
-    await page.locator('button[title="Loại nghiệp vụ"]').click()
-    await page.getByRole('option', { name: 'Mua dịch vụ' }).click()
+    // Mua dịch vụ là loại chứng từ riêng trong menu Thêm (không còn trong dropdown loại nghiệp vụ).
+    await page.goto('/purchase?tab=purchase')
+    await page.getByRole('button', { name: 'Thêm', exact: true }).click()
+    await page.getByRole('button', { name: 'Chứng từ mua dịch vụ', exact: true }).click()
+    await expect(page.getByRole('heading', { name: /Chứng từ mua dịch vụ/ })).toBeVisible()
 
     await page.locator('label', { hasText: 'Thanh toán ngay' }).locator('input[type=radio]').check()
 
@@ -47,7 +47,7 @@ test.describe('Mua hàng', () => {
     await expect(noInput).toHaveValue(/^PC/)
     const voucherNo = await noInput.inputValue()
 
-    await fillFirstItemLine(page, 'BOM 37', '1000000')
+    await fillFirstItemLine(page, 'BOM 37', '1000000', 'Mã dịch vụ')
     await page.getByRole('button', { name: 'Lưu và Đóng' }).click()
     await expect(page).toHaveURL(/\/purchase(?!\/vouchers)/)
 

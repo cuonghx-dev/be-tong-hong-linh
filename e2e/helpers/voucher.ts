@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { fillAccount } from './account'
 import { fieldInput } from './form'
 
 // Tạo phiếu thu/chi tiền mặt qua UI từ /cash?tab=txn. Trả về số chứng từ đã cấp.
@@ -23,7 +24,10 @@ export async function createCashVoucher(
   const voucherNo = await noInput.inputValue()
 
   await fieldInput(page, isReceipt ? 'Lý do nộp' : 'Lý do chi').fill(reason)
-  await page.locator('table tbody tr').first().getByPlaceholder('0').fill(amount)
+  const line = page.locator('table tbody tr').first()
+  // Phiếu chi loại "Chi khác" để trống TK Nợ (MISA cho tự nhập) → phải điền, zod đòi TK Nợ/Có.
+  if (!isReceipt) await fillAccount(page, line.locator('input').nth(1), '642')
+  await line.getByPlaceholder('0').fill(amount)
   await page.getByRole('button', { name: 'Lưu', exact: true }).click()
   await expect(page).toHaveURL(/\/cash(?!\/vouchers)/)
   return voucherNo
@@ -32,9 +36,15 @@ export async function createCashVoucher(
 // Điền dòng hàng đầu tiên của chứng từ mua/bán: chọn mã hàng + đơn giá.
 // ItemPicker query server (debounce) → phải CHỜ dropdown hiện row rồi click,
 // không dùng Enter (bắn trước khi kết quả về → chọn hụt).
-export async function fillFirstItemLine(page: Page, itemCode: string, unitPrice: string) {
+// itemPlaceholder: nhãn ô tra cứu đổi theo loại chứng từ (mua dịch vụ → "Mã dịch vụ").
+export async function fillFirstItemLine(
+  page: Page,
+  itemCode: string,
+  unitPrice: string,
+  itemPlaceholder = 'Mã hàng',
+) {
   const row = page.locator('table tbody tr').first()
-  const itemInput = row.getByPlaceholder('Mã hàng')
+  const itemInput = row.getByPlaceholder(itemPlaceholder)
   await itemInput.click()
   // Panel picker tự đóng khi có scroll (listener capture) — race không tránh được
   // bằng 1 lượt gõ. Retry: xóa keyword + gõ lại (ký tự đầu tự mở lại panel qua onChange),
@@ -53,7 +63,19 @@ export async function fillFirstItemLine(page: Page, itemCode: string, unitPrice:
   }
   // Tên hàng đã được điền = item pick thành công.
   await expect(row.locator('td').nth(2).locator('input')).not.toHaveValue('')
-  await row.getByPlaceholder('0').first().fill(unitPrice)
+  // Ô Đơn giá định vị THEO CỘT, không lấy placeholder "0" đầu dòng: bảng bán hàng
+  // có cột "CK thương mại" đứng trước Đơn giá → điền nhầm thành chiết khấu (tổng tiền âm).
+  // row = dòng đầu của bảng đầu tiên → header cùng bảng đó.
+  const headers = await page.locator('table').first().locator('thead th').allInnerTexts()
+  // innerText áp text-transform (header uppercase) → so không phân biệt hoa thường.
+  const priceIdx = headers.findIndex(
+    (h) => h.replace(/\s+/g, ' ').trim().toLowerCase() === 'đơn giá',
+  )
+  const priceCell =
+    priceIdx >= 0
+      ? row.locator('td').nth(priceIdx).locator('input')
+      : row.getByPlaceholder('0').first()
+  await priceCell.fill(unitPrice)
 }
 
 // Mở menu "Thao tác khác" của dòng chứa voucherNo rồi click 1 mục.

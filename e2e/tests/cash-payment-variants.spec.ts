@@ -1,11 +1,12 @@
-import { test, expect, type Page, type Locator } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
+import { fillAccount } from '../helpers/account'
 import { fieldInput } from '../helpers/form'
 
 // Form phiếu chi biến thể theo loại nghiệp vụ (theo form MISA):
 // - Định khoản mặc định từng loại (map @app/shared + override Chi khác trống)
 // - Trả lương tạm ứng: đối tượng là nhân viên (header + cột bảng Mã/Tên nhân viên)
 // - Gửi tiền vào NH: không có trường Nhân viên, cột TK ngân hàng
-// - Chi mua ngoài có hóa đơn: tab "Kê khai hóa đơn và hạch toán thuế" (dòng thuế 1331)
+// - Chi mua ngoài có hóa đơn: bảng "Kê khai hóa đơn và hạch toán thuế" (dòng thuế 1331)
 
 // Mở form phiếu chi mới (route trực tiếp — nhanh hơn đi qua AddMenu) + chọn loại nghiệp vụ.
 async function openPaymentForm(page: Page, category?: string) {
@@ -20,18 +21,10 @@ async function openPaymentForm(page: Page, category?: string) {
 
 // Ô TK Nợ / TK Có của dòng hạch toán đầu (input thứ 2/3 trong dòng, sau Diễn giải).
 const firstLine = (page: Page) => page.locator('table tbody tr').first()
+// Bảng thuế GTGT = bảng thứ 2 của form (Chi mua ngoài có hóa đơn); dòng đầu.
+const taxLine = (page: Page) => page.locator('table').nth(1).locator('tbody tr').first()
 const debitInput = (page: Page) => firstLine(page).locator('input').nth(1)
 const creditInput = (page: Page) => firstLine(page).locator('input').nth(2)
-
-// AccountPicker: gõ số TK, chờ panel lọc rồi Enter chọn dòng khớp đầu tiên
-// (Escape sẽ đóng panel mà KHÔNG chốt giá trị — phải Enter/blur).
-async function fillAccount(page: Page, input: Locator, accountNo: string) {
-  await input.click()
-  await input.pressSequentially(accountNo)
-  await page.waitForTimeout(300)
-  await page.keyboard.press('Enter')
-  await expect(input).toHaveValue(accountNo)
-}
 
 test.describe('Tiền mặt — form phiếu chi theo loại nghiệp vụ', () => {
   test('định khoản mặc định đúng theo từng loại nghiệp vụ', async ({ page }) => {
@@ -82,20 +75,20 @@ test.describe('Tiền mặt — form phiếu chi theo loại nghiệp vụ', () 
   test('chi mua ngoài có hóa đơn: kê khai thuế GTGT, tổng tiền gộp thuế', async ({ page }) => {
     await openPaymentForm(page, 'Chi mua ngoài có hóa đơn')
 
-    // Cột Khoản mục CP + 2 tab như MISA.
+    // Cột Khoản mục CP + bảng kê khai thuế (2 bảng cùng trang, không còn tab).
     await expect(page.getByRole('columnheader', { name: 'Khoản mục CP' })).toBeVisible()
-    const taxTab = page.getByRole('tab', { name: 'Kê khai hóa đơn và hạch toán thuế' })
-    await expect(taxTab).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Kê khai hóa đơn và hạch toán thuế' }),
+    ).toBeVisible()
 
     const voucherNo = await fieldInput(page, 'Số phiếu chi').inputValue()
     await fieldInput(page, 'Lý do chi').fill('Chi mua ngoài E2E')
     await fillAccount(page, debitInput(page), '642')
     await firstLine(page).getByPlaceholder('0').fill('1000000')
 
-    // Tab thuế: đổi thuế suất 10 → 8 tự gợi ý tiền thuế = 1.000.000 × 8% = 80.000.
-    await taxTab.click()
-    await firstLine(page).locator('input[type=number]').fill('8')
-    await expect(firstLine(page).getByPlaceholder('0').first()).toHaveValue('80.000')
+    // Bảng thuế: đổi thuế suất 10 → 8 tự gợi ý tiền thuế = 1.000.000 × 8% = 80.000.
+    await taxLine(page).locator('input[type=number]').fill('8')
+    await expect(taxLine(page).getByPlaceholder('0').first()).toHaveValue('80.000')
     await expect(page.getByText('1.080.000').first()).toBeVisible() // Tổng tiền = hàng + thuế
 
     await page.getByRole('button', { name: 'Lưu', exact: true }).click()
@@ -105,12 +98,11 @@ test.describe('Tiền mặt — form phiếu chi theo loại nghiệp vụ', () 
     const row = page.locator('tbody tr', { hasText: voucherNo })
     await expect(row).toContainText('1.080.000')
 
-    // Xem phiếu: dòng thuế nằm tab thuế, tab Hạch toán không lẫn TK 1331.
+    // Xem phiếu: dòng thuế nằm bảng thuế, bảng Hạch toán không lẫn TK 1331.
     await row.getByRole('button', { name: 'Xem' }).click()
     await expect(page.getByRole('heading', { name: /Xem phiếu chi/ })).toBeVisible()
-    await expect(page.locator('table tbody')).not.toContainText('1331')
-    await page.getByRole('tab', { name: 'Kê khai hóa đơn và hạch toán thuế' }).click()
-    await expect(firstLine(page).getByPlaceholder('0').first()).toHaveValue('80.000')
+    await expect(page.locator('table').first().locator('tbody')).not.toContainText('1331')
+    await expect(taxLine(page).getByPlaceholder('0').first()).toHaveValue('80.000')
     await expect(page.getByRole('columnheader', { name: 'Số hóa đơn' })).toBeVisible()
   })
 })

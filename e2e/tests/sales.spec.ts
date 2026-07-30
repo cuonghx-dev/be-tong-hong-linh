@@ -45,7 +45,7 @@ test.describe('Bán hàng', () => {
     const voucherNo = await noInput.inputValue()
 
     await fillFirstItemLine(page, 'BINHDAU', '500000')
-    await page.getByRole('button', { name: 'Lưu và Đóng' }).click()
+    await page.getByRole('button', { name: 'Cất', exact: true }).click()
     await expect(page).toHaveURL(/\/sales(?!\/vouchers)/)
 
     await page.goto('/sales?tab=sale')
@@ -68,7 +68,7 @@ test.describe('Bán hàng', () => {
 
     await pickOrCreateCustomer(page)
     await fillFirstItemLine(page, 'BINHDAU', '300000')
-    await page.getByRole('button', { name: 'Lưu và Đóng' }).click()
+    await page.getByRole('button', { name: 'Cất', exact: true }).click()
     await expect(page).toHaveURL(/\/sales(?!\/vouchers)/)
 
     await page.goto('/sales?tab=sale')
@@ -80,7 +80,8 @@ test.describe('Bán hàng', () => {
   })
 
   test('thu nợ khách hàng (đối trừ chứng từ)', async ({ page }) => {
-    await page.goto('/sales?tab=debt')
+    // Bảng công nợ liệt kê MỌI khách hàng (seed danh mục > 20 dòng/trang) → lọc theo mã.
+    await page.goto(`/sales?tab=debt&rq=${CUSTOMER.code}`)
     const row = page.locator('tbody tr', { hasText: CUSTOMER.name })
     await expect(row).toBeVisible()
     await row.getByRole('button', { name: 'Thu nợ' }).click()
