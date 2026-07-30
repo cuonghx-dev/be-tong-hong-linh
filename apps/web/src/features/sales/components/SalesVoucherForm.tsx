@@ -160,6 +160,8 @@ export function SalesVoucherForm({
     setValue('customerName', p.name)
     if (p.taxCode) setValue('taxCode', p.taxCode)
     if (p.address) setValue('address', p.address)
+    // Tự sinh Diễn giải theo khách hàng ("Bán hàng cho X") — như MISA, cùng pattern BankVoucherForm.
+    setValue('description', `Bán hàng cho ${p.name}`)
   }
 
   // Picker nhân viên bán hàng (+ tạo nhanh) — cùng pattern chứng từ thu/chi.

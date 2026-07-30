@@ -1,14 +1,17 @@
 import { InventoryReceiptType, type CreateInventoryReceiptInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
+import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
 import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
+import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
 import {
   Select,
   SelectContent,
@@ -79,6 +82,18 @@ export function ReceiptForm({
 
   // Preview số phiếu kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu (dãy NK chạy toàn cục).
   const nextNo = useNextReceiptNo(!receiptId)
+
+  // Picker đối tượng (+ tạo nhanh) — cùng pattern chứng từ thu/chi.
+  const [partnerKw, setPartnerKw] = useState('')
+  const { items: partnerItems, loading: partnerLoading } = usePartnerOptions(partnerKw)
+  const [partnerDialog, setPartnerDialog] = useState(false)
+  // Chọn đối tượng: điền header + tự sinh Diễn giải ("Nhập kho của X") — như MISA.
+  const selectPartner = (p: PartnerOption) => {
+    setValue('partnerId', p.code)
+    setValue('partnerName', p.name)
+    if (p.address) setValue('address', p.address)
+    setValue('description', `Nhập kho của ${p.name}`)
+  }
 
   // Nạp dữ liệu khi xem/sửa.
   useEffect(() => {
@@ -180,7 +195,15 @@ export function ReceiptForm({
         {/* Thông tin chung */}
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           <Field label="Mã đối tượng">
-            <input {...register('partnerId')} className={inputCls} />
+            <PartnerPicker
+              value={watch('partnerId')}
+              items={partnerItems}
+              loading={partnerLoading}
+              keyword={partnerKw}
+              onKeywordChange={setPartnerKw}
+              onSelect={selectPartner}
+              onAddNew={() => setPartnerDialog(true)}
+            />
           </Field>
           <Field label="Tên đối tượng">
             <input {...register('partnerName')} className={inputCls} />
@@ -398,6 +421,16 @@ export function ReceiptForm({
           </>
         )}
       </div>
+
+      <QuickAddPartnerDialog
+        open={partnerDialog}
+        onClose={() => setPartnerDialog(false)}
+        initialCode={partnerKw.trim() || undefined}
+        onCreated={(p) => {
+          setPartnerKw('')
+          selectPartner(p)
+        }}
+      />
     </form>
   )
 }

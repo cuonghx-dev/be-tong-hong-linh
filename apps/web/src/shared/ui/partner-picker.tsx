@@ -30,6 +30,8 @@ interface Props {
   placeholder?: string
   disabled?: boolean
   className?: string
+  // Đè class của ô input — dùng khi đặt picker trong cell bảng (h-8) thay vì field header (h-9).
+  inputClassName?: string
 }
 
 // Combobox tra cứu đối tượng: input mã + dropdown bảng (Mã/Tên/MST/Địa chỉ/ĐT/Loại).
@@ -45,6 +47,7 @@ export function PartnerPicker({
   placeholder = 'Mã đối tượng',
   disabled,
   className,
+  inputClassName,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
@@ -114,7 +117,10 @@ export function PartnerPicker({
             if (!open) openPanel()
             onKeywordChange(e.target.value)
           }}
-          className="h-9 w-full rounded-md border border-border pr-7 pl-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-slate-50"
+          className={cn(
+            'h-9 w-full rounded-md border border-border pr-7 pl-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-slate-50',
+            inputClassName,
+          )}
         />
         <ChevronDownIcon
           size={14}

@@ -117,6 +117,8 @@ export function GoodsIssueForm({
     setValue('customerId', p.code)
     setValue('customerName', p.name)
     if (p.address) setValue('address', p.address)
+    // Tự sinh Lý do xuất theo khách hàng ("Xuất kho bán hàng cho X") — như MISA, cùng pattern BankVoucherForm.
+    setValue('description', `${GOODS_ISSUE_CATEGORY_LABEL[watch('category')]} cho ${p.name}`)
   }
 
   // Nạp dữ liệu khi sửa hoặc nhân bản.

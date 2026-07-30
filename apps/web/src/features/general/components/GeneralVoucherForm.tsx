@@ -1,13 +1,16 @@
 import { type CreateGeneralVoucherInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { invalidToast } from '@/shared/lib/form'
 import { formatCurrency } from '@/shared/lib/currency'
+import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
 import { AccountPicker, accountCellCls } from '@/shared/ui/account-picker'
 import { Button } from '@/shared/ui/button'
 import { PlusIcon } from '@/shared/ui/icons'
+import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
+import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { useGeneralVoucher, useNextGeneralVoucherNo } from '../api/useGeneralVouchers'
@@ -67,8 +70,18 @@ export function GeneralVoucherForm({
     resolver: zodResolver(generalVoucherSchema),
     defaultValues: defaultValues(),
   })
-  const { control, register, handleSubmit, reset, watch, formState } = form
+  const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+
+  // Picker đối tượng theo dòng (+ tạo nhanh) — NVK chọn đối tượng ở từng dòng hạch toán.
+  const [partnerKw, setPartnerKw] = useState('')
+  const { items: partnerItems, loading: partnerLoading } = usePartnerOptions(partnerKw)
+  // Dialog tạo nhanh gắn với dòng đang thao tác (null = đóng).
+  const [partnerDialogLine, setPartnerDialogLine] = useState<number | null>(null)
+  const selectLinePartner = (i: number, p: PartnerOption) => {
+    setValue(`lines.${i}.partnerId`, p.code)
+    setValue(`lines.${i}.partnerName`, p.name)
+  }
 
   // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
   const nextNo = useNextGeneralVoucherNo(watch('voucherDate'), !voucherId)
@@ -250,7 +263,16 @@ export function GeneralVoucherForm({
                       />
                     </td>
                     <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.partnerId`)} className={cellCls} />
+                      <PartnerPicker
+                        value={lines?.[i]?.partnerId}
+                        items={partnerItems}
+                        loading={partnerLoading}
+                        keyword={partnerKw}
+                        onKeywordChange={setPartnerKw}
+                        onSelect={(p) => selectLinePartner(i, p)}
+                        onAddNew={() => setPartnerDialogLine(i)}
+                        inputClassName="h-8"
+                      />
                     </td>
                     <td className="px-2 py-1">
                       <input {...register(`lines.${i}.partnerName`)} className={cellCls} />
@@ -321,6 +343,16 @@ export function GeneralVoucherForm({
           </div>
         )}
       </div>
+
+      <QuickAddPartnerDialog
+        open={partnerDialogLine !== null}
+        onClose={() => setPartnerDialogLine(null)}
+        initialCode={partnerKw.trim() || undefined}
+        onCreated={(p) => {
+          setPartnerKw('')
+          if (partnerDialogLine !== null) selectLinePartner(partnerDialogLine, p)
+        }}
+      />
     </form>
   )
 }
