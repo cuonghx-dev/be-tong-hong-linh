@@ -543,6 +543,13 @@ enum SalesPaymentMode {
   PAID_NOW
 }
 
+// Hình thức thanh toán ghi trên hóa đơn (tab Hóa đơn — MISA): TM / CK / TM/CK.
+enum InvoicePaymentForm {
+  CASH
+  TRANSFER
+  CASH_OR_TRANSFER
+}
+
 // Loại đối tượng khách hàng (§8): Tổ chức / Cá nhân.
 enum CustomerType {
   ORG
@@ -611,6 +618,20 @@ model SalesVoucher {
   totalAmount        Decimal             @default(0) @map("total_amount") @db.Decimal(18, 2)
   einvoiceLookupCode String?             @map("einvoice_lookup_code")
   einvoiceLookupUrl  String?             @map("einvoice_lookup_url")
+  // Thông tin hóa đơn lập kèm (tab Hóa đơn — MISA). Mẫu số/ký hiệu do hệ thống
+  // HĐĐT cấp khi phát hành nên FE chỉ đọc; các trường còn lại nhập tay.
+  // Lý do xuất ghi trên phiếu xuất kho tự sinh (tab Phiếu xuất); trống → tự sinh theo KH + số CT.
+  issueReason        String?             @map("issue_reason")
+  invoiceForm        String?             @map("invoice_form")
+  invoiceSerial      String?             @map("invoice_serial")
+  invoiceDate        DateTime?           @map("invoice_date") @db.Date
+  buyerName          String?             @map("buyer_name")
+  invoicePaymentForm InvoicePaymentForm? @map("invoice_payment_form")
+  bankAccountNo      String?             @map("bank_account_no")
+  phone              String?
+  budgetRelationCode String?             @map("budget_relation_code")
+  idCardNo           String?             @map("id_card_no")
+  passportNo         String?             @map("passport_no")
   receiptId          String?             @map("receipt_id")
   // Chứng từ tự sinh khi kiêm phiếu xuất (tham chiếu lỏng, không FK).
   issueId            String?             @map("issue_id")
@@ -652,6 +673,13 @@ model SalesVoucherLine {
   vatAmount      Decimal      @default(0) @map("vat_amount") @db.Decimal(18, 2)
   vatAccount     String       @map("vat_account")
   lotNo          String?      @map("lot_no")
+  // Tab Giá vốn (§3): kho xuất + TK giá vốn/TK kho + đơn giá vốn. Ngầm định lấy theo
+  // dữ liệu VTHH khi chọn mã hàng, sửa được trên form; phiếu xuất kho tự sinh dùng
+  // đúng các giá trị này (fallback về dữ liệu VTHH nếu để trống).
+  warehouseId      String?    @map("warehouse_id")
+  costAccount      String?    @map("cost_account")
+  inventoryAccount String?    @map("inventory_account")
+  costPrice        Decimal    @default(0) @map("cost_price") @db.Decimal(18, 2)
 
   // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
   @@unique([voucherId, lineNo])

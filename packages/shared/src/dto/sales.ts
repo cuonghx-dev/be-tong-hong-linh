@@ -1,6 +1,7 @@
 // Type request/response phân hệ Bán hàng (04-ban-hang) — dùng chung FE ↔ BE.
 import type {
   CustomerType,
+  InvoicePaymentForm,
   PaymentMethod,
   ReceivableAging,
   ReceivableStatus,
@@ -30,6 +31,11 @@ export interface SalesVoucherLineDto {
   vatAmount: string // Tiền thuế GTGT
   vatAccount: string // TK thuế GTGT 33311 (Có)
   lotNo: string | null // Số lô
+  // ── Tab Giá vốn ──
+  warehouseId: string | null // Kho xuất
+  costAccount: string | null // TK giá vốn (632)
+  inventoryAccount: string | null // TK kho (156)
+  costPrice: string // Đơn giá vốn (Decimal → string)
 }
 
 // Chứng từ bán hàng (ghi nhận doanh thu).
@@ -60,6 +66,18 @@ export interface SalesVoucherDto {
   totalAmount: string // Tổng tiền thanh toán
   einvoiceLookupCode: string | null // Mã tra cứu HĐĐT
   einvoiceLookupUrl: string | null // Đường dẫn tra cứu HĐĐT
+  issueReason: string | null // Lý do xuất (tab Phiếu xuất)
+  // ── Tab Hóa đơn (§3) ──
+  invoiceForm: string | null // Mẫu số HĐ
+  invoiceSerial: string | null // Ký hiệu HĐ
+  invoiceDate: string | null // Ngày HĐ (ISO date-only)
+  buyerName: string | null // Người mua hàng
+  invoicePaymentForm: InvoicePaymentForm | null // Hình thức thanh toán trên HĐ
+  bankAccountNo: string | null // Tài khoản ngân hàng ghi trên HĐ
+  phone: string | null // Điện thoại người mua
+  budgetRelationCode: string | null // Mã số ĐVQHNS
+  idCardNo: string | null // Số CCCD
+  passportNo: string | null // Số hộ chiếu
   receiptId: string | null // Phiếu thu (thu ngay TM)
   receiptNo?: string | null // Số phiếu thu tự sinh (chỉ trả ở API chi tiết)
   issueId: string | null // Phiếu xuất kho (kiêm phiếu xuất)
@@ -86,6 +104,11 @@ export interface CreateSalesVoucherLineInput {
   vatRate?: number
   vatAccount?: string | null
   lotNo?: string | null
+  // Tab Giá vốn — để trống thì backend lấy theo dữ liệu ngầm định của VTHH.
+  warehouseId?: string | null
+  costAccount?: string | null
+  inventoryAccount?: string | null
+  costPrice?: number
 }
 
 // Payload tạo chứng từ bán hàng.
@@ -111,6 +134,18 @@ export interface CreateSalesVoucherInput {
   dueDate?: string | null
   einvoiceLookupCode?: string | null
   einvoiceLookupUrl?: string | null
+  issueReason?: string | null // Lý do xuất — trống thì backend tự sinh
+  // ── Tab Hóa đơn (§3) ──
+  invoiceForm?: string | null
+  invoiceSerial?: string | null
+  invoiceDate?: string | null
+  buyerName?: string | null
+  invoicePaymentForm?: InvoicePaymentForm | null
+  bankAccountNo?: string | null
+  phone?: string | null
+  budgetRelationCode?: string | null
+  idCardNo?: string | null
+  passportNo?: string | null
   branchId?: string | null
   lines: CreateSalesVoucherLineInput[]
 }

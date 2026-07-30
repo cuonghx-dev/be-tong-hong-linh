@@ -1,11 +1,6 @@
 import { CHART_OF_ACCOUNTS, SalesPaymentStatus, type Paginated } from '@app/shared'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import {
-  Prisma,
-  SalesPaymentMode,
-  type SalesVoucher,
-  type SalesVoucherLine,
-} from '@prisma/client'
+import { Prisma, SalesPaymentMode, type SalesVoucher, type SalesVoucherLine } from '@prisma/client'
 import { randomUUID } from 'crypto'
 import { PrismaService } from '../../database/prisma.service'
 import { buildPartnerLookup } from '../../database/partner-lookup'
@@ -119,7 +114,10 @@ export class SalesService {
       receiver: v.contactPerson ?? v.customerName,
       address: v.address,
       salesEmployeeId: v.salesEmployeeId,
-      description: `Xuất kho bán hàng${v.customerName ? ` ${v.customerName}` : ''} theo chứng từ ${v.voucherNo}`,
+      // Lý do xuất người dùng nhập ở tab Phiếu xuất; trống → tự sinh theo KH + số CT.
+      description:
+        v.issueReason?.trim() ||
+        `Xuất kho bán hàng${v.customerName ? ` ${v.customerName}` : ''} theo chứng từ ${v.voucherNo}`,
       posted: v.posted,
       lines: v.lines.map((l) => {
         const p =
@@ -128,12 +126,13 @@ export class SalesService {
         return {
           itemId: p?.id ?? l.itemId,
           itemName: l.itemName ?? p?.name ?? null,
-          warehouseId: p?.defaultWarehouseCode ?? null,
-          debitAccount: p?.costAccount ?? null,
-          creditAccount: p?.inventoryAccount ?? null,
+          // Ưu tiên giá trị nhập ở tab Giá vốn; trống → dữ liệu ngầm định của VTHH.
+          warehouseId: l.warehouseId ?? p?.defaultWarehouseCode ?? null,
+          debitAccount: l.costAccount ?? p?.costAccount ?? null,
+          creditAccount: l.inventoryAccount ?? p?.inventoryAccount ?? null,
           unit: l.unit ?? p?.unit ?? null,
           quantity: l.quantity,
-          unitPrice: p?.purchasePrice ?? new Prisma.Decimal(0),
+          unitPrice: l.costPrice.gt(0) ? l.costPrice : (p?.purchasePrice ?? new Prisma.Decimal(0)),
           lotNo: l.lotNo,
         }
       }),
@@ -159,7 +158,9 @@ export class SalesService {
     customerId?: string | null,
   ): Promise<string | null> {
     if (!customerId) return null
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(customerId)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      customerId,
+    )
     const customer = await tx.customer.findUnique({
       where: isUuid ? { id: customerId } : { code: customerId },
     })
@@ -206,6 +207,18 @@ export class SalesService {
           dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
           einvoiceLookupCode: dto.einvoiceLookupCode ?? null,
           einvoiceLookupUrl: dto.einvoiceLookupUrl ?? null,
+          issueReason: dto.issueReason ?? null,
+          // Tab Hóa đơn: người mua ngầm định là tên KH (như MISA).
+          invoiceForm: dto.invoiceForm ?? null,
+          invoiceSerial: dto.invoiceSerial ?? null,
+          invoiceDate: dto.invoiceDate ? new Date(dto.invoiceDate) : null,
+          buyerName: dto.buyerName ?? null,
+          invoicePaymentForm: dto.invoicePaymentForm ?? null,
+          bankAccountNo: dto.bankAccountNo ?? null,
+          phone: dto.phone ?? null,
+          budgetRelationCode: dto.budgetRelationCode ?? null,
+          idCardNo: dto.idCardNo ?? null,
+          passportNo: dto.passportNo ?? null,
           branchId: dto.branchId ?? null,
           ...totals,
           lines: { create: lines },
@@ -266,6 +279,17 @@ export class SalesService {
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         einvoiceLookupCode: dto.einvoiceLookupCode ?? undefined,
         einvoiceLookupUrl: dto.einvoiceLookupUrl ?? undefined,
+        issueReason: dto.issueReason ?? undefined,
+        invoiceForm: dto.invoiceForm ?? undefined,
+        invoiceSerial: dto.invoiceSerial ?? undefined,
+        invoiceDate: dto.invoiceDate ? new Date(dto.invoiceDate) : undefined,
+        buyerName: dto.buyerName ?? undefined,
+        invoicePaymentForm: dto.invoicePaymentForm ?? undefined,
+        bankAccountNo: dto.bankAccountNo ?? undefined,
+        phone: dto.phone ?? undefined,
+        budgetRelationCode: dto.budgetRelationCode ?? undefined,
+        idCardNo: dto.idCardNo ?? undefined,
+        passportNo: dto.passportNo ?? undefined,
         branchId: dto.branchId ?? undefined,
       }
       if (dto.customerId !== undefined) {
@@ -434,7 +458,11 @@ export class SalesService {
       await this.prisma.salesVoucherLine.createMany({ data: lines.slice(i, i + chunk) })
     }
 
-    return { total: parsed.length, created: vouchers.length, skipped: parsed.length - vouchers.length }
+    return {
+      total: parsed.length,
+      created: vouchers.length,
+      skipped: parsed.length - vouchers.length,
+    }
   }
 }
 
@@ -523,6 +551,12 @@ function normalizeLines(ctx: NormalizeCtx, lines: CreateSalesVoucherLineDto[]) {
       vatAmount,
       vatAccount: line.vatAccount || CHART_OF_ACCOUNTS.VAT_OUTPUT_DETAIL,
       lotNo: line.lotNo ?? null,
+      // Tab Giá vốn: giữ nguyên giá trị người dùng nhập; rỗng → null để phiếu xuất
+      // kho tự sinh fallback về dữ liệu ngầm định của VTHH.
+      warehouseId: line.warehouseId || null,
+      costAccount: line.costAccount || null,
+      inventoryAccount: line.inventoryAccount || null,
+      costPrice: new Prisma.Decimal(line.costPrice ?? 0),
     }
   })
 }
@@ -560,7 +594,10 @@ function toDateOnly(d: Date): string {
 
 // TT thanh toán (cột MISA): thu ngay = đã thanh toán; chưa thu = so tổng đối trừ
 // đã ghi sổ với tổng tiền chứng từ.
-function paymentInfo(v: VoucherWithRelations): { paidAmount: Prisma.Decimal; paymentStatus: SalesPaymentStatus } {
+function paymentInfo(v: VoucherWithRelations): {
+  paidAmount: Prisma.Decimal
+  paymentStatus: SalesPaymentStatus
+} {
   if (v.paymentMode === SalesPaymentMode.PAID_NOW) {
     return { paidAmount: v.totalAmount, paymentStatus: SalesPaymentStatus.Paid }
   }
@@ -604,6 +641,17 @@ function toVoucherDto(v: VoucherWithRelations) {
     totalAmount: v.totalAmount.toString(),
     einvoiceLookupCode: v.einvoiceLookupCode,
     einvoiceLookupUrl: v.einvoiceLookupUrl,
+    issueReason: v.issueReason,
+    invoiceForm: v.invoiceForm,
+    invoiceSerial: v.invoiceSerial,
+    invoiceDate: v.invoiceDate ? toDateOnly(v.invoiceDate) : null,
+    buyerName: v.buyerName,
+    invoicePaymentForm: v.invoicePaymentForm,
+    bankAccountNo: v.bankAccountNo,
+    phone: v.phone,
+    budgetRelationCode: v.budgetRelationCode,
+    idCardNo: v.idCardNo,
+    passportNo: v.passportNo,
     receiptId: v.receiptId,
     issueId: v.issueId,
     posted: v.posted,
@@ -624,6 +672,10 @@ function toVoucherDto(v: VoucherWithRelations) {
       vatAmount: l.vatAmount.toString(),
       vatAccount: l.vatAccount,
       lotNo: l.lotNo,
+      warehouseId: l.warehouseId,
+      costAccount: l.costAccount,
+      inventoryAccount: l.inventoryAccount,
+      costPrice: l.costPrice.toString(),
     })),
     createdAt: v.createdAt.toISOString(),
     updatedAt: v.updatedAt.toISOString(),

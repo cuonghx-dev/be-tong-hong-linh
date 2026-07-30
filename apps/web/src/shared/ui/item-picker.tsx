@@ -10,6 +10,7 @@ export interface ItemOption {
   // Dữ liệu ngầm định của VTHH — form chứng từ dùng để tự điền dòng hàng.
   defaultWarehouseCode?: string | null // Kho ngầm định
   inventoryAccount?: string | null // TK Kho
+  costAccount?: string | null // TK chi phí / giá vốn
   purchasePrice?: string | null // Đơn giá mua gần nhất (Decimal → string)
   salePrice?: string | null // Đơn giá bán 1 (Decimal → string)
   vatRate?: string | null // Thuế suất GTGT ("10"/"8"/"KCT"/…)

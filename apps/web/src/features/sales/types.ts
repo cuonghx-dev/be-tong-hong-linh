@@ -1,5 +1,6 @@
 import {
   CustomerType,
+  InvoicePaymentForm,
   PaymentMethod,
   ReceivableAging,
   ReceivableStatus,
@@ -17,6 +18,13 @@ export const VOUCHER_TYPE_LABEL: Record<SalesVoucherType, string> = {
 export const PAYMENT_MODE_LABEL: Record<SalesPaymentMode, string> = {
   [SalesPaymentMode.Unpaid]: 'Chưa thu tiền',
   [SalesPaymentMode.PaidNow]: 'Thu tiền mặt ngay',
+}
+
+// Nhãn hình thức thanh toán ghi trên hóa đơn (tab Hóa đơn — MISA).
+export const INVOICE_PAYMENT_FORM_LABEL: Record<InvoicePaymentForm, string> = {
+  [InvoicePaymentForm.CashOrTransfer]: 'TM/CK',
+  [InvoicePaymentForm.Cash]: 'TM',
+  [InvoicePaymentForm.Transfer]: 'CK',
 }
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {

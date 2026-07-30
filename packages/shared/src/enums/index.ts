@@ -120,6 +120,13 @@ export enum SalesPaymentMode {
   PaidNow = 'PAID_NOW', // Thu tiền mặt ngay → Nợ 1111, sinh phiếu thu
 }
 
+// Hình thức thanh toán ghi trên hóa đơn (tab Hóa đơn §3) — MISA mặc định TM/CK.
+export enum InvoicePaymentForm {
+  Cash = 'CASH', // TM
+  Transfer = 'TRANSFER', // CK
+  CashOrTransfer = 'CASH_OR_TRANSFER', // TM/CK
+}
+
 // Trạng thái thanh toán chứng từ bán hàng (cột "TT thanh toán" MISA) — tính từ
 // đối trừ thu tiền: thu ngay = Đã TT; chưa thu = so tổng phân bổ với tổng tiền.
 export enum SalesPaymentStatus {

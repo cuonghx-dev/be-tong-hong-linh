@@ -1,4 +1,4 @@
-import { SalesPaymentMode, SalesVoucherType } from '@app/shared'
+import { InvoicePaymentForm, SalesPaymentMode, SalesVoucherType } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
@@ -76,6 +76,28 @@ export class CreateSalesVoucherLineDto {
   @IsOptional()
   @IsString()
   lotNo?: string
+
+  // ── Tab Giá vốn (§3): để trống → lấy theo dữ liệu ngầm định của VTHH.
+  @ApiPropertyOptional({ description: 'Kho xuất' })
+  @IsOptional()
+  @IsString()
+  warehouseId?: string
+
+  @ApiPropertyOptional({ description: 'TK giá vốn (mặc định 632)' })
+  @IsOptional()
+  @IsString()
+  costAccount?: string
+
+  @ApiPropertyOptional({ description: 'TK kho (mặc định 156)' })
+  @IsOptional()
+  @IsString()
+  inventoryAccount?: string
+
+  @ApiPropertyOptional({ description: 'Đơn giá vốn' })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  costPrice?: number
 }
 
 export class CreateSalesVoucherDto {
@@ -181,6 +203,62 @@ export class CreateSalesVoucherDto {
   @IsOptional()
   @IsString()
   einvoiceLookupUrl?: string
+
+  @ApiPropertyOptional({ description: 'Lý do xuất (phiếu xuất kho tự sinh)' })
+  @IsOptional()
+  @IsString()
+  issueReason?: string
+
+  // ── Tab Hóa đơn (§3) ──
+  @ApiPropertyOptional({ description: 'Mẫu số hóa đơn' })
+  @IsOptional()
+  @IsString()
+  invoiceForm?: string
+
+  @ApiPropertyOptional({ description: 'Ký hiệu hóa đơn' })
+  @IsOptional()
+  @IsString()
+  invoiceSerial?: string
+
+  @ApiPropertyOptional({ description: 'Ngày hóa đơn (ISO)' })
+  @IsOptional()
+  @IsDateString()
+  invoiceDate?: string
+
+  @ApiPropertyOptional({ description: 'Người mua hàng' })
+  @IsOptional()
+  @IsString()
+  buyerName?: string
+
+  @ApiPropertyOptional({ enum: InvoicePaymentForm, description: 'Hình thức thanh toán trên HĐ' })
+  @IsOptional()
+  @IsEnum(InvoicePaymentForm)
+  invoicePaymentForm?: InvoicePaymentForm
+
+  @ApiPropertyOptional({ description: 'Tài khoản ngân hàng ghi trên HĐ' })
+  @IsOptional()
+  @IsString()
+  bankAccountNo?: string
+
+  @ApiPropertyOptional({ description: 'Điện thoại người mua' })
+  @IsOptional()
+  @IsString()
+  phone?: string
+
+  @ApiPropertyOptional({ description: 'Mã số ĐVQHNS' })
+  @IsOptional()
+  @IsString()
+  budgetRelationCode?: string
+
+  @ApiPropertyOptional({ description: 'Số CCCD' })
+  @IsOptional()
+  @IsString()
+  idCardNo?: string
+
+  @ApiPropertyOptional({ description: 'Số hộ chiếu' })
+  @IsOptional()
+  @IsString()
+  passportNo?: string
 
   @ApiPropertyOptional()
   @IsOptional()

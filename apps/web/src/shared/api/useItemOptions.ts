@@ -11,18 +11,17 @@ export function useItemOptions(keyword: string) {
 
   const items = useMemo<ItemOption[]>(
     () =>
-      (products.data?.data ?? []).map(
-        (p): ItemOption => ({
-          code: p.code,
-          name: p.name,
-          unit: p.unit,
-          defaultWarehouseCode: p.defaultWarehouseCode,
-          inventoryAccount: p.inventoryAccount,
-          purchasePrice: p.purchasePrice,
-          salePrice: p.salePrice,
-          vatRate: p.vatRate,
-        }),
-      ),
+      (products.data?.data ?? []).map((p): ItemOption => ({
+        code: p.code,
+        name: p.name,
+        unit: p.unit,
+        defaultWarehouseCode: p.defaultWarehouseCode,
+        inventoryAccount: p.inventoryAccount,
+        costAccount: p.costAccount,
+        purchasePrice: p.purchasePrice,
+        salePrice: p.salePrice,
+        vatRate: p.vatRate,
+      })),
     [products.data],
   )
 

@@ -1,4 +1,4 @@
-import { CustomerType, SalesPaymentMode, SalesVoucherType } from '@app/shared'
+import { CustomerType, InvoicePaymentForm, SalesPaymentMode, SalesVoucherType } from '@app/shared'
 import { z } from 'zod'
 
 // Dòng hàng tiền chứng từ bán hàng. Dòng ghi chú (SL 0) được để trống tên;
@@ -16,6 +16,11 @@ export const salesLineSchema = z
     debtAccount: z.string().optional(),
     revenueAccount: z.string().optional(),
     vatAccount: z.string().optional(),
+    // Tab Giá vốn — kho xuất + TK giá vốn/TK kho + đơn giá vốn.
+    warehouseId: z.string().optional(),
+    costAccount: z.string().optional(),
+    inventoryAccount: z.string().optional(),
+    costPrice: z.coerce.number().min(0).optional(),
   })
   .superRefine((l, ctx) => {
     if (l.quantity > 0 && !l.itemName?.trim()) {
@@ -42,6 +47,19 @@ export const salesVoucherSchema = z.object({
   paymentTermId: z.string().optional(),
   creditDays: z.coerce.number().int().min(0).optional(),
   dueDate: z.string().optional(),
+  // Tab Phiếu xuất — lý do xuất (trống thì backend tự sinh theo KH + số CT).
+  issueReason: z.string().optional(),
+  // Tab Hóa đơn (§3).
+  invoiceForm: z.string().optional(),
+  invoiceSerial: z.string().optional(),
+  invoiceDate: z.string().optional(),
+  buyerName: z.string().optional(),
+  invoicePaymentForm: z.nativeEnum(InvoicePaymentForm).optional(),
+  bankAccountNo: z.string().optional(),
+  phone: z.string().optional(),
+  budgetRelationCode: z.string().optional(),
+  idCardNo: z.string().optional(),
+  passportNo: z.string().optional(),
   lines: z
     .array(salesLineSchema)
     .min(1, 'Cần ít nhất 1 dòng hàng')
