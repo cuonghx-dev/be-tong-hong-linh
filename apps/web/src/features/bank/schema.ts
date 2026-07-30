@@ -32,7 +32,6 @@ export const bankVoucherSchema = z
     address: z.string().optional(),
     employeeId: z.string().optional(),
     reason: z.string().optional(),
-    reference: z.string().optional(),
     attachmentCount: z.coerce.number().int().min(0).optional(),
     branchId: z.string().optional(),
     lines: z.array(bankLineSchema).min(1, 'Cần ít nhất 1 dòng hạch toán'),

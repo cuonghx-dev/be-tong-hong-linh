@@ -126,7 +126,6 @@ export function ReceiptForm({
       address: v.address ?? undefined,
       deliverer: v.deliverer ?? undefined,
       description: v.description ?? undefined,
-      reference: v.reference ?? undefined,
       attachmentCount: v.attachmentCount,
       branchName: v.branchName ?? undefined,
       lines: v.lines.map((l) => ({
@@ -304,7 +303,7 @@ export function ReceiptForm({
             </Field>
             <div className="hidden md:col-span-2 md:block" />
 
-            {/* Hàng 4 — Kèm theo N chứng từ gốc + Tham chiếu cùng dòng như MISA. */}
+            {/* Hàng 4 — Kèm theo N chứng từ gốc. */}
             <div className="flex flex-wrap items-end gap-3 md:col-span-7">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-500">Kèm theo</label>
@@ -319,9 +318,6 @@ export function ReceiptForm({
                   <span className="text-slate-600">chứng từ gốc</span>
                 </div>
               </div>
-              <Field label="Tham chiếu" className="min-w-[12rem] flex-1">
-                <input {...register('reference')} className={inputCls} />
-              </Field>
             </div>
             {variant.showBranch && (
               <Field label="Chi nhánh" className="md:col-span-3">

@@ -106,7 +106,6 @@ export function GeneralVoucherForm({
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
       dueDate: v.dueDate ? v.dueDate.slice(0, 10) : undefined,
       description: v.description ?? undefined,
-      referenceNo: v.referenceNo ?? undefined,
       branchId: v.branchId ?? undefined,
       lines: v.lines.map((l) => ({
         description: l.description ?? undefined,
@@ -138,7 +137,6 @@ export function GeneralVoucherForm({
         voucherDate: values.voucherDate,
         dueDate: values.dueDate || null,
         description: values.description,
-        referenceNo: values.referenceNo,
         branchId: values.branchId,
         lines: values.lines.map((l) => ({
           description: l.description,
@@ -188,13 +186,6 @@ export function GeneralVoucherForm({
             <div className="flex gap-3">
               <Field label="Hạn thanh toán" className="w-56">
                 <input type="date" {...register('dueDate')} className={inputCls} />
-              </Field>
-              <Field label="Tham chiếu" className="flex-1">
-                <input
-                  {...register('referenceNo')}
-                  placeholder="Số chứng từ gốc / hợp đồng"
-                  className={inputCls}
-                />
               </Field>
             </div>
           </div>

@@ -21,7 +21,6 @@ export const generalVoucherSchema = z.object({
   voucherDate: z.string().min(1, 'Chọn ngày chứng từ'),
   dueDate: z.string().optional(),
   description: z.string().optional(),
-  referenceNo: z.string().optional(),
   branchId: z.string().optional(),
   lines: z.array(generalLineSchema).min(1, 'Cần ít nhất 1 dòng hạch toán'),
 })

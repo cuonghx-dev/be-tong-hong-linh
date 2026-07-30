@@ -497,11 +497,6 @@ export function CashVoucherForm({
             </div>
           </div>
 
-          {/* Tham chiếu — chứng từ nguồn liên quan (placeholder, chưa liên kết) */}
-          <div className="flex items-center gap-1 text-[13px] text-slate-500">
-            <span className="font-semibold text-slate-700">Tham chiếu</span>
-            <span className="text-slate-400">…</span>
-          </div>
         </section>
 
         {/* Bảng hạch toán — nền trắng */}

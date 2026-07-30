@@ -203,7 +203,6 @@ export function BankVoucherForm({
       address: v.address ?? undefined,
       employeeId: v.employeeId ?? undefined,
       reason: v.reason ?? undefined,
-      reference: v.reference ?? undefined,
       attachmentCount: v.attachmentCount,
       branchId: v.branchId ?? undefined,
       lines: v.lines.map((l) => ({
@@ -432,11 +431,6 @@ export function BankVoucherForm({
               </>
             )}
 
-            {/* Tham chiếu — chứng từ nguồn liên quan (placeholder, chưa liên kết — đồng bộ cash/MISA) */}
-            <div className="col-span-2 flex items-center gap-1 text-[13px] text-slate-500">
-              <span className="font-semibold text-slate-700">Tham chiếu</span>
-              <span className="text-slate-400">…</span>
-            </div>
           </div>
 
           {/* Cột phải: ngày + số chứng từ */}

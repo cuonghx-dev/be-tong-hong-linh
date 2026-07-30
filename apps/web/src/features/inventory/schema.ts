@@ -31,7 +31,6 @@ export const receiptSchema = z.object({
   address: z.string().optional(),
   deliverer: z.string().optional(),
   description: z.string().optional(),
-  reference: z.string().optional(),
   attachmentCount: z.coerce.number().int().min(0).optional(),
   branchName: z.string().optional(),
   lines: z
