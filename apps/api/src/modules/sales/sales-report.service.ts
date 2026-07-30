@@ -432,8 +432,8 @@ export class SalesReportService {
              v.posting_date::text,
              v.voucher_no,
              COALESCE(l.description, v.description),
-             l.partner_id,
-             l.partner_name,
+             l.debit_partner_id,
+             l.debit_partner_name,
              l.amount::text
       FROM general_voucher_lines l
       JOIN general_vouchers v ON v.id = l.voucher_id
@@ -446,8 +446,8 @@ export class SalesReportService {
              v.posting_date::text,
              v.voucher_no,
              COALESCE(l.description, v.description),
-             l.partner_id,
-             l.partner_name,
+             l.credit_partner_id,
+             l.credit_partner_name,
              l.amount::text
       FROM general_voucher_lines l
       JOIN general_vouchers v ON v.id = l.voucher_id

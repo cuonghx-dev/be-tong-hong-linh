@@ -318,12 +318,12 @@ export class ReceivableService {
       JOIN bank_vouchers v ON v.id = l.voucher_id
       WHERE v.posted AND l.credit_account LIKE ${RECEIVABLE_LIKE} AND v.posting_date <= ${asOf}
       UNION ALL
-      SELECT 'DEBIT', l.partner_id, l.partner_name, l.amount::text
+      SELECT 'DEBIT', l.debit_partner_id, l.debit_partner_name, l.amount::text
       FROM general_voucher_lines l
       JOIN general_vouchers v ON v.id = l.voucher_id
       WHERE v.posted AND l.debit_account LIKE ${RECEIVABLE_LIKE} AND v.posting_date <= ${asOf}
       UNION ALL
-      SELECT 'CREDIT', l.partner_id, l.partner_name, l.amount::text
+      SELECT 'CREDIT', l.credit_partner_id, l.credit_partner_name, l.amount::text
       FROM general_voucher_lines l
       JOIN general_vouchers v ON v.id = l.voucher_id
       WHERE v.posted AND l.credit_account LIKE ${RECEIVABLE_LIKE} AND v.posting_date <= ${asOf}
