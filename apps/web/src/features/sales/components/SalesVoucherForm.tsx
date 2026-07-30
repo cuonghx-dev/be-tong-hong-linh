@@ -724,8 +724,9 @@ export function SalesVoucherForm({
                 >
                   <input {...register('customerName')} className={inputCls} />
                 </Field>
-                {/* MST/CCCD chỉ nhập ở tab Hóa đơn (cùng field taxCode) — bỏ khỏi thông tin chung. */}
-                <div className="hidden md:col-span-2 md:block" />
+                <Field label="Mã số thuế / CCCD chủ hộ" className="md:col-span-2">
+                  <input {...register('taxCode')} className={inputCls} />
+                </Field>
                 <Field
                   label="Ngày hạch toán"
                   error={formState.errors.postingDate?.message}
