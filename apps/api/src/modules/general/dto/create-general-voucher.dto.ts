@@ -1,9 +1,11 @@
+import { GeneralLineOperation } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
   ArrayMinSize,
   IsArray,
   IsDateString,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -34,15 +36,30 @@ export class CreateGeneralVoucherLineDto {
   @Min(0.01, { message: 'Số tiền dòng phải > 0' })
   amount!: number
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: GeneralLineOperation, description: 'Nghiệp vụ (dropdown MISA)' })
+  @IsOptional()
+  @IsEnum(GeneralLineOperation)
+  operation?: GeneralLineOperation
+
+  @ApiPropertyOptional({ description: 'Đối tượng vế Nợ (mã)' })
   @IsOptional()
   @IsString()
-  partnerId?: string
+  debitPartnerId?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  partnerName?: string
+  debitPartnerName?: string
+
+  @ApiPropertyOptional({ description: 'Đối tượng vế Có (mã)' })
+  @IsOptional()
+  @IsString()
+  creditPartnerId?: string
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  creditPartnerName?: string
 }
 
 export class CreateGeneralVoucherDto {
@@ -54,10 +71,20 @@ export class CreateGeneralVoucherDto {
   @IsDateString()
   voucherDate!: string
 
+  @ApiPropertyOptional({ description: 'Hạn thanh toán (ISO)' })
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string
+
   @ApiPropertyOptional({ description: 'Diễn giải' })
   @IsOptional()
   @IsString()
   description?: string
+
+  @ApiPropertyOptional({ description: 'Tham chiếu — số chứng từ gốc/hợp đồng' })
+  @IsOptional()
+  @IsString()
+  referenceNo?: string
 
   @ApiPropertyOptional()
   @IsOptional()

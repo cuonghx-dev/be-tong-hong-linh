@@ -1,3 +1,5 @@
+import type { GeneralLineOperation } from '../enums'
+
 // Type request/response phân hệ Tổng hợp — Chứng từ nghiệp vụ khác (NVK), dùng chung FE ↔ BE.
 
 // Dòng hạch toán (bút toán) của chứng từ nghiệp vụ khác.
@@ -8,8 +10,11 @@ export interface GeneralVoucherLineDto {
   debitAccount: string // TK Nợ — tự nhập, không có TK mặc định
   creditAccount: string // TK Có — tự nhập
   amount: string // Decimal serialize thành string (đồng, không float)
-  partnerId: string | null // Đối tượng
-  partnerName: string | null
+  operation: GeneralLineOperation | null // Nghiệp vụ
+  debitPartnerId: string | null // Đối tượng Nợ
+  debitPartnerName: string | null
+  creditPartnerId: string | null // Đối tượng Có
+  creditPartnerName: string | null
 }
 
 // Chứng từ nghiệp vụ khác.
@@ -18,7 +23,9 @@ export interface GeneralVoucherDto {
   voucherNo: string // vd NVK261/2025
   postingDate: string // Ngày hạch toán (ISO)
   voucherDate: string // Ngày chứng từ (ISO)
+  dueDate: string | null // Hạn thanh toán (ISO)
   description: string | null // Diễn giải
+  referenceNo: string | null // Tham chiếu
   totalAmount: string // Σ số tiền dòng
   branchId: string | null
   posted: boolean // Đã ghi sổ — bỏ ghi thì loại khỏi sổ/báo cáo
@@ -33,15 +40,20 @@ export interface CreateGeneralVoucherLineInput {
   debitAccount: string
   creditAccount: string
   amount: number
-  partnerId?: string | null
-  partnerName?: string | null
+  operation?: GeneralLineOperation | null
+  debitPartnerId?: string | null
+  debitPartnerName?: string | null
+  creditPartnerId?: string | null
+  creditPartnerName?: string | null
 }
 
 // Payload tạo chứng từ nghiệp vụ khác.
 export interface CreateGeneralVoucherInput {
   postingDate: string
   voucherDate: string
+  dueDate?: string | null
   description?: string | null
+  referenceNo?: string | null
   branchId?: string | null
   lines: CreateGeneralVoucherLineInput[]
 }

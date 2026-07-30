@@ -97,7 +97,9 @@ export class GeneralService {
           voucherNo,
           postingDate: new Date(dto.postingDate),
           voucherDate: new Date(dto.voucherDate),
+          dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
           description: dto.description ?? null,
+          referenceNo: dto.referenceNo ?? null,
           branchId: dto.branchId ?? null,
           totalAmount: sumAmount(lines),
           lines: { create: lines },
@@ -117,7 +119,9 @@ export class GeneralService {
       const data: Prisma.GeneralVoucherUpdateInput = {
         postingDate: dto.postingDate ? new Date(dto.postingDate) : undefined,
         voucherDate: dto.voucherDate ? new Date(dto.voucherDate) : undefined,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         description: dto.description ?? undefined,
+        referenceNo: dto.referenceNo ?? undefined,
         branchId: dto.branchId ?? undefined,
       }
 
@@ -223,8 +227,11 @@ function normalizeLines(lines: CreateGeneralVoucherLineDto[]) {
     debitAccount: line.debitAccount,
     creditAccount: line.creditAccount,
     amount: new Prisma.Decimal(line.amount),
-    partnerId: line.partnerId ?? null,
-    partnerName: line.partnerName ?? null,
+    operation: line.operation ?? null,
+    debitPartnerId: line.debitPartnerId ?? null,
+    debitPartnerName: line.debitPartnerName ?? null,
+    creditPartnerId: line.creditPartnerId ?? null,
+    creditPartnerName: line.creditPartnerName ?? null,
   }))
 }
 
@@ -262,7 +269,9 @@ function toVoucherDto(v: VoucherWithLines) {
     voucherNo: v.voucherNo,
     postingDate: toDateOnly(v.postingDate),
     voucherDate: toDateOnly(v.voucherDate),
+    dueDate: v.dueDate ? toDateOnly(v.dueDate) : null,
     description: v.description,
+    referenceNo: v.referenceNo,
     totalAmount: v.totalAmount.toString(),
     branchId: v.branchId,
     posted: v.posted,
@@ -273,8 +282,11 @@ function toVoucherDto(v: VoucherWithLines) {
       debitAccount: l.debitAccount,
       creditAccount: l.creditAccount,
       amount: l.amount.toString(),
-      partnerId: l.partnerId,
-      partnerName: l.partnerName,
+      operation: l.operation,
+      debitPartnerId: l.debitPartnerId,
+      debitPartnerName: l.debitPartnerName,
+      creditPartnerId: l.creditPartnerId,
+      creditPartnerName: l.creditPartnerName,
     })),
     createdAt: v.createdAt.toISOString(),
     updatedAt: v.updatedAt.toISOString(),

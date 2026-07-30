@@ -176,6 +176,26 @@ export enum GoodsIssueCategory {
   Production = 'PRODUCTION', // 2. Xuất kho cho sản xuất (Nợ 621 / Có 152)
 }
 
+// Tổng hợp (chứng từ nghiệp vụ khác) ------------------------------------------
+
+// Nghiệp vụ của dòng hạch toán NVK — đối chiếu dropdown "Nghiệp vụ" trên form MISA.
+export enum GeneralLineOperation {
+  SalesTradeDiscount = 'SALES_TRADE_DISCOUNT', // Chiết khấu thương mại (bán hàng)
+  SalesRebate = 'SALES_REBATE', // Giảm giá hàng bán
+  SalesReturn = 'SALES_RETURN', // Trả lại hàng bán
+  TaxDeductBusiness = 'TAX_DEDUCT_BUSINESS', // Khấu trừ thuế hoạt động sản xuất kinh doanh
+  TaxDeductInvestment = 'TAX_DEDUCT_INVESTMENT', // Khấu trừ thuế hoạt động đầu tư
+}
+
+// Nhãn hiển thị nghiệp vụ dòng NVK (thứ tự đúng như dropdown MISA).
+export const GENERAL_LINE_OPERATION_LABELS: Record<GeneralLineOperation, string> = {
+  [GeneralLineOperation.SalesTradeDiscount]: 'Chiết khấu thương mại (bán hàng)',
+  [GeneralLineOperation.SalesRebate]: 'Giảm giá hàng bán',
+  [GeneralLineOperation.SalesReturn]: 'Trả lại hàng bán',
+  [GeneralLineOperation.TaxDeductBusiness]: 'Khấu trừ thuế hoạt động sản xuất kinh doanh',
+  [GeneralLineOperation.TaxDeductInvestment]: 'Khấu trừ thuế hoạt động đầu tư',
+}
+
 // Danh mục (05-danh-muc) ------------------------------------------------------
 
 // Loại đối tượng tập hợp chi phí (Doi_tuong_tap_hop_chi_phi.xlsx cột "Loại").

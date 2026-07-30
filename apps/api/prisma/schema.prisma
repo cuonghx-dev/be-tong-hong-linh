@@ -720,12 +720,23 @@ model PaymentAllocation {
 
 // Chứng từ nghiệp vụ khác (NVK) — bút toán tự do: hàng về trước hóa đơn về sau,
 // giải ngân vay, bù trừ công nợ, điều chỉnh… Định khoản tự nhập, không có TK mặc định.
+// Nghiệp vụ của dòng hạch toán NVK. Đồng bộ với GeneralLineOperation trong packages/shared.
+enum GeneralLineOperation {
+  SALES_TRADE_DISCOUNT // Chiết khấu thương mại (bán hàng)
+  SALES_REBATE // Giảm giá hàng bán
+  SALES_RETURN // Trả lại hàng bán
+  TAX_DEDUCT_BUSINESS // Khấu trừ thuế hoạt động sản xuất kinh doanh
+  TAX_DEDUCT_INVESTMENT // Khấu trừ thuế hoạt động đầu tư
+}
+
 model GeneralVoucher {
   id          String               @id @default(uuid())
   voucherNo   String               @unique @map("voucher_no")
   postingDate DateTime             @map("posting_date") @db.Date
   voucherDate DateTime             @map("voucher_date") @db.Date
+  dueDate     DateTime?            @map("due_date") @db.Date // Hạn thanh toán
   description String?
+  referenceNo String?              @map("reference_no") // Tham chiếu (số chứng từ gốc/hợp đồng)
   totalAmount Decimal              @default(0) @map("total_amount") @db.Decimal(18, 2)
   branchId    String?              @map("branch_id")
   posted      Boolean              @default(true)
@@ -749,8 +760,12 @@ model GeneralVoucherLine {
   debitAccount  String         @map("debit_account")
   creditAccount String         @map("credit_account")
   amount        Decimal        @db.Decimal(18, 2)
-  partnerId     String?        @map("partner_id")
-  partnerName   String?        @map("partner_name")
+  operation     GeneralLineOperation? // Nghiệp vụ (dropdown MISA)
+  // Đối tượng theo từng vế bút toán (MISA tách Đối tượng Nợ / Đối tượng Có).
+  debitPartnerId    String? @map("debit_partner_id")
+  debitPartnerName  String? @map("debit_partner_name")
+  creditPartnerId   String? @map("credit_partner_id")
+  creditPartnerName String? @map("credit_partner_name")
 
   // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
   @@unique([voucherId, lineNo])

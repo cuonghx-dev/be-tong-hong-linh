@@ -1,4 +1,8 @@
-import { type CreateGeneralVoucherInput } from '@app/shared'
+import {
+  GENERAL_LINE_OPERATION_LABELS,
+  GeneralLineOperation,
+  type CreateGeneralVoucherInput,
+} from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
@@ -25,6 +29,9 @@ import {
   type GeneralVoucherFormValues,
 } from '../schema'
 import { AmountInput } from './AmountInput'
+
+// Vế bút toán của ô đối tượng — dùng để dựng tên field (debitPartnerId / creditPartnerId).
+type PartnerSide = 'debit' | 'credit'
 
 interface GeneralVoucherFormProps {
   voucherId?: string | null
@@ -74,14 +81,16 @@ export function GeneralVoucherForm({
   const { control, register, handleSubmit, reset, watch, setValue, formState } = form
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
 
-  // Picker đối tượng theo dòng (+ tạo nhanh) — NVK chọn đối tượng ở từng dòng hạch toán.
+  // Picker đối tượng theo dòng (+ tạo nhanh) — MISA tách đối tượng vế Nợ và vế Có.
   const [partnerKw, setPartnerKw] = useState('')
   const { items: partnerItems, loading: partnerLoading } = usePartnerOptions(partnerKw)
-  // Dialog tạo nhanh gắn với dòng đang thao tác (null = đóng).
-  const [partnerDialogLine, setPartnerDialogLine] = useState<number | null>(null)
-  const selectLinePartner = (i: number, p: PartnerOption) => {
-    setValue(`lines.${i}.partnerId`, p.code)
-    setValue(`lines.${i}.partnerName`, p.name)
+  // Dialog tạo nhanh gắn với ô đang thao tác (null = đóng) — nhớ cả vế để điền lại đúng cột.
+  const [partnerDialogAt, setPartnerDialogAt] = useState<{ line: number; side: PartnerSide } | null>(
+    null,
+  )
+  const selectLinePartner = (i: number, side: PartnerSide, p: PartnerOption) => {
+    setValue(`lines.${i}.${side}PartnerId`, p.code)
+    setValue(`lines.${i}.${side}PartnerName`, p.name)
   }
 
   // Preview số chứng từ kế tiếp khi tạo mới — số thật vẫn cấp lúc Lưu.
@@ -95,15 +104,20 @@ export function GeneralVoucherForm({
       // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
       postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
+      dueDate: v.dueDate ? v.dueDate.slice(0, 10) : undefined,
       description: v.description ?? undefined,
+      referenceNo: v.referenceNo ?? undefined,
       branchId: v.branchId ?? undefined,
       lines: v.lines.map((l) => ({
         description: l.description ?? undefined,
         debitAccount: l.debitAccount,
         creditAccount: l.creditAccount,
         amount: Number(l.amount),
-        partnerId: l.partnerId ?? undefined,
-        partnerName: l.partnerName ?? undefined,
+        operation: l.operation ?? undefined,
+        debitPartnerId: l.debitPartnerId ?? undefined,
+        debitPartnerName: l.debitPartnerName ?? undefined,
+        creditPartnerId: l.creditPartnerId ?? undefined,
+        creditPartnerName: l.creditPartnerName ?? undefined,
       })),
     })
   }, [editing.data, reset, duplicating])
@@ -122,15 +136,20 @@ export function GeneralVoucherForm({
       const dto: CreateGeneralVoucherInput = {
         postingDate: values.postingDate,
         voucherDate: values.voucherDate,
+        dueDate: values.dueDate || null,
         description: values.description,
+        referenceNo: values.referenceNo,
         branchId: values.branchId,
         lines: values.lines.map((l) => ({
           description: l.description,
           debitAccount: l.debitAccount ?? '',
           creditAccount: l.creditAccount ?? '',
           amount: l.amount,
-          partnerId: l.partnerId,
-          partnerName: l.partnerName,
+          operation: l.operation || null,
+          debitPartnerId: l.debitPartnerId,
+          debitPartnerName: l.debitPartnerName,
+          creditPartnerId: l.creditPartnerId,
+          creditPartnerName: l.creditPartnerName,
         })),
       }
       try {
@@ -166,6 +185,18 @@ export function GeneralVoucherForm({
             <Field label="Diễn giải">
               <input {...register('description')} className={inputCls} />
             </Field>
+            <div className="flex gap-3">
+              <Field label="Hạn thanh toán" className="w-56">
+                <input type="date" {...register('dueDate')} className={inputCls} />
+              </Field>
+              <Field label="Tham chiếu" className="flex-1">
+                <input
+                  {...register('referenceNo')}
+                  placeholder="Số chứng từ gốc / hợp đồng"
+                  className={inputCls}
+                />
+              </Field>
+            </div>
           </div>
 
           {/* Cột phải: ngày + số chứng từ */}
@@ -210,8 +241,11 @@ export function GeneralVoucherForm({
                   <th className="w-24 px-2 py-1.5">TK Nợ</th>
                   <th className="w-24 px-2 py-1.5">TK Có</th>
                   <th className="w-36 px-2 py-1.5 text-right">Số&nbsp;tiền</th>
-                  <th className="px-2 py-1.5">Đối&nbsp;tượng</th>
-                  <th className="px-2 py-1.5">Tên đối&nbsp;tượng</th>
+                  <th className="w-40 px-2 py-1.5">Nghiệp&nbsp;vụ</th>
+                  <th className="px-2 py-1.5">Đối&nbsp;tượng Nợ</th>
+                  <th className="px-2 py-1.5">Tên đối&nbsp;tượng Nợ</th>
+                  <th className="px-2 py-1.5">Đối&nbsp;tượng Có</th>
+                  <th className="px-2 py-1.5">Tên đối&nbsp;tượng Có</th>
                   <th className="w-8 px-2 py-1.5" />
                 </tr>
               </thead>
@@ -264,19 +298,44 @@ export function GeneralVoucherForm({
                       />
                     </td>
                     <td className="px-2 py-1">
+                      <select {...register(`lines.${i}.operation`)} className={cellCls}>
+                        <option value="">--</option>
+                        {Object.values(GeneralLineOperation).map((op) => (
+                          <option key={op} value={op}>
+                            {GENERAL_LINE_OPERATION_LABELS[op]}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-2 py-1">
                       <PartnerPicker
-                        value={lines?.[i]?.partnerId}
+                        value={lines?.[i]?.debitPartnerId}
                         items={partnerItems}
                         loading={partnerLoading}
                         keyword={partnerKw}
                         onKeywordChange={setPartnerKw}
-                        onSelect={(p) => selectLinePartner(i, p)}
-                        onAddNew={() => setPartnerDialogLine(i)}
+                        onSelect={(p) => selectLinePartner(i, 'debit', p)}
+                        onAddNew={() => setPartnerDialogAt({ line: i, side: 'debit' })}
                         inputClassName="h-8"
                       />
                     </td>
                     <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.partnerName`)} className={cellCls} />
+                      <input {...register(`lines.${i}.debitPartnerName`)} className={cellCls} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <PartnerPicker
+                        value={lines?.[i]?.creditPartnerId}
+                        items={partnerItems}
+                        loading={partnerLoading}
+                        keyword={partnerKw}
+                        onKeywordChange={setPartnerKw}
+                        onSelect={(p) => selectLinePartner(i, 'credit', p)}
+                        onAddNew={() => setPartnerDialogAt({ line: i, side: 'credit' })}
+                        inputClassName="h-8"
+                      />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input {...register(`lines.${i}.creditPartnerName`)} className={cellCls} />
                     </td>
                     <td className="px-2 py-1 text-center">
                       <button
@@ -295,7 +354,7 @@ export function GeneralVoucherForm({
                 <tr className="border-t border-border">
                   <td className="px-2 py-1.5" colSpan={4} />
                   <td className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(total)}</td>
-                  <td colSpan={3} />
+                  <td colSpan={6} />
                 </tr>
               </tfoot>
             </table>
@@ -346,12 +405,12 @@ export function GeneralVoucherForm({
       </div>
 
       <QuickAddPartnerDialog
-        open={partnerDialogLine !== null}
-        onClose={() => setPartnerDialogLine(null)}
+        open={partnerDialogAt !== null}
+        onClose={() => setPartnerDialogAt(null)}
         initialCode={partnerKw.trim() || undefined}
         onCreated={(p) => {
           setPartnerKw('')
-          if (partnerDialogLine !== null) selectLinePartner(partnerDialogLine, p)
+          if (partnerDialogAt) selectLinePartner(partnerDialogAt.line, partnerDialogAt.side, p)
         }}
       />
     </form>
