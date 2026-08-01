@@ -122,7 +122,14 @@ export class AccountService {
       await this.prisma.account.createMany({ data: data.slice(i, i + chunk) })
     }
 
-    await this.linkParentsByNumberPrefix(data.map((d) => d.number))
+    // Gán cha cho TK vừa tạo VÀ mọi TK mồ côi có sẵn: TK do data migration chèn
+    // (vd 3341) sinh ra trước khi seed chạy nên parent_id còn null — lần import
+    // hệ thống TK kế tiếp phải nối lại. TK gốc (111, 334…) không có tiền tố nên bỏ qua.
+    const orphans = await this.prisma.account.findMany({
+      where: { parentId: null },
+      select: { number: true },
+    })
+    await this.linkParentsByNumberPrefix(orphans.map((o) => o.number))
 
     return { total: parsed.length, created: data.length, skipped: parsed.length - data.length }
   }
