@@ -37,7 +37,7 @@ export default defineConfig({
       // reuseExistingServer: false — api dev đang chạy sẽ trỏ DB dev, phải fail rõ ràng.
       command: [
         'pnpm --filter @app/api exec prisma migrate reset --force --skip-seed --skip-generate',
-        'pnpm --filter @app/api prisma:seed',
+        'pnpm --filter @app/api prisma:initial-db',
         'pnpm --filter @app/api exec nest start',
       ].join(' && '),
       url: 'http://localhost:5112/api/docs',
