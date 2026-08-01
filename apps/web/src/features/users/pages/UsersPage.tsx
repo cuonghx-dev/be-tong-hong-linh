@@ -13,6 +13,7 @@ import { useUsers } from '../api/useUsers'
 import { useUpdateUser } from '../api/useUserMutations'
 import { ResetPasswordDialog } from '../components/ResetPasswordDialog'
 import { UserDialog } from '../components/UserDialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Quản lý người dùng (chỉ ADMIN) — danh sách + tạo/sửa/khóa tài khoản.
 export function UsersPage() {
@@ -78,37 +79,37 @@ export function UsersPage() {
       </div>
 
       <div className="overflow-auto rounded-md border border-border bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-slate-50 text-left text-[13px] text-slate-500">
-              <th className="px-3 py-2 font-medium">Email</th>
-              <th className="px-3 py-2 font-medium">Họ tên</th>
-              <th className="px-3 py-2 font-medium">Vai trò</th>
-              <th className="px-3 py-2 font-medium">Trạng thái</th>
-              <th className="px-3 py-2 text-center font-medium">Chức năng</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-b bg-slate-50 text-left text-[13px] text-slate-500">
+              <TableHead className="font-medium">Email</TableHead>
+              <TableHead className="font-medium">Họ tên</TableHead>
+              <TableHead className="font-medium">Vai trò</TableHead>
+              <TableHead className="font-medium">Trạng thái</TableHead>
+              <TableHead className="text-center font-medium">Chức năng</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && (
-              <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={5} className="py-8 text-center text-slate-400">
                   Đang tải…
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {isError && (
-              <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-red-500">
+              <TableRow>
+                <TableCell colSpan={5} className="py-8 text-center text-red-500">
                   Tải danh sách thất bại.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {users?.map((u) => (
-              <tr key={u.id} className="border-b border-border last:border-0 hover:bg-slate-50">
-                <td className="px-3 py-2">{u.email}</td>
-                <td className="px-3 py-2">{u.name}</td>
-                <td className="px-3 py-2">{USER_ROLE_LABELS[u.role]}</td>
-                <td className="px-3 py-2">
+              <TableRow key={u.id} className="border-b last:border-0">
+                <TableCell>{u.email}</TableCell>
+                <TableCell>{u.name}</TableCell>
+                <TableCell>{USER_ROLE_LABELS[u.role]}</TableCell>
+                <TableCell>
                   <span
                     className={cn(
                       'rounded-full px-2 py-0.5 text-xs font-medium',
@@ -117,8 +118,8 @@ export function UsersPage() {
                   >
                     {u.isActive ? 'Hoạt động' : 'Đã khóa'}
                   </span>
-                </td>
-                <td className="px-3 py-2 text-center">
+                </TableCell>
+                <TableCell className="text-center">
                   <RowActionMenu
                     primaryLabel="Sửa"
                     onPrimary={() => setDialog({ open: true, user: u })}
@@ -136,11 +137,11 @@ export function UsersPage() {
                           ]),
                     ]}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       <UserDialog

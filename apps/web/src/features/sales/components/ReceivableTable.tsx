@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
+import { Input } from '@/shared/ui/input'
 import { useReceivables } from '../api/useReceivables'
 import { CollectPaymentDialog } from './CollectPaymentDialog'
 import {
@@ -11,6 +12,7 @@ import {
   emptyReceivableFilter,
   type ReceivableFilterValue,
 } from './ReceivableFilterPopover'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const PAGE_SIZE = 20
 
@@ -94,13 +96,13 @@ export function ReceivableTable() {
               size={15}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
-            <input
+            <Input
               placeholder="Tìm mã / tên KH"
               defaultValue={keyword}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') setParam('rq', (e.target as HTMLInputElement).value || null)
               }}
-              className="h-8 w-52 rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-8 w-52 pl-8 pr-2"
             />
           </div>
           <button
@@ -114,96 +116,96 @@ export function ReceivableTable() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[1040px] border-collapse text-sm">
-          <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-3 py-2">Mã KH</th>
-              <th className="px-3 py-2">Tên khách&nbsp;hàng</th>
-              <th className="px-3 py-2 text-right">Còn phải&nbsp;thu theo&nbsp;HĐ</th>
-              <th className="px-3 py-2 text-right">Thu&nbsp;trước / Giảm&nbsp;trừ</th>
-              <th className="px-3 py-2 text-right">Còn phải&nbsp;thu</th>
-              <th className="px-3 py-2">Địa&nbsp;chỉ</th>
-              <th className="px-3 py-2">Mã&nbsp;số thuế</th>
-              <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
+        <Table className="min-w-[1040px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Mã KH</TableHead>
+              <TableHead>Tên khách&nbsp;hàng</TableHead>
+              <TableHead className="text-right">Còn phải&nbsp;thu theo&nbsp;HĐ</TableHead>
+              <TableHead className="text-right">Thu&nbsp;trước / Giảm&nbsp;trừ</TableHead>
+              <TableHead className="text-right">Còn phải&nbsp;thu</TableHead>
+              <TableHead>Địa&nbsp;chỉ</TableHead>
+              <TableHead>Mã&nbsp;số thuế</TableHead>
+              <TableHead className="sticky right-0 z-30 bg-slate-50 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức&nbsp;năng
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && (
-              <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={8} className="py-10 text-center text-slate-400">
                   Đang tải…
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {isError && (
-              <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-red-500">
+              <TableRow>
+                <TableCell colSpan={8} className="py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
                   </button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {!isLoading && !isError && rows.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={8} className="py-10 text-center text-slate-400">
                   Chưa có công nợ.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {rows.map((r) => {
               const remaining = Number(r.remainingReceivable)
               return (
-                <tr key={r.customerId} className="group border-t border-border hover:bg-slate-50">
-                  <td className="px-3 py-2 text-slate-700">{r.customerCode}</td>
-                  <td className="max-w-[240px] truncate px-3 py-2 text-slate-700" title={r.customerName}>
+                <TableRow key={r.customerId} className="group">
+                  <TableCell className="text-slate-700">{r.customerCode}</TableCell>
+                  <TableCell className="max-w-[240px] truncate text-slate-700" title={r.customerName}>
                     {r.customerName}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-slate-700">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-slate-700">
                     {formatCurrency(Number(r.receivableByInvoice))}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-slate-600">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-slate-600">
                     {formatCurrency(Number(r.prepaidOrDeduction))}
-                  </td>
-                  <td
+                  </TableCell>
+                  <TableCell
                     className={cn(
                       'px-3 py-2 text-right tabular-nums',
                       remaining < 0 ? 'text-red-600' : 'text-slate-800',
                     )}
                   >
                     {remaining < 0 ? `(${formatCurrency(-remaining)})` : formatCurrency(remaining)}
-                  </td>
-                  <td className="max-w-[260px] truncate px-3 py-2 text-slate-600" title={r.address ?? ''}>
+                  </TableCell>
+                  <TableCell className="max-w-[260px] truncate text-slate-600" title={r.address ?? ''}>
                     {r.address}
-                  </td>
-                  <td className="px-3 py-2 text-slate-600">{r.taxCode}</td>
-                  <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
+                  </TableCell>
+                  <TableCell className="text-slate-600">{r.taxCode}</TableCell>
+                  <TableCell className="sticky right-0 z-10 bg-white shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <button
                       className="font-medium text-primary hover:underline"
                       onClick={() => setCollectFor({ id: r.customerId, name: r.customerName })}
                     >
                       Thu nợ
                     </button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )
             })}
-          </tbody>
+          </TableBody>
           {rows.length > 0 && (
-            <tfoot className="sticky bottom-0 bg-slate-100 font-medium">
-              <tr className="border-t border-border">
-                <td className="px-3 py-2" colSpan={4}>
+            <TableFooter className="sticky bottom-0 bg-slate-100">
+              <TableRow>
+                <TableCell colSpan={4}>
                   Tổng (trang này)
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totalRemaining)}</td>
-                <td colSpan={3} />
-              </tr>
-            </tfoot>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{formatCurrency(totalRemaining)}</TableCell>
+                <TableCell colSpan={3} />
+              </TableRow>
+            </TableFooter>
           )}
-        </table>
+        </Table>
       </div>
 
       <div className="flex items-center border-t border-border px-3 py-2 text-sm text-slate-500">

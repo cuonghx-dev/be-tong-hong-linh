@@ -21,10 +21,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { num } from '@/shared/lib/num'
-import { useCashVoucher, useNextCashVoucherNo } from '../api/useCashVouchers'
-import { useCreateCashVoucher, useUpdateCashVoucher } from '../api/useCashVoucherMutations'
 import { useEmployeeOptions } from '@/shared/api/useEmployeeOptions'
 import { usePartnerOptions } from '@/shared/api/usePartnerOptions'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
+import { QuickAddEmployeeDialog } from '@/shared/ui/quick-add-employee-dialog'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { Checkbox } from '@/shared/ui/checkbox'
+import { CellInput, cellInputCls } from '@/shared/ui/cell-input'
+import { useCashVoucher, useNextCashVoucherNo } from '../api/useCashVouchers'
+import { useCreateCashVoucher, useUpdateCashVoucher } from '../api/useCashVoucherMutations'
 import {
   cashVoucherSchema,
   type CashLineFormValues,
@@ -38,9 +45,7 @@ import {
   headerConfig,
   lineColumns,
 } from '../types'
-import { AmountInput } from './AmountInput'
-import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
-import { QuickAddEmployeeDialog } from '@/shared/ui/quick-add-employee-dialog'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 interface CashVoucherPrefill {
   category?: CashVoucherCategory
@@ -406,19 +411,19 @@ export function CashVoucherForm({
                 />
               </Field>
               <Field label={header.employeeAsPartner ? 'Tên nhân viên' : 'Tên đối tượng'}>
-                <input {...register('partnerName')} className={inputCls} />
+                <Input {...register('partnerName')} />
               </Field>
 
               {isReceipt ? (
                 <>
                   <Field label="Người nộp">
-                    <input {...register('payerReceiver')} className={inputCls} />
+                    <Input {...register('payerReceiver')} />
                   </Field>
                   <Field label="Địa chỉ">
-                    <input {...register('address')} className={inputCls} />
+                    <Input {...register('address')} />
                   </Field>
                   <Field label="Lý do nộp" className="sm:col-span-2">
-                    <input {...register('reason')} className={inputCls} />
+                    <Input {...register('reason')} />
                   </Field>
                   <Field label="Nhân viên">
                     <PartnerPicker
@@ -436,15 +441,15 @@ export function CashVoucherForm({
               ) : (
                 <>
                   <Field label="Người nhận">
-                    <input {...register('payerReceiver')} className={inputCls} />
+                    <Input {...register('payerReceiver')} />
                   </Field>
                   <Field label="Địa chỉ">
-                    <input {...register('address')} className={inputCls} />
+                    <Input {...register('address')} />
                   </Field>
                   {/* PC: Lý do chi (rộng) + Kèm theo (hẹp) trên cùng 1 hàng (theo form MISA) */}
                   <div className="flex flex-wrap items-start gap-x-6 gap-y-3 sm:col-span-2">
                     <Field label="Lý do chi" className="min-w-[240px] flex-1">
-                      <input {...register('reason')} className={inputCls} />
+                      <Input {...register('reason')} />
                     </Field>
                     <AttachmentField register={register} />
                   </div>
@@ -473,17 +478,17 @@ export function CashVoucherForm({
             {/* Cột phải: ngày + số phiếu */}
             <div className="w-56 space-y-3">
               <Field label="Ngày hạch toán" required error={formState.errors.postingDate?.message}>
-                <input type="date" {...register('postingDate')} className={inputCls} />
+                <Input type="date" {...register('postingDate')} />
               </Field>
               <Field label="Ngày phiếu" required error={formState.errors.voucherDate?.message}>
-                <input type="date" {...register('voucherDate')} className={inputCls} />
+                <Input type="date" {...register('voucherDate')} />
               </Field>
               <Field label={`Số phiếu ${isReceipt ? 'thu' : 'chi'}`}>
-                <input
+                <Input
                   value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
                   readOnly
                   title="Số dự kiến — cấp chính thức khi Lưu"
-                  className={cn(inputCls, 'bg-slate-50 text-slate-500 hover:border-slate-300')}
+                  className="bg-slate-50 text-slate-500 hover:border-slate-300"
                 />
               </Field>
             </div>
@@ -506,46 +511,46 @@ export function CashVoucherForm({
           <h2 className="text-base font-semibold text-slate-800">Hạch toán</h2>
 
           <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-slate-100 text-left text-[13px] text-slate-700">
-                <tr>
-                  <th className="w-8 px-2 py-2 text-center font-semibold">#</th>
-                  <th className="min-w-[200px] px-2 py-2 font-semibold">Diễn&nbsp;giải</th>
-                  <th className="w-24 px-2 py-2 font-semibold">TK Nợ</th>
-                  <th className="w-24 px-2 py-2 font-semibold">TK Có</th>
-                  <th className="w-36 px-2 py-2 text-right font-semibold">Số&nbsp;tiền</th>
-                  <th className="px-2 py-2 font-semibold">Nghiệp&nbsp;vụ</th>
+            <Table>
+              <TableHeader className="bg-slate-100 text-[13px] text-slate-700">
+                <TableRow>
+                  <TableHead className="w-8 px-2 text-center">#</TableHead>
+                  <TableHead className="min-w-[200px] px-2">Diễn&nbsp;giải</TableHead>
+                  <TableHead className="w-24 px-2">TK Nợ</TableHead>
+                  <TableHead className="w-24 px-2">TK Có</TableHead>
+                  <TableHead className="w-36 px-2 text-right">Số&nbsp;tiền</TableHead>
+                  <TableHead className="px-2">Nghiệp&nbsp;vụ</TableHead>
                   {cols.showPartner && (
-                    <th className="px-2 py-2 font-semibold">
+                    <TableHead className="px-2">
                       {cols.employeeAsPartner ? 'Mã nhân viên' : 'Đối tượng'}
-                    </th>
+                    </TableHead>
                   )}
                   {cols.showPartner && (
-                    <th className="min-w-[160px] px-2 py-2 font-semibold">
+                    <TableHead className="min-w-[160px] px-2">
                       {cols.employeeAsPartner ? 'Tên nhân viên' : 'Tên đối tượng'}
-                    </th>
+                    </TableHead>
                   )}
                   {cols.showCostItem && (
-                    <th className="px-2 py-2 font-semibold">Khoản&nbsp;mục CP</th>
+                    <TableHead className="px-2">Khoản&nbsp;mục CP</TableHead>
                   )}
-                  {cols.showBank && <th className="px-2 py-2 font-semibold">TK ngân&nbsp;hàng</th>}
-                  {cols.showBank && <th className="px-2 py-2 font-semibold">Tên ngân&nbsp;hàng</th>}
-                  <th className="w-10 px-2 py-2" />
-                </tr>
-              </thead>
-              <tbody>
+                  {cols.showBank && <TableHead className="px-2">TK ngân&nbsp;hàng</TableHead>}
+                  {cols.showBank && <TableHead className="px-2">Tên ngân&nbsp;hàng</TableHead>}
+                  <TableHead className="w-10 px-2" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {fields.map((f, i) => (
-                  <tr
+                  <TableRow
                     key={f.id}
-                    className="group border-t border-border/70 transition-colors hover:bg-slate-50/60 focus-within:bg-primary/[0.04]"
+                    className="group border-border/70 hover:bg-slate-50/60 focus-within:bg-primary/[0.04]"
                   >
-                    <td className="px-2 py-1 text-center text-xs tabular-nums text-slate-400">
+                    <TableCell className="px-2 py-1 text-center text-xs tabular-nums text-slate-400">
                       {i + 1}
-                    </td>
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.description`)} className={cellCls} />
-                    </td>
-                    <td className="px-2 py-1">
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
+                      <CellInput {...register(`lines.${i}.description`)} />
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
                       <Controller
                         control={control}
                         name={`lines.${i}.debitAccount`}
@@ -560,8 +565,8 @@ export function CashVoucherForm({
                           />
                         )}
                       />
-                    </td>
-                    <td className="px-2 py-1">
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
                       <Controller
                         control={control}
                         name={`lines.${i}.creditAccount`}
@@ -576,8 +581,8 @@ export function CashVoucherForm({
                           />
                         )}
                       />
-                    </td>
-                    <td className="px-2 py-1">
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
                       <Controller
                         control={control}
                         name={`lines.${i}.amount`}
@@ -586,7 +591,7 @@ export function CashVoucherForm({
                             value={field.value}
                             onChange={field.onChange}
                             className={cn(
-                              cellCls,
+                              cellInputCls,
                               'text-right font-medium',
                               fieldState.error &&
                                 'border-red-400 focus:border-red-400 focus:ring-red-200',
@@ -594,36 +599,36 @@ export function CashVoucherForm({
                           />
                         )}
                       />
-                    </td>
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.operation`)} className={cellCls} />
-                    </td>
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
+                      <CellInput {...register(`lines.${i}.operation`)} />
+                    </TableCell>
                     {cols.showPartner && (
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.partnerId`)} className={cellCls} />
-                      </td>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`lines.${i}.partnerId`)} />
+                      </TableCell>
                     )}
                     {cols.showPartner && (
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.partnerName`)} className={cellCls} />
-                      </td>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`lines.${i}.partnerName`)} />
+                      </TableCell>
                     )}
                     {cols.showCostItem && (
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.costItemId`)} className={cellCls} />
-                      </td>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`lines.${i}.costItemId`)} />
+                      </TableCell>
                     )}
                     {cols.showBank && (
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.bankAccountNo`)} className={cellCls} />
-                      </td>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`lines.${i}.bankAccountNo`)} />
+                      </TableCell>
                     )}
                     {cols.showBank && (
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.bankName`)} className={cellCls} />
-                      </td>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`lines.${i}.bankName`)} />
+                      </TableCell>
                     )}
-                    <td className="px-2 py-1 text-center">
+                    <TableCell className="px-2 py-1 text-center">
                       <button
                         type="button"
                         onClick={() => remove(i)}
@@ -633,20 +638,20 @@ export function CashVoucherForm({
                       >
                         <TrashIcon size={15} />
                       </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-              <tfoot className="bg-slate-100 font-semibold text-slate-800">
-                <tr className="border-t border-border">
-                  <td colSpan={4} />
-                  <td className="px-4 py-2 text-right tabular-nums">
+              </TableBody>
+              <TableFooter className="bg-slate-100 font-semibold text-slate-800">
+                <TableRow>
+                  <TableCell colSpan={4} />
+                  <TableCell className="px-4 text-right tabular-nums">
                     {formatCurrency(linesTotal)}
-                  </td>
-                  <td colSpan={Math.max(colSpan - 3, 1)} />
-                </tr>
-              </tfoot>
-            </table>
+                  </TableCell>
+                  <TableCell colSpan={Math.max(colSpan - 3, 1)} />
+                </TableRow>
+              </TableFooter>
+            </Table>
           </div>
 
           <p className="text-sm text-slate-600">
@@ -674,56 +679,54 @@ export function CashVoucherForm({
                 Kê khai hóa đơn và hạch toán thuế
               </h2>
               <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full border-collapse text-sm">
-                  <thead className="bg-slate-100 text-left text-[13px] text-slate-700">
-                    <tr>
-                      <th className="w-8 px-2 py-2 text-center font-semibold">#</th>
-                      <th className="min-w-[180px] px-2 py-2 font-semibold">Diễn giải thuế</th>
-                      <th className="w-20 px-2 py-2 text-center font-semibold">Có hóa đơn</th>
-                      <th className="w-24 px-2 py-2 text-right font-semibold">% thuế GTGT</th>
-                      <th className="w-32 px-2 py-2 text-right font-semibold">Tiền thuế GTGT</th>
-                      <th className="w-24 px-2 py-2 font-semibold">TK thuế GTGT</th>
-                      <th className="w-32 px-2 py-2 font-semibold">Ngày hóa đơn</th>
-                      <th className="w-28 px-2 py-2 font-semibold">Số hóa đơn</th>
-                      <th className="w-36 px-2 py-2 font-semibold">Nhóm HHDV mua vào</th>
-                      <th className="w-28 px-2 py-2 font-semibold">Mã NCC</th>
-                      <th className="min-w-[140px] px-2 py-2 font-semibold">Tên NCC</th>
-                      <th className="w-32 px-2 py-2 font-semibold">Mã số thuế NCC</th>
-                      <th className="w-10 px-2 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader className="bg-slate-100 text-[13px] text-slate-700">
+                    <TableRow>
+                      <TableHead className="w-8 px-2 text-center">#</TableHead>
+                      <TableHead className="min-w-[180px] px-2">Diễn giải thuế</TableHead>
+                      <TableHead className="w-20 px-2 text-center">Có hóa đơn</TableHead>
+                      <TableHead className="w-24 px-2 text-right">% thuế GTGT</TableHead>
+                      <TableHead className="w-32 px-2 text-right">Tiền thuế GTGT</TableHead>
+                      <TableHead className="w-24 px-2">TK thuế GTGT</TableHead>
+                      <TableHead className="w-32 px-2">Ngày hóa đơn</TableHead>
+                      <TableHead className="w-28 px-2">Số hóa đơn</TableHead>
+                      <TableHead className="w-36 px-2">Nhóm HHDV mua vào</TableHead>
+                      <TableHead className="w-28 px-2">Mã NCC</TableHead>
+                      <TableHead className="min-w-[140px] px-2">Tên NCC</TableHead>
+                      <TableHead className="w-32 px-2">Mã số thuế NCC</TableHead>
+                      <TableHead className="w-10 px-2" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {taxArray.fields.map((f, i) => (
-                      <tr
+                      <TableRow
                         key={f.id}
-                        className="group border-t border-border/70 transition-colors hover:bg-slate-50/60 focus-within:bg-primary/[0.04]"
+                        className="group border-border/70 hover:bg-slate-50/60 focus-within:bg-primary/[0.04]"
                       >
-                        <td className="px-2 py-1 text-center text-xs tabular-nums text-slate-400">
+                        <TableCell className="px-2 py-1 text-center text-xs tabular-nums text-slate-400">
                           {i + 1}
-                        </td>
-                        <td className="px-2 py-1">
-                          <input {...register(`taxLines.${i}.description`)} className={cellCls} />
-                        </td>
-                        <td className="px-2 py-1 text-center">
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput {...register(`taxLines.${i}.description`)} />
+                        </TableCell>
+                        <TableCell className="px-2 py-1 text-center">
                           <Controller
                             control={control}
                             name={`taxLines.${i}.hasInvoice`}
                             render={({ field }) => (
-                              <input
-                                type="checkbox"
+                              <Checkbox
                                 checked={!!field.value}
-                                onChange={(e) => field.onChange(e.target.checked)}
-                                className="h-4 w-4 accent-primary"
+                                onCheckedChange={(v) => field.onChange(v === true)}
                               />
                             )}
                           />
-                        </td>
-                        <td className="px-2 py-1">
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
                           <Controller
                             control={control}
                             name={`taxLines.${i}.vatRate`}
                             render={({ field }) => (
-                              <input
+                              <CellInput
                                 type="number"
                                 min={0}
                                 value={field.value ?? ''}
@@ -743,12 +746,12 @@ export function CashVoucherForm({
                                     )
                                   }
                                 }}
-                                className={cn(cellCls, 'text-right')}
+                                className={cn('text-right')}
                               />
                             )}
                           />
-                        </td>
-                        <td className="px-2 py-1">
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
                           <Controller
                             control={control}
                             name={`taxLines.${i}.amount`}
@@ -757,7 +760,7 @@ export function CashVoucherForm({
                                 value={field.value ?? 0}
                                 onChange={field.onChange}
                                 className={cn(
-                                  cellCls,
+                                  cellInputCls,
                                   'text-right font-medium',
                                   fieldState.error &&
                                     'border-red-400 focus:border-red-400 focus:ring-red-200',
@@ -765,8 +768,8 @@ export function CashVoucherForm({
                               />
                             )}
                           />
-                        </td>
-                        <td className="px-2 py-1">
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
                           <Controller
                             control={control}
                             name={`taxLines.${i}.vatAccount`}
@@ -781,36 +784,33 @@ export function CashVoucherForm({
                               />
                             )}
                           />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput
                             type="date"
                             {...register(`taxLines.${i}.invoiceDate`)}
-                            className={cellCls}
                           />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input {...register(`taxLines.${i}.invoiceNo`)} className={cellCls} />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput {...register(`taxLines.${i}.invoiceNo`)} />
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput
                             {...register(`taxLines.${i}.goodsServiceGroup`)}
-                            className={cellCls}
                           />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input {...register(`taxLines.${i}.partnerId`)} className={cellCls} />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input {...register(`taxLines.${i}.partnerName`)} className={cellCls} />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput {...register(`taxLines.${i}.partnerId`)} />
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput {...register(`taxLines.${i}.partnerName`)} />
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput
                             {...register(`taxLines.${i}.supplierTaxCode`)}
-                            className={cellCls}
                           />
-                        </td>
-                        <td className="px-2 py-1 text-center">
+                        </TableCell>
+                        <TableCell className="px-2 py-1 text-center">
                           <button
                             type="button"
                             onClick={() => taxArray.remove(i)}
@@ -819,20 +819,20 @@ export function CashVoucherForm({
                           >
                             <TrashIcon size={15} />
                           </button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                  <tfoot className="bg-slate-100 font-semibold text-slate-800">
-                    <tr className="border-t border-border">
-                      <td colSpan={4} />
-                      <td className="px-4 py-2 text-right tabular-nums">
+                  </TableBody>
+                  <TableFooter className="bg-slate-100 font-semibold text-slate-800">
+                    <TableRow>
+                      <TableCell colSpan={4} />
+                      <TableCell className="px-4 text-right tabular-nums">
                         {formatCurrency(taxTotal)}
-                      </td>
-                      <td colSpan={8} />
-                    </tr>
-                  </tfoot>
-                </table>
+                      </TableCell>
+                      <TableCell colSpan={8} />
+                    </TableRow>
+                  </TableFooter>
+                </Table>
               </div>
 
               <p className="text-sm text-slate-600">
@@ -929,51 +929,22 @@ export function CashVoucherForm({
 }
 
 // ── Local UI bits ─────────────────────────────────────────────────────────
-const inputCls =
-  'h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm transition-colors hover:border-primary/50 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20'
 // Ô nhập trong bảng: kiểu spreadsheet — viền ẩn, hiện khi hover/focus.
-const cellCls =
-  'h-8 w-full rounded border border-transparent bg-transparent px-2 text-sm transition-colors hover:border-slate-200 focus:border-primary/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary/20'
 
 // Trường "Kèm theo … chứng từ gốc" — dùng chung PT (sau Nhân viên) / PC (cạnh Lý do chi).
 function AttachmentField({ register }: { register: UseFormRegister<CashVoucherFormValues> }) {
   return (
     <Field label="Kèm theo">
       <div className="flex items-center gap-2">
-        <input
+        <Input
           type="number"
           min={0}
           placeholder="Số lượng"
           {...register('attachmentCount')}
-          className={cn(inputCls, 'w-32')}
+          className="w-32"
         />
         <span className="text-sm text-slate-500">chứng từ gốc</span>
       </div>
     </Field>
-  )
-}
-
-function Field({
-  label,
-  required,
-  error,
-  className,
-  children,
-}: {
-  label: string
-  required?: boolean
-  error?: string
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className={cn('space-y-1', className)}>
-      <label className="text-[13px] font-semibold text-slate-800">
-        {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
-      </label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
   )
 }

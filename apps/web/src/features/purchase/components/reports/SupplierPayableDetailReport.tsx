@@ -11,9 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Label } from '@/shared/ui/label'
 import { useSuppliers } from '../../api/useSuppliers'
 import { useSupplierPayableDetail } from '../../api/usePurchaseReports'
 import { formatDate, money, periodLabel, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 7
 
@@ -45,7 +47,7 @@ export function SupplierPayableDetailReport({ filter }: { filter: PurchaseReport
   return (
     <div className="overflow-auto">
       <div className="flex items-center gap-2 px-1 pt-3">
-        <label className="flex items-center gap-1.5 text-sm text-slate-600">
+        <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
           Nhà cung cấp
           <Select
             value={filter.supplierId || 'all'}
@@ -63,7 +65,7 @@ export function SupplierPayableDetailReport({ filter }: { filter: PurchaseReport
               ))}
             </SelectContent>
           </Select>
-        </label>
+        </Label>
       </div>
 
       <div className="py-4 text-center">
@@ -75,19 +77,19 @@ export function SupplierPayableDetailReport({ filter }: { filter: PurchaseReport
         </div>
       </div>
 
-      <table className="w-full min-w-[960px] border-collapse text-sm">
-        <thead className="sticky top-0 z-20">
-          <tr>
-            <th className={thClass}>Ngày hạch&nbsp;toán</th>
-            <th className={thClass}>Số chứng&nbsp;từ</th>
-            <th className={thClass}>Loại chứng&nbsp;từ</th>
-            <th className={thClass}>Diễn&nbsp;giải</th>
-            <th className={`${thClass} text-right`}>Phát&nbsp;sinh Nợ</th>
-            <th className={`${thClass} text-right`}>Phát&nbsp;sinh Có</th>
-            <th className={`${thClass} text-right`}>Số&nbsp;dư</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="min-w-[960px]">
+        <TableHeader>
+          <TableRow>
+            <TableHead className={thClass}>Ngày hạch&nbsp;toán</TableHead>
+            <TableHead className={thClass}>Số chứng&nbsp;từ</TableHead>
+            <TableHead className={thClass}>Loại chứng&nbsp;từ</TableHead>
+            <TableHead className={thClass}>Diễn&nbsp;giải</TableHead>
+            <TableHead className={`${thClass} text-right`}>Phát&nbsp;sinh Nợ</TableHead>
+            <TableHead className={`${thClass} text-right`}>Phát&nbsp;sinh Có</TableHead>
+            <TableHead className={`${thClass} text-right`}>Số&nbsp;dư</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {isLoading && <StatusRow colSpan={COL_SPAN}>Đang tải…</StatusRow>}
           {isError && <StatusRow colSpan={COL_SPAN}>Lỗi tải dữ liệu.</StatusRow>}
           {!isLoading && !isError && groups.length === 0 && (
@@ -97,15 +99,15 @@ export function SupplierPayableDetailReport({ filter }: { filter: PurchaseReport
             <GroupRows key={g.supplierId ?? g.supplierName} group={g} />
           ))}
           {groups.length > 0 && (
-            <tr className="bg-slate-100 font-semibold">
-              <td colSpan={4} className={tdClass}>Tổng cộng</td>
-              <td className={tdMoney}>{money(data?.totalDebit ?? '0', true)}</td>
-              <td className={tdMoney}>{money(data?.totalCredit ?? '0', true)}</td>
-              <td className={tdMoney}>{money(data?.totalClosing ?? '0', true)}</td>
-            </tr>
+            <TableRow className="bg-slate-100 font-semibold">
+              <TableCell colSpan={4} className={tdClass}>Tổng cộng</TableCell>
+              <TableCell className={tdMoney}>{money(data?.totalDebit ?? '0', true)}</TableCell>
+              <TableCell className={tdMoney}>{money(data?.totalCredit ?? '0', true)}</TableCell>
+              <TableCell className={tdMoney}>{money(data?.totalClosing ?? '0', true)}</TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }
@@ -114,37 +116,37 @@ export function SupplierPayableDetailReport({ filter }: { filter: PurchaseReport
 function GroupRows({ group: g }: { group: SupplierPayableDetailGroupDto }) {
   return (
     <>
-      <tr className="bg-slate-50">
-        <td colSpan={COL_SPAN} className={`${tdClass} font-semibold`}>
+      <TableRow className="bg-slate-50">
+        <TableCell colSpan={COL_SPAN} className={`${tdClass} font-semibold`}>
           {g.supplierCode ? `${g.supplierCode} — ` : ''}
           {g.supplierName}
-        </td>
-      </tr>
-      <tr>
-        <td colSpan={4} className={`${tdClass} italic text-slate-500`}>Số dư đầu kỳ</td>
-        <td className={tdMoney} />
-        <td className={tdMoney} />
-        <td className={tdMoney}>{money(g.openingBalance, true)}</td>
-      </tr>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell colSpan={4} className={`${tdClass} italic text-slate-500`}>Số dư đầu kỳ</TableCell>
+        <TableCell className={tdMoney} />
+        <TableCell className={tdMoney} />
+        <TableCell className={tdMoney}>{money(g.openingBalance, true)}</TableCell>
+      </TableRow>
       {g.rows.map((r) => (
-        <tr key={`${r.voucherId}-${r.debitAmount}-${r.creditAmount}`} className="hover:bg-slate-50">
-          <td className={`${tdClass} whitespace-nowrap`}>{formatDate(r.postingDate)}</td>
-          <td className={`${tdClass} whitespace-nowrap`}>{r.voucherNo}</td>
-          <td className={`${tdClass} whitespace-nowrap`}>{SOURCE_LABEL[r.source]}</td>
-          <td className={`${tdClass} max-w-[360px] truncate`} title={r.description ?? ''}>
+        <TableRow key={`${r.voucherId}-${r.debitAmount}-${r.creditAmount}`}>
+          <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(r.postingDate)}</TableCell>
+          <TableCell className={`${tdClass} whitespace-nowrap`}>{r.voucherNo}</TableCell>
+          <TableCell className={`${tdClass} whitespace-nowrap`}>{SOURCE_LABEL[r.source]}</TableCell>
+          <TableCell className={`${tdClass} max-w-[360px] truncate`} title={r.description ?? ''}>
             {r.description}
-          </td>
-          <td className={tdMoney}>{money(r.debitAmount)}</td>
-          <td className={tdMoney}>{money(r.creditAmount)}</td>
-          <td className={tdMoney}>{money(r.balance, true)}</td>
-        </tr>
+          </TableCell>
+          <TableCell className={tdMoney}>{money(r.debitAmount)}</TableCell>
+          <TableCell className={tdMoney}>{money(r.creditAmount)}</TableCell>
+          <TableCell className={tdMoney}>{money(r.balance, true)}</TableCell>
+        </TableRow>
       ))}
-      <tr className="font-semibold">
-        <td colSpan={4} className={tdClass}>Cộng nhóm — dư cuối kỳ</td>
-        <td className={tdMoney}>{money(g.debitAmount, true)}</td>
-        <td className={tdMoney}>{money(g.creditAmount, true)}</td>
-        <td className={tdMoney}>{money(g.closingBalance, true)}</td>
-      </tr>
+      <TableRow className="font-semibold">
+        <TableCell colSpan={4} className={tdClass}>Cộng nhóm — dư cuối kỳ</TableCell>
+        <TableCell className={tdMoney}>{money(g.debitAmount, true)}</TableCell>
+        <TableCell className={tdMoney}>{money(g.creditAmount, true)}</TableCell>
+        <TableCell className={tdMoney}>{money(g.closingBalance, true)}</TableCell>
+      </TableRow>
     </>
   )
 }

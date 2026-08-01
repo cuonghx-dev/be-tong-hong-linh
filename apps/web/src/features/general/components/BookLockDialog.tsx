@@ -3,6 +3,8 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { Button } from '@/shared/ui/button'
 import { Modal } from '@/shared/ui/modal'
 import { useToast } from '@/shared/ui/toast'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 import { useBookLock, useSetBookLock } from '../api/useBookLock'
 
 // Dialog khóa sổ kỳ kế toán: chọn ngày khóa sổ — chứng từ có ngày hạch toán
@@ -62,15 +64,15 @@ export function BookLockDialog({ open, onClose }: { open: boolean; onClose: () =
             <span className="font-semibold">chưa khóa sổ</span>
           )}
         </p>
-        <label className="block">
+        <Label className="font-normal block">
           <span className="mb-1 block text-slate-500">Khóa sổ đến ngày</span>
-          <input
+          <Input
             type="date"
             value={lockDate}
             onChange={(e) => setLockDate(e.target.value)}
-            className="h-9 w-48 rounded-md border border-border px-2 text-sm outline-none focus:border-primary"
+            className="h-9 w-48 px-2 outline-none focus:border-primary"
           />
-        </label>
+        </Label>
         <p className="text-slate-500">
           Mọi chứng từ có ngày hạch toán từ ngày khóa sổ trở về trước sẽ không được thêm, sửa hoặc
           xóa cho tới khi bỏ khóa sổ.

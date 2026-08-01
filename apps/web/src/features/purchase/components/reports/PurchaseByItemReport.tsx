@@ -1,6 +1,7 @@
 import type { PurchaseReportFilter } from '@app/shared'
 import { usePurchaseByItemReport } from '../../api/usePurchaseReports'
 import { money, periodLabel, quantity, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 7
 
@@ -18,45 +19,45 @@ export function PurchaseByItemReport({ filter }: { filter: PurchaseReportFilter 
         <div className="text-sm italic text-slate-500">{periodLabel(filter)}</div>
       </div>
 
-      <table className="w-full min-w-[760px] border-collapse text-sm">
-        <thead className="sticky top-0 z-20">
-          <tr>
-            <th className={thClass}>STT</th>
-            <th className={thClass}>Mặt&nbsp;hàng</th>
-            <th className={thClass}>ĐVT</th>
-            <th className={`${thClass} text-right`}>Số&nbsp;lượng</th>
-            <th className={`${thClass} text-right`}>Tiền&nbsp;hàng</th>
-            <th className={`${thClass} text-right`}>Thuế&nbsp;GTGT</th>
-            <th className={`${thClass} text-right`}>Tổng thanh&nbsp;toán</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="min-w-[760px]">
+        <TableHeader>
+          <TableRow>
+            <TableHead className={thClass}>STT</TableHead>
+            <TableHead className={thClass}>Mặt&nbsp;hàng</TableHead>
+            <TableHead className={thClass}>ĐVT</TableHead>
+            <TableHead className={`${thClass} text-right`}>Số&nbsp;lượng</TableHead>
+            <TableHead className={`${thClass} text-right`}>Tiền&nbsp;hàng</TableHead>
+            <TableHead className={`${thClass} text-right`}>Thuế&nbsp;GTGT</TableHead>
+            <TableHead className={`${thClass} text-right`}>Tổng thanh&nbsp;toán</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {isLoading && <StatusRow colSpan={COL_SPAN}>Đang tải…</StatusRow>}
           {isError && <StatusRow colSpan={COL_SPAN}>Lỗi tải dữ liệu.</StatusRow>}
           {!isLoading && !isError && rows.length === 0 && (
             <StatusRow colSpan={COL_SPAN}>Không có phát sinh trong kỳ.</StatusRow>
           )}
           {rows.map((r, i) => (
-            <tr key={`${r.itemId ?? r.itemName ?? 'none'}-${i}`} className="hover:bg-slate-50">
-              <td className={`${tdClass} w-12 text-center`}>{i + 1}</td>
-              <td className={tdClass}>{r.itemName ?? '(Không chọn mặt hàng)'}</td>
-              <td className={tdClass}>{r.unit}</td>
-              <td className={tdMoney}>{quantity(r.quantity)}</td>
-              <td className={tdMoney}>{money(r.amount, true)}</td>
-              <td className={tdMoney}>{money(r.vatAmount)}</td>
-              <td className={tdMoney}>{money(r.total, true)}</td>
-            </tr>
+            <TableRow key={`${r.itemId ?? r.itemName ?? 'none'}-${i}`}>
+              <TableCell className={`${tdClass} w-12 text-center`}>{i + 1}</TableCell>
+              <TableCell className={tdClass}>{r.itemName ?? '(Không chọn mặt hàng)'}</TableCell>
+              <TableCell className={tdClass}>{r.unit}</TableCell>
+              <TableCell className={tdMoney}>{quantity(r.quantity)}</TableCell>
+              <TableCell className={tdMoney}>{money(r.amount, true)}</TableCell>
+              <TableCell className={tdMoney}>{money(r.vatAmount)}</TableCell>
+              <TableCell className={tdMoney}>{money(r.total, true)}</TableCell>
+            </TableRow>
           ))}
           {rows.length > 0 && (
-            <tr className="bg-slate-50 font-semibold">
-              <td colSpan={4} className={tdClass}>Tổng cộng</td>
-              <td className={tdMoney}>{money(data?.totalAmount ?? '0', true)}</td>
-              <td className={tdMoney}>{money(data?.totalVat ?? '0', true)}</td>
-              <td className={tdMoney}>{money(data?.totalPayment ?? '0', true)}</td>
-            </tr>
+            <TableRow className="bg-slate-50 font-semibold">
+              <TableCell colSpan={4} className={tdClass}>Tổng cộng</TableCell>
+              <TableCell className={tdMoney}>{money(data?.totalAmount ?? '0', true)}</TableCell>
+              <TableCell className={tdMoney}>{money(data?.totalVat ?? '0', true)}</TableCell>
+              <TableCell className={tdMoney}>{money(data?.totalPayment ?? '0', true)}</TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

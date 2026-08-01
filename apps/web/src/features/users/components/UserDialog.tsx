@@ -4,7 +4,16 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
 import { Modal } from '@/shared/ui/modal'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
+import { Field } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
 import { useCreateUser, useUpdateUser } from '../api/useUserMutations'
 
 interface Props {
@@ -82,69 +91,48 @@ export function UserDialog({ open, onClose, user }: Props) {
       }
     >
       <div className="space-y-3">
-        <L label="Email" required>
-          <input
+        <Field label="Email" required>
+          <Input
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             disabled={!!user}
             autoFocus={!user}
-            className={cn(cls, user && 'bg-slate-50 text-slate-500')}
+            className={cn(user && 'bg-slate-50 text-slate-500 disabled:opacity-100')}
           />
-        </L>
-        <L label="Họ tên" required>
-          <input
+        </Field>
+        <Field label="Họ tên" required>
+          <Input
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className={cls}
           />
-        </L>
-        <L label="Vai trò" required>
-          <select
+        </Field>
+        <Field label="Vai trò" required>
+          <Select
             value={form.role}
-            onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as UserRole }))}
-            className={cls}
+            onValueChange={(v) => setForm((f) => ({ ...f, role: v as UserRole }))}
           >
-            {Object.values(UserRole).map((r) => (
-              <option key={r} value={r}>
-                {USER_ROLE_LABELS[r]}
-              </option>
-            ))}
-          </select>
-        </L>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(UserRole).map((r) => (
+                <SelectItem key={r} value={r}>
+                  {USER_ROLE_LABELS[r]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
         {!user && (
-          <L label="Mật khẩu" required>
-            <input
+          <Field label="Mật khẩu" required>
+            <Input
               type="password"
               value={form.password}
               onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              className={cls}
             />
-          </L>
+          </Field>
         )}
       </div>
     </Modal>
-  )
-}
-
-const cls =
-  'h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm transition-colors hover:border-primary/50 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20'
-
-function L({
-  label,
-  required,
-  children,
-}: {
-  label: string
-  required?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-[13px] font-semibold text-slate-800">
-        {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
-      </label>
-      {children}
-    </div>
   )
 }

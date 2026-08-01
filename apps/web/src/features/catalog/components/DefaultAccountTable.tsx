@@ -8,12 +8,15 @@ import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
+import { Checkbox } from '@/shared/ui/checkbox'
+import { Input } from '@/shared/ui/input'
 import { useDefaultAccounts } from '../api/useDefaultAccounts'
 import {
   useDeleteDefaultAccount,
   useImportDefaultAccounts,
 } from '../api/useDefaultAccountMutations'
 import { DefaultAccountForm } from './DefaultAccountForm'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const PAGE_SIZE = 20
 
@@ -99,13 +102,13 @@ export function DefaultAccountTable() {
               size={15}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
-            <input
+            <Input
               placeholder="Tìm kiếm"
               defaultValue={keyword}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') setParam(P.q, (e.target as HTMLInputElement).value || null)
               }}
-              className="h-8 w-44 rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-8 w-44 pl-8 pr-2"
             />
           </div>
           <button
@@ -120,64 +123,64 @@ export function DefaultAccountTable() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[760px] border-collapse text-sm">
-          <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="w-10 px-3 py-2 text-center">
-                <input type="checkbox" />
-              </th>
-              <th className="w-16 px-3 py-2">STT</th>
-              <th className="px-3 py-2">Loại</th>
-              <th className="px-3 py-2">TK Nợ</th>
-              <th className="px-3 py-2">TK Có</th>
-              <th className="px-3 py-2">Trạng&nbsp;thái</th>
-              <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
+        <Table className="min-w-[760px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10 text-center">
+                <Checkbox />
+              </TableHead>
+              <TableHead className="w-16">STT</TableHead>
+              <TableHead>Loại</TableHead>
+              <TableHead>TK Nợ</TableHead>
+              <TableHead>TK Có</TableHead>
+              <TableHead>Trạng&nbsp;thái</TableHead>
+              <TableHead className="sticky right-0 z-30 bg-slate-50 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức&nbsp;năng
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && (
-              <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={7} className="py-10 text-center text-slate-400">
                   Đang tải…
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {isError && (
-              <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-red-500">
+              <TableRow>
+                <TableCell colSpan={7} className="py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
                   </button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {!isLoading && !isError && rows.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={7} className="py-10 text-center text-slate-400">
                   Chưa có tài khoản ngầm định nào.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {rows.map((r) => (
-              <tr key={r.id} className="group border-t border-border hover:bg-slate-50">
-                <td className="px-3 py-2 text-center">
-                  <input type="checkbox" />
-                </td>
-                <td className="px-3 py-2 text-slate-600">{r.order}</td>
-                <td className="px-3 py-2">
+              <TableRow key={r.id} className="group">
+                <TableCell className="text-center">
+                  <Checkbox />
+                </TableCell>
+                <TableCell className="text-slate-600">{r.order}</TableCell>
+                <TableCell>
                   <button
                     className="text-left text-primary hover:underline"
                     onClick={() => setFormState({ defaultAccountId: r.id, readOnly: true })}
                   >
                     {r.name}
                   </button>
-                </td>
-                <td className="px-3 py-2 text-slate-700">{r.debitAccount}</td>
-                <td className="px-3 py-2 text-slate-700">{r.creditAccount}</td>
-                <td className="px-3 py-2">
+                </TableCell>
+                <TableCell className="text-slate-700">{r.debitAccount}</TableCell>
+                <TableCell className="text-slate-700">{r.creditAccount}</TableCell>
+                <TableCell>
                   <span
                     className={cn(
                       'inline-block rounded-full px-2 py-0.5 text-xs',
@@ -186,8 +189,8 @@ export function DefaultAccountTable() {
                   >
                     {r.isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'}
                   </span>
-                </td>
-                <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
+                </TableCell>
+                <TableCell className="sticky right-0 z-10 bg-white shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
                     primaryLabel="Sửa"
                     onPrimary={() => setFormState({ defaultAccountId: r.id, readOnly: true })}
@@ -211,11 +214,11 @@ export function DefaultAccountTable() {
                       },
                     ]}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Footer / phân trang */}

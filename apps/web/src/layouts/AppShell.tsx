@@ -1,7 +1,7 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import type { PermissionDomain } from '@app/shared'
-import { cn } from '@/shared/lib/cn'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth, useCan } from '@/features/auth'
+import { cn } from '@/shared/lib/cn'
 import { useUiStore } from '@/shared/lib/ui-store'
 import {
   BankIcon,
@@ -23,9 +23,9 @@ import {
   WalletIcon,
   type IconProps,
 } from '@/shared/ui/icons'
-
 import logoUrl from '@/assets/logo.png'
 import { COMPANY_NAME } from '@/shared/lib/company'
+import { Input } from '@/shared/ui/input'
 
 type NavItem = {
   to: string
@@ -147,9 +147,9 @@ function Header() {
           size={16}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
         />
-        <input
+        <Input
           placeholder="Tìm kiếm chứng từ, đối tượng…"
-          className="h-9 w-full rounded-md border border-border bg-slate-50 pl-9 pr-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-9 bg-slate-50 pl-9 pr-3 focus:bg-white"
         />
       </div>
 

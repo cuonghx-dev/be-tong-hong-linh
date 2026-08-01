@@ -1,8 +1,12 @@
 import type { CreateEmployeeInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { Button } from '@/shared/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
 import { useBanks } from '../api/useBanks'
 import { useEmployee } from '../api/useEmployees'
 import { useCreateEmployee, useUpdateEmployee } from '../api/useEmployeeMutations'
@@ -32,7 +36,7 @@ export function EmployeeForm({ employeeId, readOnly = false, onSaved, onCancel }
   // Cơ cấu tổ chức cho combobox "Đơn vị (phòng ban)".
   const orgUnits = useOrganizationUnits({ page: 1, pageSize: 200, isActive: true })
 
-  const { register, handleSubmit, reset, watch, formState } = useForm<EmployeeFormValues>({
+  const { register, control, handleSubmit, reset, watch, formState } = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
     defaultValues: DEFAULTS,
   })
@@ -69,51 +73,68 @@ export function EmployeeForm({ employeeId, readOnly = false, onSaved, onCancel }
       <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           <Field label="Mã nhân viên" required error={formState.errors.code?.message}>
-            <input {...register('code')} className={inputCls} />
+            <Input {...register('code')} />
           </Field>
           <Field label="Tên nhân viên" required error={formState.errors.name?.message}>
-            <input {...register('name')} className={inputCls} />
+            <Input {...register('name')} />
           </Field>
           <Field label="Chức danh">
-            <input {...register('title')} className={inputCls} />
+            <Input {...register('title')} />
           </Field>
           <Field label="Đơn vị (phòng ban)">
-            <select {...register('department')} className={inputCls}>
-              <option value="">-- Chọn đơn vị --</option>
-              {/* Giá trị cũ không còn trong cơ cấu tổ chức (nhập khẩu / ngừng dùng) vẫn hiển thị được. */}
-              {department && !orgUnits.data?.data.some((u) => u.name === department) && (
-                <option value={department}>{department}</option>
+            <Controller
+              control={control}
+              name="department"
+              render={({ field }) => (
+                <Select value={field.value || undefined} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="-- Chọn đơn vị --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* Giá trị cũ không còn trong cơ cấu tổ chức (nhập khẩu / ngừng dùng) vẫn hiển thị được. */}
+                    {department && !orgUnits.data?.data.some((u) => u.name === department) && (
+                      <SelectItem value={department}>{department}</SelectItem>
+                    )}
+                    {(orgUnits.data?.data ?? []).map((u) => (
+                      <SelectItem key={u.id} value={u.name}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
-              {(orgUnits.data?.data ?? []).map((u) => (
-                <option key={u.id} value={u.name}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
+            />
           </Field>
           <Field label="Số tài khoản ngân hàng">
-            <input {...register('bankAccount')} className={inputCls} />
+            <Input {...register('bankAccount')} />
           </Field>
           <Field label="Tên ngân hàng">
-            <select {...register('bankName')} className={inputCls}>
-              <option value="">-- Chọn ngân hàng --</option>
-              {/* Giá trị cũ không còn trong danh mục (ngừng sử dụng / nhập tay) vẫn hiển thị được. */}
-              {bankName && !banks.data?.data.some((b) => b.shortName === bankName) && (
-                <option value={bankName}>{bankName}</option>
+            <Controller
+              control={control}
+              name="bankName"
+              render={({ field }) => (
+                <Select value={field.value || undefined} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="-- Chọn ngân hàng --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* Giá trị cũ không còn trong danh mục (ngừng sử dụng / nhập tay) vẫn hiển thị được. */}
+                    {bankName && !banks.data?.data.some((b) => b.shortName === bankName) && (
+                      <SelectItem value={bankName}>{bankName}</SelectItem>
+                    )}
+                    {(banks.data?.data ?? []).map((b) => (
+                      <SelectItem key={b.id} value={b.shortName}>
+                        {b.shortName} - {b.fullName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
-              {(banks.data?.data ?? []).map((b) => (
-                <option key={b.id} value={b.shortName}>
-                  {b.shortName} - {b.fullName}
-                </option>
-              ))}
-            </select>
+            />
           </Field>
         </div>
 
-        <label className="flex items-center gap-1.5 text-sm">
-          <input type="checkbox" {...register('isActive')} />
-          Đang sử dụng
-        </label>
+        <CheckboxField control={control} name="isActive" label="Đang sử dụng" />
 
         {serverMsg && <p className="text-sm text-red-600">{String(serverMsg)}</p>}
       </fieldset>
@@ -135,31 +156,5 @@ export function EmployeeForm({ employeeId, readOnly = false, onSaved, onCancel }
         )}
       </div>
     </form>
-  )
-}
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  required,
-  error,
-  children,
-}: {
-  label: string
-  required?: boolean
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-slate-500">
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-      </label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
   )
 }

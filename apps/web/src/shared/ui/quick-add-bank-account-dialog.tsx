@@ -5,7 +5,10 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
 import { Modal } from '@/shared/ui/modal'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
+import { Field } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
 
 interface Props {
   open: boolean
@@ -80,51 +83,33 @@ export function QuickAddBankAccountDialog({ open, onClose, initialAccountNumber,
       }
     >
       <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
-        <L label="Số tài khoản" required>
-          <input value={form.accountNumber} onChange={set('accountNumber')} autoFocus className={cls} />
-        </L>
-        <L label="Tên ngân hàng" required>
-          <select value={form.bankName} onChange={set('bankName')} className={cls}>
-            <option value="">-- Chọn ngân hàng --</option>
-            {(banks.data?.data ?? []).map((b) => (
-              <option key={b.id} value={b.shortName}>
-                {b.shortName} - {b.fullName}
-              </option>
-            ))}
-          </select>
-        </L>
-        <L label="Tên chi nhánh ngân hàng">
-          <input value={form.bankBranch} onChange={set('bankBranch')} className={cls} />
-        </L>
-        <L label="Chủ tài khoản">
-          <input value={form.accountHolder} onChange={set('accountHolder')} className={cls} />
-        </L>
+        <Field label="Số tài khoản" required>
+          <Input value={form.accountNumber} onChange={set('accountNumber')} autoFocus />
+        </Field>
+        <Field label="Tên ngân hàng" required>
+          <Select
+            value={form.bankName || undefined}
+            onValueChange={(v) => setForm((f) => ({ ...f, bankName: v }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="-- Chọn ngân hàng --" />
+            </SelectTrigger>
+            <SelectContent>
+              {(banks.data?.data ?? []).map((b) => (
+                <SelectItem key={b.id} value={b.shortName}>
+                  {b.shortName} - {b.fullName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Tên chi nhánh ngân hàng">
+          <Input value={form.bankBranch} onChange={set('bankBranch')} />
+        </Field>
+        <Field label="Chủ tài khoản">
+          <Input value={form.accountHolder} onChange={set('accountHolder')} />
+        </Field>
       </div>
     </Modal>
-  )
-}
-
-const cls =
-  'h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm transition-colors hover:border-primary/50 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20'
-
-function L({
-  label,
-  required,
-  className,
-  children,
-}: {
-  label: string
-  required?: boolean
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className={cn('space-y-1', className)}>
-      <label className="text-[13px] font-semibold text-slate-800">
-        {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
-      </label>
-      {children}
-    </div>
   )
 }

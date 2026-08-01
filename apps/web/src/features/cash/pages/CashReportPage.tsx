@@ -10,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 import { CashBookReport } from '../components/reports/CashBookReport'
 import { CashJournalReport } from '../components/reports/CashJournalReport'
 import { DailyBalanceReport } from '../components/reports/DailyBalanceReport'
@@ -73,26 +75,26 @@ export function CashReportPage() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
             Từ ngày
-            <input
+            <Input
               type="date"
               value={fromDate}
               max={toDate}
               onChange={(e) => e.target.value && setRange(e.target.value, toDate)}
-              className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-8 w-auto px-2"
             />
-          </label>
-          <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          </Label>
+          <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
             Đến ngày
-            <input
+            <Input
               type="date"
               value={toDate}
               min={fromDate}
               onChange={(e) => e.target.value && setRange(fromDate, e.target.value)}
-              className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-8 w-auto px-2"
             />
-          </label>
+          </Label>
         </div>
 
         {/* Bảng báo cáo — tự cuộn trong khung */}

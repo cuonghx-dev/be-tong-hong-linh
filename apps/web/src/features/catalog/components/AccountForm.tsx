@@ -10,6 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
+import { Textarea } from '@/shared/ui/textarea'
 import { useAccount, useAccounts } from '../api/useAccounts'
 import { useCreateAccount, useUpdateAccount } from '../api/useAccountMutations'
 import { accountSchema, type AccountFormValues } from '../schema'
@@ -54,7 +58,8 @@ export function AccountForm({ itemId, readOnly = false, onSaved, onCancel }: Pro
     return items.filter((i) => !excluded.has(i.id))
   }, [all.data, itemId])
 
-  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<AccountFormValues>({
+  const { register,
+    control, handleSubmit, reset, watch, setValue, formState } = useForm<AccountFormValues>({
     resolver: zodResolver(accountSchema),
     defaultValues: DEFAULTS,
   })
@@ -91,7 +96,7 @@ export function AccountForm({ itemId, readOnly = false, onSaved, onCancel }: Pro
       <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           <Field label="Số tài khoản" required error={formState.errors.number?.message}>
-            <input {...register('number')} className={inputCls} placeholder="VD: 1111" />
+            <Input {...register('number')} placeholder="VD: 1111" />
           </Field>
           <Field label="Tính chất" required error={formState.errors.nature?.message}>
             <Select
@@ -112,10 +117,10 @@ export function AccountForm({ itemId, readOnly = false, onSaved, onCancel }: Pro
           </Field>
         </div>
         <Field label="Tên tài khoản" required error={formState.errors.name?.message}>
-          <input {...register('name')} className={inputCls} />
+          <Input {...register('name')} />
         </Field>
         <Field label="Tên tiếng Anh">
-          <input {...register('nameEn')} className={inputCls} />
+          <Input {...register('nameEn')} />
         </Field>
         <Field label="Thuộc tài khoản">
           <Select
@@ -136,13 +141,10 @@ export function AccountForm({ itemId, readOnly = false, onSaved, onCancel }: Pro
           </Select>
         </Field>
         <Field label="Diễn giải">
-          <textarea {...register('description')} rows={2} className={textareaCls} />
+          <Textarea {...register('description')} rows={2} />
         </Field>
 
-        <label className="flex items-center gap-1.5 text-sm">
-          <input type="checkbox" {...register('isActive')} />
-          Đang sử dụng
-        </label>
+        <CheckboxField control={control} name="isActive" label="Đang sử dụng" />
 
         {serverMsg && <p className="text-sm text-red-600">{String(serverMsg)}</p>}
       </fieldset>
@@ -164,33 +166,5 @@ export function AccountForm({ itemId, readOnly = false, onSaved, onCancel }: Pro
         )}
       </div>
     </form>
-  )
-}
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-const textareaCls =
-  'w-full rounded-md border border-border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  required,
-  error,
-  children,
-}: {
-  label: string
-  required?: boolean
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-slate-500">
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-      </label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
   )
 }

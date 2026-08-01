@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useBankAccounts } from '@/features/catalog'
 import { cn } from '@/shared/lib/cn'
 import { ChevronDownIcon, PlusIcon, SearchIcon } from '@/shared/ui/icons'
+import { Input } from '@/shared/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 interface Props {
   value?: string // số tài khoản đang chọn
@@ -96,7 +98,7 @@ export function BankAccountPicker({
   return (
     <div ref={wrapRef} className={cn('flex gap-1.5', className)}>
       <div className="relative flex-1">
-        <input
+        <Input
           ref={inputRef}
           disabled={disabled}
           value={open ? keyword : (value ?? '')}
@@ -106,7 +108,7 @@ export function BankAccountPicker({
             if (!open) openPanel()
             setKeyword(e.target.value)
           }}
-          className="h-9 w-full rounded-md border border-border pr-7 pl-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-slate-50"
+          className="pl-2 pr-7 disabled:bg-slate-50 disabled:opacity-100"
         />
         <ChevronDownIcon
           size={14}
@@ -135,53 +137,53 @@ export function BankAccountPicker({
           className="z-50 overflow-hidden rounded-md border border-border bg-white shadow-lg"
         >
           <div className="max-h-72 overflow-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead className="sticky top-0 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-3 py-1.5">Số tài&nbsp;khoản</th>
-                  <th className="px-3 py-1.5">Tên ngân&nbsp;hàng</th>
-                  <th className="px-3 py-1.5">Chi nhánh&nbsp;NH</th>
-                  <th className="px-3 py-1.5">Chủ tài&nbsp;khoản</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-1.5">Số tài&nbsp;khoản</TableHead>
+                  <TableHead className="py-1.5">Tên ngân&nbsp;hàng</TableHead>
+                  <TableHead className="py-1.5">Chi nhánh&nbsp;NH</TableHead>
+                  <TableHead className="py-1.5">Chủ tài&nbsp;khoản</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {isLoading && (
-                  <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-slate-400">
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-6 text-center text-slate-400">
                       Đang tải…
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!isLoading && items.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-slate-400">
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-6 text-center text-slate-400">
                       Không có tài khoản phù hợp.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!isLoading &&
                   items.map((a) => (
-                    <tr
+                    <TableRow
                       key={a.id}
                       onClick={() => pick(a)}
-                      className="cursor-pointer border-t border-border hover:bg-slate-50"
+                      className="cursor-pointer"
                     >
-                      <td className="whitespace-nowrap px-3 py-1.5 font-medium text-slate-700">
+                      <TableCell className="whitespace-nowrap py-1.5 font-medium text-slate-700">
                         {a.accountNumber}
-                      </td>
-                      <td className="max-w-[240px] truncate px-3 py-1.5 text-slate-700">
+                      </TableCell>
+                      <TableCell className="max-w-[240px] truncate py-1.5 text-slate-700">
                         {a.bankName}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-slate-600">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap py-1.5 text-slate-600">
                         {a.bankBranch ?? ''}
-                      </td>
-                      <td className="max-w-[200px] truncate px-3 py-1.5 text-slate-600">
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate py-1.5 text-slate-600">
                         {a.accountHolder ?? ''}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <div className="flex items-center gap-1.5 border-t border-border bg-slate-50 px-3 py-1.5 text-xs text-slate-400">
             <SearchIcon size={13} /> Tìm theo số TK / tên ngân hàng

@@ -1,7 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { AppShell } from '@/layouts/AppShell'
 import { RequireAuth, RequirePermission } from '@/features/auth'
-import { domainFromPath } from '@/shared/lib/domain-from-path'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { HomePage } from '@/features/dashboard/pages/HomePage'
 import { CashPage } from '@/features/cash/pages/CashPage'
@@ -35,6 +33,8 @@ import { CatalogPage } from '@/features/catalog/pages/CatalogPage'
 import { CatalogItemPage } from '@/features/catalog/pages/CatalogItemPage'
 import { UsersPage } from '@/features/users'
 import { SettingsPage } from '@/features/settings'
+import { AppShell } from '@/layouts/AppShell'
+import { domainFromPath } from '@/shared/lib/domain-from-path'
 
 // Trang chứng từ full-page (§5) — standalone, đè Sidebar/Header.
 const recordRoutes = [

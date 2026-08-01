@@ -1,6 +1,7 @@
 import type { SalesReportFilter } from '@app/shared'
 import { useSalesByItemReport } from '../../api/useSalesReports'
 import { money, quantity, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 8
 
@@ -10,49 +11,49 @@ export function SalesByItemReport({ filter }: { filter: SalesReportFilter }) {
   const rows = data?.rows ?? []
 
   return (
-    <table className="w-full min-w-[900px] border-collapse text-sm">
-      <thead className="sticky top-0 z-20">
-        <tr>
-          <th className={thClass}>Mã hàng</th>
-          <th className={thClass}>Tên hàng</th>
-          <th className={thClass}>ĐVT</th>
-          <th className={thClass}>Số&nbsp;lượng</th>
-          <th className={thClass}>Chiết&nbsp;khấu</th>
-          <th className={thClass}>Doanh&nbsp;thu</th>
-          <th className={thClass}>Thuế&nbsp;GTGT</th>
-          <th className={thClass}>Tổng&nbsp;cộng</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table className="min-w-[900px]">
+      <TableHeader>
+        <TableRow>
+          <TableHead className={thClass}>Mã hàng</TableHead>
+          <TableHead className={thClass}>Tên hàng</TableHead>
+          <TableHead className={thClass}>ĐVT</TableHead>
+          <TableHead className={thClass}>Số&nbsp;lượng</TableHead>
+          <TableHead className={thClass}>Chiết&nbsp;khấu</TableHead>
+          <TableHead className={thClass}>Doanh&nbsp;thu</TableHead>
+          <TableHead className={thClass}>Thuế&nbsp;GTGT</TableHead>
+          <TableHead className={thClass}>Tổng&nbsp;cộng</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {isLoading && <StatusRow colSpan={COL_SPAN}>Đang tải…</StatusRow>}
         {isError && <StatusRow colSpan={COL_SPAN}>Lỗi tải dữ liệu.</StatusRow>}
         {data && rows.length === 0 && (
           <StatusRow colSpan={COL_SPAN}>Không có phát sinh trong kỳ.</StatusRow>
         )}
         {rows.map((r, i) => (
-          <tr key={`${r.itemId ?? r.itemName ?? 'none'}-${i}`} className="hover:bg-slate-50">
-            <td className={`${tdClass} whitespace-nowrap`}>{r.itemCode}</td>
-            <td className={`${tdClass} max-w-[320px] truncate`} title={r.itemName ?? ''}>
+          <TableRow key={`${r.itemId ?? r.itemName ?? 'none'}-${i}`}>
+            <TableCell className={`${tdClass} whitespace-nowrap`}>{r.itemCode}</TableCell>
+            <TableCell className={`${tdClass} max-w-[320px] truncate`} title={r.itemName ?? ''}>
               {r.itemName ?? '(Không chọn mặt hàng)'}
-            </td>
-            <td className={tdClass}>{r.unit}</td>
-            <td className={tdMoney}>{quantity(r.quantity)}</td>
-            <td className={tdMoney}>{money(r.discount)}</td>
-            <td className={tdMoney}>{money(r.amount)}</td>
-            <td className={tdMoney}>{money(r.vatAmount)}</td>
-            <td className={tdMoney}>{money(r.total)}</td>
-          </tr>
+            </TableCell>
+            <TableCell className={tdClass}>{r.unit}</TableCell>
+            <TableCell className={tdMoney}>{quantity(r.quantity)}</TableCell>
+            <TableCell className={tdMoney}>{money(r.discount)}</TableCell>
+            <TableCell className={tdMoney}>{money(r.amount)}</TableCell>
+            <TableCell className={tdMoney}>{money(r.vatAmount)}</TableCell>
+            <TableCell className={tdMoney}>{money(r.total)}</TableCell>
+          </TableRow>
         ))}
         {data && rows.length > 0 && (
-          <tr className="bg-slate-50 font-semibold">
-            <td colSpan={4} className={tdClass}>Tổng cộng</td>
-            <td className={tdMoney}>{money(data.totalDiscount, true)}</td>
-            <td className={tdMoney}>{money(data.totalAmount, true)}</td>
-            <td className={tdMoney}>{money(data.totalVat, true)}</td>
-            <td className={tdMoney}>{money(data.totalPayment, true)}</td>
-          </tr>
+          <TableRow className="bg-slate-50 font-semibold">
+            <TableCell colSpan={4} className={tdClass}>Tổng cộng</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalDiscount, true)}</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalAmount, true)}</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalVat, true)}</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalPayment, true)}</TableCell>
+          </TableRow>
         )}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   )
 }

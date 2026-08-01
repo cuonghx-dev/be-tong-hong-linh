@@ -10,6 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
 import { useBankAccount } from '../api/useBankAccounts'
 import { useCreateBankAccount, useUpdateBankAccount } from '../api/useBankAccountMutations'
 import { useBanks } from '../api/useBanks'
@@ -36,7 +39,7 @@ export function BankAccountForm({ accountId, readOnly = false, onSaved, onCancel
   // Danh mục ngân hàng đang sử dụng cho dropdown chọn ngân hàng.
   const banks = useBanks({ page: 1, pageSize: 200, isActive: true })
 
-  const { register, handleSubmit, reset, watch, setValue, formState } =
+  const { register, control, handleSubmit, reset, watch, setValue, formState } =
     useForm<BankAccountFormValues>({
       resolver: zodResolver(bankAccountSchema),
       defaultValues: DEFAULTS,
@@ -71,7 +74,7 @@ export function BankAccountForm({ accountId, readOnly = false, onSaved, onCancel
       <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           <Field label="Số tài khoản" required error={formState.errors.accountNumber?.message}>
-            <input {...register('accountNumber')} className={inputCls} />
+            <Input {...register('accountNumber')} />
           </Field>
           <Field label="Tên ngân hàng" required error={formState.errors.bankName?.message}>
             <Select
@@ -96,20 +99,17 @@ export function BankAccountForm({ accountId, readOnly = false, onSaved, onCancel
             </Select>
           </Field>
           <Field label="Tên chi nhánh ngân hàng">
-            <input {...register('bankBranch')} className={inputCls} />
+            <Input {...register('bankBranch')} />
           </Field>
           <Field label="Chủ tài khoản">
-            <input {...register('accountHolder')} className={inputCls} />
+            <Input {...register('accountHolder')} />
           </Field>
           <Field label="Chi nhánh">
-            <input {...register('branch')} className={inputCls} />
+            <Input {...register('branch')} />
           </Field>
         </div>
 
-        <label className="flex items-center gap-1.5 text-sm">
-          <input type="checkbox" {...register('isActive')} />
-          Đang sử dụng
-        </label>
+        <CheckboxField control={control} name="isActive" label="Đang sử dụng" />
 
         {serverMsg && <p className="text-sm text-red-600">{String(serverMsg)}</p>}
       </fieldset>
@@ -131,31 +131,5 @@ export function BankAccountForm({ accountId, readOnly = false, onSaved, onCancel
         )}
       </div>
     </form>
-  )
-}
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  required,
-  error,
-  children,
-}: {
-  label: string
-  required?: boolean
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-slate-500">
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-      </label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
   )
 }

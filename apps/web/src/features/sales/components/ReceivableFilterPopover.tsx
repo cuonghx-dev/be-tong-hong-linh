@@ -10,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Field } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
 import { RECEIVABLE_AGING_LABEL, RECEIVABLE_STATUS_LABEL } from '../types'
 
 export interface ReceivableFilterValue {
@@ -36,9 +38,6 @@ interface Props {
   onApply: (v: ReceivableFilterValue) => void
   onReset: () => void
 }
-
-const dateCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
 export function ReceivableFilterPopover({ value, onApply, onReset }: Props) {
   const [draft, setDraft] = useState<ReceivableFilterValue>(value)
@@ -125,11 +124,10 @@ export function ReceivableFilterPopover({ value, onApply, onReset }: Props) {
             </Field>
 
             <Field label="Đến ngày">
-              <input
+              <Input
                 type="date"
                 value={draft.toDate}
                 onChange={(e) => setDraft({ ...draft, toDate: e.target.value })}
-                className={dateCls}
               />
             </Field>
           </div>
@@ -159,15 +157,6 @@ export function ReceivableFilterPopover({ value, onApply, onReset }: Props) {
         </div>
       )}
     </Popover>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-semibold text-slate-600">{label}</label>
-      {children}
-    </div>
   )
 }
 

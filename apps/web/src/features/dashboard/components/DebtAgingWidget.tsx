@@ -1,5 +1,5 @@
-import type { UseQueryResult } from '@tanstack/react-query'
 import type { DebtAgingDto } from '@app/shared'
+import type { UseQueryResult } from '@tanstack/react-query'
 import { formatCurrency } from '@/shared/lib/currency'
 import { usePayableAging, useReceivableAging } from '../api/useDashboard'
 import { DashboardCard } from './DashboardCard'

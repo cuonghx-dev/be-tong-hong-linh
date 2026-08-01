@@ -10,15 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 import { useCustomers } from '../api/useCustomers'
 import { ReceivableDetailReport } from '../components/reports/ReceivableDetailReport'
 import { ReceivableSummaryReport } from '../components/reports/ReceivableSummaryReport'
 import { SalesByItemReport } from '../components/reports/SalesByItemReport'
 import { SalesDetailReport } from '../components/reports/SalesDetailReport'
 import { reportHasCustomerFilter, SALES_REPORTS, type SalesReportSlug } from '../types'
-
-const inputClass =
-  'h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
 // Trang xem báo cáo bán hàng full-page (§5 design.md). Route: /sales/reports/:slug
 // 2 báo cáo công nợ lọc thêm được theo 1 khách hàng.
@@ -86,31 +85,31 @@ export function SalesReportPage() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
             Từ ngày
-            <input
+            <Input
               type="date"
               value={fromDate}
               max={toDate}
               onChange={(e) => e.target.value && setRange(e.target.value, toDate)}
-              className={inputClass}
+              className="h-8 w-auto px-2"
             />
-          </label>
-          <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          </Label>
+          <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
             Đến ngày
-            <input
+            <Input
               type="date"
               value={toDate}
               min={fromDate}
               onChange={(e) => e.target.value && setRange(fromDate, e.target.value)}
-              className={inputClass}
+              className="h-8 w-auto px-2"
             />
-          </label>
+          </Label>
           {reportHasCustomerFilter(slug as SalesReportSlug) && (
-            <label className="flex items-center gap-1.5 text-sm text-slate-600">
+            <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
               Khách hàng
               <CustomerSelect value={customerId} onChange={(v) => setParam('customer', v)} />
-            </label>
+            </Label>
           )}
         </div>
 

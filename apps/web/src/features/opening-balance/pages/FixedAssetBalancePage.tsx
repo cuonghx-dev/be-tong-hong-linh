@@ -6,12 +6,14 @@ import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { ChevronLeftIcon, RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { Modal } from '@/shared/ui/modal'
 import { useToast } from '@/shared/ui/toast'
+import { Input } from '@/shared/ui/input'
 import { useFixedAssetBalances } from '../api/useFixedAssetBalances'
 import {
   useImportFixedAssetBalances,
   useSaveFixedAssetBalances,
 } from '../api/useFixedAssetBalanceMutations'
 import { FixedAssetForm, type FixedAssetFormValue } from '../components/FixedAssetForm'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Dòng TSCĐ đang hiển thị/sửa trên bảng (số tiền lưu number, ngày yyyy-MM-dd).
 type AssetRow = FixedAssetFormValue
@@ -164,11 +166,11 @@ export function FixedAssetBalancePage() {
               size={15}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
-            <input
+            <Input
               placeholder="Nhập từ khóa tìm kiếm"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              className="h-8 w-full rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-8 pl-8 pr-2"
             />
           </div>
           <input
@@ -196,95 +198,95 @@ export function FixedAssetBalancePage() {
 
         {/* Table */}
         <div className="flex-1 overflow-auto">
-          <table className="w-full min-w-[1500px] border-collapse text-sm">
-            <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="w-44 px-3 py-2">Mã tài&nbsp;sản</th>
-                <th className="px-3 py-2">Tên tài&nbsp;sản</th>
-                <th className="w-44 px-3 py-2">Loại tài&nbsp;sản</th>
-                <th className="w-44 px-3 py-2">Đơn&nbsp;vị sử&nbsp;dụng</th>
-                <th className="w-36 px-3 py-2 text-right">Nguyên&nbsp;giá</th>
-                <th className="w-36 px-3 py-2 text-right">Giá&nbsp;trị tính&nbsp;KH</th>
-                <th className="w-36 px-3 py-2 text-right">Hao&nbsp;mòn lũy&nbsp;kế</th>
-                <th className="w-28 px-3 py-2">Ngày ghi&nbsp;tăng</th>
-                <th className="w-28 px-3 py-2">Ngày tính&nbsp;KH</th>
-                <th className="w-24 px-3 py-2 text-right">TG SD (tháng)</th>
-                <th className="w-24 px-3 py-2 text-right">Còn&nbsp;lại (tháng)</th>
-                <th className="w-24 px-3 py-2">TK nguyên&nbsp;giá</th>
-                <th className="w-24 px-3 py-2">TK khấu&nbsp;hao</th>
-                <th className="sticky right-0 z-30 w-28 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
+          <Table className="min-w-[1500px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-44">Mã tài&nbsp;sản</TableHead>
+                <TableHead>Tên tài&nbsp;sản</TableHead>
+                <TableHead className="w-44">Loại tài&nbsp;sản</TableHead>
+                <TableHead className="w-44">Đơn&nbsp;vị sử&nbsp;dụng</TableHead>
+                <TableHead className="w-36 text-right">Nguyên&nbsp;giá</TableHead>
+                <TableHead className="w-36 text-right">Giá&nbsp;trị tính&nbsp;KH</TableHead>
+                <TableHead className="w-36 text-right">Hao&nbsp;mòn lũy&nbsp;kế</TableHead>
+                <TableHead className="w-28">Ngày ghi&nbsp;tăng</TableHead>
+                <TableHead className="w-28">Ngày tính&nbsp;KH</TableHead>
+                <TableHead className="w-24 text-right">TG SD (tháng)</TableHead>
+                <TableHead className="w-24 text-right">Còn&nbsp;lại (tháng)</TableHead>
+                <TableHead className="w-24">TK nguyên&nbsp;giá</TableHead>
+                <TableHead className="w-24">TK khấu&nbsp;hao</TableHead>
+                <TableHead className="sticky right-0 z-30 w-28 bg-slate-50 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                   Chức&nbsp;năng
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {isLoading && (
-                <tr>
-                  <td colSpan={14} className="px-3 py-10 text-center text-slate-400">
+                <TableRow>
+                  <TableCell colSpan={14} className="py-10 text-center text-slate-400">
                     Đang tải…
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {isError && (
-                <tr>
-                  <td colSpan={14} className="px-3 py-10 text-center text-red-500">
+                <TableRow>
+                  <TableCell colSpan={14} className="py-10 text-center text-red-500">
                     Lỗi tải dữ liệu.{' '}
                     <button className="underline" onClick={() => refetch()}>
                       Thử lại
                     </button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {!isLoading && !isError && filtered.length === 0 && (
-                <tr>
-                  <td colSpan={14} className="px-3 py-10 text-center text-slate-400">
+                <TableRow>
+                  <TableCell colSpan={14} className="py-10 text-center text-slate-400">
                     Chưa có tài sản cố định. Thêm tài sản hoặc nhập khẩu từ Excel.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {filtered.map((r) => (
-                <tr key={r.code} className="group border-t border-border hover:bg-slate-50">
-                  <td className="px-3 py-1.5">
+                <TableRow key={r.code} className="group">
+                  <TableCell className="py-1.5">
                     <button
                       onClick={() => setEditing(r.code)}
                       className="text-primary hover:underline"
                     >
                       {r.code}
                     </button>
-                  </td>
-                  <td className="max-w-[320px] truncate px-3 py-1.5 text-slate-700">{r.name}</td>
-                  <td className="max-w-[176px] truncate px-3 py-1.5 text-slate-700">
+                  </TableCell>
+                  <TableCell className="max-w-[320px] truncate py-1.5 text-slate-700">{r.name}</TableCell>
+                  <TableCell className="max-w-[176px] truncate py-1.5 text-slate-700">
                     {r.assetType}
-                  </td>
-                  <td className="max-w-[176px] truncate px-3 py-1.5 text-slate-700">
+                  </TableCell>
+                  <TableCell className="max-w-[176px] truncate py-1.5 text-slate-700">
                     {r.department}
-                  </td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                  </TableCell>
+                  <TableCell className="py-1.5 text-right tabular-nums text-slate-700">
                     {r.originalCost ? formatCurrency(r.originalCost) : 0}
-                  </td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                  </TableCell>
+                  <TableCell className="py-1.5 text-right tabular-nums text-slate-700">
                     {r.depreciableValue ? formatCurrency(r.depreciableValue) : 0}
-                  </td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                  </TableCell>
+                  <TableCell className="py-1.5 text-right tabular-nums text-slate-700">
                     {r.accumulatedDepreciation ? formatCurrency(r.accumulatedDepreciation) : 0}
-                  </td>
-                  <td className="px-3 py-1.5 tabular-nums text-slate-700">
+                  </TableCell>
+                  <TableCell className="py-1.5 tabular-nums text-slate-700">
                     {formatDate(r.acquisitionDate)}
-                  </td>
-                  <td className="px-3 py-1.5 tabular-nums text-slate-700">
+                  </TableCell>
+                  <TableCell className="py-1.5 tabular-nums text-slate-700">
                     {formatDate(r.depreciationDate)}
-                  </td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                  </TableCell>
+                  <TableCell className="py-1.5 text-right tabular-nums text-slate-700">
                     {r.usefulLifeMonths}
-                  </td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                  </TableCell>
+                  <TableCell className="py-1.5 text-right tabular-nums text-slate-700">
                     {r.remainingMonths}
-                  </td>
-                  <td className="px-3 py-1.5 tabular-nums text-slate-700">{r.assetAccount}</td>
-                  <td className="px-3 py-1.5 tabular-nums text-slate-700">
+                  </TableCell>
+                  <TableCell className="py-1.5 tabular-nums text-slate-700">{r.assetAccount}</TableCell>
+                  <TableCell className="py-1.5 tabular-nums text-slate-700">
                     {r.depreciationAccount}
-                  </td>
-                  <td className="sticky right-0 z-10 bg-white px-3 py-1.5 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
+                  </TableCell>
+                  <TableCell className="sticky right-0 z-10 bg-white py-1.5 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setEditing(r.code)}
@@ -299,31 +301,31 @@ export function FixedAssetBalancePage() {
                         Xóa
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
+            </TableBody>
             {filtered.length > 0 && (
-              <tfoot className="sticky bottom-0 border-t border-border bg-slate-50 font-semibold text-slate-800">
-                <tr>
-                  <td colSpan={4} className="px-3 py-2">
+              <TableFooter className="sticky bottom-0 font-semibold text-slate-800">
+                <TableRow>
+                  <TableCell colSpan={4}>
                     Tổng cộng
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
                     {formatCurrency(totals.cost)}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
                     {formatCurrency(totals.depreciable)}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
                     {formatCurrency(totals.accumulated)}
-                  </td>
-                  <td colSpan={6} />
-                  <td className="sticky right-0 bg-slate-50" />
-                </tr>
-              </tfoot>
+                  </TableCell>
+                  <TableCell colSpan={6} />
+                  <TableCell className="sticky right-0 bg-slate-50" />
+                </TableRow>
+              </TableFooter>
             )}
-          </table>
+          </Table>
         </div>
 
         {/* Footer */}

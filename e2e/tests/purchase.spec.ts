@@ -39,7 +39,7 @@ test.describe('Mua hàng', () => {
     await page.getByRole('button', { name: 'Chứng từ mua dịch vụ', exact: true }).click()
     await expect(page.getByRole('heading', { name: /Chứng từ mua dịch vụ/ })).toBeVisible()
 
-    await page.locator('label', { hasText: 'Thanh toán ngay' }).locator('input[type=radio]').check()
+    await page.getByRole('radio', { name: 'Thanh toán ngay' }).check()
 
     await fieldInput(page, 'Tên nhà cung cấp').fill('NCC E2E')
     // Thanh toán ngay bằng tiền mặt → chứng từ lấy số của phiếu chi (PC).

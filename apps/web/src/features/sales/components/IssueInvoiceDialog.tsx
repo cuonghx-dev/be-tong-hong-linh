@@ -3,6 +3,8 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { Button } from '@/shared/ui/button'
 import { Modal } from '@/shared/ui/modal'
 import { useToast } from '@/shared/ui/toast'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 import { useUpdateSalesVoucher } from '../api/useSalesVoucherMutations'
 
 interface IssueInvoiceDialogProps {
@@ -63,14 +65,14 @@ export function IssueInvoiceDialog({ voucher, onClose }: IssueInvoiceDialogProps
       }
     >
       <div className="space-y-1">
-        <label className="text-xs font-medium text-slate-500">Số hóa đơn</label>
-        <input
+        <Label className="text-xs font-medium text-slate-500">Số hóa đơn</Label>
+        <Input
           autoFocus
           value={invoiceNo}
           onChange={(e) => setInvoiceNo(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && save()}
           placeholder="VD: 00004693"
-          className="h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-9 px-2"
         />
       </div>
     </Modal>

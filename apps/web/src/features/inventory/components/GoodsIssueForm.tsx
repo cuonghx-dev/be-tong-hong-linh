@@ -20,6 +20,10 @@ import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { WarehousePicker, warehouseCellCls } from '@/shared/ui/warehouse-picker'
 import { useToast } from '@/shared/ui/toast'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CellInput, cellInputCls } from '@/shared/ui/cell-input'
 import { useGoodsIssue, useNextGoodsIssueNo } from '../api/useGoodsIssues'
 import { useCreateGoodsIssue, useUpdateGoodsIssue } from '../api/useGoodsIssueMutations'
 import {
@@ -34,7 +38,7 @@ import {
   issueDefaultCreditAccount,
   issueDefaultDebitAccount,
 } from '../types'
-import { MoneyInput } from './MoneyInput'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 interface Props {
   category: GoodsIssueCategory
@@ -294,11 +298,11 @@ export function GoodsIssueForm({
         </Select>
         {/* Lập phiếu xuất từ chứng từ nguồn (CT bán hàng / lệnh sản xuất) — chưa hỗ trợ,
             giữ chỗ đúng vị trí MISA; placeholder đổi theo lý do xuất. */}
-        <input
+        <Input
           disabled
           placeholder={variant.sourcePlaceholder}
           title={`Lập phiếu xuất từ ${variant.sourcePlaceholder.replace('Nhập ', '')} — chưa hỗ trợ`}
-          className={cn(inputCls, 'w-60 shrink-0 disabled:bg-white disabled:text-slate-400')}
+          className="w-60 shrink-0 disabled:bg-white disabled:text-slate-400"
         />
         <button
           type="button"
@@ -333,14 +337,13 @@ export function GoodsIssueForm({
                     />
                   </Field>
                   <Field label="Tên khách hàng" className="md:col-span-4">
-                    <input {...register('customerName')} className={inputCls} />
+                    <Input {...register('customerName')} />
                   </Field>
                   {/* Người nhận bỏ trống thì phiếu in lấy tên KH. */}
                   <Field label="Người nhận" className="md:col-span-3">
-                    <input
+                    <Input
                       {...register('receiver')}
                       placeholder={watch('customerName') || undefined}
-                      className={inputCls}
                     />
                   </Field>
                 </>
@@ -361,19 +364,19 @@ export function GoodsIssueForm({
                     />
                   </Field>
                   <Field label="Tên người nhận" className="md:col-span-4">
-                    <input {...register('receiver')} className={inputCls} />
+                    <Input {...register('receiver')} />
                   </Field>
                 </>
               )}
 
               {variant.showAddress && (
                 <Field label="Địa chỉ" className="md:col-span-4">
-                  <input {...register('address')} className={inputCls} />
+                  <Input {...register('address')} />
                 </Field>
               )}
               {variant.showDepartment && (
                 <Field label="Bộ phận" className="md:col-span-3">
-                  <input {...register('department')} className={inputCls} />
+                  <Input {...register('department')} />
                 </Field>
               )}
               {variant.showSalesEmployee && (
@@ -392,24 +395,24 @@ export function GoodsIssueForm({
                 </Field>
               )}
               <Field label="Lý do xuất" className="md:col-span-4">
-                <input {...register('description')} className={inputCls} />
+                <Input {...register('description')} />
               </Field>
             </div>
 
             {/* Cụm ngày + số chứng từ */}
             <div className="space-y-3 md:col-span-3">
               <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
-                <input type="date" {...register('postingDate')} className={inputCls} />
+                <Input type="date" {...register('postingDate')} />
               </Field>
               <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
-                <input type="date" {...register('voucherDate')} className={inputCls} />
+                <Input type="date" {...register('voucherDate')} />
               </Field>
               <Field label="Số chứng từ">
-                <input
+                <Input
                   value={displayNo || 'Tự động'}
                   readOnly
                   title="Số dự kiến — cấp chính thức khi Cất"
-                  className={cn(inputCls, 'bg-slate-50 text-slate-500')}
+                  className="bg-slate-50 text-slate-500"
                 />
               </Field>
             </div>
@@ -426,12 +429,12 @@ export function GoodsIssueForm({
           {/* Kèm theo N chứng từ gốc — cùng dòng như MISA (ô số lượng + nhãn phía sau). */}
           <div className="flex items-center gap-2 text-sm">
             <span className="text-xs font-medium text-slate-500">Kèm theo</span>
-            <input
+            <Input
               type="number"
               min={0}
               placeholder="Số lượng"
               {...register('attachmentCount')}
-              className={cn(inputCls, 'w-28')}
+              className="w-28"
             />
             <span className="text-slate-600">chứng từ gốc</span>
           </div>
@@ -444,53 +447,53 @@ export function GoodsIssueForm({
               <span className="text-sm font-medium text-slate-600">Hàng tiền</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1080px] border-collapse text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="w-8 px-2 py-1.5 text-center">#</th>
-                    <th className="px-2 py-1.5">Mã hàng</th>
-                    <th className="px-2 py-1.5">Tên hàng</th>
-                    <th className="w-28 px-2 py-1.5">Kho</th>
-                    <th className="w-24 px-2 py-1.5">TK Nợ</th>
-                    <th className="w-24 px-2 py-1.5">TK Có</th>
-                    <th className="w-16 px-2 py-1.5">ĐVT</th>
-                    <th className="w-24 px-2 py-1.5 text-right">Số&nbsp;lượng</th>
-                    <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
-                    <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
+              <Table className="min-w-[1080px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                    <TableHead className="px-2 py-1.5">Mã hàng</TableHead>
+                    <TableHead className="px-2 py-1.5">Tên hàng</TableHead>
+                    <TableHead className="w-28 px-2 py-1.5">Kho</TableHead>
+                    <TableHead className="w-24 px-2 py-1.5">TK Nợ</TableHead>
+                    <TableHead className="w-24 px-2 py-1.5">TK Có</TableHead>
+                    <TableHead className="w-16 px-2 py-1.5">ĐVT</TableHead>
+                    <TableHead className="w-24 px-2 py-1.5 text-right">Số&nbsp;lượng</TableHead>
+                    <TableHead className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</TableHead>
+                    <TableHead className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</TableHead>
                     {/* Cột cuối đổi theo lý do xuất: bán hàng → Số lô + Hạn sử dụng; sản xuất → Thành phẩm. */}
                     {variant.showLot && (
                       <>
-                        <th className="w-24 px-2 py-1.5">Số&nbsp;lô</th>
-                        <th className="w-32 px-2 py-1.5">Hạn sử&nbsp;dụng</th>
+                        <TableHead className="w-24 px-2 py-1.5">Số&nbsp;lô</TableHead>
+                        <TableHead className="w-32 px-2 py-1.5">Hạn sử&nbsp;dụng</TableHead>
                       </>
                     )}
                     {variant.showFinishedProduct && (
-                      <th className="w-32 px-2 py-1.5">Thành&nbsp;phẩm</th>
+                      <TableHead className="w-32 px-2 py-1.5">Thành&nbsp;phẩm</TableHead>
                     )}
-                    <th className="w-8 px-2 py-1.5" />
-                  </tr>
-                </thead>
-                <tbody>
+                    <TableHead className="w-8 px-2 py-1.5" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {fields.map((f, i) => {
                     const l = lines?.[i]
                     const amount = num(l?.quantity) * num(l?.unitPrice)
                     return (
-                      <tr key={f.id} className="border-t border-border">
-                        <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                        <td className="px-2 py-1">
+                      <TableRow key={f.id}>
+                        <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                        <TableCell className="px-2 py-1">
                           <ItemCell value={l?.itemId} onPick={(item) => pickItem(i, item)} />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput
                             {...register(`lines.${i}.itemName`)}
                             className={cn(
-                              cellCls,
+                              cellInputCls,
                               formState.errors.lines?.[i]?.itemName &&
                                 'rounded ring-1 ring-inset ring-red-500',
                             )}
                           />
-                        </td>
-                        <td className="px-2 py-1">
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
                           <Controller
                             control={control}
                             name={`lines.${i}.warehouseId`}
@@ -502,8 +505,8 @@ export function GoodsIssueForm({
                               />
                             )}
                           />
-                        </td>
-                        <td className="px-2 py-1">
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
                           <Controller
                             control={control}
                             name={`lines.${i}.debitAccount`}
@@ -515,8 +518,8 @@ export function GoodsIssueForm({
                               />
                             )}
                           />
-                        </td>
-                        <td className="px-2 py-1">
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
                           <Controller
                             control={control}
                             name={`lines.${i}.creditAccount`}
@@ -528,55 +531,53 @@ export function GoodsIssueForm({
                               />
                             )}
                           />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input {...register(`lines.${i}.unit`)} className={cellCls} />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput {...register(`lines.${i}.unit`)} />
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
+                          <CellInput
                             type="number"
                             min={0}
                             step="any"
                             {...register(`lines.${i}.quantity`)}
-                            className={cn(cellCls, 'text-right')}
+                            className={cn('text-right')}
                           />
-                        </td>
-                        <td className="px-2 py-1">
+                        </TableCell>
+                        <TableCell className="px-2 py-1">
                           <Controller
                             control={control}
                             name={`lines.${i}.unitPrice`}
                             render={({ field }) => (
-                              <MoneyInput value={field.value} onChange={field.onChange} />
+                              <AmountInput value={field.value} onChange={field.onChange} className={cellInputCls} />
                             )}
                           />
-                        </td>
-                        <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                        </TableCell>
+                        <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                           {formatCurrency(amount)}
-                        </td>
+                        </TableCell>
                         {variant.showLot && (
                           <>
-                            <td className="px-2 py-1">
-                              <input {...register(`lines.${i}.lotNo`)} className={cellCls} />
-                            </td>
-                            <td className="px-2 py-1">
-                              <input
+                            <TableCell className="px-2 py-1">
+                              <CellInput {...register(`lines.${i}.lotNo`)} />
+                            </TableCell>
+                            <TableCell className="px-2 py-1">
+                              <CellInput
                                 type="date"
                                 {...register(`lines.${i}.expiryDate`)}
-                                className={cellCls}
                               />
-                            </td>
+                            </TableCell>
                           </>
                         )}
                         {variant.showFinishedProduct && (
-                          <td className="px-2 py-1">
-                            <input
+                          <TableCell className="px-2 py-1">
+                            <CellInput
                               {...register(`lines.${i}.finishedProduct`)}
                               placeholder="Mã thành phẩm"
-                              className={cellCls}
                             />
-                          </td>
+                          </TableCell>
                         )}
-                        <td className="px-2 py-1 text-center">
+                        <TableCell className="px-2 py-1 text-center">
                           <button
                             type="button"
                             onClick={() => fields.length > 1 && remove(i)}
@@ -585,28 +586,28 @@ export function GoodsIssueForm({
                           >
                             <TrashIcon size={14} />
                           </button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-                </tbody>
-                <tfoot className="bg-slate-100 font-medium">
-                  <tr className="border-t border-border">
+                </TableBody>
+                <TableFooter className="bg-slate-100">
+                  <TableRow>
                     {/* #, Mã hàng, Tên hàng, Kho, TK Nợ, TK Có, ĐVT */}
-                    <td className="px-2 py-1.5" colSpan={7}>
+                    <TableCell className="px-2 py-1.5" colSpan={7}>
                       Tổng cộng
-                    </td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">{totalQty}</td>
+                    </TableCell>
+                    <TableCell className="px-2 py-1.5 text-right tabular-nums">{totalQty}</TableCell>
                     {/* Đơn giá */}
-                    <td />
-                    <td className="px-2 py-1.5 text-right tabular-nums">
+                    <TableCell />
+                    <TableCell className="px-2 py-1.5 text-right tabular-nums">
                       {formatCurrency(totalAmount)}
-                    </td>
+                    </TableCell>
                     {/* [Số lô, Hạn sử dụng] / [Thành phẩm] + cột xóa dòng */}
-                    <td colSpan={(variant.showLot ? 2 : 0) + (variant.showFinishedProduct ? 1 : 0) + 1} />
-                  </tr>
-                </tfoot>
-              </table>
+                    <TableCell colSpan={(variant.showLot ? 2 : 0) + (variant.showFinishedProduct ? 1 : 0) + 1} />
+                  </TableRow>
+                </TableFooter>
+              </Table>
             </div>
 
             {/* Nút dòng (§5.6) — như MISA: Thêm dòng · Thêm ghi chú · Xóa hết dòng */}
@@ -652,7 +653,7 @@ export function GoodsIssueForm({
           {variant.showDeliveryLocation && (
             <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-12">
               <Field label="Địa điểm giao hàng" className="md:col-span-4">
-                <input {...register('deliveryLocation')} className={inputCls} />
+                <Input {...register('deliveryLocation')} />
               </Field>
             </div>
           )}
@@ -721,33 +722,8 @@ function ItemCell({ value, onPick }: { value?: string; onPick: (item: ItemOption
       onKeywordChange={setKeyword}
       onSelect={onPick}
       placeholder="Mã hàng"
-      inputClassName={cellCls}
+      inputClassName={cellInputCls}
       allowFreeText
     />
-  )
-}
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-const cellCls =
-  'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  error,
-  className,
-  children,
-}: {
-  label: string
-  error?: string
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className={cn('space-y-1', className)}>
-      <label className="text-xs font-medium text-slate-500">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
   )
 }

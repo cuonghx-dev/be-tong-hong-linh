@@ -18,9 +18,16 @@ import { Button } from '@/shared/ui/button'
 import { PlusIcon, TrashIcon } from '@/shared/ui/icons'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
 import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { num } from '@/shared/lib/num'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { Checkbox } from '@/shared/ui/checkbox'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
+import { CellInput, cellInputCls } from '@/shared/ui/cell-input'
 import { useGeneralVoucher, useNextGeneralVoucherNo } from '../api/useGeneralVouchers'
 import {
   useCreateGeneralVoucher,
@@ -32,7 +39,7 @@ import {
   type GeneralTaxLineFormValues,
   type GeneralVoucherFormValues,
 } from '../schema'
-import { AmountInput } from './AmountInput'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Vế bút toán của ô đối tượng — dùng để dựng tên field (debitPartnerId / creditPartnerId).
 // 'tax' = ô đối tượng trên dòng kê khai hóa đơn (taxLines.*.partnerId).
@@ -260,16 +267,15 @@ export function GeneralVoucherForm({
         <div className="flex flex-wrap gap-6">
           <div className="min-w-[520px] flex-1 space-y-3">
             <Field label="Diễn giải">
-              <input
+              <Input
                 {...register('description', {
                   onChange: (e) => syncDescription(e.target.value),
                 })}
-                className={inputCls}
               />
             </Field>
             <div className="flex gap-3">
               <Field label="Hạn thanh toán" className="w-56">
-                <input type="date" {...register('dueDate')} className={inputCls} />
+                <Input type="date" {...register('dueDate')} />
               </Field>
             </div>
           </div>
@@ -277,17 +283,17 @@ export function GeneralVoucherForm({
           {/* Cột phải: ngày + số chứng từ */}
           <div className="w-56 space-y-3">
             <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
-              <input type="date" {...register('postingDate')} className={inputCls} />
+              <Input type="date" {...register('postingDate')} />
             </Field>
             <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
-              <input type="date" {...register('voucherDate')} className={inputCls} />
+              <Input type="date" {...register('voucherDate')} />
             </Field>
             <Field label="Số chứng từ">
-              <input
+              <Input
                 value={voucherId ? (editing.data?.voucherNo ?? '…') : (nextNo.data ?? 'Tự động')}
                 readOnly
                 title="Số dự kiến — cấp chính thức khi Lưu"
-                className={cn(inputCls, 'bg-slate-50 text-slate-500')}
+                className="bg-slate-50 text-slate-500"
               />
             </Field>
           </div>
@@ -317,30 +323,30 @@ export function GeneralVoucherForm({
 
           <div className={cn('space-y-2', tab !== 'entry' && 'hidden')}>
           <div className="overflow-x-auto rounded-md border border-border">
-            <table data-testid="general-entry-table" className="w-full border-collapse text-sm">
-              <thead className="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="w-8 px-2 py-1.5 text-center">#</th>
-                  <th className="px-2 py-1.5">Diễn&nbsp;giải</th>
-                  <th className="w-24 px-2 py-1.5">TK Nợ</th>
-                  <th className="w-24 px-2 py-1.5">TK Có</th>
-                  <th className="w-36 px-2 py-1.5 text-right">Số&nbsp;tiền</th>
-                  <th className="w-40 px-2 py-1.5">Nghiệp&nbsp;vụ</th>
-                  <th className="px-2 py-1.5">Đối&nbsp;tượng Nợ</th>
-                  <th className="px-2 py-1.5">Tên đối&nbsp;tượng Nợ</th>
-                  <th className="px-2 py-1.5">Đối&nbsp;tượng Có</th>
-                  <th className="px-2 py-1.5">Tên đối&nbsp;tượng Có</th>
-                  <th className="w-8 px-2 py-1.5" />
-                </tr>
-              </thead>
-              <tbody>
+            <Table data-testid="general-entry-table">
+              <TableHeader className="bg-slate-100">
+                <TableRow>
+                  <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                  <TableHead className="px-2 py-1.5">Diễn&nbsp;giải</TableHead>
+                  <TableHead className="w-24 px-2 py-1.5">TK Nợ</TableHead>
+                  <TableHead className="w-24 px-2 py-1.5">TK Có</TableHead>
+                  <TableHead className="w-36 px-2 py-1.5 text-right">Số&nbsp;tiền</TableHead>
+                  <TableHead className="w-40 px-2 py-1.5">Nghiệp&nbsp;vụ</TableHead>
+                  <TableHead className="px-2 py-1.5">Đối&nbsp;tượng Nợ</TableHead>
+                  <TableHead className="px-2 py-1.5">Tên đối&nbsp;tượng Nợ</TableHead>
+                  <TableHead className="px-2 py-1.5">Đối&nbsp;tượng Có</TableHead>
+                  <TableHead className="px-2 py-1.5">Tên đối&nbsp;tượng Có</TableHead>
+                  <TableHead className="w-8 px-2 py-1.5" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {fields.map((f, i) => (
-                  <tr key={f.id} className="border-t border-border">
-                    <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.description`)} className={cellCls} />
-                    </td>
-                    <td className="px-2 py-1">
+                  <TableRow key={f.id}>
+                    <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                    <TableCell className="px-2 py-1">
+                      <CellInput {...register(`lines.${i}.description`)} />
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
                       <Controller
                         control={control}
                         name={`lines.${i}.debitAccount`}
@@ -355,8 +361,8 @@ export function GeneralVoucherForm({
                           />
                         )}
                       />
-                    </td>
-                    <td className="px-2 py-1">
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
                       <Controller
                         control={control}
                         name={`lines.${i}.creditAccount`}
@@ -371,27 +377,37 @@ export function GeneralVoucherForm({
                           />
                         )}
                       />
-                    </td>
-                    <td className="px-2 py-1">
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
                       <Controller
                         control={control}
                         name={`lines.${i}.amount`}
                         render={({ field }) => (
-                          <AmountInput value={field.value} onChange={field.onChange} />
+                          <AmountInput value={field.value} onChange={field.onChange} className={cellInputCls} />
                         )}
                       />
-                    </td>
-                    <td className="px-2 py-1">
-                      <select {...register(`lines.${i}.operation`)} className={cellCls}>
-                        <option value="">--</option>
-                        {Object.values(GeneralLineOperation).map((op) => (
-                          <option key={op} value={op}>
-                            {GENERAL_LINE_OPERATION_LABELS[op]}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-2 py-1">
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
+                      <Controller
+                        control={control}
+                        name={`lines.${i}.operation`}
+                        render={({ field }) => (
+                          <Select value={field.value || undefined} onValueChange={field.onChange}>
+                            <SelectTrigger className={cellInputCls}>
+                              <SelectValue placeholder="--" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.values(GeneralLineOperation).map((op) => (
+                                <SelectItem key={op} value={op}>
+                                  {GENERAL_LINE_OPERATION_LABELS[op]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
                       <PartnerPicker
                         value={lines?.[i]?.debitPartnerId}
                         items={partnerItems}
@@ -402,11 +418,11 @@ export function GeneralVoucherForm({
                         onAddNew={() => setPartnerDialogAt({ line: i, side: 'debit' })}
                         inputClassName="h-8"
                       />
-                    </td>
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.debitPartnerName`)} className={cellCls} />
-                    </td>
-                    <td className="px-2 py-1">
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
+                      <CellInput {...register(`lines.${i}.debitPartnerName`)} />
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
                       <PartnerPicker
                         value={lines?.[i]?.creditPartnerId}
                         items={partnerItems}
@@ -417,11 +433,11 @@ export function GeneralVoucherForm({
                         onAddNew={() => setPartnerDialogAt({ line: i, side: 'credit' })}
                         inputClassName="h-8"
                       />
-                    </td>
-                    <td className="px-2 py-1">
-                      <input {...register(`lines.${i}.creditPartnerName`)} className={cellCls} />
-                    </td>
-                    <td className="px-2 py-1 text-center">
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
+                      <CellInput {...register(`lines.${i}.creditPartnerName`)} />
+                    </TableCell>
+                    <TableCell className="px-2 py-1 text-center">
                       <button
                         type="button"
                         onClick={() => fields.length > 1 && remove(i)}
@@ -430,18 +446,18 @@ export function GeneralVoucherForm({
                       >
                         ✕
                       </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-              <tfoot className="bg-slate-100 font-medium">
-                <tr className="border-t border-border">
-                  <td className="px-2 py-1.5" colSpan={4} />
-                  <td className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(total)}</td>
-                  <td colSpan={6} />
-                </tr>
-              </tfoot>
-            </table>
+              </TableBody>
+              <TableFooter className="bg-slate-100">
+                <TableRow>
+                  <TableCell className="px-2 py-1.5" colSpan={4} />
+                  <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(total)}</TableCell>
+                  <TableCell colSpan={6} />
+                </TableRow>
+              </TableFooter>
+            </Table>
           </div>
 
           <div className="flex items-center justify-between text-sm text-slate-500">
@@ -472,58 +488,66 @@ export function GeneralVoucherForm({
           {/* Tab kê khai hóa đơn — dòng chỉ lên bảng kê thuế GTGT, không sinh bút toán */}
           <div className={cn('space-y-2', tab !== 'tax' && 'hidden')}>
             <div className="overflow-x-auto rounded-md border border-border">
-              <table data-testid="general-tax-table" className="w-full border-collapse text-sm">
-                <thead className="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="w-8 px-2 py-1.5 text-center">#</th>
-                    <th className="min-w-[200px] px-2 py-1.5">Diễn&nbsp;giải thuế</th>
-                    <th className="w-20 px-2 py-1.5 text-center">Có hóa&nbsp;đơn</th>
-                    <th className="w-44 px-2 py-1.5">Loại&nbsp;thuế</th>
-                    <th className="w-40 px-2 py-1.5 text-right">Giá trị HHDV chưa&nbsp;thuế</th>
-                    <th className="w-24 px-2 py-1.5 text-right">% thuế&nbsp;GTGT</th>
-                    <th className="w-36 px-2 py-1.5 text-right">Tiền thuế&nbsp;GTGT</th>
-                    <th className="w-24 px-2 py-1.5">TK thuế&nbsp;GTGT</th>
-                    <th className="w-28 px-2 py-1.5">Số hóa&nbsp;đơn</th>
-                    <th className="w-36 px-2 py-1.5">Ngày hóa&nbsp;đơn</th>
-                    <th className="w-32 px-2 py-1.5">Nhóm&nbsp;HHDV</th>
-                    <th className="w-44 px-2 py-1.5">Mã đối&nbsp;tượng</th>
-                    <th className="min-w-[140px] px-2 py-1.5">Tên đối&nbsp;tượng</th>
-                    <th className="w-32 px-2 py-1.5">Mã số&nbsp;thuế</th>
-                    <th className="w-8 px-2 py-1.5" />
-                  </tr>
-                </thead>
-                <tbody>
+              <Table data-testid="general-tax-table">
+                <TableHeader className="bg-slate-100">
+                  <TableRow>
+                    <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                    <TableHead className="min-w-[200px] px-2 py-1.5">Diễn&nbsp;giải thuế</TableHead>
+                    <TableHead className="w-20 px-2 py-1.5 text-center">Có hóa&nbsp;đơn</TableHead>
+                    <TableHead className="w-44 px-2 py-1.5">Loại&nbsp;thuế</TableHead>
+                    <TableHead className="w-40 px-2 py-1.5 text-right">Giá trị HHDV chưa&nbsp;thuế</TableHead>
+                    <TableHead className="w-24 px-2 py-1.5 text-right">% thuế&nbsp;GTGT</TableHead>
+                    <TableHead className="w-36 px-2 py-1.5 text-right">Tiền thuế&nbsp;GTGT</TableHead>
+                    <TableHead className="w-24 px-2 py-1.5">TK thuế&nbsp;GTGT</TableHead>
+                    <TableHead className="w-28 px-2 py-1.5">Số hóa&nbsp;đơn</TableHead>
+                    <TableHead className="w-36 px-2 py-1.5">Ngày hóa&nbsp;đơn</TableHead>
+                    <TableHead className="w-32 px-2 py-1.5">Nhóm&nbsp;HHDV</TableHead>
+                    <TableHead className="w-44 px-2 py-1.5">Mã đối&nbsp;tượng</TableHead>
+                    <TableHead className="min-w-[140px] px-2 py-1.5">Tên đối&nbsp;tượng</TableHead>
+                    <TableHead className="w-32 px-2 py-1.5">Mã số&nbsp;thuế</TableHead>
+                    <TableHead className="w-8 px-2 py-1.5" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {taxArray.fields.map((f, i) => (
-                    <tr key={f.id} className="border-t border-border">
-                      <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                      <td className="px-2 py-1">
-                        <input {...register(`taxLines.${i}.description`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1 text-center">
+                    <TableRow key={f.id}>
+                      <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`taxLines.${i}.description`)} />
+                      </TableCell>
+                      <TableCell className="px-2 py-1 text-center">
                         <Controller
                           control={control}
                           name={`taxLines.${i}.hasInvoice`}
                           render={({ field }) => (
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={!!field.value}
-                              onChange={(e) => field.onChange(e.target.checked)}
-                              className="h-4 w-4 accent-primary"
+                              onCheckedChange={(v) => field.onChange(v === true)}
                             />
                           )}
                         />
-                      </td>
-                      <td className="px-2 py-1">
-                        <select {...register(`taxLines.${i}.taxType`)} className={cellCls}>
-                          <option value="">--</option>
-                          {Object.values(GeneralTaxType).map((t) => (
-                            <option key={t} value={t}>
-                              {GENERAL_TAX_TYPE_LABELS[t]}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-2 py-1">
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <Controller
+                          control={control}
+                          name={`taxLines.${i}.taxType`}
+                          render={({ field }) => (
+                            <Select value={field.value || undefined} onValueChange={field.onChange}>
+                              <SelectTrigger className={cellInputCls}>
+                                <SelectValue placeholder="--" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.values(GeneralTaxType).map((t) => (
+                                  <SelectItem key={t} value={t}>
+                                    {GENERAL_TAX_TYPE_LABELS[t]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
                         <Controller
                           control={control}
                           name={`taxLines.${i}.taxableAmount`}
@@ -540,16 +564,17 @@ export function GeneralVoucherForm({
                                     Math.round((num(v) * rate) / 100),
                                   )
                               }}
+                              className={cellInputCls}
                             />
                           )}
                         />
-                      </td>
-                      <td className="px-2 py-1">
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
                         <Controller
                           control={control}
                           name={`taxLines.${i}.vatRate`}
                           render={({ field }) => (
-                            <input
+                            <CellInput
                               type="number"
                               min={0}
                               max={100}
@@ -562,21 +587,21 @@ export function GeneralVoucherForm({
                                   setValue(`taxLines.${i}.vatAmount`, Math.round((base * rate) / 100))
                                 }
                               }}
-                              className={cn(cellCls, 'text-right')}
+                              className={cn('text-right')}
                             />
                           )}
                         />
-                      </td>
-                      <td className="px-2 py-1">
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
                         <Controller
                           control={control}
                           name={`taxLines.${i}.vatAmount`}
                           render={({ field }) => (
-                            <AmountInput value={field.value ?? 0} onChange={field.onChange} />
+                            <AmountInput value={field.value ?? 0} onChange={field.onChange} className={cellInputCls} />
                           )}
                         />
-                      </td>
-                      <td className="px-2 py-1">
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
                         <Controller
                           control={control}
                           name={`taxLines.${i}.vatAccount`}
@@ -588,24 +613,22 @@ export function GeneralVoucherForm({
                             />
                           )}
                         />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input {...register(`taxLines.${i}.invoiceNo`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`taxLines.${i}.invoiceNo`)} />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput
                           type="date"
                           {...register(`taxLines.${i}.invoiceDate`)}
-                          className={cellCls}
                         />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput
                           {...register(`taxLines.${i}.goodsServiceGroup`)}
-                          className={cellCls}
                         />
-                      </td>
-                      <td className="px-2 py-1">
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
                         <PartnerPicker
                           value={watch(`taxLines.${i}.partnerId`)}
                           items={partnerItems}
@@ -616,14 +639,14 @@ export function GeneralVoucherForm({
                           onAddNew={() => setPartnerDialogAt({ line: i, side: 'tax' })}
                           inputClassName="h-8"
                         />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input {...register(`taxLines.${i}.partnerName`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input {...register(`taxLines.${i}.supplierTaxCode`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1 text-center">
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`taxLines.${i}.partnerName`)} />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`taxLines.${i}.supplierTaxCode`)} />
+                      </TableCell>
+                      <TableCell className="px-2 py-1 text-center">
                         <button
                           type="button"
                           onClick={() => taxArray.remove(i)}
@@ -632,24 +655,24 @@ export function GeneralVoucherForm({
                         >
                           <TrashIcon size={15} />
                         </button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-                <tfoot className="bg-slate-100 font-medium">
-                  <tr className="border-t border-border">
-                    <td colSpan={4} />
-                    <td className="px-2 py-1.5 text-right tabular-nums">
+                </TableBody>
+                <TableFooter className="bg-slate-100">
+                  <TableRow>
+                    <TableCell colSpan={4} />
+                    <TableCell className="px-2 py-1.5 text-right tabular-nums">
                       {formatCurrency(taxableTotal)}
-                    </td>
-                    <td />
-                    <td className="px-2 py-1.5 text-right tabular-nums">
+                    </TableCell>
+                    <TableCell />
+                    <TableCell className="px-2 py-1.5 text-right tabular-nums">
                       {formatCurrency(vatTotal)}
-                    </td>
-                    <td colSpan={8} />
-                  </tr>
-                </tfoot>
-              </table>
+                    </TableCell>
+                    <TableCell colSpan={8} />
+                  </TableRow>
+                </TableFooter>
+              </Table>
             </div>
 
             <div className="flex items-center justify-between text-sm text-slate-500">
@@ -677,21 +700,12 @@ export function GeneralVoucherForm({
               </Button>
             </div>
 
-            <label className="flex items-center gap-2 pt-1 text-sm text-slate-600">
-              <Controller
-                control={control}
-                name="excludeFromVatReport"
-                render={({ field }) => (
-                  <input
-                    type="checkbox"
-                    checked={!!field.value}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                    className="h-4 w-4 accent-primary"
-                  />
-                )}
-              />
-              Không lên bảng kê thuế GTGT
-            </label>
+            <CheckboxField
+              control={control}
+              name="excludeFromVatReport"
+              label="Không lên bảng kê thuế GTGT"
+              className="pt-1"
+            />
           </div>
         </section>
       </fieldset>
@@ -728,10 +742,6 @@ export function GeneralVoucherForm({
 }
 
 // ── Local UI bits ─────────────────────────────────────────────────────────
-const inputCls =
-  'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-const cellCls =
-  'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
 // Tab bảng dữ liệu (Hạch toán / Kê khai hóa đơn) — link kiểu MISA, gạch chân tab đang mở.
 function TabLink({
@@ -762,26 +772,6 @@ function TabLink({
       )}
     >
       {children}
-    </div>
-  )
-}
-
-function Field({
-  label,
-  error,
-  className,
-  children,
-}: {
-  label: string
-  error?: string
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className={cn('space-y-1', className)}>
-      <label className="text-xs font-medium text-slate-500">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   )
 }

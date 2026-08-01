@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { fillAccount } from '../helpers/account'
-import { fieldInput } from '../helpers/form'
+import { fieldInput, selectValue } from '../helpers/form'
 import { rowMenuAction } from '../helpers/voucher'
 
 // Chứng từ nghiệp vụ khác (NVK) — form MISA: hạn thanh toán ở thông tin chung,
@@ -40,7 +40,7 @@ test.describe('Tổng hợp — chứng từ nghiệp vụ khác', () => {
     await amountCell(page).fill('5000000')
     await expect(amountCell(page)).toHaveValue('5.000.000')
 
-    await firstRow(page).locator('select').selectOption({ label: 'Giảm giá hàng bán' })
+    await selectValue(page, firstRow(page).getByRole('combobox').first(), 'Giảm giá hàng bán')
     await firstRow(page).locator('input').nth(4).fill('Tên đối tượng Nợ E2E')
 
     await page.getByRole('button', { name: 'Lưu', exact: true }).click()
@@ -92,7 +92,7 @@ test.describe('Tổng hợp — chứng từ nghiệp vụ khác', () => {
     const taxRow = taxTable(page).locator('tbody tr').first()
     await expect(taxRow.locator('input').first()).toHaveValue(/Thuế GTGT/)
 
-    await taxRow.locator('select').selectOption({ label: 'Tăng thuế đầu vào' })
+    await selectValue(page, taxRow.getByRole('combobox').first(), 'Tăng thuế đầu vào')
     // Giá trị HHDV chưa thuế + % thuế → tiền thuế tự tính (10.000.000 × 10%).
     await taxRow.getByPlaceholder('0').first().fill('10000000')
     await taxRow.locator('input[type=number]').fill('10')

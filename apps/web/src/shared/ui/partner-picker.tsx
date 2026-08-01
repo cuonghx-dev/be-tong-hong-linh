@@ -2,6 +2,8 @@ import { PartnerType } from '@app/shared'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/shared/lib/cn'
 import { ChevronDownIcon, PlusIcon, SearchIcon } from '@/shared/ui/icons'
+import { Input } from '@/shared/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Đối tượng chọn được trong picker (§ Mã đối tượng — MISA).
 export interface PartnerOption {
@@ -107,7 +109,7 @@ export function PartnerPicker({
   return (
     <div ref={wrapRef} className={cn('flex gap-1.5', className)}>
       <div className="relative flex-1">
-        <input
+        <Input
           ref={inputRef}
           disabled={disabled}
           value={open ? keyword : (value ?? '')}
@@ -117,10 +119,7 @@ export function PartnerPicker({
             if (!open) openPanel()
             onKeywordChange(e.target.value)
           }}
-          className={cn(
-            'h-9 w-full rounded-md border border-border pr-7 pl-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-slate-50',
-            inputClassName,
-          )}
+          className={cn('pl-2 pr-7 disabled:bg-slate-50 disabled:opacity-100', inputClassName)}
         />
         <ChevronDownIcon
           size={14}
@@ -146,59 +145,59 @@ export function PartnerPicker({
           className="z-50 overflow-hidden rounded-md border border-border bg-white shadow-lg"
         >
           <div className="max-h-72 overflow-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead className="sticky top-0 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-3 py-1.5">Đối&nbsp;tượng</th>
-                  <th className="px-3 py-1.5">Tên đối&nbsp;tượng</th>
-                  <th className="px-3 py-1.5">Mã&nbsp;số thuế</th>
-                  <th className="px-3 py-1.5">Địa&nbsp;chỉ</th>
-                  <th className="px-3 py-1.5">Điện&nbsp;thoại</th>
-                  <th className="px-3 py-1.5">Loại đối&nbsp;tượng</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-1.5">Đối&nbsp;tượng</TableHead>
+                  <TableHead className="py-1.5">Tên đối&nbsp;tượng</TableHead>
+                  <TableHead className="py-1.5">Mã&nbsp;số thuế</TableHead>
+                  <TableHead className="py-1.5">Địa&nbsp;chỉ</TableHead>
+                  <TableHead className="py-1.5">Điện&nbsp;thoại</TableHead>
+                  <TableHead className="py-1.5">Loại đối&nbsp;tượng</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {loading && (
-                  <tr>
-                    <td colSpan={6} className="px-3 py-6 text-center text-slate-400">
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-6 text-center text-slate-400">
                       Đang tải…
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!loading && items.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-3 py-6 text-center text-slate-400">
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-6 text-center text-slate-400">
                       Không có đối tượng phù hợp.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!loading &&
                   items.map((p) => (
-                    <tr
+                    <TableRow
                       key={`${p.type}-${p.code}`}
                       onClick={() => pick(p)}
-                      className="cursor-pointer border-t border-border hover:bg-slate-50"
+                      className="cursor-pointer"
                     >
-                      <td className="whitespace-nowrap px-3 py-1.5 font-medium text-slate-700">
+                      <TableCell className="whitespace-nowrap py-1.5 font-medium text-slate-700">
                         {p.code}
-                      </td>
-                      <td className="max-w-[220px] truncate px-3 py-1.5 text-slate-700">{p.name}</td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-slate-600">
+                      </TableCell>
+                      <TableCell className="max-w-[220px] truncate py-1.5 text-slate-700">{p.name}</TableCell>
+                      <TableCell className="whitespace-nowrap py-1.5 text-slate-600">
                         {p.taxCode ?? ''}
-                      </td>
-                      <td className="max-w-[200px] truncate px-3 py-1.5 text-slate-600">
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate py-1.5 text-slate-600">
                         {p.address ?? ''}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-slate-600">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap py-1.5 text-slate-600">
                         {p.phone ?? ''}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-slate-600">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap py-1.5 text-slate-600">
                         {TYPE_LABEL[p.type]}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <div className="flex items-center gap-1.5 border-t border-border bg-slate-50 px-3 py-1.5 text-xs text-slate-400">
             <SearchIcon size={13} /> Tìm nhanh

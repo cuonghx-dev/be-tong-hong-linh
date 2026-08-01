@@ -22,7 +22,11 @@ export function Modal({ open, onClose, title, children, footer, size = 'lg' }: M
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key !== 'Escape') return
+      // Select/Popover (Radix) render qua portal ở body: Esc đóng lớp đó trước,
+      // nhưng sự kiện vẫn nổi lên document → bỏ qua để không đóng cả modal.
+      if (document.querySelector('[data-radix-popper-content-wrapper]')) return
+      onClose()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)

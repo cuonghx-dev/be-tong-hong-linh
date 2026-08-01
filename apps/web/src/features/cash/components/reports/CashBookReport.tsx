@@ -1,6 +1,7 @@
 import type { CashReportFilter } from '@app/shared'
 import { useCashBook } from '../../api/useCashReports'
 import { formatDate, money, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 9
 
@@ -11,62 +12,62 @@ export function CashBookReport({ filter }: { filter: CashReportFilter }) {
   const rows = data?.rows ?? []
 
   return (
-    <table className="w-full min-w-[1000px] border-collapse text-sm">
-      <thead className="sticky top-0 z-20">
-        <tr>
-          <th className={thClass}>Ngày hạch&nbsp;toán</th>
-          <th className={thClass}>Ngày chứng&nbsp;từ</th>
-          <th className={thClass}>Số phiếu&nbsp;thu</th>
-          <th className={thClass}>Số phiếu&nbsp;chi</th>
-          <th className={thClass}>Diễn&nbsp;giải</th>
-          <th className={thClass}>TK đối&nbsp;ứng</th>
-          <th className={thClass}>Thu</th>
-          <th className={thClass}>Chi</th>
-          <th className={thClass}>Tồn</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table className="min-w-[1000px]">
+      <TableHeader>
+        <TableRow>
+          <TableHead className={thClass}>Ngày hạch&nbsp;toán</TableHead>
+          <TableHead className={thClass}>Ngày chứng&nbsp;từ</TableHead>
+          <TableHead className={thClass}>Số phiếu&nbsp;thu</TableHead>
+          <TableHead className={thClass}>Số phiếu&nbsp;chi</TableHead>
+          <TableHead className={thClass}>Diễn&nbsp;giải</TableHead>
+          <TableHead className={thClass}>TK đối&nbsp;ứng</TableHead>
+          <TableHead className={thClass}>Thu</TableHead>
+          <TableHead className={thClass}>Chi</TableHead>
+          <TableHead className={thClass}>Tồn</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {isLoading && <StatusRow colSpan={COL_SPAN}>Đang tải…</StatusRow>}
         {isError && <StatusRow colSpan={COL_SPAN}>Lỗi tải dữ liệu.</StatusRow>}
         {data && (
-          <tr className="bg-slate-50/60 font-medium">
-            <td colSpan={8} className={tdClass}>Số dư đầu kỳ</td>
-            <td className={tdMoney}>{money(data.openingBalance, true)}</td>
-          </tr>
+          <TableRow className="bg-slate-50/60 font-medium">
+            <TableCell colSpan={8} className={tdClass}>Số dư đầu kỳ</TableCell>
+            <TableCell className={tdMoney}>{money(data.openingBalance, true)}</TableCell>
+          </TableRow>
         )}
         {data && rows.length === 0 && (
           <StatusRow colSpan={COL_SPAN}>Không có phát sinh trong kỳ.</StatusRow>
         )}
         {rows.map((r, i) => (
-          <tr key={`${r.voucherId}-${i}`} className="hover:bg-slate-50">
-            <td className={`${tdClass} whitespace-nowrap`}>{formatDate(r.postingDate)}</td>
-            <td className={`${tdClass} whitespace-nowrap`}>{formatDate(r.voucherDate)}</td>
-            <td className={`${tdClass} whitespace-nowrap`}>{r.receiptNo}</td>
-            <td className={`${tdClass} whitespace-nowrap`}>{r.paymentNo}</td>
-            <td className={`${tdClass} max-w-[300px] truncate`} title={r.description ?? ''}>
+          <TableRow key={`${r.voucherId}-${i}`}>
+            <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(r.postingDate)}</TableCell>
+            <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(r.voucherDate)}</TableCell>
+            <TableCell className={`${tdClass} whitespace-nowrap`}>{r.receiptNo}</TableCell>
+            <TableCell className={`${tdClass} whitespace-nowrap`}>{r.paymentNo}</TableCell>
+            <TableCell className={`${tdClass} max-w-[300px] truncate`} title={r.description ?? ''}>
               {r.description}
-            </td>
-            <td className={tdClass}>{r.counterAccount}</td>
-            <td className={tdMoney}>{money(r.receiptAmount)}</td>
-            <td className={tdMoney}>{money(r.paymentAmount)}</td>
-            <td className={tdMoney}>{money(r.balance, true)}</td>
-          </tr>
+            </TableCell>
+            <TableCell className={tdClass}>{r.counterAccount}</TableCell>
+            <TableCell className={tdMoney}>{money(r.receiptAmount)}</TableCell>
+            <TableCell className={tdMoney}>{money(r.paymentAmount)}</TableCell>
+            <TableCell className={tdMoney}>{money(r.balance, true)}</TableCell>
+          </TableRow>
         ))}
         {data && (
           <>
-            <tr className="bg-slate-50 font-semibold">
-              <td colSpan={6} className={tdClass}>Cộng phát sinh trong kỳ</td>
-              <td className={tdMoney}>{money(data.totalReceipt, true)}</td>
-              <td className={tdMoney}>{money(data.totalPayment, true)}</td>
-              <td className={tdClass} />
-            </tr>
-            <tr className="bg-slate-50 font-semibold">
-              <td colSpan={8} className={tdClass}>Số dư cuối kỳ</td>
-              <td className={tdMoney}>{money(data.closingBalance, true)}</td>
-            </tr>
+            <TableRow className="bg-slate-50 font-semibold">
+              <TableCell colSpan={6} className={tdClass}>Cộng phát sinh trong kỳ</TableCell>
+              <TableCell className={tdMoney}>{money(data.totalReceipt, true)}</TableCell>
+              <TableCell className={tdMoney}>{money(data.totalPayment, true)}</TableCell>
+              <TableCell className={tdClass} />
+            </TableRow>
+            <TableRow className="bg-slate-50 font-semibold">
+              <TableCell colSpan={8} className={tdClass}>Số dư cuối kỳ</TableCell>
+              <TableCell className={tdMoney}>{money(data.closingBalance, true)}</TableCell>
+            </TableRow>
           </>
         )}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   )
 }

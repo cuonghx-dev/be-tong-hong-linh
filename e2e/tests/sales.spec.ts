@@ -35,7 +35,7 @@ test.describe('Bán hàng', () => {
     await expect(page.getByRole('heading', { name: /Chứng từ bán hàng/ })).toBeVisible()
 
     // Không kiêm phiếu xuất — tồn kho seed = 0.
-    await page.locator('label', { hasText: 'Kiêm phiếu xuất' }).locator('input[type=checkbox]').uncheck()
+    await page.getByRole('checkbox', { name: 'Kiêm phiếu xuất' }).uncheck()
 
     await pickOrCreateCustomer(page)
     await expect(fieldInput(page, 'Tên khách hàng')).toHaveValue(CUSTOMER.name)
@@ -58,8 +58,8 @@ test.describe('Bán hàng', () => {
     await page.getByRole('button', { name: 'Thêm', exact: true }).click()
     await page.getByRole('button', { name: 'Chứng từ bán hàng', exact: true }).click()
 
-    await page.locator('label', { hasText: 'Kiêm phiếu xuất' }).locator('input[type=checkbox]').uncheck()
-    await page.locator('label', { hasText: 'Thu tiền mặt ngay' }).locator('input[type=radio]').check()
+    await page.getByRole('checkbox', { name: 'Kiêm phiếu xuất' }).uncheck()
+    await page.getByRole('radio', { name: 'Thu tiền mặt ngay' }).check()
 
     // Số chứng từ đổi sang dải phiếu thu.
     const noInput = fieldInput(page, 'Số chứng từ')
@@ -89,7 +89,7 @@ test.describe('Bán hàng', () => {
     const dialog = page.getByRole('dialog')
     await expect(dialog.getByText(`Thu tiền khách hàng — ${CUSTOMER.name}`)).toBeVisible()
     // Tick chứng từ nợ đầu tiên → tự điền toàn bộ số còn phải thu.
-    await dialog.locator('tbody tr').first().locator('input[type=checkbox]').check()
+    await dialog.locator('tbody tr').first().getByRole('checkbox').check()
     await expect(dialog.getByText(/Tổng thu:/)).not.toContainText('Tổng thu: 0')
 
     await dialog.getByRole('button', { name: 'Thu tiền', exact: true }).click()

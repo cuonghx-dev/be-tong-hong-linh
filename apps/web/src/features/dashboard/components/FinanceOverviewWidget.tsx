@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import type { DashboardPeriod } from '@app/shared'
+import { useState } from 'react'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { useFinanceOverview } from '../api/useDashboard'

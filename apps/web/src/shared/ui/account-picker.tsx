@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAccountOptions } from '@/shared/api/useAccountOptions'
 import { cn } from '@/shared/lib/cn'
 import { ChevronDownIcon, SearchIcon } from '@/shared/ui/icons'
+import { Input } from '@/shared/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Kiểu ô TK trong bảng chi tiết chứng từ: spreadsheet — viền ẩn, hiện khi hover/focus.
 // Chừa lề phải cho mũi tên dropdown.
@@ -107,7 +109,7 @@ export function AccountPicker({
 
   return (
     <div ref={wrapRef} className={cn('relative', className)}>
-      <input
+      <Input
         ref={inputRef}
         disabled={disabled}
         title={selected ? `${selected.number} — ${selected.name}` : undefined}
@@ -129,10 +131,7 @@ export function AccountPicker({
             pick(first)
           }
         }}
-        className={cn(
-          'h-8 w-full rounded-md border border-border pr-6 pl-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-slate-50',
-          inputClassName,
-        )}
+        className={cn('h-8 pl-2 pr-6 disabled:bg-slate-50 disabled:opacity-100', inputClassName)}
       />
       <ChevronDownIcon
         size={13}
@@ -146,48 +145,48 @@ export function AccountPicker({
           className="z-50 overflow-hidden rounded-md border border-border bg-white shadow-lg"
         >
           <div className="max-h-72 overflow-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead className="sticky top-0 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-3 py-1.5">Số TK</th>
-                  <th className="px-3 py-1.5">Tên tài khoản</th>
-                  <th className="px-3 py-1.5">Tính chất</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-1.5">Số TK</TableHead>
+                  <TableHead className="py-1.5">Tên tài khoản</TableHead>
+                  <TableHead className="py-1.5">Tính chất</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {isLoading && (
-                  <tr>
-                    <td colSpan={3} className="px-3 py-6 text-center text-slate-400">
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-6 text-center text-slate-400">
                       Đang tải…
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!isLoading && matches.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-3 py-6 text-center text-slate-400">
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-6 text-center text-slate-400">
                       Không có tài khoản phù hợp.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!isLoading &&
                   matches.map((a) => {
                     const isParent = parentIds.has(a.id)
                     return (
-                      <tr
+                      <TableRow
                         key={a.id}
                         onMouseDown={(e) => e.preventDefault()} // giữ focus, tránh onBlur ghi đè
                         onClick={() => pick(a)}
-                        className="cursor-pointer border-t border-border hover:bg-slate-50"
+                        className="cursor-pointer"
                       >
-                        <td
+                        <TableCell
                           className={cn(
                             'whitespace-nowrap px-3 py-1.5 font-medium',
                             isParent ? 'text-slate-400' : 'text-slate-700',
                           )}
                         >
                           {a.number}
-                        </td>
-                        <td
+                        </TableCell>
+                        <TableCell
                           className={cn(
                             'max-w-[260px] truncate px-3 py-1.5',
                             isParent ? 'text-slate-400' : 'text-slate-700',
@@ -197,15 +196,15 @@ export function AccountPicker({
                           {isParent && (
                             <span className="ml-1.5 text-xs text-slate-400">(TK tổng hợp)</span>
                           )}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-1.5 text-slate-600">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap py-1.5 text-slate-600">
                           {ACCOUNT_NATURE_LABELS[a.nature]}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <div className="flex items-center gap-1.5 border-t border-border bg-slate-50 px-3 py-1.5 text-xs text-slate-400">
             <SearchIcon size={13} /> Tìm nhanh theo số TK / tên TK

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { fieldInput, fieldInputIn } from '../helpers/form'
+import { fieldInput, fieldInputIn, fieldSelectIn, selectValue } from '../helpers/form'
 
 // Chọn TK ngân hàng trong picker; chưa có thì tạo nhanh qua dialog "Thêm tài khoản ngân hàng".
 // `nth`: form CTNB có 2 picker cùng placeholder (tài khoản đi = 0, tài khoản đến = 1).
@@ -19,7 +19,7 @@ async function pickOrCreateBankAccount(page: Page, accountNumber: string, nth = 
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByText('Thêm tài khoản ngân hàng')).toBeVisible()
   await fieldInputIn(dialog, page, 'Số tài khoản').fill(accountNumber)
-  await fieldInputIn(dialog, page, 'Tên ngân hàng').selectOption({ index: 1 })
+  await selectValue(page, fieldSelectIn(dialog, page, 'Tên ngân hàng'), { index: 0 })
   await dialog.getByRole('button', { name: 'Lưu', exact: true }).click()
   await expect(dialog).toBeHidden()
 }

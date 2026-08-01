@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { formatCurrency } from '@/shared/lib/currency'
-import { AmountInput } from './AmountInput'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 
 // Giá trị 1 dòng số dư đang soạn trong form.
 export interface BalanceFormValue {
@@ -56,31 +58,30 @@ export function AccountBalanceForm({ initial, isParent, existingCodes, onSubmit,
     <form onSubmit={submit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className={label}>
+          <Label className={label}>
             Số tài khoản <span className="text-red-500">*</span>
-          </label>
-          <input
+          </Label>
+          <Input
             value={value.accountCode}
             onChange={(e) => patch({ accountCode: e.target.value })}
             placeholder="vd 1111"
-            className={`${field} tabular-nums`}
+            className="tabular-nums"
             autoFocus
           />
         </div>
         <div className="sm:col-span-2">
-          <label className={label}>Tên tài khoản</label>
-          <input
+          <Label className={label}>Tên tài khoản</Label>
+          <Input
             value={value.accountName}
             onChange={(e) => patch({ accountName: e.target.value })}
             placeholder="Tên tài khoản"
-            className={field}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className={label}>Dư Nợ</label>
+          <Label className={label}>Dư Nợ</Label>
           {isParent ? (
             <div className={`${field} flex items-center justify-end bg-slate-50 tabular-nums text-slate-500`}>
               {formatCurrency(value.debitAmount)}
@@ -90,7 +91,7 @@ export function AccountBalanceForm({ initial, isParent, existingCodes, onSubmit,
           )}
         </div>
         <div>
-          <label className={label}>Dư Có</label>
+          <Label className={label}>Dư Có</Label>
           {isParent ? (
             <div className={`${field} flex items-center justify-end bg-slate-50 tabular-nums text-slate-500`}>
               {formatCurrency(value.creditAmount)}

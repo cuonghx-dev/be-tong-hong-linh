@@ -5,10 +5,15 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { Button } from '@/shared/ui/button'
 import { Modal } from '@/shared/ui/modal'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { Checkbox } from '@/shared/ui/checkbox'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 import { useCollectPayment, useOpenReceivables } from '../api/useReceivables'
 import { PAYMENT_METHOD_LABEL } from '../types'
-import { AmountInput } from './AmountInput'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 interface CollectPaymentDialogProps {
   // Khách hàng cần thu tiền; null = đóng dialog.
@@ -113,108 +118,110 @@ export function CollectPaymentDialog({ customer, onClose }: CollectPaymentDialog
       <div className="space-y-3">
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-500">Ngày thu</label>
-            <input
+            <Label className="text-xs font-medium text-slate-500">Ngày thu</Label>
+            <Input
               type="date"
               value={postingDate}
               onChange={(e) => setPostingDate(e.target.value)}
-              className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-8 w-auto px-2"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-500">Hình thức thu</label>
-            <select
-              value={method}
-              onChange={(e) => setMethod(e.target.value as PaymentMethod)}
-              className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              {Object.values(PaymentMethod).map((m) => (
-                <option key={m} value={m}>
-                  {PAYMENT_METHOD_LABEL[m]}
-                </option>
-              ))}
-            </select>
+            <Label className="text-xs font-medium text-slate-500">Hình thức thu</Label>
+            <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
+              <SelectTrigger className="h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(PaymentMethod).map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {PAYMENT_METHOD_LABEL[m]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {needBank && (
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-500">TK ngân hàng nhận</label>
-              <select
-                value={bankAccountNo}
-                onChange={(e) => {
-                  const no = e.target.value
+              <Label className="text-xs font-medium text-slate-500">TK ngân hàng nhận</Label>
+              <Select
+                value={bankAccountNo || undefined}
+                onValueChange={(no) => {
                   const acc = bankAccounts.data?.data.find((a) => a.accountNumber === no)
                   setBankAccountNo(no)
                   setBankName(acc?.bankName ?? '')
                 }}
-                className="h-8 min-w-[220px] rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
-                <option value="">— Chọn tài khoản —</option>
-                {(bankAccounts.data?.data ?? []).map((a) => (
-                  <option key={a.accountNumber} value={a.accountNumber}>
-                    {a.accountNumber} — {a.bankName}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-8 min-w-[220px] rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <SelectValue placeholder="— Chọn tài khoản —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(bankAccounts.data?.data ?? []).map((a) => (
+                    <SelectItem key={a.accountNumber} value={a.accountNumber}>
+                      {a.accountNumber} — {a.bankName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
         </div>
 
         <div className="max-h-[380px] overflow-auto rounded-md border border-border">
-          <table className="w-full min-w-[720px] border-collapse text-sm">
-            <thead className="sticky top-0 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="w-8 px-2 py-2" />
-                <th className="px-3 py-2">Chứng&nbsp;từ</th>
-                <th className="px-3 py-2">Ngày</th>
-                <th className="px-3 py-2">Hạn&nbsp;TT</th>
-                <th className="px-3 py-2 text-right">Còn phải&nbsp;thu</th>
-                <th className="w-40 px-3 py-2 text-right">Số&nbsp;thu</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="min-w-[720px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-8 px-2" />
+                <TableHead>Chứng&nbsp;từ</TableHead>
+                <TableHead>Ngày</TableHead>
+                <TableHead>Hạn&nbsp;TT</TableHead>
+                <TableHead className="text-right">Còn phải&nbsp;thu</TableHead>
+                <TableHead className="w-40 text-right">Số&nbsp;thu</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {open.isLoading && (
-                <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-slate-400">
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-slate-400">
                     Đang tải…
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {!open.isLoading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-slate-400">
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-slate-400">
                     Khách hàng không còn chứng từ phải thu.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {rows.map((r) => {
                 const remaining = Number(r.remainingAmount)
                 const picked = amounts[r.salesVoucherId] !== undefined
                 const over = (amounts[r.salesVoucherId] ?? 0) > remaining
                 return (
-                  <tr key={r.salesVoucherId} className="border-t border-border hover:bg-slate-50">
-                    <td className="px-2 py-1.5 text-center">
-                      <input
-                        type="checkbox"
+                  <TableRow key={r.salesVoucherId}>
+                    <TableCell className="px-2 py-1.5 text-center">
+                      <Checkbox
                         checked={picked}
-                        onChange={() => toggle(r.salesVoucherId, remaining)}
+                        onCheckedChange={() => toggle(r.salesVoucherId, remaining)}
                       />
-                    </td>
-                    <td className="px-3 py-1.5 text-slate-700">
+                    </TableCell>
+                    <TableCell className="py-1.5 text-slate-700">
                       {r.voucherNo}
                       {r.invoiceNo && (
                         <span className="block text-xs text-slate-400">HĐ {r.invoiceNo}</span>
                       )}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-1.5 text-slate-600">
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap py-1.5 text-slate-600">
                       {formatDate(r.postingDate)}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-1.5 text-slate-600">
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap py-1.5 text-slate-600">
                       {r.dueDate ? formatDate(r.dueDate) : ''}
-                    </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                    </TableCell>
+                    <TableCell className="py-1.5 text-right tabular-nums text-slate-700">
                       {formatCurrency(remaining)}
-                    </td>
-                    <td className="px-3 py-1.5">
+                    </TableCell>
+                    <TableCell className="py-1.5">
                       {picked ? (
                         <AmountInput
                           value={amounts[r.salesVoucherId] ?? 0}
@@ -224,12 +231,12 @@ export function CollectPaymentDialog({ customer, onClose }: CollectPaymentDialog
                           className={over ? 'border-red-400 text-red-600' : ''}
                         />
                       ) : null}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
         {overAllocated && (
           <p className="text-xs text-red-600">Số thu không được vượt số còn phải thu của chứng từ.</p>

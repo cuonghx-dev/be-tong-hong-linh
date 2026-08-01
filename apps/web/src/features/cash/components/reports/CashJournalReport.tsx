@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useCashJournal } from '../../api/useCashReports'
 import { formatDate, money, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Số cột TK đối ứng tách riêng (như MISA); các TK còn lại gộp nhóm "TK khác".
 const MAX_PIVOT_COLUMNS = 4
@@ -64,74 +65,74 @@ export function CashJournalReport({
           <div className="text-sm italic text-slate-500">{periodLabel(filter)}</div>
         </div>
 
-        <table className="w-full min-w-[960px] border-collapse text-sm">
-          <thead className="sticky top-0 z-20">
-            <tr>
-              <th rowSpan={2} className={thClass}>Ngày, tháng ghi&nbsp;sổ</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</th>
-              <th rowSpan={2} className={thClass}>Diễn&nbsp;giải</th>
-              <th rowSpan={2} className={thClass}>Ghi {isReceipt ? 'nợ' : 'có'} TK 111</th>
-              <th colSpan={Math.max(accounts.length, 1)} className={`${thClass} text-center`}>
+        <Table className="min-w-[960px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead rowSpan={2} className={thClass}>Ngày, tháng ghi&nbsp;sổ</TableHead>
+              <TableHead colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</TableHead>
+              <TableHead rowSpan={2} className={thClass}>Diễn&nbsp;giải</TableHead>
+              <TableHead rowSpan={2} className={thClass}>Ghi {isReceipt ? 'nợ' : 'có'} TK 111</TableHead>
+              <TableHead colSpan={Math.max(accounts.length, 1)} className={`${thClass} text-center`}>
                 Ghi {side.toLowerCase()} các TK
-              </th>
-              <th colSpan={2} className={`${thClass} text-center`}>
+              </TableHead>
+              <TableHead colSpan={2} className={`${thClass} text-center`}>
                 Ghi {side.toLowerCase()} các TK khác
-              </th>
-            </tr>
-            <tr>
-              <th className={thClass}>Số&nbsp;hiệu</th>
-              <th className={thClass}>Ngày&nbsp;tháng</th>
+              </TableHead>
+            </TableRow>
+            <TableRow>
+              <TableHead className={thClass}>Số&nbsp;hiệu</TableHead>
+              <TableHead className={thClass}>Ngày&nbsp;tháng</TableHead>
               {accounts.map((acc) => (
-                <th key={acc} className={`${thClass} text-right`}>{acc}</th>
+                <TableHead key={acc} className={`${thClass} text-right`}>{acc}</TableHead>
               ))}
-              {accounts.length === 0 && <th className={thClass} />}
-              <th className={`${thClass} text-right`}>Số&nbsp;tiền</th>
-              <th className={`${thClass} text-right`}>Số&nbsp;hiệu</th>
-            </tr>
-          </thead>
-          <tbody>
+              {accounts.length === 0 && <TableHead className={thClass} />}
+              <TableHead className={`${thClass} text-right`}>Số&nbsp;tiền</TableHead>
+              <TableHead className={`${thClass} text-right`}>Số&nbsp;hiệu</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && <StatusRow colSpan={colSpan + 2}>Đang tải…</StatusRow>}
             {isError && <StatusRow colSpan={colSpan + 2}>Lỗi tải dữ liệu.</StatusRow>}
             {!isLoading && !isError && vouchers.length === 0 && (
               <StatusRow colSpan={colSpan + 2}>Không có phát sinh trong kỳ.</StatusRow>
             )}
             {pageRows.map((v) => (
-              <tr key={v.voucherId} className="hover:bg-slate-50">
-                <td className={`${tdClass} whitespace-nowrap`}>{formatDate(v.postingDate)}</td>
-                <td className={`${tdClass} whitespace-nowrap`}>{v.voucherNo}</td>
-                <td className={`${tdClass} whitespace-nowrap`}>{formatDate(v.voucherDate)}</td>
-                <td className={`${tdClass} max-w-[360px] truncate`} title={v.description ?? ''}>
+              <TableRow key={v.voucherId}>
+                <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(v.postingDate)}</TableCell>
+                <TableCell className={`${tdClass} whitespace-nowrap`}>{v.voucherNo}</TableCell>
+                <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(v.voucherDate)}</TableCell>
+                <TableCell className={`${tdClass} max-w-[360px] truncate`} title={v.description ?? ''}>
                   {v.description}
-                </td>
-                <td className={tdMoney}>{money(String(v.total), true)}</td>
+                </TableCell>
+                <TableCell className={tdMoney}>{money(String(v.total), true)}</TableCell>
                 {accounts.map((acc) => (
-                  <td key={acc} className={tdMoney}>
+                  <TableCell key={acc} className={tdMoney}>
                     {money(String(v.byAccount.get(acc) ?? 0))}
-                  </td>
+                  </TableCell>
                 ))}
-                {accounts.length === 0 && <td className={tdClass} />}
-                <td className={tdMoney}>{money(String(v.otherAmount))}</td>
-                <td className={`${tdClass} whitespace-nowrap text-right text-slate-500`}>
+                {accounts.length === 0 && <TableCell className={tdClass} />}
+                <TableCell className={tdMoney}>{money(String(v.otherAmount))}</TableCell>
+                <TableCell className={`${tdClass} whitespace-nowrap text-right text-slate-500`}>
                   {v.otherCodes.join(', ')}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {vouchers.length > 0 && (
-              <tr className="bg-slate-50 font-semibold">
-                <td colSpan={4} className={tdClass}>Tổng cộng</td>
-                <td className={tdMoney}>{money(data?.totalAmount ?? '0', true)}</td>
+              <TableRow className="bg-slate-50 font-semibold">
+                <TableCell colSpan={4} className={tdClass}>Tổng cộng</TableCell>
+                <TableCell className={tdMoney}>{money(data?.totalAmount ?? '0', true)}</TableCell>
                 {accounts.map((acc) => (
-                  <td key={acc} className={tdMoney}>
+                  <TableCell key={acc} className={tdMoney}>
                     {money(String(accountTotals.get(acc) ?? 0), true)}
-                  </td>
+                  </TableCell>
                 ))}
-                {accounts.length === 0 && <td className={tdClass} />}
-                <td className={tdMoney}>{money(String(otherTotal), true)}</td>
-                <td className={tdClass} />
-              </tr>
+                {accounts.length === 0 && <TableCell className={tdClass} />}
+                <TableCell className={tdMoney}>{money(String(otherTotal), true)}</TableCell>
+                <TableCell className={tdClass} />
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Footer phân trang — theo pattern bảng danh sách (§3) */}

@@ -1,6 +1,7 @@
 import type { AccountLedgerFilter, AccountLedgerSectionDto } from '@app/shared'
 import { useAccountLedger } from '../../api/useGeneralReports'
 import { formatDate, money, periodLabel, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // S03b-DNN: Sổ chi tiết các tài khoản — mỗi TK 1 section: dư đầu kỳ, dòng phát
 // sinh kèm TK đối ứng + dư lũy kế, cộng phát sinh và dư cuối kỳ.
@@ -19,26 +20,26 @@ export function AccountLedgerReport({ filter }: { filter: AccountLedgerFilter })
           <div className="text-sm italic text-slate-500">{periodLabel(filter)}</div>
         </div>
 
-        <table className="w-full min-w-[1080px] border-collapse text-sm">
-          <thead className="sticky top-0 z-20">
-            <tr>
-              <th rowSpan={2} className={thClass}>Ngày, tháng ghi&nbsp;sổ</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</th>
-              <th rowSpan={2} className={thClass}>Diễn&nbsp;giải</th>
-              <th rowSpan={2} className={thClass}>TK đối&nbsp;ứng</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Số phát&nbsp;sinh</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Số&nbsp;dư</th>
-            </tr>
-            <tr>
-              <th className={thClass}>Số&nbsp;hiệu</th>
-              <th className={thClass}>Ngày&nbsp;tháng</th>
-              <th className={`${thClass} text-right`}>Nợ</th>
-              <th className={`${thClass} text-right`}>Có</th>
-              <th className={`${thClass} text-right`}>Nợ</th>
-              <th className={`${thClass} text-right`}>Có</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-[1080px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead rowSpan={2} className={thClass}>Ngày, tháng ghi&nbsp;sổ</TableHead>
+              <TableHead colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</TableHead>
+              <TableHead rowSpan={2} className={thClass}>Diễn&nbsp;giải</TableHead>
+              <TableHead rowSpan={2} className={thClass}>TK đối&nbsp;ứng</TableHead>
+              <TableHead colSpan={2} className={`${thClass} text-center`}>Số phát&nbsp;sinh</TableHead>
+              <TableHead colSpan={2} className={`${thClass} text-center`}>Số&nbsp;dư</TableHead>
+            </TableRow>
+            <TableRow>
+              <TableHead className={thClass}>Số&nbsp;hiệu</TableHead>
+              <TableHead className={thClass}>Ngày&nbsp;tháng</TableHead>
+              <TableHead className={`${thClass} text-right`}>Nợ</TableHead>
+              <TableHead className={`${thClass} text-right`}>Có</TableHead>
+              <TableHead className={`${thClass} text-right`}>Nợ</TableHead>
+              <TableHead className={`${thClass} text-right`}>Có</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && <StatusRow colSpan={9}>Đang tải…</StatusRow>}
             {isError && <StatusRow colSpan={9}>Lỗi tải dữ liệu.</StatusRow>}
             {!isLoading && !isError && sections.length === 0 && (
@@ -47,8 +48,8 @@ export function AccountLedgerReport({ filter }: { filter: AccountLedgerFilter })
             {sections.map((s) => (
               <LedgerSection key={s.accountCode} section={s} />
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   )
@@ -58,52 +59,52 @@ function LedgerSection({ section: s }: { section: AccountLedgerSectionDto }) {
   return (
     <>
       {/* Header TK */}
-      <tr className="bg-slate-100 font-semibold">
-        <td colSpan={9} className={tdClass}>
+      <TableRow className="bg-slate-100 font-semibold">
+        <TableCell colSpan={9} className={tdClass}>
           Tài khoản {s.accountCode}
           {s.accountName ? ` — ${s.accountName}` : ''}
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
       {/* Số dư đầu kỳ */}
-      <tr className="font-medium">
-        <td colSpan={5} className={tdClass}>Số dư đầu kỳ</td>
-        <td className={tdMoney} />
-        <td className={tdMoney} />
-        <td className={tdMoney}>{money(s.openingDebit)}</td>
-        <td className={tdMoney}>{money(s.openingCredit)}</td>
-      </tr>
+      <TableRow className="font-medium">
+        <TableCell colSpan={5} className={tdClass}>Số dư đầu kỳ</TableCell>
+        <TableCell className={tdMoney} />
+        <TableCell className={tdMoney} />
+        <TableCell className={tdMoney}>{money(s.openingDebit)}</TableCell>
+        <TableCell className={tdMoney}>{money(s.openingCredit)}</TableCell>
+      </TableRow>
       {s.rows.map((r, i) => (
-        <tr key={`${s.accountCode}-${i}`} className="hover:bg-slate-50">
-          <td className={`${tdClass} whitespace-nowrap`}>{formatDate(r.postingDate)}</td>
-          <td className={`${tdClass} whitespace-nowrap`} title={r.voucherKind}>
+        <TableRow key={`${s.accountCode}-${i}`}>
+          <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(r.postingDate)}</TableCell>
+          <TableCell className={`${tdClass} whitespace-nowrap`} title={r.voucherKind}>
             {r.voucherNo}
-          </td>
-          <td className={`${tdClass} whitespace-nowrap`}>{formatDate(r.voucherDate)}</td>
-          <td className={`${tdClass} max-w-[320px] truncate`} title={r.description ?? ''}>
+          </TableCell>
+          <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(r.voucherDate)}</TableCell>
+          <TableCell className={`${tdClass} max-w-[320px] truncate`} title={r.description ?? ''}>
             {r.description}
-          </td>
-          <td className={`${tdClass} whitespace-nowrap`}>{r.counterAccount}</td>
-          <td className={tdMoney}>{money(r.debitAmount)}</td>
-          <td className={tdMoney}>{money(r.creditAmount)}</td>
-          <td className={tdMoney}>{money(r.balanceDebit)}</td>
-          <td className={tdMoney}>{money(r.balanceCredit)}</td>
-        </tr>
+          </TableCell>
+          <TableCell className={`${tdClass} whitespace-nowrap`}>{r.counterAccount}</TableCell>
+          <TableCell className={tdMoney}>{money(r.debitAmount)}</TableCell>
+          <TableCell className={tdMoney}>{money(r.creditAmount)}</TableCell>
+          <TableCell className={tdMoney}>{money(r.balanceDebit)}</TableCell>
+          <TableCell className={tdMoney}>{money(r.balanceCredit)}</TableCell>
+        </TableRow>
       ))}
       {/* Cộng phát sinh + dư cuối kỳ */}
-      <tr className="bg-slate-50 font-semibold">
-        <td colSpan={5} className={tdClass}>Cộng phát sinh trong kỳ</td>
-        <td className={tdMoney}>{money(s.totalDebit, true)}</td>
-        <td className={tdMoney}>{money(s.totalCredit, true)}</td>
-        <td className={tdMoney} />
-        <td className={tdMoney} />
-      </tr>
-      <tr className="bg-slate-50 font-semibold">
-        <td colSpan={5} className={tdClass}>Số dư cuối kỳ</td>
-        <td className={tdMoney} />
-        <td className={tdMoney} />
-        <td className={tdMoney}>{money(s.closingDebit)}</td>
-        <td className={tdMoney}>{money(s.closingCredit)}</td>
-      </tr>
+      <TableRow className="bg-slate-50 font-semibold">
+        <TableCell colSpan={5} className={tdClass}>Cộng phát sinh trong kỳ</TableCell>
+        <TableCell className={tdMoney}>{money(s.totalDebit, true)}</TableCell>
+        <TableCell className={tdMoney}>{money(s.totalCredit, true)}</TableCell>
+        <TableCell className={tdMoney} />
+        <TableCell className={tdMoney} />
+      </TableRow>
+      <TableRow className="bg-slate-50 font-semibold">
+        <TableCell colSpan={5} className={tdClass}>Số dư cuối kỳ</TableCell>
+        <TableCell className={tdMoney} />
+        <TableCell className={tdMoney} />
+        <TableCell className={tdMoney}>{money(s.closingDebit)}</TableCell>
+        <TableCell className={tdMoney}>{money(s.closingCredit)}</TableCell>
+      </TableRow>
     </>
   )
 }

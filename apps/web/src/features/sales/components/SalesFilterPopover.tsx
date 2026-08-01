@@ -10,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Field } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
 import { PAYMENT_MODE_LABEL, VOUCHER_TYPE_LABEL } from '../types'
 
 export interface SalesFilterValue {
@@ -47,9 +49,6 @@ interface Props {
   onApply: (v: SalesFilterValue) => void
   onReset: () => void
 }
-
-const dateCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
 export function SalesFilterPopover({ value, onApply, onReset }: Props) {
   const [draft, setDraft] = useState<SalesFilterValue>(value)
@@ -138,7 +137,7 @@ export function SalesFilterPopover({ value, onApply, onReset }: Props) {
               </Select>
             </Field>
             <Field label="Từ ngày">
-              <input
+              <Input
                 type="date"
                 value={draft.from}
                 max={draft.to || undefined}
@@ -146,11 +145,10 @@ export function SalesFilterPopover({ value, onApply, onReset }: Props) {
                   setDraft({ ...draft, from: e.target.value })
                   setPreset('custom')
                 }}
-                className={dateCls}
               />
             </Field>
             <Field label="Đến ngày">
-              <input
+              <Input
                 type="date"
                 value={draft.to}
                 min={draft.from || undefined}
@@ -158,7 +156,6 @@ export function SalesFilterPopover({ value, onApply, onReset }: Props) {
                   setDraft({ ...draft, to: e.target.value })
                   setPreset('custom')
                 }}
-                className={dateCls}
               />
             </Field>
           </div>
@@ -189,15 +186,6 @@ export function SalesFilterPopover({ value, onApply, onReset }: Props) {
         </div>
       )}
     </Popover>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-semibold text-slate-600">{label}</label>
-      {children}
-    </div>
   )
 }
 

@@ -6,7 +6,10 @@ import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
 import { Modal } from '@/shared/ui/modal'
 import type { PartnerOption } from '@/shared/ui/partner-picker'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
+import { Field } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
 
 interface Props {
   open: boolean
@@ -78,51 +81,33 @@ export function QuickAddEmployeeDialog({ open, onClose, initialCode, onCreated }
       }
     >
       <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
-        <L label="Mã nhân viên" required>
-          <input value={form.code} onChange={set('code')} autoFocus className={cls} />
-        </L>
-        <L label="Tên nhân viên" required>
-          <input value={form.name} onChange={set('name')} className={cls} />
-        </L>
-        <L label="Chức danh">
-          <input value={form.title} onChange={set('title')} className={cls} />
-        </L>
-        <L label="Phòng ban">
-          <select value={form.department} onChange={set('department')} className={cls}>
-            <option value="">-- Chọn đơn vị --</option>
-            {(orgUnits.data?.data ?? []).map((u) => (
-              <option key={u.id} value={u.name}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-        </L>
+        <Field label="Mã nhân viên" required>
+          <Input value={form.code} onChange={set('code')} autoFocus />
+        </Field>
+        <Field label="Tên nhân viên" required>
+          <Input value={form.name} onChange={set('name')} />
+        </Field>
+        <Field label="Chức danh">
+          <Input value={form.title} onChange={set('title')} />
+        </Field>
+        <Field label="Phòng ban">
+          <Select
+            value={form.department || undefined}
+            onValueChange={(v) => setForm((f) => ({ ...f, department: v }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="-- Chọn đơn vị --" />
+            </SelectTrigger>
+            <SelectContent>
+              {(orgUnits.data?.data ?? []).map((u) => (
+                <SelectItem key={u.id} value={u.name}>
+                  {u.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
       </div>
     </Modal>
-  )
-}
-
-const cls =
-  'h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm transition-colors hover:border-primary/50 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20'
-
-function L({
-  label,
-  required,
-  className,
-  children,
-}: {
-  label: string
-  required?: boolean
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className={cn('space-y-1', className)}>
-      <label className="text-[13px] font-semibold text-slate-800">
-        {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
-      </label>
-      {children}
-    </div>
   )
 }

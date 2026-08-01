@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useWarehouses } from '@/features/catalog'
 import { cn } from '@/shared/lib/cn'
 import { ChevronDownIcon, SearchIcon } from '@/shared/ui/icons'
+import { Input } from '@/shared/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Kiểu ô Kho trong bảng dòng hàng: spreadsheet — viền ẩn, hiện khi hover/focus.
 export const warehouseCellCls =
@@ -100,7 +102,7 @@ export function WarehousePicker({
 
   return (
     <div ref={wrapRef} className={cn('relative', className)}>
-      <input
+      <Input
         ref={inputRef}
         disabled={disabled}
         title={selected ? `${selected.code} — ${selected.name}` : undefined}
@@ -122,10 +124,7 @@ export function WarehousePicker({
             pick(first.code)
           }
         }}
-        className={cn(
-          'h-8 w-full rounded-md border border-border pr-6 pl-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-slate-50',
-          inputClassName,
-        )}
+        className={cn('h-8 pl-2 pr-6 disabled:bg-slate-50 disabled:opacity-100', inputClassName)}
       />
       <ChevronDownIcon
         size={13}
@@ -139,48 +138,48 @@ export function WarehousePicker({
           className="z-50 overflow-hidden rounded-md border border-border bg-white shadow-lg"
         >
           <div className="max-h-72 overflow-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead className="sticky top-0 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-3 py-1.5">Mã kho</th>
-                  <th className="px-3 py-1.5">Tên kho</th>
-                  <th className="px-3 py-1.5">Địa chỉ</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-1.5">Mã kho</TableHead>
+                  <TableHead className="py-1.5">Tên kho</TableHead>
+                  <TableHead className="py-1.5">Địa chỉ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {isLoading && (
-                  <tr>
-                    <td colSpan={3} className="px-3 py-6 text-center text-slate-400">
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-6 text-center text-slate-400">
                       Đang tải…
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!isLoading && matches.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-3 py-6 text-center text-slate-400">
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-6 text-center text-slate-400">
                       Không có kho phù hợp.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!isLoading &&
                   matches.map((w) => (
-                    <tr
+                    <TableRow
                       key={w.id}
                       onMouseDown={(e) => e.preventDefault()} // giữ focus, tránh onBlur ghi đè
                       onClick={() => pick(w.code)}
-                      className="cursor-pointer border-t border-border hover:bg-slate-50"
+                      className="cursor-pointer"
                     >
-                      <td className="whitespace-nowrap px-3 py-1.5 font-medium text-slate-700">
+                      <TableCell className="whitespace-nowrap py-1.5 font-medium text-slate-700">
                         {w.code}
-                      </td>
-                      <td className="max-w-[220px] truncate px-3 py-1.5 text-slate-700">{w.name}</td>
-                      <td className="max-w-[220px] truncate px-3 py-1.5 text-slate-600">
+                      </TableCell>
+                      <TableCell className="max-w-[220px] truncate py-1.5 text-slate-700">{w.name}</TableCell>
+                      <TableCell className="max-w-[220px] truncate py-1.5 text-slate-600">
                         {w.address ?? ''}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <div className="flex items-center gap-1.5 border-t border-border bg-slate-50 px-3 py-1.5 text-xs text-slate-400">
             <SearchIcon size={13} /> Tìm nhanh theo mã / tên kho

@@ -12,6 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
 import { useProductGroups } from '../api/useProductGroups'
 import { useProduct } from '../api/useProducts'
 import { useCreateProduct, useUpdateProduct } from '../api/useProductMutations'
@@ -139,10 +142,10 @@ export function ProductForm({
         {/* Thông tin chung */}
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           <Field label="Mã hàng hóa" required error={formState.errors.code?.message}>
-            <input {...register('code')} className={inputCls} />
+            <Input {...register('code')} />
           </Field>
           <Field label="Tên hàng hóa" required error={formState.errors.name?.message}>
-            <input {...register('name')} className={inputCls} />
+            <Input {...register('name')} />
           </Field>
           <Field label="Tính chất" error={formState.errors.type?.message}>
             <Select
@@ -189,17 +192,16 @@ export function ProductForm({
             />
           </Field>
           <Field label="Giảm thuế theo quy định">
-            <input
+            <Input
               {...register('taxReduction')}
               placeholder="Chưa xác định"
-              className={inputCls}
             />
           </Field>
           <Field label="Mô tả">
-            <input {...register('description')} className={inputCls} />
+            <Input {...register('description')} />
           </Field>
           <Field label="Số lượng tồn tối thiểu" error={formState.errors.minStock?.message}>
-            <input {...register('minStock')} inputMode="decimal" className={inputCls} />
+            <Input {...register('minStock')} inputMode="decimal" />
           </Field>
         </div>
 
@@ -222,10 +224,10 @@ export function ProductForm({
             />
           </Field>
           <Field label="Đơn giá mua gần nhất" error={formState.errors.purchasePrice?.message}>
-            <input {...register('purchasePrice')} inputMode="decimal" className={inputCls} />
+            <Input {...register('purchasePrice')} inputMode="decimal" />
           </Field>
           <Field label="Đơn giá bán" error={formState.errors.salePrice?.message}>
-            <input {...register('salePrice')} inputMode="decimal" className={inputCls} />
+            <Input {...register('salePrice')} inputMode="decimal" />
           </Field>
         </Section>
 
@@ -239,7 +241,6 @@ export function ProductForm({
                 <AccountPicker
                   value={field.value}
                   onChange={field.onChange}
-                  inputClassName={inputCls}
                 />
               )}
             />
@@ -252,7 +253,6 @@ export function ProductForm({
                 <AccountPicker
                   value={field.value}
                   onChange={field.onChange}
-                  inputClassName={inputCls}
                 />
               )}
             />
@@ -265,7 +265,6 @@ export function ProductForm({
                 <AccountPicker
                   value={field.value}
                   onChange={field.onChange}
-                  inputClassName={inputCls}
                 />
               )}
             />
@@ -278,7 +277,6 @@ export function ProductForm({
                 <AccountPicker
                   value={field.value}
                   onChange={field.onChange}
-                  inputClassName={inputCls}
                 />
               )}
             />
@@ -291,7 +289,6 @@ export function ProductForm({
                 <AccountPicker
                   value={field.value}
                   onChange={field.onChange}
-                  inputClassName={inputCls}
                 />
               )}
             />
@@ -301,17 +298,14 @@ export function ProductForm({
         {/* Diễn giải mua/bán */}
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           <Field label="Diễn giải khi mua">
-            <input {...register('purchaseDescription')} className={inputCls} />
+            <Input {...register('purchaseDescription')} />
           </Field>
           <Field label="Diễn giải khi bán">
-            <input {...register('saleDescription')} className={inputCls} />
+            <Input {...register('saleDescription')} />
           </Field>
         </div>
 
-        <label className="flex items-center gap-1.5 text-sm">
-          <input type="checkbox" {...register('isActive')} />
-          Đang sử dụng
-        </label>
+        <CheckboxField control={control} name="isActive" label="Đang sử dụng" />
 
         {serverMsg && <p className="text-sm text-red-600">{String(serverMsg)}</p>}
       </fieldset>
@@ -335,9 +329,6 @@ export function ProductForm({
     </form>
   )
 }
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
 // Combobox chọn 1 giá trị text từ danh mục; '' = bỏ trống.
 // Giá trị cũ không còn trong danh mục (ngừng sử dụng / nhập khẩu) vẫn hiển thị được.
@@ -378,29 +369,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div className="space-y-3">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</h3>
       <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">{children}</div>
-    </div>
-  )
-}
-
-function Field({
-  label,
-  required,
-  error,
-  children,
-}: {
-  label: string
-  required?: boolean
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-slate-500">
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-      </label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   )
 }

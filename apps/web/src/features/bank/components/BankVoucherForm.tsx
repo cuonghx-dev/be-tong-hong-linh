@@ -31,11 +31,17 @@ import {
 import { useToast } from '@/shared/ui/toast'
 import { cn } from '@/shared/lib/cn'
 import { num } from '@/shared/lib/num'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
+import { CellInput, cellInputCls } from '@/shared/ui/cell-input'
+import { Label } from '@/shared/ui/label'
 import { useBankVoucher, useNextBankVoucherNo } from '../api/useBankVouchers'
 import { useCreateBankVoucher, useUpdateBankVoucher } from '../api/useBankVoucherMutations'
 import { bankVoucherSchema, type BankLineFormValues, type BankVoucherFormValues } from '../schema'
 import { CATEGORY_LABEL, CATEGORY_OPTIONS, PAYMENT_METHOD_LABEL } from '../types'
-import { AmountInput } from './AmountInput'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 interface BankVoucherFormProps {
   type: BankVoucherType
@@ -288,7 +294,7 @@ export function BankVoucherForm({
           {/* Thu: tạm bỏ ô "Nhập số UNC từ chi nhánh khác chuyển đến" (internalRef vẫn giữ trong schema/DTO). */}
           {!isReceipt && (
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-slate-600">Phương thức thanh toán</label>
+              <Label className="text-sm font-medium text-slate-600">Phương thức thanh toán</Label>
               <Select
                 value={watch('paymentMethod')}
                 onValueChange={(v) => setValue('paymentMethod', v as BankPaymentMethod)}
@@ -311,10 +317,7 @@ export function BankVoucherForm({
 
         {/* Chi: checkbox UNC theo lô ở hàng riêng dưới dropdown (MISA) */}
         {type === BankVoucherType.Payment && (
-          <label className="flex w-fit items-center gap-1.5 text-sm text-slate-600">
-            <input type="checkbox" {...register('isBatchTransfer')} />
-            Là UNC chuyển tiền theo lô
-          </label>
+          <CheckboxField control={control} name="isBatchTransfer" label="Là UNC chuyển tiền theo lô" className="w-fit" />
         )}
 
         {/* Thông tin chung: cột trái (đối tượng/tài khoản) | cột phải (ngày) | tổng tiền */}
@@ -331,7 +334,7 @@ export function BankVoucherForm({
                   />
                 </Field>
                 <Field label="Tên ngân hàng">
-                  <input {...register('bankName')} className={inputCls} placeholder="Tự điền theo số TK" />
+                  <Input {...register('bankName')} placeholder="Tự điền theo số TK" />
                 </Field>
 
                 <Field label="Tài khoản đến" error={formState.errors.receiverAccountNo?.message}>
@@ -342,15 +345,14 @@ export function BankVoucherForm({
                   />
                 </Field>
                 <Field label="Tên ngân hàng">
-                  <input
+                  <Input
                     {...register('receiverBankName')}
-                    className={inputCls}
                     placeholder="Tự điền theo số TK"
                   />
                 </Field>
 
                 <Field label="Lý do chuyển" className="col-span-2">
-                  <input {...register('reason')} className={inputCls} />
+                  <Input {...register('reason')} />
                 </Field>
               </>
             ) : (
@@ -366,7 +368,7 @@ export function BankVoucherForm({
                       />
                     </Field>
                     <Field label="Tên ngân hàng">
-                      <input {...register('bankName')} className={inputCls} placeholder="Tự điền theo số TK" />
+                      <Input {...register('bankName')} placeholder="Tự điền theo số TK" />
                     </Field>
                   </>
                 )}
@@ -383,11 +385,11 @@ export function BankVoucherForm({
                   />
                 </Field>
                 <Field label="Tên đối tượng">
-                  <input {...register('partnerName')} className={inputCls} />
+                  <Input {...register('partnerName')} />
                 </Field>
 
                 <Field label="Địa chỉ" className="col-span-2">
-                  <input {...register('address')} className={inputCls} />
+                  <Input {...register('address')} />
                 </Field>
 
                 {isReceipt ? (
@@ -400,31 +402,31 @@ export function BankVoucherForm({
                       />
                     </Field>
                     <Field label="Tên ngân hàng">
-                      <input {...register('bankName')} className={inputCls} placeholder="Tự điền theo số TK" />
+                      <Input {...register('bankName')} placeholder="Tự điền theo số TK" />
                     </Field>
 
                     <Field label="Nhân viên thu nợ">
                       <LookupInput {...register('employeeId')} withAdd onAdd={() => setEmployeeDialog(true)} />
                     </Field>
                     <Field label="Lý do thu">
-                      <input {...register('reason')} className={inputCls} />
+                      <Input {...register('reason')} />
                     </Field>
                   </>
                 ) : (
                   <>
                     {/* Tài khoản nhận của đối tượng: số TK + tên ngân hàng nhận (MISA 2 ô cạnh nhau). */}
                     <Field label="Tài khoản nhận">
-                      <input {...register('receiverAccountNo')} className={inputCls} />
+                      <Input {...register('receiverAccountNo')} />
                     </Field>
                     <Field label="Tên ngân hàng">
-                      <input {...register('receiverBankName')} className={inputCls} />
+                      <Input {...register('receiverBankName')} />
                     </Field>
 
                     <Field label="Nhân viên">
                       <LookupInput {...register('employeeId')} withAdd onAdd={() => setEmployeeDialog(true)} />
                     </Field>
                     <Field label="Nội dung thanh toán">
-                      <input {...register('reason')} className={inputCls} />
+                      <Input {...register('reason')} />
                     </Field>
                   </>
                 )}
@@ -436,17 +438,17 @@ export function BankVoucherForm({
           {/* Cột phải: ngày + số chứng từ */}
           <div className="w-56 space-y-3">
             <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
-              <input type="date" {...register('postingDate')} className={inputCls} />
+              <Input type="date" {...register('postingDate')} />
             </Field>
             <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
-              <input type="date" {...register('voucherDate')} className={inputCls} />
+              <Input type="date" {...register('voucherDate')} />
             </Field>
             <Field label="Số chứng từ">
-              <input
+              <Input
                 value={editing.data?.voucherNo ?? nextNo.data ?? 'Tự động'}
                 readOnly
                 title="Số dự kiến — cấp chính thức khi Lưu"
-                className={cn(inputCls, 'bg-slate-50 text-slate-500')}
+                className="bg-slate-50 text-slate-500"
               />
             </Field>
           </div>
@@ -467,28 +469,28 @@ export function BankVoucherForm({
         <section className="space-y-2 px-6 py-5">
           <span className="text-base font-semibold text-slate-700">Hạch toán</span>
           <div className="overflow-x-auto rounded-md border border-border">
-              <table className="w-full border-collapse text-sm">
-                <thead className="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="w-8 px-2 py-1.5 text-center">#</th>
-                    <th className="px-2 py-1.5">Diễn&nbsp;giải</th>
-                    <th className="w-24 px-2 py-1.5">TK Nợ</th>
-                    <th className="w-24 px-2 py-1.5">TK Có</th>
-                    <th className="w-36 px-2 py-1.5 text-right">Số&nbsp;tiền</th>
+              <Table>
+                <TableHeader className="bg-slate-100">
+                  <TableRow>
+                    <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                    <TableHead className="px-2 py-1.5">Diễn&nbsp;giải</TableHead>
+                    <TableHead className="w-24 px-2 py-1.5">TK Nợ</TableHead>
+                    <TableHead className="w-24 px-2 py-1.5">TK Có</TableHead>
+                    <TableHead className="w-36 px-2 py-1.5 text-right">Số&nbsp;tiền</TableHead>
                     {/* CTNB không hạch toán theo đối tượng (MISA). */}
-                    {!isTransfer && <th className="px-2 py-1.5">Đối&nbsp;tượng</th>}
-                    {!isTransfer && <th className="px-2 py-1.5">Tên đối&nbsp;tượng</th>}
-                    <th className="w-8 px-2 py-1.5" />
-                  </tr>
-                </thead>
-                <tbody>
+                    {!isTransfer && <TableHead className="px-2 py-1.5">Đối&nbsp;tượng</TableHead>}
+                    {!isTransfer && <TableHead className="px-2 py-1.5">Tên đối&nbsp;tượng</TableHead>}
+                    <TableHead className="w-8 px-2 py-1.5" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {fields.map((f, i) => (
-                    <tr key={f.id} className="border-t border-border">
-                      <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                      <td className="px-2 py-1">
-                        <input {...register(`lines.${i}.description`)} className={cellCls} />
-                      </td>
-                      <td className="px-2 py-1">
+                    <TableRow key={f.id}>
+                      <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`lines.${i}.description`)} />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
                         <Controller
                           control={control}
                           name={`lines.${i}.debitAccount`}
@@ -503,8 +505,8 @@ export function BankVoucherForm({
                             />
                           )}
                         />
-                      </td>
-                      <td className="px-2 py-1">
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
                         <Controller
                           control={control}
                           name={`lines.${i}.creditAccount`}
@@ -519,8 +521,8 @@ export function BankVoucherForm({
                             />
                           )}
                         />
-                      </td>
-                      <td className="px-2 py-1">
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
                         <Controller
                           control={control}
                           name={`lines.${i}.amount`}
@@ -529,24 +531,25 @@ export function BankVoucherForm({
                               value={field.value}
                               onChange={field.onChange}
                               className={cn(
+                                cellInputCls,
                                 fieldState.error &&
                                   'border-red-400 focus:border-red-400 focus:ring-red-200',
                               )}
                             />
                           )}
                         />
-                      </td>
+                      </TableCell>
                       {!isTransfer && (
-                        <td className="px-2 py-1">
-                          <input {...register(`lines.${i}.partnerId`)} className={cellCls} />
-                        </td>
+                        <TableCell className="px-2 py-1">
+                          <CellInput {...register(`lines.${i}.partnerId`)} />
+                        </TableCell>
                       )}
                       {!isTransfer && (
-                        <td className="px-2 py-1">
-                          <input {...register(`lines.${i}.partnerName`)} className={cellCls} />
-                        </td>
+                        <TableCell className="px-2 py-1">
+                          <CellInput {...register(`lines.${i}.partnerName`)} />
+                        </TableCell>
                       )}
-                      <td className="px-2 py-1 text-center">
+                      <TableCell className="px-2 py-1 text-center">
                         <button
                           type="button"
                           onClick={() => fields.length > 1 && remove(i)}
@@ -555,18 +558,18 @@ export function BankVoucherForm({
                         >
                           ✕
                         </button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-                <tfoot className="bg-slate-100 font-medium">
-                  <tr className="border-t border-border">
-                    <td className="px-2 py-1.5" colSpan={4} />
-                    <td className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(total)}</td>
-                    <td colSpan={isTransfer ? 1 : 3} />
-                  </tr>
-                </tfoot>
-              </table>
+                </TableBody>
+                <TableFooter className="bg-slate-100">
+                  <TableRow>
+                    <TableCell className="px-2 py-1.5" colSpan={4} />
+                    <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(total)}</TableCell>
+                    <TableCell colSpan={isTransfer ? 1 : 3} />
+                  </TableRow>
+                </TableFooter>
+              </Table>
           </div>
 
           {typeof formState.errors.lines?.message === 'string' && (
@@ -667,30 +670,6 @@ export function BankVoucherForm({
 }
 
 // ── Local UI bits ─────────────────────────────────────────────────────────
-const inputCls =
-  'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-const cellCls =
-  'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  error,
-  className,
-  children,
-}: {
-  label: string
-  error?: string
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className={cn('space-y-1', className)}>
-      <label className="text-xs font-medium text-slate-500">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
-  )
-}
 
 // Ô nhập có nút "+" (thêm nhanh) và mũi tên chọn — style theo MISA. Chưa nối lookup.
 const LookupInput = forwardRef<
@@ -699,10 +678,10 @@ const LookupInput = forwardRef<
 >(function LookupInput({ withAdd, onAdd, className, ...props }, ref) {
   return (
     <div className="flex">
-      <input
+      <Input
         ref={ref}
         {...props}
-        className={cn(inputCls, 'rounded-r-none focus:ring-2', className)}
+        className={cn('rounded-r-none focus:ring-2', className)}
       />
       {withAdd && (
         <button

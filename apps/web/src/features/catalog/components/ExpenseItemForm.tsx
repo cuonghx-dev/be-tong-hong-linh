@@ -10,6 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
+import { Textarea } from '@/shared/ui/textarea'
 import { useExpenseItem, useExpenseItems } from '../api/useExpenseItems'
 import { useCreateExpenseItem, useUpdateExpenseItem } from '../api/useExpenseItemMutations'
 import { expenseItemSchema, type ExpenseItemFormValues } from '../schema'
@@ -53,7 +57,8 @@ export function ExpenseItemForm({ itemId, readOnly = false, onSaved, onCancel }:
     return items.filter((i) => !excluded.has(i.id))
   }, [all.data, itemId])
 
-  const { register, handleSubmit, reset, watch, setValue, formState } = useForm<ExpenseItemFormValues>({
+  const { register,
+    control, handleSubmit, reset, watch, setValue, formState } = useForm<ExpenseItemFormValues>({
     resolver: zodResolver(expenseItemSchema),
     defaultValues: DEFAULTS,
   })
@@ -86,10 +91,10 @@ export function ExpenseItemForm({ itemId, readOnly = false, onSaved, onCancel }:
       <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
           <Field label="Mã khoản mục chi phí" required error={formState.errors.code?.message}>
-            <input {...register('code')} className={inputCls} placeholder="VD: MTC.VL" />
+            <Input {...register('code')} placeholder="VD: MTC.VL" />
           </Field>
           <Field label="Tên khoản mục chi phí" required error={formState.errors.name?.message}>
-            <input {...register('name')} className={inputCls} />
+            <Input {...register('name')} />
           </Field>
         </div>
         <Field label="Thuộc khoản mục">
@@ -111,13 +116,10 @@ export function ExpenseItemForm({ itemId, readOnly = false, onSaved, onCancel }:
           </Select>
         </Field>
         <Field label="Diễn giải">
-          <textarea {...register('description')} rows={2} className={textareaCls} />
+          <Textarea {...register('description')} rows={2} />
         </Field>
 
-        <label className="flex items-center gap-1.5 text-sm">
-          <input type="checkbox" {...register('isActive')} />
-          Đang sử dụng
-        </label>
+        <CheckboxField control={control} name="isActive" label="Đang sử dụng" />
 
         {serverMsg && <p className="text-sm text-red-600">{String(serverMsg)}</p>}
       </fieldset>
@@ -139,33 +141,5 @@ export function ExpenseItemForm({ itemId, readOnly = false, onSaved, onCancel }:
         )}
       </div>
     </form>
-  )
-}
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-const textareaCls =
-  'w-full rounded-md border border-border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  required,
-  error,
-  children,
-}: {
-  label: string
-  required?: boolean
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-slate-500">
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-      </label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
   )
 }

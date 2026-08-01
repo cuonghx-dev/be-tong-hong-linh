@@ -9,12 +9,15 @@ import { AddMenu } from '@/shared/ui/add-menu'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
+import { Checkbox } from '@/shared/ui/checkbox'
+import { Input } from '@/shared/ui/input'
 import { useBankVouchers } from '../api/useBankVouchers'
 import { useImportBankVouchers, useSetBankVoucherPosted } from '../api/useBankVoucherMutations'
 import { BankFilterPopover, type BankFilterValue } from '../components/BankFilterPopover'
 import { BankProcessTab } from '../components/BankProcessTab'
 import { BankReportListTab } from '../components/reports/BankReportListTab'
 import { VOUCHER_TYPE_LABEL } from '../types'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const PAGE_SIZE = 20
 
@@ -143,13 +146,13 @@ function BankTable() {
               size={15}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
-            <input
+            <Input
               placeholder="Tìm kiếm"
               defaultValue={keyword}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') setParam('q', (e.target as HTMLInputElement).value || null)
               }}
-              className="h-8 w-44 rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-8 w-44 pl-8 pr-2"
             />
           </div>
           <button
@@ -164,66 +167,66 @@ function BankTable() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[1240px] border-collapse text-sm">
-          <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="w-10 px-3 py-2 text-center">
-                <input type="checkbox" />
-              </th>
-              <th className="px-3 py-2">Ngày hạch&nbsp;toán</th>
-              <th className="px-3 py-2">Ngày chứng&nbsp;từ</th>
-              <th className="px-3 py-2">Số chứng&nbsp;từ</th>
-              <th className="px-3 py-2">Diễn&nbsp;giải</th>
-              <th className="px-3 py-2 text-right">Số&nbsp;tiền</th>
-              <th className="px-3 py-2">Đối&nbsp;tượng</th>
-              <th className="px-3 py-2">Số tài&nbsp;khoản NH</th>
-              <th className="px-3 py-2">Lý&nbsp;do thu/chi</th>
-              <th className="px-3 py-2">Loại chứng&nbsp;từ</th>
-              <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
+        <Table className="min-w-[1240px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10 text-center">
+                <Checkbox />
+              </TableHead>
+              <TableHead>Ngày hạch&nbsp;toán</TableHead>
+              <TableHead>Ngày chứng&nbsp;từ</TableHead>
+              <TableHead>Số chứng&nbsp;từ</TableHead>
+              <TableHead>Diễn&nbsp;giải</TableHead>
+              <TableHead className="text-right">Số&nbsp;tiền</TableHead>
+              <TableHead>Đối&nbsp;tượng</TableHead>
+              <TableHead>Số tài&nbsp;khoản NH</TableHead>
+              <TableHead>Lý&nbsp;do thu/chi</TableHead>
+              <TableHead>Loại chứng&nbsp;từ</TableHead>
+              <TableHead className="sticky right-0 z-30 bg-slate-50 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức&nbsp;năng
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && (
-              <tr>
-                <td colSpan={11} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={11} className="py-10 text-center text-slate-400">
                   Đang tải…
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {isError && (
-              <tr>
-                <td colSpan={11} className="px-3 py-10 text-center text-red-500">
+              <TableRow>
+                <TableCell colSpan={11} className="py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
                   </button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {!isLoading && !isError && rows.length === 0 && (
-              <tr>
-                <td colSpan={11} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={11} className="py-10 text-center text-slate-400">
                   Chưa có chứng từ tiền gửi nào.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {rows.map((r) => {
               const signed =
                 r.type === BankVoucherType.Payment ? -Number(r.totalAmount) : Number(r.totalAmount)
               return (
-                <tr key={r.id} className="group border-t border-border hover:bg-slate-50">
-                  <td className="px-3 py-2 text-center">
-                    <input type="checkbox" />
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">
+                <TableRow key={r.id} className="group">
+                  <TableCell className="text-center">
+                    <Checkbox />
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-slate-600">
                     {formatDate(r.postingDate)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-slate-600">
                     {formatDate(r.voucherDate)}
-                  </td>
-                  <td className="px-3 py-2">
+                  </TableCell>
+                  <TableCell>
                     <button
                       className="text-primary hover:underline"
                       onClick={() => openView(r.id, r.type)}
@@ -235,40 +238,40 @@ function BankTable() {
                         Chưa ghi sổ
                       </span>
                     )}
-                  </td>
-                  <td
-                    className="min-w-[220px] max-w-[340px] px-3 py-2 text-slate-700"
+                  </TableCell>
+                  <TableCell
+                    className="min-w-[220px] max-w-[340px] text-slate-700"
                     title={r.lines[0]?.description || r.reason || ''}
                   >
                     <div className="line-clamp-2 break-words">
                       {r.lines[0]?.description || r.reason}
                     </div>
-                  </td>
-                  <td
+                  </TableCell>
+                  <TableCell
                     className={cn(
                       'whitespace-nowrap px-3 py-2 text-right tabular-nums',
                       signed < 0 ? 'text-red-600' : 'text-emerald-600',
                     )}
                   >
                     {formatCurrency(signed)}
-                  </td>
-                  <td
-                    className="min-w-[140px] max-w-[220px] px-3 py-2 text-slate-600"
+                  </TableCell>
+                  <TableCell
+                    className="min-w-[140px] max-w-[220px] text-slate-600"
                     title={r.partnerName || ''}
                   >
                     <div className="line-clamp-2 break-words">{r.partnerName}</div>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">{r.bankAccountNo}</td>
-                  <td
-                    className="min-w-[100px] max-w-[160px] px-3 py-2 text-slate-600"
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-slate-600">{r.bankAccountNo}</TableCell>
+                  <TableCell
+                    className="min-w-[100px] max-w-[160px] text-slate-600"
                     title={r.reason || ''}
                   >
                     <div className="line-clamp-2 break-words">{r.reason}</div>
-                  </td>
-                  <td className="min-w-[140px] px-3 py-2 text-slate-600">
+                  </TableCell>
+                  <TableCell className="min-w-[140px] text-slate-600">
                     {VOUCHER_TYPE_LABEL[r.type]}
-                  </td>
-                  <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
+                  </TableCell>
+                  <TableCell className="sticky right-0 z-10 bg-white shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
                       onPrimary={() => openView(r.id, r.type)}
                       items={[
@@ -294,12 +297,12 @@ function BankTable() {
                         },
                       ]}
                     />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Footer / phân trang */}

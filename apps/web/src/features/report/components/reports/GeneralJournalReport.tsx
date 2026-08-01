@@ -2,6 +2,7 @@ import type { GeneralJournalFilter } from '@app/shared'
 import { useSearchParams } from 'react-router-dom'
 import { useGeneralJournal } from '../../api/useGeneralReports'
 import { formatDate, money, periodLabel, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const PAGE_SIZE = 20
 
@@ -30,23 +31,23 @@ export function GeneralJournalReport({ filter }: { filter: GeneralJournalFilter 
           <div className="text-sm italic text-slate-500">{periodLabel(filter)}</div>
         </div>
 
-        <table className="w-full min-w-[960px] border-collapse text-sm">
-          <thead className="sticky top-0 z-20">
-            <tr>
-              <th rowSpan={2} className={thClass}>Ngày, tháng ghi&nbsp;sổ</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</th>
-              <th rowSpan={2} className={thClass}>Diễn&nbsp;giải</th>
-              <th rowSpan={2} className={thClass}>Số&nbsp;hiệu TK</th>
-              <th colSpan={2} className={`${thClass} text-center`}>Số phát&nbsp;sinh</th>
-            </tr>
-            <tr>
-              <th className={thClass}>Số&nbsp;hiệu</th>
-              <th className={thClass}>Ngày&nbsp;tháng</th>
-              <th className={`${thClass} text-right`}>Nợ</th>
-              <th className={`${thClass} text-right`}>Có</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-[960px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead rowSpan={2} className={thClass}>Ngày, tháng ghi&nbsp;sổ</TableHead>
+              <TableHead colSpan={2} className={`${thClass} text-center`}>Chứng&nbsp;từ</TableHead>
+              <TableHead rowSpan={2} className={thClass}>Diễn&nbsp;giải</TableHead>
+              <TableHead rowSpan={2} className={thClass}>Số&nbsp;hiệu TK</TableHead>
+              <TableHead colSpan={2} className={`${thClass} text-center`}>Số phát&nbsp;sinh</TableHead>
+            </TableRow>
+            <TableRow>
+              <TableHead className={thClass}>Số&nbsp;hiệu</TableHead>
+              <TableHead className={thClass}>Ngày&nbsp;tháng</TableHead>
+              <TableHead className={`${thClass} text-right`}>Nợ</TableHead>
+              <TableHead className={`${thClass} text-right`}>Có</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && <StatusRow colSpan={7}>Đang tải…</StatusRow>}
             {isError && <StatusRow colSpan={7}>Lỗi tải dữ liệu.</StatusRow>}
             {!isLoading && !isError && vouchers.length === 0 && (
@@ -54,48 +55,48 @@ export function GeneralJournalReport({ filter }: { filter: GeneralJournalFilter 
             )}
             {vouchers.map((v) =>
               v.rows.map((r, i) => (
-                <tr key={`${v.voucherKind}-${v.voucherNo}-${i}`} className="hover:bg-slate-50">
+                <TableRow key={`${v.voucherKind}-${v.voucherNo}-${i}`}>
                   {i === 0 && (
                     <>
-                      <td rowSpan={v.rows.length} className={`${tdClass} whitespace-nowrap align-top`}>
+                      <TableCell rowSpan={v.rows.length} className={`${tdClass} whitespace-nowrap align-top`}>
                         {formatDate(v.postingDate)}
-                      </td>
-                      <td
+                      </TableCell>
+                      <TableCell
                         rowSpan={v.rows.length}
                         className={`${tdClass} whitespace-nowrap align-top`}
                         title={v.voucherKind}
                       >
                         {v.voucherNo}
-                      </td>
-                      <td rowSpan={v.rows.length} className={`${tdClass} whitespace-nowrap align-top`}>
+                      </TableCell>
+                      <TableCell rowSpan={v.rows.length} className={`${tdClass} whitespace-nowrap align-top`}>
                         {formatDate(v.voucherDate)}
-                      </td>
+                      </TableCell>
                     </>
                   )}
-                  <td
+                  <TableCell
                     className={`${tdClass} max-w-[360px] truncate ${r.description ? '' : 'text-slate-400'}`}
                     title={r.description ?? ''}
                   >
                     {r.description}
-                  </td>
+                  </TableCell>
                   {/* Vế Có thụt lề theo mẫu in S03a */}
-                  <td className={`${tdClass} whitespace-nowrap ${Number(r.creditAmount) > 0 ? 'pl-8' : ''}`}>
+                  <TableCell className={`${tdClass} whitespace-nowrap ${Number(r.creditAmount) > 0 ? 'pl-8' : ''}`}>
                     {r.account}
-                  </td>
-                  <td className={tdMoney}>{money(r.debitAmount)}</td>
-                  <td className={tdMoney}>{money(r.creditAmount)}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className={tdMoney}>{money(r.debitAmount)}</TableCell>
+                  <TableCell className={tdMoney}>{money(r.creditAmount)}</TableCell>
+                </TableRow>
               )),
             )}
             {vouchers.length > 0 && (
-              <tr className="bg-slate-50 font-semibold">
-                <td colSpan={5} className={tdClass}>Tổng cộng toàn kỳ</td>
-                <td className={tdMoney}>{money(data?.totalDebit ?? '0', true)}</td>
-                <td className={tdMoney}>{money(data?.totalCredit ?? '0', true)}</td>
-              </tr>
+              <TableRow className="bg-slate-50 font-semibold">
+                <TableCell colSpan={5} className={tdClass}>Tổng cộng toàn kỳ</TableCell>
+                <TableCell className={tdMoney}>{money(data?.totalDebit ?? '0', true)}</TableCell>
+                <TableCell className={tdMoney}>{money(data?.totalCredit ?? '0', true)}</TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Footer phân trang — theo pattern bảng danh sách (§3) */}

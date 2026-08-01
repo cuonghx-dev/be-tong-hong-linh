@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChartIcon, SearchIcon } from '@/shared/ui/icons'
+import { Input } from '@/shared/ui/input'
 import { PURCHASE_REPORTS } from '../../types'
 
 // Tab "Báo cáo" phân hệ Mua hàng: danh sách báo cáo 2 cột (như MISA),
@@ -20,11 +21,11 @@ export function PurchaseReportListTab() {
           size={15}
           className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
         />
-        <input
+        <Input
           placeholder="Tìm theo tên báo cáo"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          className="h-8 w-full rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-8 pl-8 pr-2"
         />
       </div>
 

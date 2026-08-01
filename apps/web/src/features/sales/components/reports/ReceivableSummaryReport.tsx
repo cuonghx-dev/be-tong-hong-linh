@@ -1,6 +1,7 @@
 import type { SalesReportFilter } from '@app/shared'
 import { useCustomerReceivableSummary } from '../../api/useSalesReports'
 import { money, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 6
 
@@ -11,45 +12,45 @@ export function ReceivableSummaryReport({ filter }: { filter: SalesReportFilter 
   const rows = data?.rows ?? []
 
   return (
-    <table className="w-full min-w-[900px] border-collapse text-sm">
-      <thead className="sticky top-0 z-20">
-        <tr>
-          <th className={thClass}>Mã khách&nbsp;hàng</th>
-          <th className={thClass}>Tên khách&nbsp;hàng</th>
-          <th className={thClass}>Dư&nbsp;Nợ đầu&nbsp;kỳ</th>
-          <th className={thClass}>Phát&nbsp;sinh Nợ</th>
-          <th className={thClass}>Phát&nbsp;sinh Có</th>
-          <th className={thClass}>Dư&nbsp;Nợ cuối&nbsp;kỳ</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table className="min-w-[900px]">
+      <TableHeader>
+        <TableRow>
+          <TableHead className={thClass}>Mã khách&nbsp;hàng</TableHead>
+          <TableHead className={thClass}>Tên khách&nbsp;hàng</TableHead>
+          <TableHead className={thClass}>Dư&nbsp;Nợ đầu&nbsp;kỳ</TableHead>
+          <TableHead className={thClass}>Phát&nbsp;sinh Nợ</TableHead>
+          <TableHead className={thClass}>Phát&nbsp;sinh Có</TableHead>
+          <TableHead className={thClass}>Dư&nbsp;Nợ cuối&nbsp;kỳ</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {isLoading && <StatusRow colSpan={COL_SPAN}>Đang tải…</StatusRow>}
         {isError && <StatusRow colSpan={COL_SPAN}>Lỗi tải dữ liệu.</StatusRow>}
         {data && rows.length === 0 && (
           <StatusRow colSpan={COL_SPAN}>Không có công nợ trong kỳ.</StatusRow>
         )}
         {rows.map((r, i) => (
-          <tr key={`${r.customerId ?? r.customerName}-${i}`} className="hover:bg-slate-50">
-            <td className={`${tdClass} whitespace-nowrap`}>{r.customerCode}</td>
-            <td className={`${tdClass} max-w-[320px] truncate`} title={r.customerName}>
+          <TableRow key={`${r.customerId ?? r.customerName}-${i}`}>
+            <TableCell className={`${tdClass} whitespace-nowrap`}>{r.customerCode}</TableCell>
+            <TableCell className={`${tdClass} max-w-[320px] truncate`} title={r.customerName}>
               {r.customerName}
-            </td>
-            <td className={tdMoney}>{money(r.openingBalance)}</td>
-            <td className={tdMoney}>{money(r.debitAmount)}</td>
-            <td className={tdMoney}>{money(r.creditAmount)}</td>
-            <td className={tdMoney}>{money(r.closingBalance)}</td>
-          </tr>
+            </TableCell>
+            <TableCell className={tdMoney}>{money(r.openingBalance)}</TableCell>
+            <TableCell className={tdMoney}>{money(r.debitAmount)}</TableCell>
+            <TableCell className={tdMoney}>{money(r.creditAmount)}</TableCell>
+            <TableCell className={tdMoney}>{money(r.closingBalance)}</TableCell>
+          </TableRow>
         ))}
         {data && rows.length > 0 && (
-          <tr className="bg-slate-50 font-semibold">
-            <td colSpan={2} className={tdClass}>Tổng cộng</td>
-            <td className={tdMoney}>{money(data.totalOpening, true)}</td>
-            <td className={tdMoney}>{money(data.totalDebit, true)}</td>
-            <td className={tdMoney}>{money(data.totalCredit, true)}</td>
-            <td className={tdMoney}>{money(data.totalClosing, true)}</td>
-          </tr>
+          <TableRow className="bg-slate-50 font-semibold">
+            <TableCell colSpan={2} className={tdClass}>Tổng cộng</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalOpening, true)}</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalDebit, true)}</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalCredit, true)}</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalClosing, true)}</TableCell>
+          </TableRow>
         )}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   )
 }

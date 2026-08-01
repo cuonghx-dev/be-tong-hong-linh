@@ -25,10 +25,17 @@ import { ItemPicker, type ItemOption } from '@/shared/ui/item-picker'
 import { PartnerPicker, type PartnerOption } from '@/shared/ui/partner-picker'
 import { QuickAddEmployeeDialog } from '@/shared/ui/quick-add-employee-dialog'
 import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
-import { CostVoucherPickerDialog } from './CostVoucherPickerDialog'
 import { WarehousePicker, warehouseCellCls } from '@/shared/ui/warehouse-picker'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
+import { CellInput, cellInputCls } from '@/shared/ui/cell-input'
+import { Label } from '@/shared/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group'
+import { CostVoucherPickerDialog } from './CostVoucherPickerDialog'
 import { useSuppliers } from '../api/useSuppliers'
 import { useNextPurchaseVoucherNo, usePurchaseVoucher } from '../api/usePurchaseVouchers'
 import {
@@ -48,7 +55,7 @@ import {
   VOUCHER_TYPE_LABEL,
   hasWarehouse,
 } from '../types'
-import { MoneyInput } from './MoneyInput'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 interface Props {
   type: PurchaseVoucherType
@@ -416,11 +423,11 @@ export function PurchaseVoucherForm({
             </SelectContent>
           </Select>
         )}
-        <input
+        <Input
           {...register('contractNo')}
           disabled={readOnly}
           placeholder={variant.contractPlaceholder}
-          className={cn(inputCls, 'w-56 shrink-0')}
+          className="w-56 shrink-0"
         />
         <button
           type="button"
@@ -435,17 +442,20 @@ export function PurchaseVoucherForm({
       {/* ── Sub-header (§5.3): tùy chọn thanh toán · phương thức · nhận kèm HĐ | tổng tiền ── */}
       <div className="flex shrink-0 flex-wrap items-center gap-4 bg-primary/5 px-4 py-2">
         <fieldset disabled={readOnly} className="flex flex-wrap items-center gap-4">
-          {[PurchasePaymentMode.Unpaid, PurchasePaymentMode.Immediate].map((m) => (
-            <label key={m} className="flex items-center gap-1.5 text-sm">
-              <input
-                type="radio"
-                value={m}
-                checked={paymentMode === m}
-                onChange={() => setValue('paymentMode', m)}
-              />
-              {PAYMENT_MODE_LABEL[m]}
-            </label>
-          ))}
+          <RadioGroup
+            value={paymentMode}
+            onValueChange={(v) => setValue('paymentMode', v as typeof paymentMode)}
+            className="flex items-center gap-4"
+          >
+            {[PurchasePaymentMode.Unpaid, PurchasePaymentMode.Immediate].map((m) => (
+              <div key={m} className="flex items-center gap-1.5">
+                <RadioGroupItem value={m} id={`purchase-payment-mode-${m}`} />
+                <Label htmlFor={`purchase-payment-mode-${m}`} className="cursor-pointer font-normal">
+                  {PAYMENT_MODE_LABEL[m]}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
           {/* Phương thức TT chỉ có nghĩa khi trả ngay; hiện chỉ hỗ trợ tiền mặt.
               MISA luôn hiện dropdown, xám khi "Chưa thanh toán". */}
           <Select value="CASH" disabled>
@@ -480,10 +490,7 @@ export function PurchaseVoucherForm({
           </Select>
           {/* MISA: chỉ chứng từ dịch vụ đánh dấu cờ này mới được chọn phân bổ CP (§10.4). */}
           {variant.hasCostFlag && (
-            <label className="flex items-center gap-1.5 text-sm">
-              <input type="checkbox" {...register('isPurchaseCost')} />
-              Là chi phí mua hàng
-            </label>
+            <CheckboxField control={control} name="isPurchaseCost" label="Là chi phí mua hàng" />
           )}
         </fieldset>
         <div className="ml-auto text-right">
@@ -552,24 +559,22 @@ export function PurchaseVoucherForm({
             // ký hiệu, số, ngày hóa đơn); chỉ có nghĩa khi nhận kèm HĐ.
             <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-3">
               <Field label="Mẫu số hóa đơn">
-                <input
+                <Input
                   {...register('invoiceTemplate')}
                   placeholder="VD: 01GTKT0/001"
-                  className={inputCls}
                 />
               </Field>
               <Field label="Ký hiệu hóa đơn">
-                <input
+                <Input
                   {...register('invoiceSeries')}
                   placeholder="VD: 1C24TYY"
-                  className={inputCls}
                 />
               </Field>
               <Field label="Số hóa đơn">
-                <input {...register('invoiceNo')} className={inputCls} />
+                <Input {...register('invoiceNo')} />
               </Field>
               <Field label="Ngày hóa đơn">
-                <input type="date" {...register('invoiceDate')} className={inputCls} />
+                <Input type="date" {...register('invoiceDate')} />
               </Field>
               {!receiveWithInvoice && (
                 <p className="self-end pb-2 text-xs text-slate-500 md:col-span-2">
@@ -594,27 +599,27 @@ export function PurchaseVoucherForm({
                   />
                 </Field>
                 <Field label="Tên nhà cung cấp" error={formState.errors.supplierName?.message}>
-                  <input {...register('supplierName')} className={inputCls} />
+                  <Input {...register('supplierName')} />
                 </Field>
                 <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
-                  <input type="date" {...register('postingDate')} className={inputCls} />
+                  <Input type="date" {...register('postingDate')} />
                 </Field>
 
                 {/* Cột deliverer: nhập kho "Người giao hàng", dịch vụ "Người nhận";
                   không qua kho không có — Địa chỉ giãn 2 cột. */}
                 {variant.delivererLabel && (
                   <Field label={variant.delivererLabel}>
-                    <input {...register('deliverer')} className={inputCls} />
+                    <Input {...register('deliverer')} />
                   </Field>
                 )}
                 <Field
                   label="Địa chỉ"
                   className={variant.delivererLabel ? undefined : 'md:col-span-2'}
                 >
-                  <input {...register('address')} className={inputCls} />
+                  <Input {...register('address')} />
                 </Field>
                 <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
-                  <input type="date" {...register('voucherDate')} className={inputCls} />
+                  <Input type="date" {...register('voucherDate')} />
                 </Field>
 
                 <Field label="Nhân viên mua hàng">
@@ -630,24 +635,23 @@ export function PurchaseVoucherForm({
                   />
                 </Field>
                 <Field label="Diễn giải">
-                  <input {...register('description')} className={inputCls} />
+                  <Input {...register('description')} />
                 </Field>
                 <Field label={variant.voucherNoLabel}>
-                  <input
+                  <Input
                     value={displayNo || 'Tự động'}
                     readOnly
                     title="Số dự kiến — cấp chính thức khi Lưu"
-                    className={cn(inputCls, 'bg-slate-50 text-slate-500')}
+                    className="bg-slate-50 text-slate-500"
                   />
                 </Field>
 
                 {variant.hasAttachment && (
                   <Field label="Kèm theo (chứng từ gốc)">
-                    <input
+                    <Input
                       type="number"
                       min={0}
                       {...register('attachmentCount')}
-                      className={inputCls}
                     />
                   </Field>
                 )}
@@ -658,13 +662,13 @@ export function PurchaseVoucherForm({
               {isUnpaid && (
                 <div className="grid grid-cols-1 gap-x-6 gap-y-3 rounded-md bg-slate-50 px-3 py-2 md:grid-cols-3">
                   <Field label="Điều khoản thanh toán">
-                    <input {...register('paymentTermId')} className={inputCls} />
+                    <Input {...register('paymentTermId')} />
                   </Field>
                   <Field label="Số ngày được nợ">
-                    <input type="number" min={0} {...register('creditDays')} className={inputCls} />
+                    <Input type="number" min={0} {...register('creditDays')} />
                   </Field>
                   <Field label="Hạn thanh toán">
-                    <input type="date" {...register('dueDate')} className={inputCls} />
+                    <Input type="date" {...register('dueDate')} />
                   </Field>
                 </div>
               )}
@@ -712,57 +716,57 @@ export function PurchaseVoucherForm({
               // ── Tab Chi phí (§10.4): bảng phân bổ chi phí từ chứng từ mua dịch vụ ──
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[900px] border-collapse text-sm">
-                    <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                      <tr>
-                        <th className="w-8 px-2 py-1.5 text-center">#</th>
-                        <th className="px-2 py-1.5">Ngày hạch toán</th>
-                        <th className="px-2 py-1.5">Ngày chứng từ</th>
-                        <th className="px-2 py-1.5">Số chứng từ</th>
-                        <th className="px-2 py-1.5">Nhà cung cấp</th>
-                        <th className="w-32 px-2 py-1.5 text-right">Tổng chi phí</th>
-                        <th className="w-40 px-2 py-1.5 text-right">Lũy kế số đã phân bổ</th>
-                        <th className="w-36 px-2 py-1.5 text-right">Số phân bổ lần này</th>
-                        <th className="w-8 px-2 py-1.5" />
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table className="min-w-[900px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                        <TableHead className="px-2 py-1.5">Ngày hạch toán</TableHead>
+                        <TableHead className="px-2 py-1.5">Ngày chứng từ</TableHead>
+                        <TableHead className="px-2 py-1.5">Số chứng từ</TableHead>
+                        <TableHead className="px-2 py-1.5">Nhà cung cấp</TableHead>
+                        <TableHead className="w-32 px-2 py-1.5 text-right">Tổng chi phí</TableHead>
+                        <TableHead className="w-40 px-2 py-1.5 text-right">Lũy kế số đã phân bổ</TableHead>
+                        <TableHead className="w-36 px-2 py-1.5 text-right">Số phân bổ lần này</TableHead>
+                        <TableHead className="w-8 px-2 py-1.5" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {costArray.fields.length === 0 && (
-                        <tr>
-                          <td colSpan={9} className="px-2 py-6 text-center text-slate-500">
+                        <TableRow>
+                          <TableCell colSpan={9} className="px-2 py-6 text-center text-slate-500">
                             Chưa có chi phí phân bổ — bấm “Chọn chứng từ CP” để thêm.
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )}
                       {costArray.fields.map((f, i) => {
                         const a = costAllocs?.[i]
                         return (
-                          <tr key={f.id} className="border-t border-border">
-                            <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                            <td className="px-2 py-1">
+                          <TableRow key={f.id}>
+                            <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                            <TableCell className="px-2 py-1">
                               {a?.postingDate ? formatDate(a.postingDate) : ''}
-                            </td>
-                            <td className="px-2 py-1">
+                            </TableCell>
+                            <TableCell className="px-2 py-1">
                               {a?.voucherDate ? formatDate(a.voucherDate) : ''}
-                            </td>
-                            <td className="px-2 py-1 font-medium text-primary">{a?.voucherNo}</td>
-                            <td className="max-w-56 truncate px-2 py-1">{a?.supplierName ?? ''}</td>
-                            <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                            </TableCell>
+                            <TableCell className="px-2 py-1 font-medium text-primary">{a?.voucherNo}</TableCell>
+                            <TableCell className="max-w-56 truncate px-2 py-1">{a?.supplierName ?? ''}</TableCell>
+                            <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                               {formatCurrency(a?.totalCost ?? 0)}
-                            </td>
-                            <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                            </TableCell>
+                            <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                               {formatCurrency((a?.allocatedOther || 0) + (a?.amount || 0))}
-                            </td>
-                            <td className="px-2 py-1">
+                            </TableCell>
+                            <TableCell className="px-2 py-1">
                               <Controller
                                 control={control}
                                 name={`costAllocations.${i}.amount`}
                                 render={({ field }) => (
-                                  <MoneyInput value={field.value ?? 0} onChange={field.onChange} />
+                                  <AmountInput value={field.value ?? 0} onChange={field.onChange} className={cellInputCls} />
                                 )}
                               />
-                            </td>
-                            <td className="px-2 py-1 text-center">
+                            </TableCell>
+                            <TableCell className="px-2 py-1 text-center">
                               <button
                                 type="button"
                                 onClick={() => costArray.remove(i)}
@@ -771,38 +775,38 @@ export function PurchaseVoucherForm({
                               >
                                 <TrashIcon size={14} />
                               </button>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         )
                       })}
-                    </tbody>
+                    </TableBody>
                     {costArray.fields.length > 0 && (
-                      <tfoot className="bg-slate-100 font-medium">
-                        <tr className="border-t border-border">
-                          <td className="px-2 py-1.5" colSpan={5}>
+                      <TableFooter className="bg-slate-100">
+                        <TableRow>
+                          <TableCell className="px-2 py-1.5" colSpan={5}>
                             Cộng
-                          </td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">
+                          </TableCell>
+                          <TableCell className="px-2 py-1.5 text-right tabular-nums">
                             {formatCurrency(
                               (costAllocs ?? []).reduce((s, a) => s + num(a.totalCost), 0),
                             )}
-                          </td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">
+                          </TableCell>
+                          <TableCell className="px-2 py-1.5 text-right tabular-nums">
                             {formatCurrency(
                               (costAllocs ?? []).reduce(
                                 (s, a) => s + num(a.allocatedOther) + num(a.amount),
                                 0,
                               ),
                             )}
-                          </td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">
+                          </TableCell>
+                          <TableCell className="px-2 py-1.5 text-right tabular-nums">
                             {formatCurrency(purchaseCostValue)}
-                          </td>
-                          <td />
-                        </tr>
-                      </tfoot>
+                          </TableCell>
+                          <TableCell />
+                        </TableRow>
+                      </TableFooter>
                     )}
-                  </table>
+                  </Table>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 border-t border-border px-2 py-1.5">
@@ -833,60 +837,60 @@ export function PurchaseVoucherForm({
               // dòng dữ liệu với tab Hạch toán. Số/Ngày hóa đơn là field header (mọi
               // dòng đồng bộ — Controller controlled); xóa dòng = xóa cả dòng hạch toán. ──
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px] border-collapse text-sm">
-                  <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="w-8 px-2 py-1.5 text-center">#</th>
-                      <th className="px-2 py-1.5">{variant.itemCodeLabel}</th>
-                      <th className="px-2 py-1.5">{variant.itemNameLabel}</th>
-                      <th className="w-24 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</th>
-                      <th className="w-32 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</th>
-                      {showAccounts && <th className="w-28 px-2 py-1.5">TK thuế GTGT</th>}
-                      <th className="w-32 px-2 py-1.5">Số hóa đơn</th>
-                      <th className="w-36 px-2 py-1.5">Ngày hóa đơn</th>
-                      <th className="w-8 px-2 py-1.5" />
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table className="min-w-[1000px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                      <TableHead className="px-2 py-1.5">{variant.itemCodeLabel}</TableHead>
+                      <TableHead className="px-2 py-1.5">{variant.itemNameLabel}</TableHead>
+                      <TableHead className="w-24 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</TableHead>
+                      <TableHead className="w-32 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</TableHead>
+                      {showAccounts && <TableHead className="w-28 px-2 py-1.5">TK thuế GTGT</TableHead>}
+                      <TableHead className="w-32 px-2 py-1.5">Số hóa đơn</TableHead>
+                      <TableHead className="w-36 px-2 py-1.5">Ngày hóa đơn</TableHead>
+                      <TableHead className="w-8 px-2 py-1.5" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {fields.map((f, i) => {
                       const l = lines?.[i]
                       const amount = (l?.quantity || 0) * (l?.unitPrice || 0)
                       const vat = (amount * (l?.vatRate || 0)) / 100
                       return (
-                        <tr key={f.id} className="border-t border-border">
-                          <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                          <td className="px-2 py-1">
+                        <TableRow key={f.id}>
+                          <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                          <TableCell className="px-2 py-1">
                             <ItemCell
                               value={l?.itemId}
                               placeholder={variant.itemCodeLabel}
                               onPick={(item) => pickItem(i, item)}
                             />
-                          </td>
-                          <td className="px-2 py-1">
-                            <input
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
+                            <CellInput
                               {...register(`lines.${i}.itemName`)}
                               className={cn(
-                                cellCls,
+                                cellInputCls,
                                 formState.errors.lines?.[i]?.itemName &&
                                   'rounded ring-1 ring-inset ring-red-500',
                               )}
                             />
-                          </td>
-                          <td className="px-2 py-1">
-                            <input
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
+                            <CellInput
                               type="number"
                               min={0}
                               max={100}
                               step="any"
                               {...register(`lines.${i}.vatRate`)}
-                              className={cn(cellCls, 'text-right')}
+                              className={cn('text-right')}
                             />
-                          </td>
-                          <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                          </TableCell>
+                          <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                             {formatCurrency(vat)}
-                          </td>
+                          </TableCell>
                           {showAccounts && (
-                            <td className="px-2 py-1">
+                            <TableCell className="px-2 py-1">
                               <Controller
                                 control={control}
                                 name={`lines.${i}.vatAccount`}
@@ -898,32 +902,31 @@ export function PurchaseVoucherForm({
                                   />
                                 )}
                               />
-                            </td>
+                            </TableCell>
                           )}
-                          <td className="px-2 py-1">
+                          <TableCell className="px-2 py-1">
                             <Controller
                               control={control}
                               name="invoiceNo"
                               render={({ field }) => (
-                                <input {...field} value={field.value ?? ''} className={cellCls} />
+                                <CellInput {...field} value={field.value ?? ''} />
                               )}
                             />
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
                             <Controller
                               control={control}
                               name="invoiceDate"
                               render={({ field }) => (
-                                <input
+                                <CellInput
                                   type="date"
                                   {...field}
                                   value={field.value ?? ''}
-                                  className={cellCls}
                                 />
                               )}
                             />
-                          </td>
-                          <td className="px-2 py-1 text-center">
+                          </TableCell>
+                          <TableCell className="px-2 py-1 text-center">
                             <button
                               type="button"
                               onClick={() => fields.length > 1 && remove(i)}
@@ -932,81 +935,81 @@ export function PurchaseVoucherForm({
                             >
                               <TrashIcon size={14} />
                             </button>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )
                     })}
-                  </tbody>
-                  <tfoot className="bg-slate-100 font-medium">
-                    <tr className="border-t border-border">
-                      <td className="px-2 py-1.5" colSpan={4}>
+                  </TableBody>
+                  <TableFooter className="bg-slate-100">
+                    <TableRow>
+                      <TableCell className="px-2 py-1.5" colSpan={4}>
                         Tổng cộng
-                      </td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 text-right tabular-nums">
                         {formatCurrency(totalVat)}
-                      </td>
-                      <td colSpan={showAccounts ? 4 : 3} />
-                    </tr>
-                  </tfoot>
-                </table>
+                      </TableCell>
+                      <TableCell colSpan={showAccounts ? 4 : 3} />
+                    </TableRow>
+                  </TableFooter>
+                </Table>
               </div>
             ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1000px] border-collapse text-sm">
-                    <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                      <tr>
-                        <th className="w-8 px-2 py-1.5 text-center">#</th>
-                        <th className="px-2 py-1.5">{variant.itemCodeLabel}</th>
-                        <th className="px-2 py-1.5">{variant.itemNameLabel}</th>
-                        {showWarehouse && <th className="px-2 py-1.5">Kho</th>}
+                  <Table className="min-w-[1000px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                        <TableHead className="px-2 py-1.5">{variant.itemCodeLabel}</TableHead>
+                        <TableHead className="px-2 py-1.5">{variant.itemNameLabel}</TableHead>
+                        {showWarehouse && <TableHead className="px-2 py-1.5">Kho</TableHead>}
                         {showAccounts && (
-                          <th className="w-24 px-2 py-1.5">{variant.stockAccountLabel}</th>
+                          <TableHead className="w-24 px-2 py-1.5">{variant.stockAccountLabel}</TableHead>
                         )}
-                        {showAccounts && <th className="w-24 px-2 py-1.5">TK Công nợ</th>}
-                        <th className="w-16 px-2 py-1.5">ĐVT</th>
-                        <th className="w-20 px-2 py-1.5 text-right">Số&nbsp;lượng</th>
-                        <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
-                        <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
+                        {showAccounts && <TableHead className="w-24 px-2 py-1.5">TK Công nợ</TableHead>}
+                        <TableHead className="w-16 px-2 py-1.5">ĐVT</TableHead>
+                        <TableHead className="w-20 px-2 py-1.5 text-right">Số&nbsp;lượng</TableHead>
+                        <TableHead className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</TableHead>
+                        <TableHead className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</TableHead>
                         {vatInline && (
-                          <th className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</th>
+                          <TableHead className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</TableHead>
                         )}
                         {vatInline && (
-                          <th className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</th>
+                          <TableHead className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</TableHead>
                         )}
                         {vatInline && showAccounts && (
-                          <th className="w-24 px-2 py-1.5">TK thuế GTGT</th>
+                          <TableHead className="w-24 px-2 py-1.5">TK thuế GTGT</TableHead>
                         )}
-                        <th className="w-8 px-2 py-1.5" />
-                      </tr>
-                    </thead>
-                    <tbody>
+                        <TableHead className="w-8 px-2 py-1.5" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {fields.map((f, i) => {
                         const l = lines?.[i]
                         const amount = (l?.quantity || 0) * (l?.unitPrice || 0)
                         const vat = (amount * (l?.vatRate || 0)) / 100
                         return (
-                          <tr key={f.id} className="border-t border-border">
-                            <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                            <td className="px-2 py-1">
+                          <TableRow key={f.id}>
+                            <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                            <TableCell className="px-2 py-1">
                               <ItemCell
                                 value={l?.itemId}
                                 placeholder={variant.itemCodeLabel}
                                 onPick={(item) => pickItem(i, item)}
                               />
-                            </td>
-                            <td className="px-2 py-1">
-                              <input
+                            </TableCell>
+                            <TableCell className="px-2 py-1">
+                              <CellInput
                                 {...register(`lines.${i}.itemName`)}
                                 className={cn(
-                                  cellCls,
+                                  cellInputCls,
                                   formState.errors.lines?.[i]?.itemName &&
                                     'rounded ring-1 ring-inset ring-red-500',
                                 )}
                               />
-                            </td>
+                            </TableCell>
                             {showWarehouse && (
-                              <td className="px-2 py-1">
+                              <TableCell className="px-2 py-1">
                                 <Controller
                                   control={control}
                                   name={`lines.${i}.warehouseId`}
@@ -1018,10 +1021,10 @@ export function PurchaseVoucherForm({
                                     />
                                   )}
                                 />
-                              </td>
+                              </TableCell>
                             )}
                             {showAccounts && (
-                              <td className="px-2 py-1">
+                              <TableCell className="px-2 py-1">
                                 <Controller
                                   control={control}
                                   name={`lines.${i}.stockAccount`}
@@ -1033,10 +1036,10 @@ export function PurchaseVoucherForm({
                                     />
                                   )}
                                 />
-                              </td>
+                              </TableCell>
                             )}
                             {showAccounts && (
-                              <td className="px-2 py-1">
+                              <TableCell className="px-2 py-1">
                                 <Controller
                                   control={control}
                                   name={`lines.${i}.payableAccount`}
@@ -1048,51 +1051,51 @@ export function PurchaseVoucherForm({
                                     />
                                   )}
                                 />
-                              </td>
+                              </TableCell>
                             )}
-                            <td className="px-2 py-1">
-                              <input {...register(`lines.${i}.unit`)} className={cellCls} />
-                            </td>
-                            <td className="px-2 py-1">
-                              <input
+                            <TableCell className="px-2 py-1">
+                              <CellInput {...register(`lines.${i}.unit`)} />
+                            </TableCell>
+                            <TableCell className="px-2 py-1">
+                              <CellInput
                                 type="number"
                                 min={0}
                                 step="any"
                                 {...register(`lines.${i}.quantity`)}
-                                className={cn(cellCls, 'text-right')}
+                                className={cn('text-right')}
                               />
-                            </td>
-                            <td className="px-2 py-1">
+                            </TableCell>
+                            <TableCell className="px-2 py-1">
                               <Controller
                                 control={control}
                                 name={`lines.${i}.unitPrice`}
                                 render={({ field }) => (
-                                  <MoneyInput value={field.value} onChange={field.onChange} />
+                                  <AmountInput value={field.value} onChange={field.onChange} className={cellInputCls} />
                                 )}
                               />
-                            </td>
-                            <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                            </TableCell>
+                            <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                               {formatCurrency(amount)}
-                            </td>
+                            </TableCell>
                             {vatInline && (
-                              <td className="px-2 py-1">
-                                <input
+                              <TableCell className="px-2 py-1">
+                                <CellInput
                                   type="number"
                                   min={0}
                                   max={100}
                                   step="any"
                                   {...register(`lines.${i}.vatRate`)}
-                                  className={cn(cellCls, 'text-right')}
+                                  className={cn('text-right')}
                                 />
-                              </td>
+                              </TableCell>
                             )}
                             {vatInline && (
-                              <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                              <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                                 {formatCurrency(vat)}
-                              </td>
+                              </TableCell>
                             )}
                             {vatInline && showAccounts && (
-                              <td className="px-2 py-1">
+                              <TableCell className="px-2 py-1">
                                 <Controller
                                   control={control}
                                   name={`lines.${i}.vatAccount`}
@@ -1104,9 +1107,9 @@ export function PurchaseVoucherForm({
                                     />
                                   )}
                                 />
-                              </td>
+                              </TableCell>
                             )}
-                            <td className="px-2 py-1 text-center">
+                            <TableCell className="px-2 py-1 text-center">
                               <button
                                 type="button"
                                 onClick={() => fields.length > 1 && remove(i)}
@@ -1115,31 +1118,31 @@ export function PurchaseVoucherForm({
                               >
                                 <TrashIcon size={14} />
                               </button>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         )
                       })}
-                    </tbody>
-                    <tfoot className="bg-slate-100 font-medium">
-                      <tr className="border-t border-border">
-                        <td className="px-2 py-1.5" colSpan={leadCols}>
+                    </TableBody>
+                    <TableFooter className="bg-slate-100">
+                      <TableRow>
+                        <TableCell className="px-2 py-1.5" colSpan={leadCols}>
                           Tổng cộng
-                        </td>
-                        <td className="px-2 py-1.5 text-right tabular-nums">{totalQty}</td>
-                        <td />
-                        <td className="px-2 py-1.5 text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">{totalQty}</TableCell>
+                        <TableCell />
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">
                           {formatCurrency(totalGoods)}
-                        </td>
-                        {vatInline && <td />}
+                        </TableCell>
+                        {vatInline && <TableCell />}
                         {vatInline && (
-                          <td className="px-2 py-1.5 text-right tabular-nums">
+                          <TableCell className="px-2 py-1.5 text-right tabular-nums">
                             {formatCurrency(totalVat)}
-                          </td>
+                          </TableCell>
                         )}
-                        <td colSpan={vatInline && showAccounts ? 2 : 1} />
-                      </tr>
-                    </tfoot>
-                  </table>
+                        <TableCell colSpan={vatInline && showAccounts ? 2 : 1} />
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
                 </div>
 
                 {/* Nút dòng (§5.6) */}
@@ -1312,33 +1315,8 @@ function ItemCell({
       onKeywordChange={setKeyword}
       onSelect={onPick}
       placeholder={placeholder}
-      inputClassName={cellCls}
+      inputClassName={cellInputCls}
       allowFreeText
     />
-  )
-}
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-const cellCls =
-  'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  error,
-  className,
-  children,
-}: {
-  label: string
-  error?: string
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className={cn('space-y-1', className)}>
-      <label className="text-xs font-medium text-slate-500">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
   )
 }

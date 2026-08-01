@@ -1,6 +1,7 @@
 import type { BankBalanceFilter } from '@app/shared'
 import { useBankBalances } from '../../api/useBankReports'
 import { money, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 5
 
@@ -10,40 +11,40 @@ export function BankBalancesReport({ filter }: { filter: BankBalanceFilter }) {
   const rows = data?.rows ?? []
 
   return (
-    <table className="w-full min-w-[720px] border-collapse text-sm">
-      <thead className="sticky top-0 z-20">
-        <tr>
-          <th className={`${thClass} w-12 text-center`}>STT</th>
-          <th className={thClass}>Số tài&nbsp;khoản</th>
-          <th className={thClass}>Ngân&nbsp;hàng</th>
-          <th className={thClass}>Chi&nbsp;nhánh</th>
-          <th className={thClass}>Số&nbsp;dư</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table className="min-w-[720px]">
+      <TableHeader>
+        <TableRow>
+          <TableHead className={`${thClass} w-12 text-center`}>STT</TableHead>
+          <TableHead className={thClass}>Số tài&nbsp;khoản</TableHead>
+          <TableHead className={thClass}>Ngân&nbsp;hàng</TableHead>
+          <TableHead className={thClass}>Chi&nbsp;nhánh</TableHead>
+          <TableHead className={thClass}>Số&nbsp;dư</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {isLoading && <StatusRow colSpan={COL_SPAN}>Đang tải…</StatusRow>}
         {isError && <StatusRow colSpan={COL_SPAN}>Lỗi tải dữ liệu.</StatusRow>}
         {data && rows.length === 0 && (
           <StatusRow colSpan={COL_SPAN}>Chưa có tài khoản ngân hàng nào.</StatusRow>
         )}
         {rows.map((r, i) => (
-          <tr key={r.bankAccountNo || '(trống)'} className="hover:bg-slate-50">
-            <td className={`${tdClass} text-center text-slate-500`}>{i + 1}</td>
-            <td className={`${tdClass} whitespace-nowrap`}>
+          <TableRow key={r.bankAccountNo || '(trống)'}>
+            <TableCell className={`${tdClass} text-center text-slate-500`}>{i + 1}</TableCell>
+            <TableCell className={`${tdClass} whitespace-nowrap`}>
               {r.bankAccountNo || 'Chưa chọn TK ngân hàng'}
-            </td>
-            <td className={tdClass}>{r.bankName}</td>
-            <td className={tdClass}>{r.bankBranch}</td>
-            <td className={tdMoney}>{money(r.balance, true)}</td>
-          </tr>
+            </TableCell>
+            <TableCell className={tdClass}>{r.bankName}</TableCell>
+            <TableCell className={tdClass}>{r.bankBranch}</TableCell>
+            <TableCell className={tdMoney}>{money(r.balance, true)}</TableCell>
+          </TableRow>
         ))}
         {data && rows.length > 0 && (
-          <tr className="bg-slate-50 font-semibold">
-            <td colSpan={4} className={tdClass}>Tổng cộng</td>
-            <td className={tdMoney}>{money(data.totalBalance, true)}</td>
-          </tr>
+          <TableRow className="bg-slate-50 font-semibold">
+            <TableCell colSpan={4} className={tdClass}>Tổng cộng</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalBalance, true)}</TableCell>
+          </TableRow>
         )}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   )
 }

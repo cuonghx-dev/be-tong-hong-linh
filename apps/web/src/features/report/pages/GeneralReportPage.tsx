@@ -10,12 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 import { AccountLedgerReport } from '../components/reports/AccountLedgerReport'
 import { GeneralJournalReport } from '../components/reports/GeneralJournalReport'
 import { GENERAL_REPORTS, type GeneralReportSlug } from '../types'
-
-const inputClass =
-  'h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
 // Trang xem báo cáo Tổng hợp full-page (§5 design.md). Route: /general/reports/:slug
 // Sổ chi tiết các tài khoản lọc thêm được theo 1 TK (khớp tiền tố: 131 gồm 1311…).
@@ -84,31 +83,31 @@ export function GeneralReportPage() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
             Từ ngày
-            <input
+            <Input
               type="date"
               value={fromDate}
               max={toDate}
               onChange={(e) => e.target.value && setRange(e.target.value, toDate)}
-              className={inputClass}
+              className="h-8 w-auto px-2"
             />
-          </label>
-          <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          </Label>
+          <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
             Đến ngày
-            <input
+            <Input
               type="date"
               value={toDate}
               min={fromDate}
               onChange={(e) => e.target.value && setRange(fromDate, e.target.value)}
-              className={inputClass}
+              className="h-8 w-auto px-2"
             />
-          </label>
+          </Label>
           {slug === 'account-ledger' && (
-            <label className="flex items-center gap-1.5 text-sm text-slate-600">
+            <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
               Tài khoản
               <AccountSelect value={accountCode} onChange={(v) => setParam('account', v)} />
-            </label>
+            </Label>
           )}
         </div>
 

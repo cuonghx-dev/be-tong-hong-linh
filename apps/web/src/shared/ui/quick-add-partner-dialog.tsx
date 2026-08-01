@@ -7,7 +7,10 @@ import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/button'
 import { Modal } from '@/shared/ui/modal'
 import type { PartnerOption } from '@/shared/ui/partner-picker'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
+import { Field } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
 
 interface Props {
   open: boolean
@@ -90,53 +93,33 @@ export function QuickAddPartnerDialog({ open, onClose, kind = 'customer', initia
       }
     >
       <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
-        <L label={isSupplier ? 'Mã nhà cung cấp' : 'Mã đối tượng'} required>
-          <input value={form.code} onChange={set('code')} autoFocus className={cls} />
-        </L>
-        <L label="Loại">
-          <select value={form.type} onChange={set('type')} className={cls}>
-            <option value="ORG">Tổ chức</option>
-            <option value="INDIVIDUAL">Cá nhân</option>
-          </select>
-        </L>
-        <L label={isSupplier ? 'Tên nhà cung cấp' : 'Tên đối tượng'} required className="sm:col-span-2">
-          <input value={form.name} onChange={set('name')} className={cls} />
-        </L>
-        <L label="Mã số thuế">
-          <input value={form.taxCode} onChange={set('taxCode')} className={cls} />
-        </L>
-        <L label="Điện thoại">
-          <input value={form.phone} onChange={set('phone')} className={cls} />
-        </L>
-        <L label="Địa chỉ" className="sm:col-span-2">
-          <input value={form.address} onChange={set('address')} className={cls} />
-        </L>
+        <Field label={isSupplier ? 'Mã nhà cung cấp' : 'Mã đối tượng'} required>
+          <Input value={form.code} onChange={set('code')} autoFocus />
+        </Field>
+        <Field label="Loại">
+          <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ORG">Tổ chức</SelectItem>
+              <SelectItem value="INDIVIDUAL">Cá nhân</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label={isSupplier ? 'Tên nhà cung cấp' : 'Tên đối tượng'} required className="sm:col-span-2">
+          <Input value={form.name} onChange={set('name')} />
+        </Field>
+        <Field label="Mã số thuế">
+          <Input value={form.taxCode} onChange={set('taxCode')} />
+        </Field>
+        <Field label="Điện thoại">
+          <Input value={form.phone} onChange={set('phone')} />
+        </Field>
+        <Field label="Địa chỉ" className="sm:col-span-2">
+          <Input value={form.address} onChange={set('address')} />
+        </Field>
       </div>
     </Modal>
-  )
-}
-
-const cls =
-  'h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm transition-colors hover:border-primary/50 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20'
-
-function L({
-  label,
-  required,
-  className,
-  children,
-}: {
-  label: string
-  required?: boolean
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className={cn('space-y-1', className)}>
-      <label className="text-[13px] font-semibold text-slate-800">
-        {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
-      </label>
-      {children}
-    </div>
   )
 }

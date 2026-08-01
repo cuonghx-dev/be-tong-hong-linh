@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import { CHART_OF_ACCOUNTS, type SaveFixedAssetOpeningBalanceLineInput } from '@app/shared'
+import { useState } from 'react'
 import {
   Select,
   SelectContent,
@@ -7,7 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
-import { AmountInput } from './AmountInput'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 
 // Giá trị 1 dòng TSCĐ đang soạn trong form (trùng payload lưu).
 export type FixedAssetFormValue = SaveFixedAssetOpeningBalanceLineInput
@@ -95,33 +97,31 @@ export function FixedAssetForm({ initial, existingCodes, onSubmit, onCancel }: P
     <form onSubmit={submit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className={label}>
+          <Label className={label}>
             Mã tài sản <span className="text-red-500">*</span>
-          </label>
-          <input
+          </Label>
+          <Input
             value={value.code}
             onChange={(e) => patch({ code: e.target.value })}
             placeholder="vd TRAMTRON"
-            className={field}
             autoFocus
           />
         </div>
         <div className="sm:col-span-2">
-          <label className={label}>
+          <Label className={label}>
             Tên tài sản <span className="text-red-500">*</span>
-          </label>
-          <input
+          </Label>
+          <Input
             value={value.name}
             onChange={(e) => patch({ name: e.target.value })}
             placeholder="Tên tài sản"
-            className={field}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className={label}>Loại tài sản</label>
+          <Label className={label}>Loại tài sản</Label>
           <Select value={value.assetType} onValueChange={changeType}>
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -136,23 +136,22 @@ export function FixedAssetForm({ initial, existingCodes, onSubmit, onCancel }: P
           </Select>
         </div>
         <div>
-          <label className={label}>Đơn vị sử dụng</label>
-          <input
+          <Label className={label}>Đơn vị sử dụng</Label>
+          <Input
             value={value.department}
             onChange={(e) => patch({ department: e.target.value })}
             placeholder="vd Bộ phận sản xuất"
-            className={field}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className={label}>Nguyên giá</label>
+          <Label className={label}>Nguyên giá</Label>
           <AmountInput value={value.originalCost} onChange={changeOriginalCost} className="h-9" />
         </div>
         <div>
-          <label className={label}>Giá trị tính KH</label>
+          <Label className={label}>Giá trị tính KH</Label>
           <AmountInput
             value={value.depreciableValue}
             onChange={(v) => patch({ depreciableValue: v })}
@@ -160,7 +159,7 @@ export function FixedAssetForm({ initial, existingCodes, onSubmit, onCancel }: P
           />
         </div>
         <div>
-          <label className={label}>Hao mòn lũy kế</label>
+          <Label className={label}>Hao mòn lũy kế</Label>
           <AmountInput
             value={value.accumulatedDepreciation}
             onChange={(v) => patch({ accumulatedDepreciation: v })}
@@ -171,72 +170,70 @@ export function FixedAssetForm({ initial, existingCodes, onSubmit, onCancel }: P
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div>
-          <label className={label}>
+          <Label className={label}>
             Ngày ghi tăng <span className="text-red-500">*</span>
-          </label>
-          <input
+          </Label>
+          <Input
             type="date"
             value={value.acquisitionDate}
             onChange={(e) => patch({ acquisitionDate: e.target.value })}
-            className={field}
           />
         </div>
         <div>
-          <label className={label}>Ngày tính KH</label>
-          <input
+          <Label className={label}>Ngày tính KH</Label>
+          <Input
             type="date"
             value={value.depreciationDate}
             onChange={(e) => patch({ depreciationDate: e.target.value })}
-            className={field}
           />
         </div>
         <div>
-          <label className={label}>Thời gian SD (tháng)</label>
-          <input
+          <Label className={label}>Thời gian SD (tháng)</Label>
+          <Input
             type="number"
             min={0}
             step="any"
             value={value.usefulLifeMonths || ''}
             onChange={(e) => patch({ usefulLifeMonths: Number(e.target.value) || 0 })}
             placeholder="0"
-            className={`${field} text-right tabular-nums`}
+            className="text-right tabular-nums"
           />
         </div>
         <div>
-          <label className={label}>SD còn lại (tháng)</label>
-          <input
+          <Label className={label}>SD còn lại (tháng)</Label>
+          <Input
             type="number"
             min={0}
             step="any"
             value={value.remainingMonths || ''}
             onChange={(e) => patch({ remainingMonths: Number(e.target.value) || 0 })}
             placeholder="0"
-            className={`${field} text-right tabular-nums`}
+            className="text-right tabular-nums"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className={label}>
+          <Label className={label}>
             TK nguyên giá <span className="text-red-500">*</span>
-          </label>
-          <input
+          </Label>
+          <Input
             value={value.assetAccount}
             onChange={(e) => patch({ assetAccount: e.target.value })}
             placeholder="vd 21112"
-            className={`${field} tabular-nums`}
+            className="tabular-nums"
           />
         </div>
         <div>
-          <label className={label}>
+          <Label className={label}>
             TK khấu hao <span className="text-red-500">*</span>
-          </label>
-          <input
+          </Label>
+          <Input
             value={value.depreciationAccount}
             onChange={(e) => patch({ depreciationAccount: e.target.value })}
             placeholder="vd 2141"
-            className={`${field} tabular-nums`}
+            className="tabular-nums"
           />
         </div>
       </div>

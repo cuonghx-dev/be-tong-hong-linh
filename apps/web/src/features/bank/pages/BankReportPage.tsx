@@ -11,13 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 import { BankBalancesReport } from '../components/reports/BankBalancesReport'
 import { BankBookReport } from '../components/reports/BankBookReport'
 import { BankDailyBalanceReport } from '../components/reports/BankDailyBalanceReport'
 import { BANK_REPORTS, type BankReportSlug } from '../types'
-
-const inputClass =
-  'h-8 rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
 // Trang xem báo cáo tiền gửi full-page (§5 design.md). Route: /bank/reports/:slug
 // Bảng kê số dư ngân hàng chỉ dùng mốc "đến ngày"; sổ tiền gửi lọc thêm theo TKNH.
@@ -87,21 +86,21 @@ export function BankReportPage() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <label className="flex items-center gap-1.5 text-sm text-slate-600">
+              <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
                 Từ ngày
-                <input
+                <Input
                   type="date"
                   value={fromDate}
                   max={toDate}
                   onChange={(e) => e.target.value && setRange(e.target.value, toDate)}
-                  className={inputClass}
+                  className="h-8 w-auto px-2"
                 />
-              </label>
+              </Label>
             </>
           )}
-          <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
             Đến ngày
-            <input
+            <Input
               type="date"
               value={toDate}
               min={balanceOnly ? undefined : fromDate}
@@ -109,14 +108,14 @@ export function BankReportPage() {
                 e.target.value &&
                 (balanceOnly ? setParam('to', e.target.value) : setRange(fromDate, e.target.value))
               }
-              className={inputClass}
+              className="h-8 w-auto px-2"
             />
-          </label>
+          </Label>
           {slug === 'bank-book' && (
-            <label className="flex items-center gap-1.5 text-sm text-slate-600">
+            <Label className="font-normal flex items-center gap-1.5 text-sm text-slate-600">
               Tài khoản
               <BankAccountSelect value={bankAccountNo} onChange={(v) => setParam('bank', v)} />
-            </label>
+            </Label>
           )}
         </div>
 

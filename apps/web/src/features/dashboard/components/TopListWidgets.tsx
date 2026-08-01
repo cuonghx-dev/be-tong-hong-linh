@@ -4,6 +4,7 @@ import { useInventorySummary, useTopSelling } from '../api/useDashboard'
 import { DashboardCard, PeriodSelect } from './DashboardCard'
 import { CATEGORICAL, toNumber } from './chart-theme'
 import { yearOptions } from './chart-parts'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Định dạng số lượng: tối đa 2 số lẻ, phân cách vi-VN.
 const qtyFormatter = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 })
@@ -87,29 +88,29 @@ function ItemTable({
     return <div className="py-8 text-center text-sm text-slate-400">Chưa có dữ liệu</div>
   }
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="text-xs text-slate-400">
-          <th className="pb-2 text-left font-medium">{headers[0]}</th>
-          <th className="pb-2 text-right font-medium">{headers[1]}</th>
-          <th className="pb-2 text-right font-medium">{headers[2]}</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table>
+      <TableHeader>
+        <TableRow className="text-xs text-slate-400">
+          <TableHead className="pb-2 text-left font-medium">{headers[0]}</TableHead>
+          <TableHead className="pb-2 text-right font-medium">{headers[1]}</TableHead>
+          <TableHead className="pb-2 text-right font-medium">{headers[2]}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {rows.map((r, i) => (
-          <tr key={r.name} className="border-t border-dashed border-border">
-            <td className="flex items-center gap-2 py-2 text-slate-700">
+          <TableRow key={r.name} className="border-dashed">
+            <TableCell className="flex items-center gap-2 text-slate-700">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-sm"
                 style={{ backgroundColor: CATEGORICAL[i % CATEGORICAL.length] }}
               />
               <span className="truncate">{r.name}</span>
-            </td>
-            <td className="py-2 text-right tabular-nums text-slate-700">{r.cols[0]}</td>
-            <td className="py-2 text-right tabular-nums text-slate-700">{r.cols[1]}</td>
-          </tr>
+            </TableCell>
+            <TableCell className="text-right tabular-nums text-slate-700">{r.cols[0]}</TableCell>
+            <TableCell className="text-right tabular-nums text-slate-700">{r.cols[1]}</TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   )
 }

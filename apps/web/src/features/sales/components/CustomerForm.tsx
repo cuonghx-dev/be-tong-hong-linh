@@ -1,9 +1,15 @@
 import { CustomerType, type CreateCustomerInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useEmployees, usePartnerGroups } from '@/features/catalog'
 import { Button } from '@/shared/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
+import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group'
+import { Label } from '@/shared/ui/label'
 import { useCustomer } from '../api/useCustomers'
 import { useCreateCustomer, useUpdateCustomer } from '../api/useCustomerMutations'
 import { customerSchema, type CustomerFormValues } from '../schema'
@@ -41,7 +47,7 @@ export function CustomerForm({
     resolver: zodResolver(customerSchema),
     defaultValues: defaultValues(),
   })
-  const { register, handleSubmit, reset, formState } = form
+  const { register, control, handleSubmit, reset, formState } = form
 
   useEffect(() => {
     const c = editing.data
@@ -87,60 +93,91 @@ export function CustomerForm({
       <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
       {/* Loại đối tượng */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-        {Object.values(CustomerType).map((t) => (
-          <label key={t} className="flex items-center gap-1.5">
-            <input type="radio" value={t} {...register('type')} /> {CUSTOMER_TYPE_LABEL[t]}
-          </label>
-        ))}
-        <label className="ml-2 flex items-center gap-1.5">
-          <input type="checkbox" {...register('isSupplier')} /> Là nhà cung cấp
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input type="checkbox" {...register('isInternal')} /> Là đối tượng nội bộ
-        </label>
+        <Controller
+          control={control}
+          name="type"
+          render={({ field }) => (
+            <RadioGroup
+              value={field.value}
+              onValueChange={field.onChange}
+              className="flex flex-wrap items-center gap-x-5 gap-y-2"
+            >
+              {Object.values(CustomerType).map((t) => (
+                <div key={t} className="flex items-center gap-1.5">
+                  <RadioGroupItem value={t} id={`customer-type-${t}`} />
+                  <Label htmlFor={`customer-type-${t}`} className="cursor-pointer font-normal">
+                    {CUSTOMER_TYPE_LABEL[t]}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          )}
+        />
+        <CheckboxField control={control} name="isSupplier" label="Là nhà cung cấp" className="ml-2" />
+        <CheckboxField control={control} name="isInternal" label="Là đối tượng nội bộ" />
       </div>
 
       <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
         <Field label="Mã khách hàng *" error={formState.errors.code?.message}>
-          <input {...register('code')} className={inputCls} />
+          <Input {...register('code')} />
         </Field>
         <Field label="Tên khách hàng *" error={formState.errors.name?.message}>
-          <input {...register('name')} className={inputCls} />
+          <Input {...register('name')} />
         </Field>
         <Field label="Mã số thuế / CCCD chủ hộ">
-          <input {...register('taxCode')} className={inputCls} />
+          <Input {...register('taxCode')} />
         </Field>
         <Field label="Mã số ĐVQHNS">
-          <input {...register('budgetRelationCode')} className={inputCls} />
+          <Input {...register('budgetRelationCode')} />
         </Field>
         <Field label="Điện thoại">
-          <input {...register('phone')} className={inputCls} />
+          <Input {...register('phone')} />
         </Field>
         <Field label="Website">
-          <input {...register('website')} className={inputCls} />
+          <Input {...register('website')} />
         </Field>
         <Field label="Địa chỉ">
-          <input {...register('address')} className={inputCls} />
+          <Input {...register('address')} />
         </Field>
         <Field label="Nhóm khách hàng">
-          <select {...register('groupId')} className={inputCls}>
-            <option value="">-- Chọn nhóm khách hàng --</option>
-            {(groups.data?.data ?? []).map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.code} - {g.name}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name="groupId"
+            render={({ field }) => (
+              <Select value={field.value || undefined} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="-- Chọn nhóm khách hàng --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(groups.data?.data ?? []).map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.code} - {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </Field>
         <Field label="Nhân viên bán hàng">
-          <select {...register('salesEmployeeId')} className={inputCls}>
-            <option value="">-- Chọn nhân viên --</option>
-            {(employees.data?.data ?? []).map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.code} - {e.name}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name="salesEmployeeId"
+            render={({ field }) => (
+              <Select value={field.value || undefined} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="-- Chọn nhân viên --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(employees.data?.data ?? []).map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.code} - {e.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </Field>
       </div>
 
@@ -151,13 +188,13 @@ export function CustomerForm({
         </p>
         <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-3">
           <Field label="Họ và tên">
-            <input {...register('contactName')} className={inputCls} />
+            <Input {...register('contactName')} />
           </Field>
           <Field label="Email (ngăn cách bằng ;)">
-            <input {...register('contactEmail')} className={inputCls} />
+            <Input {...register('contactEmail')} />
           </Field>
           <Field label="Số điện thoại">
-            <input {...register('contactPhone')} className={inputCls} />
+            <Input {...register('contactPhone')} />
           </Field>
         </div>
       </div>
@@ -186,26 +223,5 @@ export function CustomerForm({
         )}
       </div>
     </form>
-  )
-}
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-slate-500">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
   )
 }

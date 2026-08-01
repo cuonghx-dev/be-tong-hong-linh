@@ -28,6 +28,13 @@ import { QuickAddPartnerDialog } from '@/shared/ui/quick-add-partner-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { WarehousePicker, warehouseCellCls } from '@/shared/ui/warehouse-picker'
 import { useToast } from '@/shared/ui/toast'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
+import { CellInput, cellInputCls } from '@/shared/ui/cell-input'
+import { Label } from '@/shared/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group'
 import { useCustomers } from '../api/useCustomers'
 import { useNextSalesVoucherNo, useSalesVoucher } from '../api/useSalesVouchers'
 import { useCreateSalesVoucher, useUpdateSalesVoucher } from '../api/useSalesVoucherMutations'
@@ -42,7 +49,7 @@ import {
   PAYMENT_MODE_LABEL,
   VOUCHER_TYPE_LABEL,
 } from '../types'
-import { AmountInput } from './AmountInput'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 interface SalesVoucherFormProps {
   voucherId?: string | null
@@ -398,11 +405,11 @@ export function SalesVoucherForm({
           </SelectContent>
         </Select>
         {/* Lập chứng từ từ phiếu xuất đã có — chưa hỗ trợ, giữ chỗ đúng vị trí MISA. */}
-        <input
+        <Input
           disabled
           placeholder="Nhập số phiếu xuất"
           title="Lập chứng từ từ phiếu xuất — chưa hỗ trợ"
-          className={cn(inputCls, 'w-52 shrink-0 disabled:bg-white disabled:text-slate-400')}
+          className="w-52 shrink-0 disabled:bg-white disabled:text-slate-400"
         />
         {/* Badge trạng thái hóa đơn (chỉ có nghĩa khi chứng từ đã lưu). */}
         {!!voucherId && !!editing.data?.invoiceNo && (
@@ -423,17 +430,20 @@ export function SalesVoucherForm({
       {/* ── Sub-header (§5.3): tùy chọn thanh toán · kiêm phiếu xuất/hóa đơn | tổng tiền ── */}
       <div className="flex shrink-0 flex-wrap items-center gap-4 bg-primary/5 px-4 py-2">
         <fieldset disabled={readOnly} className="flex flex-wrap items-center gap-4">
-          {[SalesPaymentMode.Unpaid, SalesPaymentMode.PaidNow].map((m) => (
-            <label key={m} className="flex items-center gap-1.5 text-sm">
-              <input
-                type="radio"
-                value={m}
-                checked={paymentMode === m}
-                onChange={() => setValue('paymentMode', m)}
-              />
-              {PAYMENT_MODE_LABEL[m]}
-            </label>
-          ))}
+          <RadioGroup
+            value={paymentMode}
+            onValueChange={(v) => setValue('paymentMode', v as typeof paymentMode)}
+            className="flex items-center gap-4"
+          >
+            {[SalesPaymentMode.Unpaid, SalesPaymentMode.PaidNow].map((m) => (
+              <div key={m} className="flex items-center gap-1.5">
+                <RadioGroupItem value={m} id={`sales-payment-mode-${m}`} />
+                <Label htmlFor={`sales-payment-mode-${m}`} className="cursor-pointer font-normal">
+                  {PAYMENT_MODE_LABEL[m]}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
           {/* Hình thức thanh toán: bán hàng chỉ hỗ trợ tiền mặt (phiếu thu tự sinh). */}
           <Select value={PaymentMethod.Cash} disabled>
             <SelectTrigger className="h-9 w-36 bg-white" title="Thu tiền ngay chỉ hỗ trợ tiền mặt">
@@ -446,15 +456,9 @@ export function SalesVoucherForm({
             </SelectContent>
           </Select>
           <span className="h-4 w-px bg-border" />
-          <label className="flex items-center gap-1.5 text-sm">
-            <input type="checkbox" {...register('isInventoryIssue')} /> Kiêm phiếu xuất
-          </label>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input type="checkbox" {...register('withInvoice')} /> Lập kèm hóa đơn
-          </label>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input type="checkbox" {...register('isPosInvoice')} /> Hóa đơn từ máy tính tiền
-          </label>
+          <CheckboxField control={control} name="isInventoryIssue" label="Kiêm phiếu xuất" />
+          <CheckboxField control={control} name="withInvoice" label="Lập kèm hóa đơn" />
+          <CheckboxField control={control} name="isPosInvoice" label="Hóa đơn từ máy tính tiền" />
         </fieldset>
         <div className="ml-auto text-right">
           <div className="text-xs text-slate-500">Tổng tiền thanh toán</div>
@@ -512,51 +516,49 @@ export function SalesVoucherForm({
                   />
                 </Field>
                 <Field label="Tên khách hàng" className="md:col-span-4">
-                  <input {...register('customerName')} className={inputCls} />
+                  <Input {...register('customerName')} />
                 </Field>
                 <div className="hidden md:col-span-2 md:block" />
                 <Field label="Mẫu số HĐ" className="md:col-span-3">
-                  <input {...register('invoiceForm')} placeholder="VD: 1" className={inputCls} />
+                  <Input {...register('invoiceForm')} placeholder="VD: 1" />
                 </Field>
 
                 {/* Hàng 2 */}
                 <Field label="Mã số thuế / CCCD chủ hộ" className="md:col-span-3">
-                  <input {...register('taxCode')} className={inputCls} />
+                  <Input {...register('taxCode')} />
                 </Field>
                 <Field label="Mã số ĐVQHNS" className="md:col-span-2">
-                  <input {...register('budgetRelationCode')} className={inputCls} />
+                  <Input {...register('budgetRelationCode')} />
                 </Field>
                 <Field label="Số CCCD" className="md:col-span-2">
-                  <input {...register('idCardNo')} className={inputCls} />
+                  <Input {...register('idCardNo')} />
                 </Field>
                 <Field label="Số hộ chiếu" className="md:col-span-2">
-                  <input {...register('passportNo')} className={inputCls} />
+                  <Input {...register('passportNo')} />
                 </Field>
                 <Field label="Ký hiệu HĐ" className="md:col-span-3">
-                  <input
+                  <Input
                     {...register('invoiceSerial')}
                     placeholder="VD: C26TAA"
-                    className={inputCls}
                   />
                 </Field>
 
                 {/* Hàng 3 */}
                 <Field label="Địa chỉ" className="md:col-span-7">
-                  <input {...register('address')} className={inputCls} />
+                  <Input {...register('address')} />
                 </Field>
                 <Field label="Điện thoại" className="md:col-span-2">
-                  <input {...register('phone')} className={inputCls} />
+                  <Input {...register('phone')} />
                 </Field>
                 <Field label="Số hóa đơn" className="md:col-span-3">
-                  <input {...register('invoiceNo')} className={inputCls} />
+                  <Input {...register('invoiceNo')} />
                 </Field>
 
                 {/* Hàng 4 — người mua bỏ trống = lấy tên KH khi in hóa đơn. */}
                 <Field label="Người mua hàng" className="md:col-span-3">
-                  <input
+                  <Input
                     {...register('buyerName')}
                     placeholder={watch('customerName') || undefined}
-                    className={inputCls}
                   />
                 </Field>
                 <Field label="Hình thức thanh toán" className="md:col-span-3">
@@ -583,10 +585,10 @@ export function SalesVoucherForm({
                   />
                 </Field>
                 <Field label="Tài khoản ngân hàng" className="md:col-span-3">
-                  <input {...register('bankAccountNo')} className={inputCls} />
+                  <Input {...register('bankAccountNo')} />
                 </Field>
                 <Field label="Ngày HĐ" className="md:col-span-3">
-                  <input type="date" {...register('invoiceDate')} className={inputCls} />
+                  <Input type="date" {...register('invoiceDate')} />
                 </Field>
               </div>
 
@@ -632,27 +634,26 @@ export function SalesVoucherForm({
                   />
                 </Field>
                 <Field label="Tên khách hàng" className="md:col-span-4">
-                  <input {...register('customerName')} className={inputCls} />
+                  <Input {...register('customerName')} />
                 </Field>
                 <div className="hidden md:col-span-2 md:block" />
                 <Field label="Ngày hạch toán" className="md:col-span-3">
-                  <input type="date" {...register('postingDate')} className={inputCls} />
+                  <Input type="date" {...register('postingDate')} />
                 </Field>
 
                 {/* Hàng 2 — người nhận = Người liên hệ; trống thì phiếu xuất lấy tên KH. */}
                 <Field label="Người nhận" className="md:col-span-3">
-                  <input
+                  <Input
                     {...register('contactPerson')}
                     placeholder={watch('customerName') || undefined}
-                    className={inputCls}
                   />
                 </Field>
                 <Field label="Địa chỉ" className="md:col-span-4">
-                  <input {...register('address')} className={inputCls} />
+                  <Input {...register('address')} />
                 </Field>
                 <div className="hidden md:col-span-2 md:block" />
                 <Field label="Ngày chứng từ" className="md:col-span-3">
-                  <input type="date" {...register('voucherDate')} className={inputCls} />
+                  <Input type="date" {...register('voucherDate')} />
                 </Field>
 
                 {/* Hàng 3 */}
@@ -669,19 +670,18 @@ export function SalesVoucherForm({
                   />
                 </Field>
                 <Field label="Lý do xuất" className="md:col-span-4">
-                  <input
+                  <Input
                     {...register('issueReason')}
                     placeholder={autoIssueReason}
-                    className={inputCls}
                   />
                 </Field>
                 <div className="hidden md:col-span-2 md:block" />
                 <Field label="Số phiếu xuất" className="md:col-span-3">
-                  <input
+                  <Input
                     value={editing.data?.issueNo ?? 'Tự động khi Cất'}
                     readOnly
                     title="Số phiếu xuất do hệ thống cấp khi Cất"
-                    className={roInputCls}
+                    className="bg-slate-50 px-2 text-slate-500"
                   />
                 </Field>
               </div>
@@ -723,25 +723,25 @@ export function SalesVoucherForm({
                   error={formState.errors.customerName?.message}
                   className="md:col-span-4"
                 >
-                  <input {...register('customerName')} className={inputCls} />
+                  <Input {...register('customerName')} />
                 </Field>
                 <Field label="Mã số thuế / CCCD chủ hộ" className="md:col-span-2">
-                  <input {...register('taxCode')} className={inputCls} />
+                  <Input {...register('taxCode')} />
                 </Field>
                 <Field
                   label="Ngày hạch toán"
                   error={formState.errors.postingDate?.message}
                   className="md:col-span-3"
                 >
-                  <input type="date" {...register('postingDate')} className={inputCls} />
+                  <Input type="date" {...register('postingDate')} />
                 </Field>
 
                 {/* Hàng 2 */}
                 <Field label="Người liên hệ" className="md:col-span-3">
-                  <input {...register('contactPerson')} className={inputCls} />
+                  <Input {...register('contactPerson')} />
                 </Field>
                 <Field label="Địa chỉ" className="md:col-span-4">
-                  <input {...register('address')} className={inputCls} />
+                  <Input {...register('address')} />
                 </Field>
                 <div className="hidden md:col-span-2 md:block" />
                 <Field
@@ -749,7 +749,7 @@ export function SalesVoucherForm({
                   error={formState.errors.voucherDate?.message}
                   className="md:col-span-3"
                 >
-                  <input type="date" {...register('voucherDate')} className={inputCls} />
+                  <Input type="date" {...register('voucherDate')} />
                 </Field>
 
                 {/* Hàng 3 */}
@@ -766,15 +766,15 @@ export function SalesVoucherForm({
                   />
                 </Field>
                 <Field label="Diễn giải" className="md:col-span-4">
-                  <input {...register('description')} className={inputCls} />
+                  <Input {...register('description')} />
                 </Field>
                 <div className="hidden md:col-span-2 md:block" />
                 <Field label="Số chứng từ" className="md:col-span-3">
-                  <input
+                  <Input
                     value={displayNo || 'Tự động'}
                     readOnly
                     title="Số dự kiến — cấp chính thức khi Cất"
-                    className={cn(inputCls, 'bg-slate-50 text-slate-500')}
+                    className="bg-slate-50 text-slate-500"
                   />
                 </Field>
               </div>
@@ -817,18 +817,17 @@ export function SalesVoucherForm({
                   {termsOpen && (
                     <div className="mt-2 grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-3">
                       <Field label="Điều khoản thanh toán">
-                        <input {...register('paymentTermId')} className={inputCls} />
+                        <Input {...register('paymentTermId')} />
                       </Field>
                       <Field label="Số ngày được nợ">
-                        <input
+                        <Input
                           type="number"
                           min={0}
                           {...register('creditDays')}
-                          className={inputCls}
                         />
                       </Field>
                       <Field label="Hạn thanh toán">
-                        <input type="date" {...register('dueDate')} className={inputCls} />
+                        <Input type="date" {...register('dueDate')} />
                       </Field>
                     </div>
                   )}
@@ -886,36 +885,36 @@ export function SalesVoucherForm({
               // đúng giá trị ở đây; ô để trống → fallback dữ liệu VTHH.
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1000px] border-collapse text-sm">
-                    <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                      <tr>
-                        <th className="w-8 px-2 py-1.5 text-center">#</th>
-                        <th className="px-2 py-1.5">Mã hàng</th>
-                        <th className="px-2 py-1.5">Tên hàng</th>
-                        <th className="w-28 px-2 py-1.5">Kho</th>
-                        <th className="w-24 px-2 py-1.5">TK giá vốn</th>
-                        <th className="w-24 px-2 py-1.5">TK kho</th>
-                        <th className="w-16 px-2 py-1.5">ĐVT</th>
-                        <th className="w-24 px-2 py-1.5 text-right">Số&nbsp;lượng</th>
-                        <th className="w-32 px-2 py-1.5 text-right">Đơn&nbsp;giá&nbsp;vốn</th>
-                        <th className="w-32 px-2 py-1.5 text-right">Tiền&nbsp;vốn</th>
-                        <th className="w-8 px-2 py-1.5" />
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table className="min-w-[1000px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                        <TableHead className="px-2 py-1.5">Mã hàng</TableHead>
+                        <TableHead className="px-2 py-1.5">Tên hàng</TableHead>
+                        <TableHead className="w-28 px-2 py-1.5">Kho</TableHead>
+                        <TableHead className="w-24 px-2 py-1.5">TK giá vốn</TableHead>
+                        <TableHead className="w-24 px-2 py-1.5">TK kho</TableHead>
+                        <TableHead className="w-16 px-2 py-1.5">ĐVT</TableHead>
+                        <TableHead className="w-24 px-2 py-1.5 text-right">Số&nbsp;lượng</TableHead>
+                        <TableHead className="w-32 px-2 py-1.5 text-right">Đơn&nbsp;giá&nbsp;vốn</TableHead>
+                        <TableHead className="w-32 px-2 py-1.5 text-right">Tiền&nbsp;vốn</TableHead>
+                        <TableHead className="w-8 px-2 py-1.5" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {fields.map((f, i) => (
-                        <tr key={f.id} className="border-t border-border">
-                          <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                          <td className="px-2 py-1">
+                        <TableRow key={f.id}>
+                          <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                          <TableCell className="px-2 py-1">
                             <ItemCell
                               value={lines?.[i]?.itemId}
                               onPick={(item) => pickItem(i, item)}
                             />
-                          </td>
-                          <td className="px-2 py-1">
-                            <input {...register(`lines.${i}.itemName`)} className={cellCls} />
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
+                            <CellInput {...register(`lines.${i}.itemName`)} />
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
                             <Controller
                               control={control}
                               name={`lines.${i}.warehouseId`}
@@ -927,8 +926,8 @@ export function SalesVoucherForm({
                                 />
                               )}
                             />
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
                             <Controller
                               control={control}
                               name={`lines.${i}.costAccount`}
@@ -940,8 +939,8 @@ export function SalesVoucherForm({
                                 />
                               )}
                             />
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
                             <Controller
                               control={control}
                               name={`lines.${i}.inventoryAccount`}
@@ -953,32 +952,32 @@ export function SalesVoucherForm({
                                 />
                               )}
                             />
-                          </td>
-                          <td className="px-2 py-1">
-                            <input {...register(`lines.${i}.unit`)} className={cellCls} />
-                          </td>
-                          <td className="px-2 py-1">
-                            <input
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
+                            <CellInput {...register(`lines.${i}.unit`)} />
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
+                            <CellInput
                               type="number"
                               min={0}
                               step="any"
                               {...register(`lines.${i}.quantity`)}
-                              className={cn(cellCls, 'text-right')}
+                              className={cn('text-right')}
                             />
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
                             <Controller
                               control={control}
                               name={`lines.${i}.costPrice`}
                               render={({ field }) => (
-                                <AmountInput value={field.value ?? 0} onChange={field.onChange} />
+                                <AmountInput value={field.value ?? 0} onChange={field.onChange} className={cellInputCls} />
                               )}
                             />
-                          </td>
-                          <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                          </TableCell>
+                          <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                             {formatCurrency(lineCost(lines?.[i]))}
-                          </td>
-                          <td className="px-2 py-1 text-center">
+                          </TableCell>
+                          <TableCell className="px-2 py-1 text-center">
                             <button
                               type="button"
                               onClick={() => fields.length > 1 && remove(i)}
@@ -987,24 +986,24 @@ export function SalesVoucherForm({
                             >
                               <TrashIcon size={14} />
                             </button>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                    <tfoot className="bg-slate-100 font-medium">
-                      <tr className="border-t border-border">
-                        <td className="px-2 py-1.5" colSpan={7}>
+                    </TableBody>
+                    <TableFooter className="bg-slate-100">
+                      <TableRow>
+                        <TableCell className="px-2 py-1.5" colSpan={7}>
                           Tổng cộng
-                        </td>
-                        <td className="px-2 py-1.5 text-right tabular-nums">{totalQty}</td>
-                        <td />
-                        <td className="px-2 py-1.5 text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">{totalQty}</TableCell>
+                        <TableCell />
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">
                           {formatCurrency(totalCost)}
-                        </td>
-                        <td />
-                      </tr>
-                    </tfoot>
-                  </table>
+                        </TableCell>
+                        <TableCell />
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
                 </div>
                 <p className="px-2 pb-1 text-xs text-slate-500">
                   Để trống Kho / TK giá vốn / TK kho / Đơn giá vốn thì phiếu xuất kho tự sinh lấy
@@ -1014,56 +1013,56 @@ export function SalesVoucherForm({
             ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1100px] border-collapse text-sm">
-                    <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                      <tr>
-                        <th className="w-8 px-2 py-1.5 text-center">#</th>
-                        <th className="px-2 py-1.5">Mã hàng</th>
-                        <th className="px-2 py-1.5">Tên hàng</th>
-                        <th className="w-28 px-2 py-1.5 text-right">CK&nbsp;thương&nbsp;mại</th>
-                        {showAccounts && <th className="w-24 px-2 py-1.5">TK công nợ</th>}
-                        {showAccounts && <th className="w-24 px-2 py-1.5">TK doanh thu</th>}
-                        <th className="w-16 px-2 py-1.5">ĐVT</th>
-                        <th className="w-20 px-2 py-1.5 text-right">Số&nbsp;lượng</th>
-                        <th className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</th>
-                        <th className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</th>
-                        <th className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</th>
-                        <th className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</th>
-                        {showAccounts && <th className="w-24 px-2 py-1.5">TK thuế GTGT</th>}
-                        <th className="w-8 px-2 py-1.5" />
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table className="min-w-[1100px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                        <TableHead className="px-2 py-1.5">Mã hàng</TableHead>
+                        <TableHead className="px-2 py-1.5">Tên hàng</TableHead>
+                        <TableHead className="w-28 px-2 py-1.5 text-right">CK&nbsp;thương&nbsp;mại</TableHead>
+                        {showAccounts && <TableHead className="w-24 px-2 py-1.5">TK công nợ</TableHead>}
+                        {showAccounts && <TableHead className="w-24 px-2 py-1.5">TK doanh thu</TableHead>}
+                        <TableHead className="w-16 px-2 py-1.5">ĐVT</TableHead>
+                        <TableHead className="w-20 px-2 py-1.5 text-right">Số&nbsp;lượng</TableHead>
+                        <TableHead className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</TableHead>
+                        <TableHead className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</TableHead>
+                        <TableHead className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</TableHead>
+                        <TableHead className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</TableHead>
+                        {showAccounts && <TableHead className="w-24 px-2 py-1.5">TK thuế GTGT</TableHead>}
+                        <TableHead className="w-8 px-2 py-1.5" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {fields.map((f, i) => (
-                        <tr key={f.id} className="border-t border-border">
-                          <td className="px-2 py-1 text-center text-slate-400">{i + 1}</td>
-                          <td className="px-2 py-1">
+                        <TableRow key={f.id}>
+                          <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                          <TableCell className="px-2 py-1">
                             <ItemCell
                               value={lines?.[i]?.itemId}
                               onPick={(item) => pickItem(i, item)}
                             />
-                          </td>
-                          <td className="px-2 py-1">
-                            <input
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
+                            <CellInput
                               {...register(`lines.${i}.itemName`)}
                               className={cn(
-                                cellCls,
+                                cellInputCls,
                                 formState.errors.lines?.[i]?.itemName &&
                                   'rounded ring-1 ring-inset ring-red-500',
                               )}
                             />
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
                             <Controller
                               control={control}
                               name={`lines.${i}.tradeDiscount`}
                               render={({ field }) => (
-                                <AmountInput value={field.value ?? 0} onChange={field.onChange} />
+                                <AmountInput value={field.value ?? 0} onChange={field.onChange} className={cellInputCls} />
                               )}
                             />
-                          </td>
+                          </TableCell>
                           {showAccounts && (
-                            <td className="px-2 py-1">
+                            <TableCell className="px-2 py-1">
                               <Controller
                                 control={control}
                                 name={`lines.${i}.debtAccount`}
@@ -1075,10 +1074,10 @@ export function SalesVoucherForm({
                                   />
                                 )}
                               />
-                            </td>
+                            </TableCell>
                           )}
                           {showAccounts && (
-                            <td className="px-2 py-1">
+                            <TableCell className="px-2 py-1">
                               <Controller
                                 control={control}
                                 name={`lines.${i}.revenueAccount`}
@@ -1090,47 +1089,47 @@ export function SalesVoucherForm({
                                   />
                                 )}
                               />
-                            </td>
+                            </TableCell>
                           )}
-                          <td className="px-2 py-1">
-                            <input {...register(`lines.${i}.unit`)} className={cellCls} />
-                          </td>
-                          <td className="px-2 py-1">
-                            <input
+                          <TableCell className="px-2 py-1">
+                            <CellInput {...register(`lines.${i}.unit`)} />
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
+                            <CellInput
                               type="number"
                               min={0}
                               step="any"
                               {...register(`lines.${i}.quantity`)}
-                              className={cn(cellCls, 'text-right')}
+                              className={cn('text-right')}
                             />
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
                             <Controller
                               control={control}
                               name={`lines.${i}.unitPrice`}
                               render={({ field }) => (
-                                <AmountInput value={field.value} onChange={field.onChange} />
+                                <AmountInput value={field.value} onChange={field.onChange} className={cellInputCls} />
                               )}
                             />
-                          </td>
-                          <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                          </TableCell>
+                          <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                             {formatCurrency(lineAmount(lines?.[i] ?? f))}
-                          </td>
-                          <td className="px-2 py-1">
-                            <input
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
+                            <CellInput
                               type="number"
                               min={0}
                               max={100}
                               step="any"
                               {...register(`lines.${i}.vatRate`)}
-                              className={cn(cellCls, 'text-right')}
+                              className={cn('text-right')}
                             />
-                          </td>
-                          <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                          </TableCell>
+                          <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                             {formatCurrency(lineVat(lines?.[i] ?? f))}
-                          </td>
+                          </TableCell>
                           {showAccounts && (
-                            <td className="px-2 py-1">
+                            <TableCell className="px-2 py-1">
                               <Controller
                                 control={control}
                                 name={`lines.${i}.vatAccount`}
@@ -1142,9 +1141,9 @@ export function SalesVoucherForm({
                                   />
                                 )}
                               />
-                            </td>
+                            </TableCell>
                           )}
-                          <td className="px-2 py-1 text-center">
+                          <TableCell className="px-2 py-1 text-center">
                             <button
                               type="button"
                               onClick={() => fields.length > 1 && remove(i)}
@@ -1153,37 +1152,37 @@ export function SalesVoucherForm({
                             >
                               <TrashIcon size={14} />
                             </button>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                    <tfoot className="bg-slate-100 font-medium">
-                      <tr className="border-t border-border">
+                    </TableBody>
+                    <TableFooter className="bg-slate-100">
+                      <TableRow>
                         {/* #, Mã hàng, Tên hàng */}
-                        <td className="px-2 py-1.5" colSpan={3}>
+                        <TableCell className="px-2 py-1.5" colSpan={3}>
                           Tổng cộng
-                        </td>
-                        <td className="px-2 py-1.5 text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">
                           {formatCurrency(totalDiscount)}
-                        </td>
+                        </TableCell>
                         {/* [TK công nợ, TK doanh thu], ĐVT */}
-                        <td colSpan={showAccounts ? 3 : 1} />
-                        <td className="px-2 py-1.5 text-right tabular-nums">{totalQty}</td>
+                        <TableCell colSpan={showAccounts ? 3 : 1} />
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">{totalQty}</TableCell>
                         {/* Đơn giá */}
-                        <td />
-                        <td className="px-2 py-1.5 text-right tabular-nums">
+                        <TableCell />
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">
                           {formatCurrency(totalGoods)}
-                        </td>
+                        </TableCell>
                         {/* % thuế GTGT */}
-                        <td />
-                        <td className="px-2 py-1.5 text-right tabular-nums">
+                        <TableCell />
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">
                           {formatCurrency(totalVat)}
-                        </td>
+                        </TableCell>
                         {/* [TK thuế GTGT], cột xóa dòng */}
-                        <td colSpan={showAccounts ? 2 : 1} />
-                      </tr>
-                    </tfoot>
-                  </table>
+                        <TableCell colSpan={showAccounts ? 2 : 1} />
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
                 </div>
               </>
             )}
@@ -1310,36 +1309,9 @@ function ItemCell({ value, onPick }: { value?: string; onPick: (item: ItemOption
       onKeywordChange={setKeyword}
       onSelect={onPick}
       placeholder="Mã hàng"
-      inputClassName={cellCls}
+      inputClassName={cellInputCls}
       allowFreeText
     />
   )
 }
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 // Ô read-only (tab Phiếu xuất — dữ liệu suy ra từ chứng từ bán hàng).
-const roInputCls =
-  'h-9 w-full rounded-md border border-border bg-slate-50 px-2 text-sm text-slate-500'
-const cellCls =
-  'h-8 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  error,
-  className,
-  children,
-}: {
-  label: string
-  error?: string
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className={cn('space-y-1', className)}>
-      <label className="text-xs font-medium text-slate-500">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
-  )
-}

@@ -1,9 +1,15 @@
 import { SupplierType, type CreateSupplierInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useEmployees, usePartnerGroups } from '@/features/catalog'
 import { Button } from '@/shared/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
+import { Input } from '@/shared/ui/input'
+import { Field } from '@/shared/ui/field'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
+import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group'
+import { Label } from '@/shared/ui/label'
 import { useSupplier } from '../api/useSuppliers'
 import { useCreateSupplier, useUpdateSupplier } from '../api/useSupplierMutations'
 import { supplierSchema, type SupplierFormValues } from '../schema'
@@ -41,7 +47,7 @@ export function SupplierForm({
   const groups = usePartnerGroups({ page: 1, pageSize: 200, isActive: true })
   const employees = useEmployees({ page: 1, pageSize: 200, isActive: true })
 
-  const { register, handleSubmit, reset, formState } = useForm<SupplierFormValues>({
+  const { register, control, handleSubmit, reset, formState } = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierSchema),
     defaultValues: DEFAULTS,
   })
@@ -87,69 +93,93 @@ export function SupplierForm({
     <form onSubmit={submit} className="space-y-4">
       <fieldset disabled={readOnly} className="space-y-4 disabled:opacity-90">
       <div className="flex gap-4">
-        {Object.values(SupplierType).map((t) => (
-          <label key={t} className="flex items-center gap-1.5 text-sm">
-            <input type="radio" value={t} {...register('type')} />
-            {SUPPLIER_TYPE_LABEL[t]}
-          </label>
-        ))}
-        <label className="ml-auto flex items-center gap-1.5 text-sm">
-          <input type="checkbox" {...register('isCustomer')} />
-          Là khách hàng
-        </label>
+        <Controller
+          control={control}
+          name="type"
+          render={({ field }) => (
+            <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4">
+              {Object.values(SupplierType).map((t) => (
+                <div key={t} className="flex items-center gap-1.5">
+                  <RadioGroupItem value={t} id={`supplier-type-${t}`} />
+                  <Label htmlFor={`supplier-type-${t}`} className="cursor-pointer font-normal">
+                    {SUPPLIER_TYPE_LABEL[t]}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          )}
+        />
+        <CheckboxField control={control} name="isCustomer" label="Là khách hàng" className="ml-auto" />
       </div>
 
       <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
         <Field label="Mã nhà cung cấp" required error={formState.errors.code?.message}>
-          <input {...register('code')} className={inputCls} />
+          <Input {...register('code')} />
         </Field>
         <Field label="Tên nhà cung cấp" required error={formState.errors.name?.message}>
-          <input {...register('name')} className={inputCls} />
+          <Input {...register('name')} />
         </Field>
         <Field label="Mã số thuế/CCCD">
-          <input {...register('taxCode')} className={inputCls} />
+          <Input {...register('taxCode')} />
         </Field>
         <Field label="Mã số ĐVQHNS">
-          <input {...register('budgetRelationCode')} className={inputCls} />
+          <Input {...register('budgetRelationCode')} />
         </Field>
         <Field label="Điện thoại">
-          <input {...register('phone')} className={inputCls} />
+          <Input {...register('phone')} />
         </Field>
         <Field label="Website">
-          <input {...register('website')} className={inputCls} />
+          <Input {...register('website')} />
         </Field>
         <Field label="Địa chỉ">
-          <input {...register('address')} className={inputCls} />
+          <Input {...register('address')} />
         </Field>
         <Field label="Nhóm nhà cung cấp">
-          <select {...register('groupId')} className={inputCls}>
-            <option value="">-- Chọn nhóm nhà cung cấp --</option>
-            {(groups.data?.data ?? []).map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.code} - {g.name}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name="groupId"
+            render={({ field }) => (
+              <Select value={field.value || undefined} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="-- Chọn nhóm nhà cung cấp --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(groups.data?.data ?? []).map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.code} - {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </Field>
         <Field label="Nhân viên mua hàng">
-          <select {...register('employeeId')} className={inputCls}>
-            <option value="">-- Chọn nhân viên --</option>
-            {(employees.data?.data ?? []).map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.code} - {e.name}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name="employeeId"
+            render={({ field }) => (
+              <Select value={field.value || undefined} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="-- Chọn nhân viên --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(employees.data?.data ?? []).map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.code} - {e.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </Field>
         <Field label="Rủi ro về hóa đơn">
-          <input {...register('invoiceRisk')} className={inputCls} />
+          <Input {...register('invoiceRisk')} />
         </Field>
       </div>
 
-      <label className="flex items-center gap-1.5 text-sm">
-        <input type="checkbox" {...register('isInternal')} />
-        Là đối tượng nội bộ
-      </label>
+      <CheckboxField control={control} name="isInternal" label="Là đối tượng nội bộ" />
 
       {serverMsg && <p className="text-sm text-red-600">{String(serverMsg)}</p>}
       </fieldset>
@@ -171,31 +201,5 @@ export function SupplierForm({
         )}
       </div>
     </form>
-  )
-}
-
-const inputCls =
-  'h-9 w-full rounded-md border border-border px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-function Field({
-  label,
-  required,
-  error,
-  children,
-}: {
-  label: string
-  required?: boolean
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-slate-500">
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-      </label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
   )
 }

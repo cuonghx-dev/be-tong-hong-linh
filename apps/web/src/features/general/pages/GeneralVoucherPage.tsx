@@ -1,6 +1,7 @@
 import { useParams, useSearchParams } from 'react-router-dom'
 import { RecordPageShell } from '@/layouts/RecordPageShell'
 import { useNavigateBack } from '@/shared/hooks/use-navigate-back'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useGeneralVoucher, useNextGeneralVoucherNo } from '../api/useGeneralVouchers'
 import { GeneralVoucherForm } from '../components/GeneralVoucherForm'
 
@@ -35,13 +36,17 @@ export function GeneralVoucherPage({ mode }: { mode: Mode }) {
   const title = (
     <span className="flex items-center gap-3">
       {heading}
-      <select
-        className="h-8 rounded-md border border-border bg-white px-2 text-sm font-normal text-slate-700"
-        defaultValue="OTHER"
-        aria-label="Loại chứng từ"
-      >
-        <option value="OTHER">Khác</option>
-      </select>
+      <Select defaultValue="OTHER">
+        <SelectTrigger
+          aria-label="Loại chứng từ"
+          className="h-8 w-auto gap-2 rounded-md border border-border bg-white px-2 text-sm font-normal text-slate-700"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="OTHER">Khác</SelectItem>
+        </SelectContent>
+      </Select>
     </span>
   )
 

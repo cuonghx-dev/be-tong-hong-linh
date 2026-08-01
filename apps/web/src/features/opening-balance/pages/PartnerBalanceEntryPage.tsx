@@ -15,12 +15,15 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { useToast } from '@/shared/ui/toast'
-import { AmountInput } from '../components/AmountInput'
+import { AmountInput } from '@/shared/ui/amount-input'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 import { usePartnerBalances } from '../api/usePartnerBalances'
 import {
   useImportPartnerBalances,
   useSavePartnerBalances,
 } from '../api/usePartnerBalanceMutations'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const PAGE_SIZES = [20, 50, 100]
 
@@ -264,14 +267,14 @@ export function PartnerBalanceEntryPage() {
             size={15}
             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
           />
-          <input
+          <Input
             placeholder="Nhập từ khóa tìm kiếm"
             value={keyword}
             onChange={(e) => {
               setKeyword(e.target.value)
               setPage(1)
             }}
-            className="h-8 w-full rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-8 pl-8 pr-2"
           />
         </div>
         <input
@@ -292,79 +295,79 @@ export function PartnerBalanceEntryPage() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[900px] border-collapse text-sm">
-          <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="w-28 px-3 py-2">Số tài&nbsp;khoản</th>
-              <th className="w-48 px-3 py-2">{labels.code}</th>
-              <th className="px-3 py-2">{labels.name}</th>
-              <th className="w-48 px-3 py-2 text-right">Dư&nbsp;Nợ</th>
-              <th className="w-48 px-3 py-2 text-right">Dư&nbsp;Có</th>
-              <th className="w-24 px-3 py-2">Chức năng</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-[900px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-28">Số tài&nbsp;khoản</TableHead>
+              <TableHead className="w-48">{labels.code}</TableHead>
+              <TableHead>{labels.name}</TableHead>
+              <TableHead className="w-48 text-right">Dư&nbsp;Nợ</TableHead>
+              <TableHead className="w-48 text-right">Dư&nbsp;Có</TableHead>
+              <TableHead className="w-24">Chức năng</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && (
-              <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center text-slate-400">
                   Đang tải…
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {isError && (
-              <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-red-500">
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
                   </button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {!isLoading && !isError && pageRows.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center text-slate-400">
                   Chưa có số dư công nợ. Bấm “Thêm” để chọn đối tượng và nhập số dư.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {pageRows.map((r) => (
-              <tr key={r.partnerId} className="border-t border-border hover:bg-slate-50">
-                <td className="px-3 py-1.5 tabular-nums text-slate-700">{accountCode}</td>
-                <td className="px-3 py-1.5 text-slate-700">{r.partnerCode}</td>
-                <td className="max-w-[360px] truncate px-3 py-1.5 text-slate-700">
+              <TableRow key={r.partnerId}>
+                <TableCell className="py-1.5 tabular-nums text-slate-700">{accountCode}</TableCell>
+                <TableCell className="py-1.5 text-slate-700">{r.partnerCode}</TableCell>
+                <TableCell className="max-w-[360px] truncate py-1.5 text-slate-700">
                   {r.partnerName}
-                </td>
-                <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                </TableCell>
+                <TableCell className="py-1.5 text-right tabular-nums text-slate-700">
                   {r.debitAmount ? formatCurrency(r.debitAmount) : 0}
-                </td>
-                <td className="px-3 py-1.5 text-right tabular-nums text-slate-700">
+                </TableCell>
+                <TableCell className="py-1.5 text-right tabular-nums text-slate-700">
                   {r.creditAmount ? formatCurrency(r.creditAmount) : 0}
-                </td>
-                <td className="px-3 py-1.5">
+                </TableCell>
+                <TableCell className="py-1.5">
                   <button
                     onClick={() => startEdit(r)}
                     className="font-medium text-primary hover:underline"
                   >
                     Sửa
                   </button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
+          </TableBody>
           {records.length > 0 && (
-            <tfoot className="sticky bottom-0 border-t border-border bg-slate-50 font-semibold text-slate-800">
-              <tr>
-                <td colSpan={3} className="px-3 py-2">
+            <TableFooter className="sticky bottom-0 font-semibold text-slate-800">
+              <TableRow>
+                <TableCell colSpan={3}>
                   Tổng
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.debit)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.credit)}</td>
-                <td />
-              </tr>
-            </tfoot>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{formatCurrency(totals.debit)}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatCurrency(totals.credit)}</TableCell>
+                <TableCell />
+              </TableRow>
+            </TableFooter>
           )}
-        </table>
+        </Table>
       </div>
 
       {/* Pagination */}
@@ -429,33 +432,33 @@ export function PartnerBalanceEntryPage() {
         {editing && (
           <div className="flex flex-col gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Số tài khoản</label>
-              <input
+              <Label className="mb-1 block text-sm font-medium text-slate-600">Số tài khoản</Label>
+              <Input
                 value={accountCode}
                 disabled
-                className="h-9 w-full rounded-md border border-border bg-slate-50 px-2 text-sm text-slate-500"
+                className="h-9 bg-slate-50 px-2 text-slate-500"
               />
             </div>
             <div className="grid grid-cols-[1fr_auto_auto] items-end gap-3">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">
+                <Label className="mb-1 block text-sm font-medium text-slate-600">
                   {labels.partnerField}
-                </label>
-                <input
+                </Label>
+                <Input
                   value={editing.partnerName}
                   disabled
-                  className="h-9 w-full rounded-md border border-border bg-slate-50 px-2 text-sm text-slate-500"
+                  className="h-9 bg-slate-50 px-2 text-slate-500"
                 />
               </div>
               <div className="w-48">
-                <label className="mb-1 block text-sm font-medium text-slate-600">Dư Nợ</label>
+                <Label className="mb-1 block text-sm font-medium text-slate-600">Dư Nợ</Label>
                 <AmountInput
                   value={draft.debit}
                   onChange={(v) => setDraft((d) => ({ ...d, debit: v }))}
                 />
               </div>
               <div className="w-48">
-                <label className="mb-1 block text-sm font-medium text-slate-600">Dư Có</label>
+                <Label className="mb-1 block text-sm font-medium text-slate-600">Dư Có</Label>
                 <AmountInput
                   value={draft.credit}
                   onChange={(v) => setDraft((d) => ({ ...d, credit: v }))}
@@ -485,18 +488,18 @@ export function PartnerBalanceEntryPage() {
       <Modal open={addOpen} onClose={cancelAdd} size="xl" title={labels.title}>
         <div className="flex flex-col gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Số tài khoản</label>
-            <input
+            <Label className="mb-1 block text-sm font-medium text-slate-600">Số tài khoản</Label>
+            <Input
               value={accountCode}
               disabled
-              className="h-9 w-full rounded-md border border-border bg-slate-50 px-2 text-sm text-slate-500"
+              className="h-9 bg-slate-50 px-2 text-slate-500"
             />
           </div>
           <div className="grid grid-cols-[1fr_auto_auto] items-end gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">
+              <Label className="mb-1 block text-sm font-medium text-slate-600">
                 {labels.partnerField}
-              </label>
+              </Label>
               <PartnerPicker
                 value={addPartner ? `${addPartner.partnerCode} - ${addPartner.partnerName}` : ''}
                 items={addOptions}
@@ -511,14 +514,14 @@ export function PartnerBalanceEntryPage() {
               />
             </div>
             <div className="w-48">
-              <label className="mb-1 block text-sm font-medium text-slate-600">Dư Nợ</label>
+              <Label className="mb-1 block text-sm font-medium text-slate-600">Dư Nợ</Label>
               <AmountInput
                 value={addDraft.debit}
                 onChange={(v) => setAddDraft((d) => ({ ...d, debit: v }))}
               />
             </div>
             <div className="w-48">
-              <label className="mb-1 block text-sm font-medium text-slate-600">Dư Có</label>
+              <Label className="mb-1 block text-sm font-medium text-slate-600">Dư Có</Label>
               <AmountInput
                 value={addDraft.credit}
                 onChange={(v) => setAddDraft((d) => ({ ...d, credit: v }))}

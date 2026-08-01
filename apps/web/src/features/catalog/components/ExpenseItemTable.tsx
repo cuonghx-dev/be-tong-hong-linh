@@ -8,9 +8,11 @@ import { MinusSquareIcon, PlusSquareIcon, RefreshIcon, SearchIcon } from '@/shar
 import { Modal } from '@/shared/ui/modal'
 import { RowActionMenu } from '@/shared/ui/row-action-menu'
 import { useToast } from '@/shared/ui/toast'
+import { Input } from '@/shared/ui/input'
 import { useExpenseItems } from '../api/useExpenseItems'
 import { useDeleteExpenseItem, useImportExpenseItems } from '../api/useExpenseItemMutations'
 import { ExpenseItemForm } from './ExpenseItemForm'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Danh mục nhỏ → lấy cả bảng 1 lần để dựng cây (max của API).
 const PAGE_SIZE = 200
@@ -146,13 +148,13 @@ export function ExpenseItemTable() {
               size={15}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
-            <input
+            <Input
               placeholder="Tìm kiếm"
               defaultValue={keyword}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') setKeyword((e.target as HTMLInputElement).value || null)
               }}
-              className="h-8 w-44 rounded-md border border-border pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-8 w-44 pl-8 pr-2"
             />
           </div>
           <button
@@ -167,46 +169,46 @@ export function ExpenseItemTable() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
-          <thead className="sticky top-0 z-20 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-3 py-2">Mã khoản&nbsp;mục chi&nbsp;phí</th>
-              <th className="px-3 py-2">Tên khoản&nbsp;mục chi&nbsp;phí</th>
-              <th className="px-3 py-2">Diễn&nbsp;giải</th>
-              <th className="px-3 py-2">Trạng&nbsp;thái</th>
-              <th className="sticky right-0 z-30 bg-slate-50 px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
+        <Table className="min-w-[720px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Mã khoản&nbsp;mục chi&nbsp;phí</TableHead>
+              <TableHead>Tên khoản&nbsp;mục chi&nbsp;phí</TableHead>
+              <TableHead>Diễn&nbsp;giải</TableHead>
+              <TableHead>Trạng&nbsp;thái</TableHead>
+              <TableHead className="sticky right-0 z-30 bg-slate-50 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)]">
                 Chức&nbsp;năng
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && (
-              <tr>
-                <td colSpan={5} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={5} className="py-10 text-center text-slate-400">
                   Đang tải…
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {isError && (
-              <tr>
-                <td colSpan={5} className="px-3 py-10 text-center text-red-500">
+              <TableRow>
+                <TableCell colSpan={5} className="py-10 text-center text-red-500">
                   Lỗi tải dữ liệu.{' '}
                   <button className="underline" onClick={() => refetch()}>
                     Thử lại
                   </button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {!isLoading && !isError && rows.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-3 py-10 text-center text-slate-400">
+              <TableRow>
+                <TableCell colSpan={5} className="py-10 text-center text-slate-400">
                   Chưa có khoản mục chi phí nào.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {rows.map(({ item: r, depth, hasChildren }) => (
-              <tr key={r.id} className="group border-t border-border hover:bg-slate-50">
-                <td className="px-3 py-2">
+              <TableRow key={r.id} className="group">
+                <TableCell>
                   <div
                     className="flex items-center gap-1"
                     style={{ paddingLeft: `${depth * 20}px` }}
@@ -233,17 +235,17 @@ export function ExpenseItemTable() {
                       {r.code}
                     </button>
                   </div>
-                </td>
-                <td
+                </TableCell>
+                <TableCell
                   className={cn(
                     'max-w-[320px] truncate px-3 py-2 text-slate-700',
                     hasChildren && 'font-semibold',
                   )}
                 >
                   {r.name}
-                </td>
-                <td className="max-w-[280px] truncate px-3 py-2 text-slate-600">{r.description}</td>
-                <td className={cn('px-3 py-2', hasChildren && 'font-semibold')}>
+                </TableCell>
+                <TableCell className="max-w-[280px] truncate text-slate-600">{r.description}</TableCell>
+                <TableCell className={cn('px-3 py-2', hasChildren && 'font-semibold')}>
                   <span
                     className={cn(
                       'inline-block rounded-full px-2 py-0.5 text-xs',
@@ -252,8 +254,8 @@ export function ExpenseItemTable() {
                   >
                     {r.isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'}
                   </span>
-                </td>
-                <td className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
+                </TableCell>
+                <TableCell className="sticky right-0 z-10 bg-white shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
                     primaryLabel="Sửa"
                     onPrimary={() => setFormState({ itemId: r.id, readOnly: true })}
@@ -277,11 +279,11 @@ export function ExpenseItemTable() {
                       },
                     ]}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Footer */}

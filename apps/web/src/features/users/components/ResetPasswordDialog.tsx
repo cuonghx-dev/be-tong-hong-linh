@@ -4,6 +4,8 @@ import { getApiErrorMessage } from '@/shared/lib/api'
 import { Button } from '@/shared/ui/button'
 import { Modal } from '@/shared/ui/modal'
 import { useToast } from '@/shared/ui/toast'
+import { Field } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
 import { useUpdateUser } from '../api/useUserMutations'
 
 interface Props {
@@ -71,47 +73,22 @@ export function ResetPasswordDialog({ open, onClose, user }: Props) {
       }
     >
       <div className="space-y-3">
-        <L label="Mật khẩu mới" required>
-          <input
+        <Field label="Mật khẩu mới" required>
+          <Input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoFocus
-            className={cls}
           />
-        </L>
-        <L label="Nhập lại mật khẩu mới" required>
-          <input
+        </Field>
+        <Field label="Nhập lại mật khẩu mới" required>
+          <Input
             type="password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            className={cls}
           />
-        </L>
+        </Field>
       </div>
     </Modal>
-  )
-}
-
-const cls =
-  'h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm transition-colors hover:border-primary/50 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20'
-
-function L({
-  label,
-  required,
-  children,
-}: {
-  label: string
-  required?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-[13px] font-semibold text-slate-800">
-        {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
-      </label>
-      {children}
-    </div>
   )
 }

@@ -5,6 +5,7 @@ import type {
 } from '@app/shared'
 import { useCustomerReceivableDetail } from '../../api/useSalesReports'
 import { formatDate, money, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 7
 
@@ -23,19 +24,19 @@ export function ReceivableDetailReport({ filter }: { filter: SalesReportFilter }
   const groups = data?.groups ?? []
 
   return (
-    <table className="w-full min-w-[1000px] border-collapse text-sm">
-      <thead className="sticky top-0 z-20">
-        <tr>
-          <th className={thClass}>Ngày hạch&nbsp;toán</th>
-          <th className={thClass}>Số chứng&nbsp;từ</th>
-          <th className={thClass}>Loại chứng&nbsp;từ</th>
-          <th className={thClass}>Diễn&nbsp;giải</th>
-          <th className={thClass}>Phát&nbsp;sinh Nợ</th>
-          <th className={thClass}>Phát&nbsp;sinh Có</th>
-          <th className={thClass}>Dư&nbsp;Nợ</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table className="min-w-[1000px]">
+      <TableHeader>
+        <TableRow>
+          <TableHead className={thClass}>Ngày hạch&nbsp;toán</TableHead>
+          <TableHead className={thClass}>Số chứng&nbsp;từ</TableHead>
+          <TableHead className={thClass}>Loại chứng&nbsp;từ</TableHead>
+          <TableHead className={thClass}>Diễn&nbsp;giải</TableHead>
+          <TableHead className={thClass}>Phát&nbsp;sinh Nợ</TableHead>
+          <TableHead className={thClass}>Phát&nbsp;sinh Có</TableHead>
+          <TableHead className={thClass}>Dư&nbsp;Nợ</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {isLoading && <StatusRow colSpan={COL_SPAN}>Đang tải…</StatusRow>}
         {isError && <StatusRow colSpan={COL_SPAN}>Lỗi tải dữ liệu.</StatusRow>}
         {data && groups.length === 0 && (
@@ -45,18 +46,18 @@ export function ReceivableDetailReport({ filter }: { filter: SalesReportFilter }
           <GroupRows key={`${g.customerId ?? g.customerName}-${gi}`} group={g} />
         ))}
         {data && groups.length > 0 && (
-          <tr className="bg-slate-100 font-semibold">
-            <td colSpan={4} className={tdClass}>
+          <TableRow className="bg-slate-100 font-semibold">
+            <TableCell colSpan={4} className={tdClass}>
               Tổng cộng (dư đầu {money(data.totalOpening, true)} → dư cuối{' '}
               {money(data.totalClosing, true)})
-            </td>
-            <td className={tdMoney}>{money(data.totalDebit, true)}</td>
-            <td className={tdMoney}>{money(data.totalCredit, true)}</td>
-            <td className={tdMoney}>{money(data.totalClosing, true)}</td>
-          </tr>
+            </TableCell>
+            <TableCell className={tdMoney}>{money(data.totalDebit, true)}</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalCredit, true)}</TableCell>
+            <TableCell className={tdMoney}>{money(data.totalClosing, true)}</TableCell>
+          </TableRow>
         )}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   )
 }
 
@@ -64,33 +65,33 @@ function GroupRows({ group }: { group: CustomerReceivableDetailGroupDto }) {
   return (
     <>
       {/* Tên KH + dư đầu kỳ */}
-      <tr className="bg-slate-50/80 font-medium">
-        <td colSpan={6} className={tdClass}>
+      <TableRow className="bg-slate-50/80 font-medium">
+        <TableCell colSpan={6} className={tdClass}>
           {group.customerCode ? `${group.customerCode} — ` : ''}
           {group.customerName} · Số dư đầu kỳ
-        </td>
-        <td className={tdMoney}>{money(group.openingBalance, true)}</td>
-      </tr>
+        </TableCell>
+        <TableCell className={tdMoney}>{money(group.openingBalance, true)}</TableCell>
+      </TableRow>
       {group.rows.map((r, i) => (
-        <tr key={`${r.voucherId}-${r.source}-${i}`} className="hover:bg-slate-50">
-          <td className={`${tdClass} whitespace-nowrap`}>{formatDate(r.postingDate)}</td>
-          <td className={`${tdClass} whitespace-nowrap`}>{r.voucherNo}</td>
-          <td className={`${tdClass} whitespace-nowrap`}>{SOURCE_LABEL[r.source]}</td>
-          <td className={`${tdClass} max-w-[320px] truncate`} title={r.description ?? ''}>
+        <TableRow key={`${r.voucherId}-${r.source}-${i}`}>
+          <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(r.postingDate)}</TableCell>
+          <TableCell className={`${tdClass} whitespace-nowrap`}>{r.voucherNo}</TableCell>
+          <TableCell className={`${tdClass} whitespace-nowrap`}>{SOURCE_LABEL[r.source]}</TableCell>
+          <TableCell className={`${tdClass} max-w-[320px] truncate`} title={r.description ?? ''}>
             {r.description}
-          </td>
-          <td className={tdMoney}>{money(r.debitAmount)}</td>
-          <td className={tdMoney}>{money(r.creditAmount)}</td>
-          <td className={tdMoney}>{money(r.balance, true)}</td>
-        </tr>
+          </TableCell>
+          <TableCell className={tdMoney}>{money(r.debitAmount)}</TableCell>
+          <TableCell className={tdMoney}>{money(r.creditAmount)}</TableCell>
+          <TableCell className={tdMoney}>{money(r.balance, true)}</TableCell>
+        </TableRow>
       ))}
       {/* Cộng phát sinh + dư cuối kỳ của KH */}
-      <tr className="bg-slate-50/80 font-medium">
-        <td colSpan={4} className={tdClass}>Cộng phát sinh · Số dư cuối kỳ</td>
-        <td className={tdMoney}>{money(group.debitAmount, true)}</td>
-        <td className={tdMoney}>{money(group.creditAmount, true)}</td>
-        <td className={tdMoney}>{money(group.closingBalance, true)}</td>
-      </tr>
+      <TableRow className="bg-slate-50/80 font-medium">
+        <TableCell colSpan={4} className={tdClass}>Cộng phát sinh · Số dư cuối kỳ</TableCell>
+        <TableCell className={tdMoney}>{money(group.debitAmount, true)}</TableCell>
+        <TableCell className={tdMoney}>{money(group.creditAmount, true)}</TableCell>
+        <TableCell className={tdMoney}>{money(group.closingBalance, true)}</TableCell>
+      </TableRow>
     </>
   )
 }

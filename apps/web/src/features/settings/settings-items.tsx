@@ -1,5 +1,5 @@
-import type { ComponentType, SVGProps } from 'react'
 import type { Permission } from '@app/shared'
+import type { ComponentType, SVGProps } from 'react'
 
 // Danh sách mục ở trang hub Thiết lập hệ thống + icon minh họa nhiều màu
 // (kiểu MISA, cùng phong cách opening-balance-icons). Chỉ dùng trong feature này.

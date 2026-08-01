@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { fieldInputIn } from '../helpers/form'
+import { fieldInputIn, fieldSelectIn, selectValue } from '../helpers/form'
 
 test.describe('Người dùng', () => {
   test('danh sách hiển thị admin', async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe('Người dùng', () => {
     await expect(dialog.getByText('Thêm người dùng')).toBeVisible()
     await fieldInputIn(dialog, page, 'Email').fill(email)
     await fieldInputIn(dialog, page, 'Họ tên').fill('Kế toán E2E')
-    await fieldInputIn(dialog, page, 'Vai trò').selectOption({ label: 'Kế toán' })
+    await selectValue(page, fieldSelectIn(dialog, page, 'Vai trò'), 'Kế toán')
     await fieldInputIn(dialog, page, 'Mật khẩu').fill('ketoan123')
     await dialog.getByRole('button', { name: 'Lưu', exact: true }).click()
     await expect(dialog).toBeHidden()

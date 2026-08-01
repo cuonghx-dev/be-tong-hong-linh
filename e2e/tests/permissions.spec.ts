@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { fieldInputIn } from '../helpers/form'
+import { fieldInputIn, fieldSelectIn, selectValue } from '../helpers/form'
 
 const VIEWER = { email: 'viewer@e2e.vn', name: 'Giám đốc E2E', password: 'viewer123' }
 
@@ -15,7 +15,7 @@ test.describe('Phân quyền', () => {
       const dialog = page.getByRole('dialog')
       await fieldInputIn(dialog, page, 'Email').fill(VIEWER.email)
       await fieldInputIn(dialog, page, 'Họ tên').fill(VIEWER.name)
-      await fieldInputIn(dialog, page, 'Vai trò').selectOption({ label: 'Giám đốc' })
+      await selectValue(page, fieldSelectIn(dialog, page, 'Vai trò'), 'Giám đốc')
       await fieldInputIn(dialog, page, 'Mật khẩu').fill(VIEWER.password)
       await dialog.getByRole('button', { name: 'Lưu', exact: true }).click()
       await expect(dialog).toBeHidden()
