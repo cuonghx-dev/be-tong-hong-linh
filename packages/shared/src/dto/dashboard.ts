@@ -92,3 +92,43 @@ export interface ExpenseBreakdownDto {
   total: string
   groups: ExpenseGroupDto[]
 }
+
+// ── Tiến độ thiết lập ban đầu (tutorial "Bắt đầu sử dụng") ───────────────────
+// Mỗi key = 1 việc cần làm, `true` khi đã có dữ liệu thật trong DB.
+// FE nhóm các key này thành từng bước (xem features/onboarding/onboarding-steps.tsx).
+export const ONBOARDING_TASK_KEYS = [
+  // Bước 1 — Người dùng & thiết lập
+  'users',
+  'employees',
+  'orgUnits',
+  // Bước 2 — Khai báo danh mục
+  'customers',
+  'suppliers',
+  'products',
+  'warehouses',
+  'bankAccounts',
+  'accounts',
+  // Bước 3 — Nhập số dư ban đầu
+  'accountBalances',
+  'bankAccountBalances',
+  'receivableBalances',
+  'payableBalances',
+  'inventoryBalances',
+  'fixedAssetBalances',
+  // Bước 4 — Lập chứng từ
+  'cashReceipt',
+  'cashPayment',
+  'bankReceipt',
+  'bankPayment',
+  'purchaseVoucher',
+  'salesVoucher',
+  'inventoryReceipt',
+  'goodsIssue',
+  'generalVoucher',
+] as const
+
+export type OnboardingTaskKey = (typeof ONBOARDING_TASK_KEYS)[number]
+
+export interface OnboardingProgressDto {
+  tasks: Record<OnboardingTaskKey, boolean>
+}

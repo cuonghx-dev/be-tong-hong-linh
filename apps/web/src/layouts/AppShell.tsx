@@ -1,6 +1,7 @@
 import type { PermissionDomain } from '@app/shared'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth, useCan } from '@/features/auth'
+import { OnboardingModal, useOnboardingStore } from '@/features/onboarding'
 import { cn } from '@/shared/lib/cn'
 import { useUiStore } from '@/shared/lib/ui-store'
 import {
@@ -138,6 +139,7 @@ function Header() {
   const user = useAuth((s) => s.user)
   const logout = useAuth((s) => s.logout)
   const can = useCan()
+  const openTutorial = useOnboardingStore((s) => s.setOpen)
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-white px-6">
@@ -155,14 +157,17 @@ function Header() {
 
       {/* Utility phải */}
       <div className="ml-auto flex items-center gap-1">
-        {[BellIcon, HelpIcon].map((Icon, i) => (
-          <button
-            key={i}
-            className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
-          >
-            <Icon size={18} />
-          </button>
-        ))}
+        <button className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100">
+          <BellIcon size={18} />
+        </button>
+        {/* Trợ giúp — mở lại tutorial "Bắt đầu sử dụng" (checklist thiết lập ban đầu) */}
+        <button
+          title="Bắt đầu sử dụng phần mềm"
+          onClick={() => openTutorial(true)}
+          className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
+        >
+          <HelpIcon size={18} />
+        </button>
         {/* Cài đặt hệ thống (quản lý người dùng…) — không thuộc nghiệp vụ kế toán nên nằm ngoài sidebar */}
         {can('users:read') && (
           <button
@@ -216,6 +221,8 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+      {/* Tutorial "Bắt đầu sử dụng" — tự bật lần đầu ở Tổng quan, mở lại bằng nút Trợ giúp */}
+      <OnboardingModal />
     </div>
   )
 }

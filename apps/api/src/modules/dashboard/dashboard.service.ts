@@ -5,11 +5,14 @@ import type {
   ExpenseBreakdownDto,
   FinanceOverviewDto,
   InventorySummaryDto,
+  OnboardingProgressDto,
+  OnboardingTaskKey,
   ProfitLossReportDto,
   TopSellingReportDto,
 } from '@app/shared'
+import { ONBOARDING_TASK_KEYS } from '@app/shared'
 import { Injectable } from '@nestjs/common'
-import { Prisma } from '@prisma/client'
+import { BankVoucherType, CashVoucherType, PartnerType, Prisma } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 
 const ZERO = new Prisma.Decimal(0)
@@ -370,6 +373,45 @@ export class DashboardService {
       FROM purchase_voucher_lines l JOIN purchase_vouchers v ON v.id = l.voucher_id
       WHERE l.stock_account ~ '^(6|8)' AND v.posting_date BETWEEN ${from} AND ${to}
     `
+  }
+
+  // ── Tiến độ thiết lập ban đầu (tutorial "Bắt đầu sử dụng") ─────────────────
+  // Mỗi việc = 1 count; gom trong 1 $transaction để chỉ tốn 1 round-trip.
+  async onboardingProgress(): Promise<OnboardingProgressDto> {
+    const counts = await this.prisma.$transaction([
+      this.prisma.user.count(),
+      this.prisma.employee.count(),
+      this.prisma.organizationUnit.count(),
+      this.prisma.customer.count(),
+      this.prisma.supplier.count(),
+      this.prisma.product.count(),
+      this.prisma.warehouse.count(),
+      this.prisma.bankAccount.count(),
+      this.prisma.account.count(),
+      this.prisma.accountOpeningBalance.count(),
+      this.prisma.bankAccountOpeningBalance.count(),
+      this.prisma.partnerOpeningBalance.count({ where: { partnerType: PartnerType.CUSTOMER } }),
+      this.prisma.partnerOpeningBalance.count({ where: { partnerType: PartnerType.SUPPLIER } }),
+      this.prisma.inventoryOpeningBalance.count(),
+      this.prisma.fixedAssetOpeningBalance.count(),
+      this.prisma.cashVoucher.count({ where: { type: CashVoucherType.RECEIPT } }),
+      this.prisma.cashVoucher.count({ where: { type: CashVoucherType.PAYMENT } }),
+      this.prisma.bankVoucher.count({ where: { type: BankVoucherType.RECEIPT } }),
+      this.prisma.bankVoucher.count({ where: { type: BankVoucherType.PAYMENT } }),
+      this.prisma.purchaseVoucher.count(),
+      this.prisma.salesVoucher.count(),
+      this.prisma.inventoryReceipt.count(),
+      this.prisma.goodsIssueVoucher.count(),
+      this.prisma.generalVoucher.count(),
+    ])
+
+    // counts[i] khớp thứ tự ONBOARDING_TASK_KEYS — sửa 1 bên phải sửa bên kia.
+    const tasks = {} as Record<OnboardingTaskKey, boolean>
+    ONBOARDING_TASK_KEYS.forEach((key, i) => {
+      // Tài khoản quản trị đầu tiên không tính → 'users' cần > 1.
+      tasks[key] = (counts[i] ?? 0) > (key === 'users' ? 1 : 0)
+    })
+    return { tasks }
   }
 }
 

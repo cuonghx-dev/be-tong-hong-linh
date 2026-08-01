@@ -52,6 +52,12 @@ export class DashboardController {
     return this.dashboard.topSelling(query.year ?? new Date().getUTCFullYear(), query.limit ?? 5)
   }
 
+  @Get('onboarding')
+  @ApiOperation({ summary: 'Tiến độ thiết lập ban đầu (tutorial "Bắt đầu sử dụng")' })
+  onboarding() {
+    return this.dashboard.onboardingProgress()
+  }
+
   @Get('expenses')
   @ApiOperation({ summary: 'Cơ cấu chi phí theo nhóm TK trong năm' })
   expenses(@Query() query: YearQueryDto) {

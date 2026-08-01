@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { RequireAuth, RequirePermission } from '@/features/auth'
+import { TrackReportView } from '@/features/onboarding'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { HomePage } from '@/features/dashboard/pages/HomePage'
 import { CashPage } from '@/features/cash/pages/CashPage'
@@ -81,14 +82,20 @@ const recordRoutes = [
   // Trang tạo/sửa cần quyền write, trang xem/báo cáo chỉ cần read trên domain của route.
   const domain = domainFromPath(r.path)
   const action = r.path.endsWith('/new') || r.path.endsWith('/edit') ? 'write' : 'read'
+  // Mở trang báo cáo = hoàn thành bước "Xem báo cáo" của tutorial (không suy được từ DB).
+  const element = r.path.includes('/reports/') ? (
+    <TrackReportView>{r.element}</TrackReportView>
+  ) : (
+    r.element
+  )
   return {
     path: r.path,
     element: (
       <RequireAuth>
         {domain ? (
-          <RequirePermission permission={`${domain}:${action}`}>{r.element}</RequirePermission>
+          <RequirePermission permission={`${domain}:${action}`}>{element}</RequirePermission>
         ) : (
-          r.element
+          element
         )}
       </RequireAuth>
     ),
