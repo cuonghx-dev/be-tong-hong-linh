@@ -1,15 +1,33 @@
 import { type Paginated } from '@app/shared'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
-import { Prisma, type GeneralVoucher, type GeneralVoucherLine } from '@prisma/client'
+import {
+  Prisma,
+  type GeneralVoucher,
+  type GeneralVoucherLine,
+  type GeneralVoucherTaxLine,
+} from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { BookLockService } from '../book-lock/book-lock.service'
 import { parseGeneralXlsx } from './general-import'
 import { GeneralVoucherFilterDto } from './dto/general-voucher-filter.dto'
-import { CreateGeneralVoucherDto, CreateGeneralVoucherLineDto } from './dto/create-general-voucher.dto'
+import {
+  CreateGeneralVoucherDto,
+  CreateGeneralVoucherLineDto,
+  CreateGeneralVoucherTaxLineDto,
+} from './dto/create-general-voucher.dto'
 import { UpdateGeneralVoucherDto } from './dto/update-general-voucher.dto'
 
-type VoucherWithLines = GeneralVoucher & { lines: GeneralVoucherLine[] }
+type VoucherWithLines = GeneralVoucher & {
+  lines: GeneralVoucherLine[]
+  taxLines: GeneralVoucherTaxLine[]
+}
+
+// Include dùng chung cho mọi truy vấn trả DTO (2 bảng dòng: hạch toán + kê khai thuế).
+const voucherInclude = {
+  lines: { orderBy: { lineNo: 'asc' } },
+  taxLines: { orderBy: { lineNo: 'asc' } },
+} satisfies Prisma.GeneralVoucherInclude
 
 @Injectable()
 export class GeneralService {
@@ -35,7 +53,7 @@ export class GeneralService {
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.generalVoucher.findMany({
         where,
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: voucherInclude,
         orderBy: [{ postingDate: 'desc' }, { createdAt: 'desc' }],
         skip: (filter.page - 1) * filter.pageSize,
         take: filter.pageSize,
@@ -52,7 +70,7 @@ export class GeneralService {
   async findOne(id: string) {
     const voucher = await this.prisma.generalVoucher.findUnique({
       where: { id },
-      include: { lines: { orderBy: { lineNo: 'asc' } } },
+      include: voucherInclude,
     })
     if (!voucher) throw new NotFoundException(`Không tìm thấy chứng từ ${id}`)
     return toVoucherDto(voucher)
@@ -101,10 +119,13 @@ export class GeneralService {
           description: dto.description ?? null,
           referenceNo: dto.referenceNo ?? null,
           branchId: dto.branchId ?? null,
+          excludeFromVatReport: dto.excludeFromVatReport ?? false,
+          // Tổng tiền chỉ tính dòng hạch toán — dòng kê khai thuế không phải bút toán.
           totalAmount: sumAmount(lines),
           lines: { create: lines },
+          taxLines: { create: normalizeTaxLines(dto.taxLines ?? []) },
         },
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: voucherInclude,
       })
     })
     return toVoucherDto(created)
@@ -123,6 +144,7 @@ export class GeneralService {
         description: dto.description ?? undefined,
         referenceNo: dto.referenceNo ?? undefined,
         branchId: dto.branchId ?? undefined,
+        excludeFromVatReport: dto.excludeFromVatReport ?? undefined,
       }
 
       if (dto.lines) {
@@ -133,10 +155,16 @@ export class GeneralService {
         data.lines = { create: lines }
       }
 
+      // Dòng kê khai thuế: xóa hết rồi tạo lại (như line hạch toán); mảng rỗng = bỏ kê khai.
+      if (dto.taxLines) {
+        await tx.generalVoucherTaxLine.deleteMany({ where: { voucherId: id } })
+        data.taxLines = { create: normalizeTaxLines(dto.taxLines) }
+      }
+
       return tx.generalVoucher.update({
         where: { id },
         data,
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: voucherInclude,
       })
     })
     return toVoucherDto(updated)
@@ -203,7 +231,7 @@ export class GeneralService {
     const updated = await this.prisma.generalVoucher.update({
       where: { id },
       data: { posted },
-      include: { lines: { orderBy: { lineNo: 'asc' } } },
+      include: voucherInclude,
     })
     return toVoucherDto(updated)
   }
@@ -233,6 +261,28 @@ function normalizeLines(lines: CreateGeneralVoucherLineDto[]) {
     creditPartnerId: line.creditPartnerId ?? null,
     creditPartnerName: line.creditPartnerName ?? null,
   }))
+}
+
+// Dòng kê khai hóa đơn — bỏ dòng trắng (chưa nhập tiền thuế lẫn giá trị HHDV).
+function normalizeTaxLines(taxLines: CreateGeneralVoucherTaxLineDto[]) {
+  return taxLines
+    .filter((t) => (t.vatAmount ?? 0) > 0 || (t.taxableAmount ?? 0) > 0)
+    .map((t, i) => ({
+      lineNo: i + 1,
+      description: t.description ?? null,
+      hasInvoice: t.hasInvoice ?? true,
+      taxType: t.taxType ?? null,
+      taxableAmount: new Prisma.Decimal(t.taxableAmount ?? 0),
+      vatRate: t.vatRate != null ? new Prisma.Decimal(t.vatRate) : null,
+      vatAmount: new Prisma.Decimal(t.vatAmount ?? 0),
+      vatAccount: t.vatAccount ?? null,
+      invoiceNo: t.invoiceNo ?? null,
+      invoiceDate: t.invoiceDate ? new Date(t.invoiceDate) : null,
+      goodsServiceGroup: t.goodsServiceGroup ?? null,
+      partnerId: t.partnerId ?? null,
+      partnerName: t.partnerName ?? null,
+      supplierTaxCode: t.supplierTaxCode ?? null,
+    }))
 }
 
 function sumAmount(lines: { amount: Prisma.Decimal }[]) {
@@ -275,6 +325,24 @@ function toVoucherDto(v: VoucherWithLines) {
     totalAmount: v.totalAmount.toString(),
     branchId: v.branchId,
     posted: v.posted,
+    excludeFromVatReport: v.excludeFromVatReport,
+    taxLines: v.taxLines.map((t) => ({
+      id: t.id,
+      lineNo: t.lineNo,
+      description: t.description,
+      hasInvoice: t.hasInvoice,
+      taxType: t.taxType,
+      taxableAmount: t.taxableAmount.toString(),
+      vatRate: t.vatRate?.toString() ?? null,
+      vatAmount: t.vatAmount.toString(),
+      vatAccount: t.vatAccount,
+      invoiceNo: t.invoiceNo,
+      invoiceDate: t.invoiceDate ? toDateOnly(t.invoiceDate) : null,
+      goodsServiceGroup: t.goodsServiceGroup,
+      partnerId: t.partnerId,
+      partnerName: t.partnerName,
+      supplierTaxCode: t.supplierTaxCode,
+    })),
     lines: v.lines.map((l) => ({
       id: l.id,
       lineNo: l.lineNo,

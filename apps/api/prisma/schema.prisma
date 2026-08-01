@@ -740,7 +740,10 @@ model GeneralVoucher {
   totalAmount Decimal              @default(0) @map("total_amount") @db.Decimal(18, 2)
   branchId    String?              @map("branch_id")
   posted      Boolean              @default(true)
-  lines       GeneralVoucherLine[]
+  // Không lên bảng kê thuế GTGT — chứng từ vẫn ghi sổ nhưng loại khỏi tờ khai.
+  excludeFromVatReport Boolean                 @default(false) @map("exclude_from_vat_report")
+  lines                GeneralVoucherLine[]
+  taxLines             GeneralVoucherTaxLine[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -770,6 +773,40 @@ model GeneralVoucherLine {
   // Unique kép: chặn trùng số dòng trong 1 phiếu; leading voucher_id thay index thường.
   @@unique([voucherId, lineNo])
   @@map("general_voucher_lines")
+}
+
+// Loại thuế dòng kê khai NVK (tab "Kê khai hóa đơn và hạch toán thuế").
+enum GeneralTaxType {
+  INPUT_INCREASE
+  INPUT_DECREASE
+  OUTPUT_INCREASE
+  OUTPUT_DECREASE
+}
+
+// Dòng kê khai hóa đơn của chứng từ nghiệp vụ khác — CHỈ phục vụ bảng kê thuế
+// GTGT, KHÔNG sinh bút toán (khác cash: dòng thuế phiếu chi là bút toán thật).
+// Bút toán thuế của NVK do người dùng tự nhập ở tab Hạch toán.
+model GeneralVoucherTaxLine {
+  id            String         @id @default(uuid())
+  voucherId     String         @map("voucher_id")
+  voucher       GeneralVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  lineNo        Int            @map("line_no")
+  description   String? // Diễn giải thuế
+  hasInvoice    Boolean         @default(true) @map("has_invoice") // Có hóa đơn
+  taxType       GeneralTaxType? @map("tax_type") // Loại thuế
+  taxableAmount Decimal         @default(0) @map("taxable_amount") @db.Decimal(18, 2) // Giá trị HHDV chưa thuế
+  vatRate       Decimal?        @map("vat_rate") @db.Decimal(5, 2) // % thuế GTGT
+  vatAmount     Decimal         @default(0) @map("vat_amount") @db.Decimal(18, 2) // Tiền thuế GTGT
+  vatAccount    String?         @map("vat_account") // TK thuế GTGT
+  invoiceNo     String?         @map("invoice_no")
+  invoiceDate   DateTime?       @map("invoice_date") @db.Date
+  goodsServiceGroup String?     @map("goods_service_group") // Nhóm HHDV
+  partnerId         String?     @map("partner_id") // Mã NCC/KH trên hóa đơn
+  partnerName       String?     @map("partner_name")
+  supplierTaxCode   String?     @map("supplier_tax_code") // Mã số thuế
+
+  @@unique([voucherId, lineNo])
+  @@map("general_voucher_tax_lines")
 }
 
 // ── Danh mục (05-danh-muc) ───────────────────────────────────────────────────

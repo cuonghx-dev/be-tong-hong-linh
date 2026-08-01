@@ -196,6 +196,24 @@ export const GENERAL_LINE_OPERATION_LABELS: Record<GeneralLineOperation, string>
   [GeneralLineOperation.TaxDeductInvestment]: 'Khấu trừ thuế hoạt động đầu tư',
 }
 
+// Loại thuế của dòng kê khai hóa đơn NVK — dropdown "Loại thuế" trên tab
+// "Kê khai hóa đơn và hạch toán thuế". Quyết định dòng lên bảng kê mua vào
+// (đầu vào) hay bán ra (đầu ra), tăng hay giảm số thuế.
+export enum GeneralTaxType {
+  InputIncrease = 'INPUT_INCREASE', // Tăng thuế đầu vào
+  InputDecrease = 'INPUT_DECREASE', // Giảm thuế đầu vào
+  OutputIncrease = 'OUTPUT_INCREASE', // Tăng thuế đầu ra
+  OutputDecrease = 'OUTPUT_DECREASE', // Giảm thuế đầu ra
+}
+
+// Nhãn hiển thị loại thuế dòng kê khai NVK (thứ tự đúng như dropdown MISA).
+export const GENERAL_TAX_TYPE_LABELS: Record<GeneralTaxType, string> = {
+  [GeneralTaxType.InputIncrease]: 'Tăng thuế đầu vào',
+  [GeneralTaxType.InputDecrease]: 'Giảm thuế đầu vào',
+  [GeneralTaxType.OutputIncrease]: 'Tăng thuế đầu ra',
+  [GeneralTaxType.OutputDecrease]: 'Giảm thuế đầu ra',
+}
+
 // Danh mục (05-danh-muc) ------------------------------------------------------
 
 // Loại đối tượng tập hợp chi phí (Doi_tuong_tap_hop_chi_phi.xlsx cột "Loại").

@@ -6,7 +6,10 @@ import { rowMenuAction } from '../helpers/voucher'
 // Chứng từ nghiệp vụ khác (NVK) — form MISA: hạn thanh toán ở thông tin chung,
 // dòng hạch toán có Nghiệp vụ + đối tượng vế Nợ và vế Có (§ docs/misa-specs).
 
-const firstRow = (page: Page) => page.locator('table tbody tr').first()
+// Form có 2 bảng (tab Hạch toán / tab Kê khai hóa đơn) → luôn scope theo testid.
+const entryTable = (page: Page) => page.getByTestId('general-entry-table')
+const taxTable = (page: Page) => page.getByTestId('general-tax-table')
+const firstRow = (page: Page) => entryTable(page).locator('tbody tr').first()
 // Dòng hạch toán: [diễn giải, TK Nợ, TK Có, số tiền, (select nghiệp vụ),
 // đối tượng Nợ, tên đối tượng Nợ, đối tượng Có, tên đối tượng Có].
 const debitCell = (page: Page) => firstRow(page).locator('input').nth(1)
@@ -54,9 +57,14 @@ test.describe('Tổng hợp — chứng từ nghiệp vụ khác', () => {
     await fieldInput(page, 'Diễn giải').fill('Diễn giải kế thừa')
     await page.getByRole('button', { name: 'Thêm dòng' }).click()
 
-    const rows = page.locator('table tbody tr')
+    const rows = entryTable(page).locator('tbody tr')
     await expect(rows).toHaveCount(2)
+    // Header đổi → điền xuống MỌI dòng hạch toán, dòng kê khai thành "Thuế GTGT - …".
+    await expect(rows.nth(0).locator('input').first()).toHaveValue('Diễn giải kế thừa')
     await expect(rows.nth(1).locator('input').first()).toHaveValue('Diễn giải kế thừa')
+    await expect(taxTable(page).locator('tbody tr').first().locator('input').first()).toHaveValue(
+      'Thuế GTGT - Diễn giải kế thừa',
+    )
   })
 
   test('TK Nợ trùng TK Có → backend chặn, ở lại form', async ({ page }) => {
@@ -68,6 +76,39 @@ test.describe('Tổng hợp — chứng từ nghiệp vụ khác', () => {
     await page.getByRole('button', { name: 'Lưu', exact: true }).click()
     await expect(page.getByText('Lưu chứng từ thất bại')).toBeVisible()
     await expect(page).toHaveURL(/\/general\/vouchers\/new/)
+  })
+
+  test('kê khai hóa đơn: tự tính tiền thuế và lưu kèm chứng từ', async ({ page }) => {
+    await openNewGeneralVoucher(page)
+    await fieldInput(page, 'Diễn giải').fill('NVK kê khai thuế E2E')
+    const voucherNo = await fieldInput(page, 'Số chứng từ').inputValue()
+
+    await fillAccount(page, debitCell(page), '1331')
+    await fillAccount(page, creditCell(page), '3331')
+    await amountCell(page).fill('1000000')
+
+    // Sang tab kê khai — dòng mặc định "Thuế GTGT - <diễn giải>", TK 1331.
+    await page.getByRole('tab', { name: 'Kê khai hóa đơn và hạch toán thuế' }).click()
+    const taxRow = taxTable(page).locator('tbody tr').first()
+    await expect(taxRow.locator('input').first()).toHaveValue(/Thuế GTGT/)
+
+    await taxRow.locator('select').selectOption({ label: 'Tăng thuế đầu vào' })
+    // Giá trị HHDV chưa thuế + % thuế → tiền thuế tự tính (10.000.000 × 10%).
+    await taxRow.getByPlaceholder('0').first().fill('10000000')
+    await taxRow.locator('input[type=number]').fill('10')
+    await expect(taxRow.getByPlaceholder('0').nth(1)).toHaveValue('1.000.000')
+    await taxRow.locator('input[type=date]').fill('2026-06-29')
+
+    await page.getByRole('button', { name: 'Lưu', exact: true }).click()
+    await expect(page).toHaveURL(/\/general(?!\/vouchers)/)
+
+    // Mở lại chứng từ → dòng kê khai được nạp đúng (không cộng vào tổng tiền chứng từ).
+    await page.goto('/general?tab=other-voucher')
+    await rowMenuAction(page, voucherNo, 'Sửa')
+    await page.getByRole('tab', { name: 'Kê khai hóa đơn và hạch toán thuế' }).click()
+    const savedRow = taxTable(page).locator('tbody tr').first()
+    await expect(savedRow.getByPlaceholder('0').nth(1)).toHaveValue('1.000.000')
+    await expect(savedRow.locator('input[type=date]')).toHaveValue('2026-06-29')
   })
 
   test('xem rồi bỏ ghi NVK từ danh sách', async ({ page }) => {
