@@ -2,7 +2,8 @@ import type { CashJournalRowDto, CashReportFilter } from '@app/shared'
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useCashJournal } from '../../api/useCashReports'
-import { formatDate, money, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { formatDate, money } from '@/shared/lib/report-format'
+import { StatusRow, tdClass, tdMoney, thClass } from '@/shared/ui/report-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // Số cột TK đối ứng tách riêng (như MISA); các TK còn lại gộp nhóm "TK khác".

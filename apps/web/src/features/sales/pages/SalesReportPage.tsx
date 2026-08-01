@@ -18,6 +18,7 @@ import { ReceivableSummaryReport } from '../components/reports/ReceivableSummary
 import { SalesByItemReport } from '../components/reports/SalesByItemReport'
 import { SalesDetailReport } from '../components/reports/SalesDetailReport'
 import { reportHasCustomerFilter, SALES_REPORTS, type SalesReportSlug } from '../types'
+import { Card } from '@/shared/ui/card'
 
 // Trang xem báo cáo bán hàng full-page (§5 design.md). Route: /sales/reports/:slug
 // 2 báo cáo công nợ lọc thêm được theo 1 khách hàng.
@@ -114,9 +115,9 @@ export function SalesReportPage() {
         </div>
 
         {/* Bảng báo cáo — tự cuộn trong khung */}
-        <div className="flex-1 overflow-auto rounded-lg border border-border bg-white">
+        <Card className="flex-1 overflow-auto">
           {renderReport(slug as SalesReportSlug, filter)}
-        </div>
+        </Card>
       </div>
     </RecordPageShell>
   )

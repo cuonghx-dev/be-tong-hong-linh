@@ -14,6 +14,7 @@ import {
 } from '../api/useFixedAssetBalanceMutations'
 import { FixedAssetForm, type FixedAssetFormValue } from '../components/FixedAssetForm'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Card } from '@/shared/ui/card'
 
 // Dòng TSCĐ đang hiển thị/sửa trên bảng (số tiền lưu number, ngày yyyy-MM-dd).
 type AssetRow = FixedAssetFormValue
@@ -158,7 +159,7 @@ export function FixedAssetBalancePage() {
       </div>
       <h1 className="mt-2 text-2xl font-bold text-slate-800">Tài sản cố định đầu kỳ</h1>
 
-      <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-white">
+      <Card className="mt-4 flex min-h-0 flex-1 flex-col">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
           <div className="relative w-72">
@@ -334,7 +335,7 @@ export function FixedAssetBalancePage() {
             Tổng số: <b className="text-slate-700">{filtered.length}</b> tài sản
           </span>
         </div>
-      </div>
+      </Card>
 
       {/* Modal thêm/sửa 1 tài sản cố định. */}
       <Modal

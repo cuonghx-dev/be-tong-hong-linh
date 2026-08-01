@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Card } from '@/shared/ui/card'
 
 // Khung widget Tổng quan: tiêu đề + control bên phải, footer "Số liệu tính đến / Tải lại".
 export function DashboardCard({
@@ -28,7 +29,7 @@ export function DashboardCard({
   children: ReactNode
 }) {
   return (
-    <section className={cn('flex flex-col rounded-lg border border-border bg-white p-4', className)}>
+    <Card className={cn('flex flex-col p-4', className)}>
       <header className="mb-3 flex items-center gap-2">
         <h2 className="flex-1 truncate text-base font-semibold text-slate-800">{title}</h2>
         {actions}
@@ -55,7 +56,7 @@ export function DashboardCard({
           Tải lại
         </button>
       </footer>
-    </section>
+    </Card>
   )
 }
 

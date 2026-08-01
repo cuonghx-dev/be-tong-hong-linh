@@ -3,8 +3,14 @@ import { useLocation } from 'react-router-dom'
 import { useCan } from '@/features/auth'
 import { domainFromPath } from '@/shared/lib/domain-from-path'
 import { Button } from '@/shared/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu'
 import { ChevronDownIcon, ExcelIcon, PlusIcon } from '@/shared/ui/icons'
-import { Popover } from '@/shared/ui/popover'
 
 export interface AddMenuAction {
   label: string
@@ -31,46 +37,27 @@ export function AddMenu({ label = 'Thêm', actions, onImportExcel, importing }: 
   // Vai trò chỉ xem (viewer, thủ quỹ) → ẩn hẳn nút Thêm của phân hệ đó.
   if (domain && !can(`${domain}:write`)) return null
   return (
-    <Popover
-      align="right"
-      className="min-w-[200px] p-1"
-      trigger={({ open, toggle }) => (
-        <Button size="sm" onClick={toggle} aria-expanded={open}>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="sm">
           <PlusIcon size={16} />
           {label}
           <ChevronDownIcon size={14} />
         </Button>
-      )}
-    >
-      {(close) => (
-        <div className="flex flex-col">
-          {actions.map((a, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                close()
-                a.onClick()
-              }}
-              className="flex items-center gap-2 rounded px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50"
-            >
-              {a.icon}
-              {a.label}
-            </button>
-          ))}
-          {actions.length > 0 && <div className="my-1 border-t border-border" />}
-          <button
-            onClick={() => {
-              close()
-              onImportExcel()
-            }}
-            disabled={importing}
-            className="flex items-center gap-2 rounded px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-          >
-            <ExcelIcon size={16} />
-            {importing ? 'Đang nhập…' : 'Nhập Excel'}
-          </button>
-        </div>
-      )}
-    </Popover>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[200px]">
+        {actions.map((a, i) => (
+          <DropdownMenuItem key={i} onSelect={a.onClick} className="gap-2">
+            {a.icon}
+            {a.label}
+          </DropdownMenuItem>
+        ))}
+        {actions.length > 0 && <DropdownMenuSeparator />}
+        <DropdownMenuItem onSelect={onImportExcel} disabled={importing} className="gap-2">
+          <ExcelIcon size={16} />
+          {importing ? 'Đang nhập…' : 'Nhập Excel'}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

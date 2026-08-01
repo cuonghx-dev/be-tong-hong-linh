@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { cn } from '@/shared/lib/cn'
 import { HelpIcon, SettingsIcon } from '@/shared/ui/icons'
+import { TabBar } from '@/shared/ui/tab-bar'
 
 export interface ModuleTab {
   key: string
@@ -25,23 +25,13 @@ export function ModuleContent({ tabs, defaultTab }: { tabs: ModuleTab[]; default
     <div className="flex h-full flex-col">
       {/* Tabs bar */}
       <div className="sticky top-0 z-10 flex items-center border-b border-border bg-white px-3">
-        <nav className="flex overflow-x-auto">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setActive(t.key)}
-              aria-selected={t.key === active}
-              className={cn(
-                'whitespace-nowrap border-b-2 px-3 py-3 text-sm transition-colors',
-                t.key === active
-                  ? 'border-primary font-medium text-primary'
-                  : 'border-transparent text-slate-500 hover:text-slate-700',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
+        <TabBar
+          size="nav"
+          value={active ?? ''}
+          onChange={setActive}
+          items={tabs}
+          className="overflow-x-auto"
+        />
         <div className="ml-auto flex items-center gap-1 pl-2">
           <button className="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:bg-slate-100">
             <HelpIcon size={18} />

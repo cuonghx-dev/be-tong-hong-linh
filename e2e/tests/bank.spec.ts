@@ -35,7 +35,7 @@ test.describe('Tiền gửi', () => {
   test('tạo thu tiền gửi (NTTK)', async ({ page }) => {
     await page.goto('/bank?tab=txn')
     await page.getByRole('button', { name: 'Thêm', exact: true }).click()
-    await page.getByRole('button', { name: 'Thu tiền', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Thu tiền', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Thu tiền gửi' })).toBeVisible()
 
     const noInput = fieldInput(page, 'Số chứng từ')
@@ -62,7 +62,7 @@ test.describe('Tiền gửi', () => {
   test('tạo ủy nhiệm chi (UNC)', async ({ page }) => {
     await page.goto('/bank?tab=txn')
     await page.getByRole('button', { name: 'Thêm', exact: true }).click()
-    await page.getByRole('button', { name: 'Chi tiền', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Chi tiền', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Ủy nhiệm chi' })).toBeVisible()
 
     const noInput = fieldInput(page, 'Số chứng từ')
@@ -87,7 +87,7 @@ test.describe('Tiền gửi', () => {
   test('tạo chuyển tiền nội bộ (CTNB)', async ({ page }) => {
     await page.goto('/bank?tab=txn')
     await page.getByRole('button', { name: 'Thêm', exact: true }).click()
-    await page.getByRole('button', { name: 'Chuyển tiền nội bộ', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Chuyển tiền nội bộ', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Chuyển tiền nội bộ' })).toBeVisible()
 
     const noInput = fieldInput(page, 'Số chứng từ')

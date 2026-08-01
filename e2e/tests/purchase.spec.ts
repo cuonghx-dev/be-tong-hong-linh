@@ -5,7 +5,7 @@ import { fillFirstItemLine } from '../helpers/voucher'
 async function openNewPurchaseVoucher(page: Page) {
   await page.goto('/purchase?tab=purchase')
   await page.getByRole('button', { name: 'Thêm', exact: true }).click()
-  await page.getByRole('button', { name: 'Chứng từ mua hàng', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Chứng từ mua hàng', exact: true }).click()
   await expect(page.getByRole('heading', { name: /Chứng từ mua hàng/ })).toBeVisible()
 }
 
@@ -36,7 +36,7 @@ test.describe('Mua hàng', () => {
     // Mua dịch vụ là loại chứng từ riêng trong menu Thêm (không còn trong dropdown loại nghiệp vụ).
     await page.goto('/purchase?tab=purchase')
     await page.getByRole('button', { name: 'Thêm', exact: true }).click()
-    await page.getByRole('button', { name: 'Chứng từ mua dịch vụ', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Chứng từ mua dịch vụ', exact: true }).click()
     await expect(page.getByRole('heading', { name: /Chứng từ mua dịch vụ/ })).toBeVisible()
 
     await page.getByRole('radio', { name: 'Thanh toán ngay' }).check()

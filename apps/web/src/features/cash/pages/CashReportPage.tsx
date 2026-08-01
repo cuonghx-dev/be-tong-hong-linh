@@ -16,6 +16,7 @@ import { CashBookReport } from '../components/reports/CashBookReport'
 import { CashJournalReport } from '../components/reports/CashJournalReport'
 import { DailyBalanceReport } from '../components/reports/DailyBalanceReport'
 import { CASH_REPORTS, type CashReportSlug } from '../types'
+import { Card } from '@/shared/ui/card'
 
 // Trang xem báo cáo tiền mặt full-page (§5 design.md). Route: /cash/reports/:slug
 export function CashReportPage() {
@@ -98,9 +99,9 @@ export function CashReportPage() {
         </div>
 
         {/* Bảng báo cáo — tự cuộn trong khung */}
-        <div className="flex-1 overflow-auto rounded-lg border border-border bg-white">
+        <Card className="flex-1 overflow-auto">
           {renderReport(slug as CashReportSlug, filter)}
-        </div>
+        </Card>
       </div>
     </RecordPageShell>
   )

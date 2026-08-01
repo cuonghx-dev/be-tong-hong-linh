@@ -1,6 +1,7 @@
 import type { PurchaseReportFilter } from '@app/shared'
 import { useSupplierPayableSummary } from '../../api/usePurchaseReports'
-import { money, periodLabel, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { money, periodLabel } from '@/shared/lib/report-format'
+import { StatusRow, tdClass, tdMoney, thClass } from '@/shared/ui/report-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 7

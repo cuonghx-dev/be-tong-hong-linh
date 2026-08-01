@@ -19,6 +19,7 @@ import {
 import { AccountBalanceForm, type BalanceFormValue } from '../components/AccountBalanceForm'
 import { buildTree, toSaveItems, type BalanceRow } from '../tree'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Card } from '@/shared/ui/card'
 
 // Bảng Số dư tài khoản đầu kỳ — cây cộng dồn cha-con. "Sửa" mở màn nhập số dư chi tiết (như MISA).
 export function AccountBalancePage() {
@@ -157,7 +158,7 @@ export function AccountBalancePage() {
       </div>
       <h1 className="mt-2 text-2xl font-bold text-slate-800">Số dư tài khoản</h1>
 
-      <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-white">
+      <Card className="mt-4 flex min-h-0 flex-1 flex-col">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
           <input
@@ -332,7 +333,7 @@ export function AccountBalancePage() {
             </span>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Modal thêm tài khoản mới (sửa số dư đi qua màn "Nhập số dư tài khoản"). */}
       <Modal

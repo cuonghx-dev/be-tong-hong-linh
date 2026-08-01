@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChartIcon, SearchIcon } from '@/shared/ui/icons'
 import { Input } from '@/shared/ui/input'
 import { PURCHASE_REPORTS } from '../../types'
+import { Card } from '@/shared/ui/card'
 
 // Tab "Báo cáo" phân hệ Mua hàng: danh sách báo cáo 2 cột (như MISA),
 // click 1 báo cáo → trang xem full-page /purchase/reports/<slug>.
@@ -29,7 +30,7 @@ export function PurchaseReportListTab() {
         />
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-2">
+      <Card className="p-2">
         {reports.length === 0 && (
           <div className="px-3 py-10 text-center text-slate-400">
             Không tìm thấy báo cáo phù hợp.
@@ -47,7 +48,7 @@ export function PurchaseReportListTab() {
             </button>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

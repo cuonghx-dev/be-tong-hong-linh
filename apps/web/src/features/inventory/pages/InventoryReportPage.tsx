@@ -16,6 +16,7 @@ import { Label } from '@/shared/ui/label'
 import { ItemLedgerReport } from '../components/reports/ItemLedgerReport'
 import { StockSummaryReport } from '../components/reports/StockSummaryReport'
 import { INVENTORY_REPORTS, type InventoryReportSlug } from '../types'
+import { Card } from '@/shared/ui/card'
 
 // Preset kỳ báo cáo — chọn preset ghi from/to vào URL params (share link được).
 const PRESETS: { key: string; label: string; range: () => { from: string; to: string } }[] = [
@@ -133,7 +134,7 @@ export function InventoryReportPage() {
         </div>
 
         {/* Bảng báo cáo — tự cuộn trong khung */}
-        <div className="flex-1 overflow-auto rounded-lg border border-border bg-white">
+        <Card className="flex-1 overflow-auto">
           {renderReport(slug as InventoryReportSlug, {
             fromDate,
             toDate,
@@ -141,7 +142,7 @@ export function InventoryReportPage() {
             itemCode,
             keyword: keyword || undefined,
           })}
-        </div>
+        </Card>
       </div>
     </RecordPageShell>
   )

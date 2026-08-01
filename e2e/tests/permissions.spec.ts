@@ -28,7 +28,7 @@ test.describe('Phân quyền', () => {
     await viewerPage.getByPlaceholder('Email').fill(VIEWER.email)
     await viewerPage.getByPlaceholder('Mật khẩu').fill(VIEWER.password)
     await viewerPage.getByRole('button', { name: 'Đăng nhập' }).click()
-    await expect(viewerPage.getByRole('button', { name: 'Tổng quan' })).toBeVisible()
+    await expect(viewerPage.getByRole('tab', { name: 'Tổng quan' })).toBeVisible()
 
     // Viewer đọc được danh sách nhưng không có nút Thêm / thao tác ghi.
     await viewerPage.goto('http://localhost:5111/cash?tab=txn')

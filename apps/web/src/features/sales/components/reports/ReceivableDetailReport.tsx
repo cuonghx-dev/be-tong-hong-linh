@@ -4,7 +4,8 @@ import type {
   SalesReportFilter,
 } from '@app/shared'
 import { useCustomerReceivableDetail } from '../../api/useSalesReports'
-import { formatDate, money, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { formatDate, money } from '@/shared/lib/report-format'
+import { StatusRow, tdClass, tdMoney, thClass } from '@/shared/ui/report-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 7

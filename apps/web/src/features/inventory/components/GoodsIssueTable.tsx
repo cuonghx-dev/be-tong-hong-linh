@@ -22,6 +22,7 @@ import {
   type GoodsIssueFilterValue,
 } from './GoodsIssueFilterPopover'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Card } from '@/shared/ui/card'
 
 const PAGE_SIZE = 20
 
@@ -114,7 +115,7 @@ export function GoodsIssueTable() {
   }
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-border bg-white">
+    <Card className="flex h-full flex-col">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
         <GoodsIssueFilterPopover
@@ -330,6 +331,6 @@ export function GoodsIssueTable() {
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }

@@ -21,6 +21,7 @@ import {
   useSaveInventoryBalances,
 } from '../api/useInventoryBalanceMutations'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Card } from '@/shared/ui/card'
 
 const PAGE_SIZES = [20, 50, 100]
 
@@ -224,7 +225,7 @@ export function InventoryBalancePage() {
         </Link>
       </div>
 
-      <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-white">
+      <Card className="mt-4 flex min-h-0 flex-1 flex-col">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
           <div className="relative w-72">
@@ -395,7 +396,7 @@ export function InventoryBalancePage() {
             </button>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Modal sửa tồn kho 1 VTHH tại 1 kho (như MISA) */}
       <Modal open={!!editing} onClose={cancelEdit} size="md" title="Tồn kho vật tư, hàng hóa">

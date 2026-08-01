@@ -50,6 +50,7 @@ import {
   VOUCHER_TYPE_LABEL,
 } from '../types'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { TabBar } from '@/shared/ui/tab-bar'
 
 interface SalesVoucherFormProps {
   voucherId?: string | null
@@ -469,30 +470,17 @@ export function SalesVoucherForm({
       </div>
 
       {/* ── Tabs bản ghi (§5.4) — vẫn thuộc lớp tint ── */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-border bg-primary/5 px-4">
-        {(
-          [
-            { key: 'main', label: isUnpaid ? 'Chứng từ ghi nợ' : 'Chứng từ bán hàng' },
-            // Tab phiếu xuất chỉ có nghĩa khi chứng từ kiêm phiếu xuất kho.
-            ...(isInventoryIssue ? ([{ key: 'issue', label: 'Phiếu xuất' }] as const) : []),
-            { key: 'invoice', label: 'Hóa đơn' },
-          ] as const
-        ).map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={cn(
-              'border-b-2 px-3 py-2 text-sm transition-colors',
-              tab === t.key
-                ? 'border-primary font-medium text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-700',
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        value={tab}
+        onChange={setTab}
+        items={[
+          { key: 'main', label: isUnpaid ? 'Chứng từ ghi nợ' : 'Chứng từ bán hàng' },
+          // Tab phiếu xuất chỉ có nghĩa khi chứng từ kiêm phiếu xuất kho.
+          ...(isInventoryIssue ? ([{ key: 'issue', label: 'Phiếu xuất' }] as const) : []),
+          { key: 'invoice', label: 'Hóa đơn' },
+        ]}
+        className="shrink-0 border-b border-border bg-primary/5 px-4"
+      />
 
       {/* ── Form body (§5.5) — cuộn dọc, 2 lớp màu: thông tin chung tint / bảng hàng trắng ── */}
       <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
@@ -844,26 +832,15 @@ export function SalesVoucherForm({
           {/* ── Line section (§5.6): toolbar + bảng dòng hàng ── */}
           <div className="rounded-md border border-border">
             <div className="flex items-center gap-1 border-b border-border bg-slate-50 px-2">
-              {(
-                [
+              <TabBar
+                size="sm"
+                value={lineTab}
+                onChange={setLineTab}
+                items={[
                   { key: 'goods', label: 'Hàng tiền' },
                   { key: 'cost', label: 'Giá vốn' },
-                ] as const
-              ).map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setLineTab(t.key)}
-                  className={cn(
-                    'border-b-2 px-3 py-1.5 text-sm transition-colors',
-                    lineTab === t.key
-                      ? 'border-primary font-medium text-primary'
-                      : 'border-transparent text-slate-500 hover:text-slate-700',
-                  )}
-                >
-                  {t.label}
-                </button>
-              ))}
+                ]}
+              />
               {/* Chiết khấu tổng chưa hỗ trợ — giữ chỗ đúng vị trí toolbar của MISA. */}
               <div className="ml-auto flex items-center gap-2 py-1">
                 <span className="text-xs text-slate-500">Chiết khấu</span>

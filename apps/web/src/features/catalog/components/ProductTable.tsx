@@ -26,6 +26,7 @@ import {
 } from '../api/useProductMutations'
 import { ProductForm } from './ProductForm'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Card } from '@/shared/ui/card'
 
 const PAGE_SIZE = 20
 
@@ -105,7 +106,7 @@ export function ProductTable() {
   const closeForm = () => setFormState(null)
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-border bg-white">
+    <Card className="flex h-full flex-col">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
         <input
@@ -324,6 +325,6 @@ export function ProductTable() {
           />
         )}
       </Modal>
-    </div>
+    </Card>
   )
 }

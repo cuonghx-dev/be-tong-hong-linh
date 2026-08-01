@@ -1,9 +1,14 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
+import { type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useCan } from '@/features/auth'
 import { cn } from '@/shared/lib/cn'
 import { domainFromPath } from '@/shared/lib/domain-from-path'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu'
 import { ChevronDownIcon } from '@/shared/ui/icons'
 
 export interface RowAction {
@@ -22,58 +27,12 @@ interface Props {
 }
 
 // Cột "Chức năng": link chính (Xem) + ▾ mở menu (design.md §3.8).
-// Menu dùng position:fixed → không bị clip bởi overflow của bảng.
+// DropdownMenu của Radix portal ra body → không bị clip/đè bởi cell sticky của bảng.
 export function RowActionMenu({ primaryLabel = 'Xem', onPrimary, items: allItems }: Props) {
   const can = useCan()
   const domain = domainFromPath(useLocation().pathname)
   // Lọc thao tác theo quyền trên domain hiện tại (Sửa/Xóa cần write, Ghi sổ cần post).
-  const items = domain
-    ? allItems.filter((it) => can(`${domain}:${it.action ?? 'write'}`))
-    : allItems
-  const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState({ top: 0, right: 0 })
-  const btnRef = useRef<HTMLButtonElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  const toggle = () => {
-    const el = btnRef.current
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    setPos({ top: r.bottom + 4, right: window.innerWidth - r.right })
-    setOpen((v) => !v)
-  }
-
-  useEffect(() => {
-    if (!open) return
-    // Chỉ đóng khi scroll NGOÀI menu — cuộn bên trong menu không làm đóng.
-    const close = (e: Event) => {
-      if (
-        e.target instanceof Node &&
-        (btnRef.current?.contains(e.target) || menuRef.current?.contains(e.target))
-      )
-        return
-      setOpen(false)
-    }
-    const onDown = (e: MouseEvent) => {
-      if (
-        !menuRef.current?.contains(e.target as Node) &&
-        !btnRef.current?.contains(e.target as Node)
-      )
-        setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    // fixed không cuộn theo → đóng khi cuộn/resize.
-    window.addEventListener('scroll', close, true)
-    window.addEventListener('resize', close)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-      window.removeEventListener('scroll', close, true)
-      window.removeEventListener('resize', close)
-    }
-  }, [open])
+  const items = domain ? allItems.filter((it) => can(`${domain}:${it.action ?? 'write'}`)) : allItems
 
   return (
     <div className="flex items-center gap-1 whitespace-nowrap">
@@ -81,44 +40,26 @@ export function RowActionMenu({ primaryLabel = 'Xem', onPrimary, items: allItems
         {primaryLabel}
       </button>
       {items.length > 0 && (
-        <button
-          ref={btnRef}
-          onClick={toggle}
-          aria-label="Thao tác khác"
-          aria-expanded={open}
-          className="grid h-6 w-6 place-items-center rounded text-primary hover:bg-primary/10"
-        >
-          <ChevronDownIcon size={14} />
-        </button>
-      )}
-
-      {/* Portal ra body: cell sticky của bảng tạo stacking context riêng → menu
-          để trong td sẽ bị cell các hàng dưới đè lên, z-index không cứu được. */}
-      {open &&
-        createPortal(
-        <div
-          ref={menuRef}
-          style={{ position: 'fixed', top: pos.top, right: pos.right }}
-          className="z-50 min-w-[160px] overflow-hidden rounded-md border border-border bg-white py-1 shadow-lg"
-        >
-          {items.map((it, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                setOpen(false)
-                it.onClick()
-              }}
-              className={cn(
-                'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-slate-50',
-                it.danger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700',
-              )}
-            >
-              {it.icon}
-              {it.label}
-            </button>
-          ))}
-        </div>,
-        document.body,
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label="Thao tác khác"
+            className="grid h-6 w-6 place-items-center rounded text-primary outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/40"
+          >
+            <ChevronDownIcon size={14} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[160px]">
+            {items.map((it, i) => (
+              <DropdownMenuItem
+                key={i}
+                onSelect={it.onClick}
+                className={cn('gap-2', it.danger && 'text-red-600 focus:bg-red-50 focus:text-red-600')}
+              >
+                {it.icon}
+                {it.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   )

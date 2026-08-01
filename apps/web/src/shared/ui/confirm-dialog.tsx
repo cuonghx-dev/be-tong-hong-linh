@@ -1,14 +1,13 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import { Button } from '@/shared/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/ui/dialog'
 
 interface ConfirmOptions {
   title: string
@@ -26,7 +25,8 @@ interface Pending extends ConfirmOptions {
   resolve: (ok: boolean) => void
 }
 
-// Provider dịch vụ xác nhận (shadcn AlertDialog-style) thay cho window.confirm.
+// Provider dịch vụ xác nhận thay cho window.confirm. Dựng trên shadcn Dialog (Radix)
+// → có focus trap, khóa scroll nền, Esc, portal.
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<Pending | null>(null)
 
@@ -35,70 +35,54 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  const close = useCallback(
-    (ok: boolean) => {
-      setPending((cur) => {
-        cur?.resolve(ok)
-        return null
-      })
-    },
-    [],
-  )
+  const close = useCallback((ok: boolean) => {
+    setPending((cur) => {
+      cur?.resolve(ok)
+      return null
+    })
+  }, [])
 
   const value = useMemo(() => confirm, [confirm])
 
   return (
     <ConfirmContext.Provider value={value}>
       {children}
-      {pending && <ConfirmDialog pending={pending} onClose={close} />}
+      <Dialog open={!!pending} onOpenChange={(v) => !v && close(false)}>
+        <DialogContent
+          role="alertdialog"
+          className="max-w-md gap-0 border-border"
+          // Enter = Đồng ý (nút xác nhận nhận focus khi mở).
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              close(true)
+            }
+          }}
+        >
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-base font-semibold text-slate-800">
+              {pending?.title}
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="text-sm text-slate-500">{pending?.description}</div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 gap-2 sm:space-x-0">
+            <Button variant="outline" size="sm" onClick={() => close(false)}>
+              {pending?.cancelText ?? 'Hủy'}
+            </Button>
+            <Button
+              autoFocus
+              variant={pending?.destructive ? 'destructive' : 'primary'}
+              size="sm"
+              onClick={() => close(true)}
+            >
+              {pending?.confirmText ?? 'Đồng ý'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ConfirmContext.Provider>
-  )
-}
-
-function ConfirmDialog({ pending, onClose }: { pending: Pending; onClose: (ok: boolean) => void }) {
-  const confirmRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    confirmRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose(false)
-      if (e.key === 'Enter') onClose(true)
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-slate-900/40"
-        onClick={() => onClose(false)}
-        aria-hidden="true"
-      />
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
-      >
-        <h2 className="text-base font-semibold text-slate-800">{pending.title}</h2>
-        {pending.description && (
-          <div className="mt-2 text-sm text-slate-500">{pending.description}</div>
-        )}
-        <div className="mt-6 flex items-center justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => onClose(false)}>
-            {pending.cancelText ?? 'Hủy'}
-          </Button>
-          <Button
-            ref={confirmRef}
-            variant={pending.destructive ? 'destructive' : 'primary'}
-            size="sm"
-            onClick={() => onClose(true)}
-          >
-            {pending.confirmText ?? 'Đồng ý'}
-          </Button>
-        </div>
-      </div>
-    </div>
   )
 }
 

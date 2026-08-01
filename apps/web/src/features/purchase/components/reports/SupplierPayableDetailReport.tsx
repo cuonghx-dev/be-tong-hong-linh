@@ -14,7 +14,8 @@ import {
 import { Label } from '@/shared/ui/label'
 import { useSuppliers } from '../../api/useSuppliers'
 import { useSupplierPayableDetail } from '../../api/usePurchaseReports'
-import { formatDate, money, periodLabel, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { formatDate, money, periodLabel } from '@/shared/lib/report-format'
+import { StatusRow, tdClass, tdMoney, thClass } from '@/shared/ui/report-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 7

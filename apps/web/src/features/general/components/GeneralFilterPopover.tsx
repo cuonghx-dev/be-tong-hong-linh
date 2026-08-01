@@ -11,6 +11,7 @@ import {
 } from '@/shared/ui/select'
 import { Field } from '@/shared/ui/field'
 import { Input } from '@/shared/ui/input'
+import { Badge } from '@/shared/ui/badge'
 
 export interface GeneralFilterValue {
   from: string
@@ -62,9 +63,9 @@ export function GeneralFilterPopover({ value, onApply, onReset }: Props) {
         <Button variant="outline" size="sm" onClick={toggle} aria-expanded={open}>
           <FilterIcon size={16} /> Lọc
           {activeCount > 0 && (
-            <span className="ml-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] text-white">
+            <Badge variant="count">
               {activeCount}
-            </span>
+            </Badge>
           )}
           <ChevronDownIcon size={14} />
         </Button>

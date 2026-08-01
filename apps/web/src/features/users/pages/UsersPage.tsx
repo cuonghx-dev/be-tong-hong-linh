@@ -14,6 +14,7 @@ import { useUpdateUser } from '../api/useUserMutations'
 import { ResetPasswordDialog } from '../components/ResetPasswordDialog'
 import { UserDialog } from '../components/UserDialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Badge } from '@/shared/ui/badge'
 
 // Quản lý người dùng (chỉ ADMIN) — danh sách + tạo/sửa/khóa tài khoản.
 export function UsersPage() {
@@ -110,14 +111,9 @@ export function UsersPage() {
                 <TableCell>{u.name}</TableCell>
                 <TableCell>{USER_ROLE_LABELS[u.role]}</TableCell>
                 <TableCell>
-                  <span
-                    className={cn(
-                      'rounded-full px-2 py-0.5 text-xs font-medium',
-                      u.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500',
-                    )}
-                  >
+                  <Badge variant={u.isActive ? 'success' : 'muted'} className="font-medium">
                     {u.isActive ? 'Hoạt động' : 'Đã khóa'}
-                  </span>
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-center">
                   <RowActionMenu

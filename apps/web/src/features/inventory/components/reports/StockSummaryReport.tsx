@@ -1,6 +1,7 @@
 import type { StockSummaryFilter } from '@app/shared'
 import { useStockSummary } from '../../api/useInventoryReports'
-import { money, periodLabel, quantity, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { money, periodLabel, quantity } from '@/shared/lib/report-format'
+import { StatusRow, tdClass, tdMoney, thClass } from '@/shared/ui/report-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 11

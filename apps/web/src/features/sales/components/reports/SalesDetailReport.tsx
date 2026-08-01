@@ -1,6 +1,7 @@
 import type { SalesReportFilter } from '@app/shared'
 import { useSalesDetailReport } from '../../api/useSalesReports'
-import { formatDate, money, quantity, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { formatDate, money, quantity } from '@/shared/lib/report-format'
+import { StatusRow, tdClass, tdMoney, thClass } from '@/shared/ui/report-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const COL_SPAN = 12

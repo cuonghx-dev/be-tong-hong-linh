@@ -13,7 +13,7 @@ export async function createCashVoucher(
   await page.goto('/cash?tab=txn')
   // exact — tránh match substring với tab "Thu, chi tiền".
   await page.getByRole('button', { name: 'Thêm', exact: true }).click()
-  await page.getByRole('button', { name: isReceipt ? 'Thu tiền' : 'Chi tiền', exact: true }).click()
+  await page.getByRole('menuitem', { name: isReceipt ? 'Thu tiền' : 'Chi tiền', exact: true }).click()
   await expect(page).toHaveURL(/\/cash\/vouchers\/new/)
   await expect(
     page.getByRole('heading', { name: isReceipt ? 'Phiếu thu' : 'Phiếu chi' }),
@@ -82,6 +82,10 @@ export async function fillFirstItemLine(
 // Menu render trong portal trên document.body → item locate trên page, không scope theo row.
 export async function rowMenuAction(page: Page, voucherNo: string, item: string) {
   const row = page.locator('tbody tr', { hasText: voucherNo })
-  await row.getByLabel('Thao tác khác').click()
-  await page.getByRole('button', { name: item, exact: true }).click()
+  // Danh sách có thể refetch ngay sau khi mở menu → item detach giữa chừng. Retry cả khối.
+  await expect(async () => {
+    const menuBtn = row.getByLabel('Thao tác khác')
+    if ((await menuBtn.getAttribute('aria-expanded')) !== 'true') await menuBtn.click()
+    await page.getByRole('menuitem', { name: item, exact: true }).click({ timeout: 2000 })
+  }).toPass({ timeout: 15_000 })
 }

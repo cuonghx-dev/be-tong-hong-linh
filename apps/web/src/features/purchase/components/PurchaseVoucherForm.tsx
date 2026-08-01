@@ -56,6 +56,7 @@ import {
   hasWarehouse,
 } from '../types'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { TabBar } from '@/shared/ui/tab-bar'
 
 interface Props {
   type: PurchaseVoucherType
@@ -504,28 +505,15 @@ export function PurchaseVoucherForm({
       {/* ── Tabs bản ghi (§5.4) — vẫn thuộc lớp tint; mua dịch vụ không có tab
           Hóa đơn (MISA: thông tin HĐ nằm trong sub-tab Thuế) ── */}
       {variant.hasInvoiceTab && (
-        <div className="flex shrink-0 items-center gap-1 border-b border-border bg-primary/5 px-4">
-          {(
-            [
-              { key: 'main', label: variant.mainTab },
-              { key: 'invoice', label: 'Hóa đơn' },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              className={cn(
-                'border-b-2 px-3 py-2 text-sm transition-colors',
-                tab === t.key
-                  ? 'border-primary font-medium text-primary'
-                  : 'border-transparent text-slate-500 hover:text-slate-700',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <TabBar
+          value={tab}
+          onChange={setTab}
+          items={[
+            { key: 'main', label: variant.mainTab },
+            { key: 'invoice', label: 'Hóa đơn' },
+          ]}
+          className="shrink-0 border-b border-border bg-primary/5 px-4"
+        />
       )}
 
       {/* ── Form body (§5.5) — cuộn dọc, 2 lớp màu: thông tin chung tint / bảng hàng trắng ── */}
@@ -683,21 +671,15 @@ export function PurchaseVoucherForm({
           <div className="rounded-md border border-border">
             <div className="flex items-center gap-1 border-b border-border bg-slate-50 px-2">
               {/* Sub-tabs MISA: Hàng tiền/Hạch toán | Chi phí (mua hàng) | Thuế (mua dịch vụ). */}
-              {lineTabs.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setLineTab(t)}
-                  className={cn(
-                    'border-b-2 px-3 py-1.5 text-sm transition-colors',
-                    lineTab === t
-                      ? 'border-primary font-medium text-primary'
-                      : 'border-transparent text-slate-500 hover:text-slate-700',
-                  )}
-                >
-                  {t === 'money' ? variant.lineTab : t === 'cost' ? 'Chi phí' : 'Thuế'}
-                </button>
-              ))}
+              <TabBar
+                size="sm"
+                value={lineTab}
+                onChange={setLineTab}
+                items={lineTabs.map((t) => ({
+                  key: t,
+                  label: t === 'money' ? variant.lineTab : t === 'cost' ? 'Chi phí' : 'Thuế',
+                }))}
+              />
               {/* Chiết khấu chưa hỗ trợ — giữ chỗ đúng vị trí toolbar của MISA. */}
               <div className="ml-auto flex items-center gap-2 py-1">
                 <span className="text-xs text-slate-500">Chiết khấu</span>

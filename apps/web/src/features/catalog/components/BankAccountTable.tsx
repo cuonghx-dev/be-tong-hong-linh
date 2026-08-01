@@ -1,7 +1,6 @@
 import type { BankAccountFilter } from '@app/shared'
 import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { cn } from '@/shared/lib/cn'
 import { AddMenu } from '@/shared/ui/add-menu'
 import { useConfirm } from '@/shared/ui/confirm-dialog'
 import { RefreshIcon, SearchIcon } from '@/shared/ui/icons'
@@ -14,6 +13,8 @@ import { useBankAccounts } from '../api/useBankAccounts'
 import { useDeleteBankAccount, useImportBankAccounts } from '../api/useBankAccountMutations'
 import { BankAccountForm } from './BankAccountForm'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Badge } from '@/shared/ui/badge'
+import { Card } from '@/shared/ui/card'
 
 const PAGE_SIZE = 20
 
@@ -76,7 +77,7 @@ export function BankAccountTable() {
   const closeForm = () => setFormState(null)
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-border bg-white">
+    <Card className="flex h-full flex-col">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
         <input
@@ -179,14 +180,9 @@ export function BankAccountTable() {
                   {r.accountHolder}
                 </TableCell>
                 <TableCell>
-                  <span
-                    className={cn(
-                      'inline-block rounded-full px-2 py-0.5 text-xs',
-                      r.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500',
-                    )}
-                  >
+                  <Badge variant={r.isActive ? 'success' : 'muted'}>
                     {r.isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'}
-                  </span>
+                  </Badge>
                 </TableCell>
                 <TableCell className="sticky right-0 z-10 bg-white shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
@@ -271,6 +267,6 @@ export function BankAccountTable() {
           />
         )}
       </Modal>
-    </div>
+    </Card>
   )
 }

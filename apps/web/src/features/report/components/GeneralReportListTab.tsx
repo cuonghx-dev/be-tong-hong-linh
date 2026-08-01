@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChartIcon, ChevronDownIcon, SearchIcon } from '@/shared/ui/icons'
 import { Input } from '@/shared/ui/input'
 import { GENERAL_REPORT_GROUPS } from '../types'
+import { Card } from '@/shared/ui/card'
 
 // Tab "Báo cáo" phân hệ Tổng hợp: danh mục báo cáo nhóm accordion (như MISA),
 // gồm cả báo cáo các phân hệ khác (link chéo). Click 1 báo cáo → trang xem
@@ -42,15 +43,15 @@ export function GeneralReportListTab() {
 
       <div className="flex flex-col gap-2">
         {groups.length === 0 && (
-          <div className="rounded-lg border border-border bg-white px-3 py-10 text-center text-slate-400">
+          <Card className="px-3 py-10 text-center text-slate-400">
             Không tìm thấy báo cáo phù hợp.
-          </div>
+          </Card>
         )}
         {groups.map((g) => {
           // Đang tìm kiếm thì luôn mở nhóm có kết quả.
           const isOpen = kw !== '' || !collapsed.has(g.title)
           return (
-            <div key={g.title} className="overflow-hidden rounded-lg border border-border bg-white">
+            <Card key={g.title} className="overflow-hidden">
               <button
                 onClick={() => toggle(g.title)}
                 className="flex w-full items-center justify-between bg-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-200"
@@ -75,7 +76,7 @@ export function GeneralReportListTab() {
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
           )
         })}
       </div>

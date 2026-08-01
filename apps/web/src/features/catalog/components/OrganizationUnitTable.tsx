@@ -17,6 +17,8 @@ import {
 } from '../api/useOrganizationUnitMutations'
 import { OrganizationUnitForm } from './OrganizationUnitForm'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Badge } from '@/shared/ui/badge'
+import { Card } from '@/shared/ui/card'
 
 // Danh mục nhỏ → lấy cả bảng 1 lần để dựng cây (max của API).
 const PAGE_SIZE = 200
@@ -123,7 +125,7 @@ export function OrganizationUnitTable() {
   const closeForm = () => setFormState(null)
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-border bg-white">
+    <Card className="flex h-full flex-col">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
         <input
@@ -251,14 +253,9 @@ export function OrganizationUnitTable() {
                 <TableCell className="max-w-[260px] truncate text-slate-600">{r.address}</TableCell>
                 <TableCell className="text-slate-600">{ORG_UNIT_LEVEL_LABELS[r.level]}</TableCell>
                 <TableCell>
-                  <span
-                    className={cn(
-                      'inline-block rounded-full px-2 py-0.5 text-xs',
-                      r.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500',
-                    )}
-                  >
+                  <Badge variant={r.isActive ? 'success' : 'muted'}>
                     {r.isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'}
-                  </span>
+                  </Badge>
                 </TableCell>
                 <TableCell className="sticky right-0 z-10 bg-white shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
@@ -321,6 +318,6 @@ export function OrganizationUnitTable() {
           />
         )}
       </Modal>
-    </div>
+    </Card>
   )
 }

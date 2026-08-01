@@ -9,7 +9,8 @@ import {
 } from '@/shared/ui/select'
 import { AmountInput } from '@/shared/ui/amount-input'
 import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
+import { Field } from '@/shared/ui/field'
+import { Button } from '@/shared/ui/button'
 
 // Giá trị 1 dòng TSCĐ đang soạn trong form (trùng payload lưu).
 export type FixedAssetFormValue = SaveFixedAssetOpeningBalanceLineInput
@@ -89,39 +90,28 @@ export function FixedAssetForm({ initial, existingCodes, onSubmit, onCancel }: P
     })
   }
 
-  const label = 'mb-1 block text-sm font-medium text-slate-600'
-  const field =
-    'h-9 w-full rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div>
-          <Label className={label}>
-            Mã tài sản <span className="text-red-500">*</span>
-          </Label>
+        <Field label="Mã tài sản" required>
           <Input
             value={value.code}
             onChange={(e) => patch({ code: e.target.value })}
             placeholder="vd TRAMTRON"
             autoFocus
           />
-        </div>
-        <div className="sm:col-span-2">
-          <Label className={label}>
-            Tên tài sản <span className="text-red-500">*</span>
-          </Label>
+        </Field>
+        <Field label="Tên tài sản" required className="sm:col-span-2">
           <Input
             value={value.name}
             onChange={(e) => patch({ name: e.target.value })}
             placeholder="Tên tài sản"
           />
-        </div>
+        </Field>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <Label className={label}>Loại tài sản</Label>
+        <Field label="Loại tài sản">
           <Select value={value.assetType} onValueChange={changeType}>
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -134,61 +124,52 @@ export function FixedAssetForm({ initial, existingCodes, onSubmit, onCancel }: P
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div>
-          <Label className={label}>Đơn vị sử dụng</Label>
+        </Field>
+        <Field label="Đơn vị sử dụng">
           <Input
             value={value.department}
             onChange={(e) => patch({ department: e.target.value })}
             placeholder="vd Bộ phận sản xuất"
           />
-        </div>
+        </Field>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div>
-          <Label className={label}>Nguyên giá</Label>
+        <Field label="Nguyên giá">
           <AmountInput value={value.originalCost} onChange={changeOriginalCost} className="h-9" />
-        </div>
-        <div>
-          <Label className={label}>Giá trị tính KH</Label>
+        </Field>
+        <Field label="Giá trị tính KH">
           <AmountInput
             value={value.depreciableValue}
             onChange={(v) => patch({ depreciableValue: v })}
             className="h-9"
           />
-        </div>
-        <div>
-          <Label className={label}>Hao mòn lũy kế</Label>
+        </Field>
+        <Field label="Hao mòn lũy kế">
           <AmountInput
             value={value.accumulatedDepreciation}
             onChange={(v) => patch({ accumulatedDepreciation: v })}
             className="h-9"
           />
-        </div>
+        </Field>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <div>
-          <Label className={label}>
-            Ngày ghi tăng <span className="text-red-500">*</span>
-          </Label>
+        <Field label="Ngày ghi tăng" required>
           <Input
             type="date"
             value={value.acquisitionDate}
             onChange={(e) => patch({ acquisitionDate: e.target.value })}
           />
-        </div>
-        <div>
-          <Label className={label}>Ngày tính KH</Label>
+        </Field>
+        <Field label="Ngày tính KH">
           <Input
             type="date"
             value={value.depreciationDate}
             onChange={(e) => patch({ depreciationDate: e.target.value })}
           />
-        </div>
-        <div>
-          <Label className={label}>Thời gian SD (tháng)</Label>
+        </Field>
+        <Field label="Thời gian SD (tháng)">
           <Input
             type="number"
             min={0}
@@ -198,9 +179,8 @@ export function FixedAssetForm({ initial, existingCodes, onSubmit, onCancel }: P
             placeholder="0"
             className="text-right tabular-nums"
           />
-        </div>
-        <div>
-          <Label className={label}>SD còn lại (tháng)</Label>
+        </Field>
+        <Field label="SD còn lại (tháng)">
           <Input
             type="number"
             min={0}
@@ -210,50 +190,35 @@ export function FixedAssetForm({ initial, existingCodes, onSubmit, onCancel }: P
             placeholder="0"
             className="text-right tabular-nums"
           />
-        </div>
+        </Field>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <Label className={label}>
-            TK nguyên giá <span className="text-red-500">*</span>
-          </Label>
+        <Field label="TK nguyên giá" required>
           <Input
             value={value.assetAccount}
             onChange={(e) => patch({ assetAccount: e.target.value })}
             placeholder="vd 21112"
             className="tabular-nums"
           />
-        </div>
-        <div>
-          <Label className={label}>
-            TK khấu hao <span className="text-red-500">*</span>
-          </Label>
+        </Field>
+        <Field label="TK khấu hao" required>
           <Input
             value={value.depreciationAccount}
             onChange={(e) => patch({ depreciationAccount: e.target.value })}
             placeholder="vd 2141"
             className="tabular-nums"
           />
-        </div>
+        </Field>
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       <div className="mt-2 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-9 rounded-md border border-border px-4 text-sm font-medium text-slate-600 hover:bg-slate-50"
-        >
+        <Button type="button" variant="outline" onClick={onCancel}>
           Hủy
-        </button>
-        <button
-          type="submit"
-          className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-white hover:bg-primary/90"
-        >
-          Lưu
-        </button>
+        </Button>
+        <Button type="submit">Lưu</Button>
       </div>
     </form>
   )

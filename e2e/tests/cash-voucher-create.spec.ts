@@ -7,7 +7,7 @@ test.describe('Tiền mặt — tạo phiếu thu', () => {
 
     // AddMenu "＋ Thêm" → Thu tiền → trang chứng từ full-page.
     await page.getByRole('button', { name: 'Thêm' }).click()
-    await page.getByRole('button', { name: 'Thu tiền' }).click()
+    await page.getByRole('menuitem', { name: 'Thu tiền' }).click()
     await expect(page).toHaveURL(/\/cash\/vouchers\/new/)
     await expect(page.getByRole('heading', { name: 'Phiếu thu' })).toBeVisible()
 

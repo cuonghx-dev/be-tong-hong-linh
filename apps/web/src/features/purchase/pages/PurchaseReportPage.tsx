@@ -16,6 +16,7 @@ import { PurchaseDetailReport } from '../components/reports/PurchaseDetailReport
 import { SupplierPayableDetailReport } from '../components/reports/SupplierPayableDetailReport'
 import { SupplierPayableSummaryReport } from '../components/reports/SupplierPayableSummaryReport'
 import { PURCHASE_REPORTS, type PurchaseReportSlug } from '../types'
+import { Card } from '@/shared/ui/card'
 
 // Preset kỳ báo cáo — chọn preset ghi from/to vào URL params (share link được).
 const PRESETS: { key: string; label: string; range: () => { from: string; to: string } }[] = [
@@ -110,9 +111,9 @@ export function PurchaseReportPage() {
         </div>
 
         {/* Bảng báo cáo — tự cuộn trong khung */}
-        <div className="flex-1 overflow-auto rounded-lg border border-border bg-white">
+        <Card className="flex-1 overflow-auto">
           {renderReport(slug as PurchaseReportSlug, filter)}
-        </div>
+        </Card>
       </div>
     </RecordPageShell>
   )

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AmountInput } from '@/shared/ui/amount-input'
 import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
+import { Field } from '@/shared/ui/field'
+import { Button } from '@/shared/ui/button'
 
 // Giá trị 1 dòng số dư đang soạn trong form.
 export interface BalanceFormValue {
@@ -50,17 +51,10 @@ export function AccountBalanceForm({ initial, isParent, existingCodes, onSubmit,
     })
   }
 
-  const label = 'mb-1 block text-sm font-medium text-slate-600'
-  const field =
-    'h-9 w-full rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div>
-          <Label className={label}>
-            Số tài khoản <span className="text-red-500">*</span>
-          </Label>
+        <Field label="Số tài khoản" required>
           <Input
             value={value.accountCode}
             onChange={(e) => patch({ accountCode: e.target.value })}
@@ -68,38 +62,35 @@ export function AccountBalanceForm({ initial, isParent, existingCodes, onSubmit,
             className="tabular-nums"
             autoFocus
           />
-        </div>
-        <div className="sm:col-span-2">
-          <Label className={label}>Tên tài khoản</Label>
+        </Field>
+        <Field label="Tên tài khoản" className="sm:col-span-2">
           <Input
             value={value.accountName}
             onChange={(e) => patch({ accountName: e.target.value })}
             placeholder="Tên tài khoản"
           />
-        </div>
+        </Field>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <Label className={label}>Dư Nợ</Label>
+        <Field label="Dư Nợ">
           {isParent ? (
-            <div className={`${field} flex items-center justify-end bg-slate-50 tabular-nums text-slate-500`}>
+            <div className="flex h-9 w-full items-center justify-end rounded-md border border-border bg-slate-50 px-3 text-sm tabular-nums text-slate-500">
               {formatCurrency(value.debitAmount)}
             </div>
           ) : (
             <AmountInput value={value.debitAmount} onChange={(v) => patch({ debitAmount: v })} />
           )}
-        </div>
-        <div>
-          <Label className={label}>Dư Có</Label>
+        </Field>
+        <Field label="Dư Có">
           {isParent ? (
-            <div className={`${field} flex items-center justify-end bg-slate-50 tabular-nums text-slate-500`}>
+            <div className="flex h-9 w-full items-center justify-end rounded-md border border-border bg-slate-50 px-3 text-sm tabular-nums text-slate-500">
               {formatCurrency(value.creditAmount)}
             </div>
           ) : (
             <AmountInput value={value.creditAmount} onChange={(v) => patch({ creditAmount: v })} />
           )}
-        </div>
+        </Field>
       </div>
 
       {isParent && (
@@ -110,19 +101,10 @@ export function AccountBalanceForm({ initial, isParent, existingCodes, onSubmit,
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       <div className="mt-2 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-9 rounded-md border border-border px-4 text-sm font-medium text-slate-600 hover:bg-slate-50"
-        >
+        <Button type="button" variant="outline" onClick={onCancel}>
           Hủy
-        </button>
-        <button
-          type="submit"
-          className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-white hover:bg-primary/90"
-        >
-          Lưu
-        </button>
+        </Button>
+        <Button type="submit">Lưu</Button>
       </div>
     </form>
   )

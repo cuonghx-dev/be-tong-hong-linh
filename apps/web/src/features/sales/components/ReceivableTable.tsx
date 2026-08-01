@@ -13,6 +13,7 @@ import {
   type ReceivableFilterValue,
 } from './ReceivableFilterPopover'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Card } from '@/shared/ui/card'
 
 const PAGE_SIZE = 20
 
@@ -77,7 +78,7 @@ export function ReceivableTable() {
   const totalRemaining = rows.reduce((s, r) => s + Number(r.remainingReceivable), 0)
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-border bg-white">
+    <Card className="flex h-full flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
         <ReceivableFilterPopover
           value={{
@@ -234,6 +235,6 @@ export function ReceivableTable() {
       </div>
 
       <CollectPaymentDialog customer={collectFor} onClose={() => setCollectFor(null)} />
-    </div>
+    </Card>
   )
 }

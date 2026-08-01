@@ -31,7 +31,7 @@ test.describe('Bán hàng', () => {
   test('tạo chứng từ bán chưa thu tiền (BH)', async ({ page }) => {
     await page.goto('/sales?tab=sale')
     await page.getByRole('button', { name: 'Thêm', exact: true }).click()
-    await page.getByRole('button', { name: 'Chứng từ bán hàng', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Chứng từ bán hàng', exact: true }).click()
     await expect(page.getByRole('heading', { name: /Chứng từ bán hàng/ })).toBeVisible()
 
     // Không kiêm phiếu xuất — tồn kho seed = 0.
@@ -56,7 +56,7 @@ test.describe('Bán hàng', () => {
   test('tạo chứng từ bán thu tiền mặt ngay (PT)', async ({ page }) => {
     await page.goto('/sales?tab=sale')
     await page.getByRole('button', { name: 'Thêm', exact: true }).click()
-    await page.getByRole('button', { name: 'Chứng từ bán hàng', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Chứng từ bán hàng', exact: true }).click()
 
     await page.getByRole('checkbox', { name: 'Kiêm phiếu xuất' }).uncheck()
     await page.getByRole('radio', { name: 'Thu tiền mặt ngay' }).check()

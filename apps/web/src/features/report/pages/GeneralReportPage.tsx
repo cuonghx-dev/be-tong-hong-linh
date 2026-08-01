@@ -15,6 +15,7 @@ import { Label } from '@/shared/ui/label'
 import { AccountLedgerReport } from '../components/reports/AccountLedgerReport'
 import { GeneralJournalReport } from '../components/reports/GeneralJournalReport'
 import { GENERAL_REPORTS, type GeneralReportSlug } from '../types'
+import { Card } from '@/shared/ui/card'
 
 // Trang xem báo cáo Tổng hợp full-page (§5 design.md). Route: /general/reports/:slug
 // Sổ chi tiết các tài khoản lọc thêm được theo 1 TK (khớp tiền tố: 131 gồm 1311…).
@@ -112,9 +113,9 @@ export function GeneralReportPage() {
         </div>
 
         {/* Bảng báo cáo — tự cuộn trong khung */}
-        <div className="flex-1 overflow-auto rounded-lg border border-border bg-white">
+        <Card className="flex-1 overflow-auto">
           {renderReport(slug as GeneralReportSlug, fromDate, toDate, accountCode)}
-        </div>
+        </Card>
       </div>
     </RecordPageShell>
   )

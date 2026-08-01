@@ -40,6 +40,7 @@ import {
   type GeneralVoucherFormValues,
 } from '../schema'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { TabBar } from '@/shared/ui/tab-bar'
 
 // Vế bút toán của ô đối tượng — dùng để dựng tên field (debitPartnerId / creditPartnerId).
 // 'tax' = ô đối tượng trên dòng kê khai hóa đơn (taxLines.*.partnerId).
@@ -312,14 +313,16 @@ export function GeneralVoucherForm({
 
         {/* Bảng hạch toán / kê khai hóa đơn — lớp nền trắng, 2 tab như MISA */}
         <section className="space-y-2 px-6 py-5">
-          <div role="tablist" className="flex items-center gap-6 border-b border-border pb-2">
-            <TabLink active={tab === 'entry'} onClick={() => setTab('entry')}>
-              Hạch toán
-            </TabLink>
-            <TabLink active={tab === 'tax'} onClick={() => setTab('tax')}>
-              Kê khai hóa đơn và hạch toán thuế
-            </TabLink>
-          </div>
+          <TabBar
+            size="lg"
+            value={tab}
+            onChange={setTab}
+            items={[
+              { key: 'entry', label: 'Hạch toán' },
+              { key: 'tax', label: 'Kê khai hóa đơn và hạch toán thuế' },
+            ]}
+            className="border-b border-border pb-2"
+          />
 
           <div className={cn('space-y-2', tab !== 'entry' && 'hidden')}>
           <div className="overflow-x-auto rounded-md border border-border">
@@ -744,34 +747,3 @@ export function GeneralVoucherForm({
 // ── Local UI bits ─────────────────────────────────────────────────────────
 
 // Tab bảng dữ liệu (Hạch toán / Kê khai hóa đơn) — link kiểu MISA, gạch chân tab đang mở.
-function TabLink({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  // div + role thay vì <button>: nằm trong <fieldset disabled> (chế độ xem) nên
-  // control thật sẽ bị chặn click — vẫn phải xem được tab kê khai.
-  return (
-    <div
-      role="tab"
-      aria-selected={active}
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') onClick()
-      }}
-      className={cn(
-        '-mb-2 cursor-pointer select-none border-b-2 pb-2 text-base font-semibold transition-colors',
-        active
-          ? 'border-primary text-primary'
-          : 'border-transparent text-slate-500 hover:text-slate-700',
-      )}
-    >
-      {children}
-    </div>
-  )
-}

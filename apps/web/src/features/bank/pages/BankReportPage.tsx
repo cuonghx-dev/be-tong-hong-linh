@@ -17,6 +17,7 @@ import { BankBalancesReport } from '../components/reports/BankBalancesReport'
 import { BankBookReport } from '../components/reports/BankBookReport'
 import { BankDailyBalanceReport } from '../components/reports/BankDailyBalanceReport'
 import { BANK_REPORTS, type BankReportSlug } from '../types'
+import { Card } from '@/shared/ui/card'
 
 // Trang xem báo cáo tiền gửi full-page (§5 design.md). Route: /bank/reports/:slug
 // Bảng kê số dư ngân hàng chỉ dùng mốc "đến ngày"; sổ tiền gửi lọc thêm theo TKNH.
@@ -120,13 +121,13 @@ export function BankReportPage() {
         </div>
 
         {/* Bảng báo cáo — tự cuộn trong khung */}
-        <div className="flex-1 overflow-auto rounded-lg border border-border bg-white">
+        <Card className="flex-1 overflow-auto">
           {renderReport(slug as BankReportSlug, {
             fromDate,
             toDate,
             bankAccountNo: bankAccountNo || undefined,
           })}
-        </div>
+        </Card>
       </div>
     </RecordPageShell>
   )

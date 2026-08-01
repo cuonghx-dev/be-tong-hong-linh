@@ -1,6 +1,7 @@
 import type { AccountLedgerFilter, AccountLedgerSectionDto } from '@app/shared'
 import { useAccountLedger } from '../../api/useGeneralReports'
-import { formatDate, money, periodLabel, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { formatDate, money, periodLabel } from '@/shared/lib/report-format'
+import { StatusRow, tdClass, tdMoney, thClass } from '@/shared/ui/report-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // S03b-DNN: Sổ chi tiết các tài khoản — mỗi TK 1 section: dư đầu kỳ, dòng phát

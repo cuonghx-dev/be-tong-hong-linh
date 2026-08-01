@@ -25,6 +25,7 @@ import { PAYMENT_STATUS_LABEL } from '../types'
 import { IssueInvoiceDialog } from './IssueInvoiceDialog'
 import { SalesFilterPopover, type SalesFilterValue } from './SalesFilterPopover'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Card } from '@/shared/ui/card'
 
 const PAGE_SIZE = 20
 
@@ -119,7 +120,7 @@ export function SalesVoucherTable() {
   }
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-border bg-white">
+    <Card className="flex h-full flex-col">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
         <SalesFilterPopover
@@ -361,7 +362,7 @@ export function SalesVoucherTable() {
       </div>
 
       <IssueInvoiceDialog voucher={issueFor} onClose={() => setIssueFor(null)} />
-    </div>
+    </Card>
   )
 }
 

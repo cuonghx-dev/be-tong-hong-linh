@@ -25,7 +25,7 @@ test.describe('Danh mục', () => {
 
     // Thêm mới qua AddMenu.
     await page.getByRole('button', { name: 'Thêm', exact: true }).click()
-    await page.getByRole('button', { name: 'Đơn vị tính', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Đơn vị tính', exact: true }).click()
     const dialog = page.getByRole('dialog')
     await expect(dialog.getByText('Thông tin đơn vị tính')).toBeVisible()
     await fieldInputIn(dialog, page, 'Đơn vị tính').fill(NAME)
@@ -40,7 +40,7 @@ test.describe('Danh mục', () => {
     await expect(async () => {
       const menuBtn = row.getByLabel('Thao tác khác')
       if (await menuBtn.getAttribute('aria-expanded') !== 'true') await menuBtn.click()
-      await page.getByRole('button', { name: 'Xóa', exact: true }).click({ timeout: 2000 })
+      await page.getByRole('menuitem', { name: 'Xóa', exact: true }).click({ timeout: 2000 })
     }).toPass({ timeout: 15_000 })
     await expect(page.getByRole('alertdialog')).toContainText(`Xóa đơn vị tính ${NAME}?`)
     await page.getByRole('alertdialog').getByRole('button', { name: 'Xóa', exact: true }).click()

@@ -1,7 +1,8 @@
 import type { PurchaseReportFilter } from '@app/shared'
 import { useSearchParams } from 'react-router-dom'
 import { usePurchaseDetailReport } from '../../api/usePurchaseReports'
-import { formatDate, money, periodLabel, quantity, StatusRow, tdClass, tdMoney, thClass } from './report-utils'
+import { formatDate, money, periodLabel, quantity } from '@/shared/lib/report-format'
+import { StatusRow, tdClass, tdMoney, thClass } from '@/shared/ui/report-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 const PAGE_SIZE = 20
