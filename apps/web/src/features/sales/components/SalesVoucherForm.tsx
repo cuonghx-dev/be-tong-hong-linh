@@ -247,7 +247,8 @@ export function SalesVoucherForm({
       // Nhân bản → ngày về hôm nay (chứng từ mới), sửa → giữ nguyên ngày gốc.
       postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
-      customerId: v.customerId ?? undefined,
+      // Picker Mã KH làm việc bằng MÃ danh mục — customerId của DTO là row id.
+      customerId: v.customerCode ?? undefined,
       customerName: v.customerName ?? '',
       taxCode: v.taxCode ?? undefined,
       contactPerson: v.contactPerson ?? undefined,

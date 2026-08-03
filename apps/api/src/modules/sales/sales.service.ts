@@ -127,7 +127,8 @@ export class SalesService {
           (l.itemId ? (byId.get(l.itemId) ?? byCode.get(l.itemId)) : undefined) ??
           (l.itemName ? byName.get(l.itemName) : undefined)
         return {
-          itemId: p?.id ?? l.itemId,
+          // itemId trên dòng phiếu xuất = MÃ VTHH (FE hiển thị + báo cáo tồn kho lọc theo mã).
+          itemId: p?.code ?? l.itemId,
           itemName: l.itemName ?? p?.name ?? null,
           // Ưu tiên giá trị nhập ở tab Giá vốn; trống → dữ liệu ngầm định của VTHH.
           warehouseId: l.warehouseId ?? p?.defaultWarehouseCode ?? null,
@@ -629,6 +630,8 @@ function toVoucherDto(v: VoucherWithRelations) {
     postingDate: toDateOnly(v.postingDate),
     voucherDate: toDateOnly(v.voucherDate),
     customerId: v.customerId,
+    // Mã KH (danh mục) cho picker FE — customerId là row id, không hiển thị được.
+    customerCode: v.customer?.code ?? null,
     customerName: v.customerName,
     taxCode: v.taxCode,
     contactPerson: v.contactPerson,

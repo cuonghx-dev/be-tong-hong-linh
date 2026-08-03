@@ -15,7 +15,11 @@ import { GoodsIssueFilterDto } from './dto/goods-issue-filter.dto'
 import { UpdateGoodsIssueDto } from './dto/update-goods-issue.dto'
 import { parseGoodsIssueXlsx } from './goods-issue-import'
 
-type IssueWithLines = GoodsIssueVoucher & { lines: GoodsIssueLine[] }
+type IssueWithLines = GoodsIssueVoucher & {
+  lines: GoodsIssueLine[]
+  // Mã KH (danh mục) — customerId là row id, FE cần code cho picker "Mã khách hàng".
+  customer?: { code: string } | null
+}
 
 @Injectable()
 export class GoodsIssueService {
@@ -43,7 +47,7 @@ export class GoodsIssueService {
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.goodsIssueVoucher.findMany({
         where,
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: { lines: { orderBy: { lineNo: 'asc' } }, customer: { select: { code: true } } },
         orderBy: [{ postingDate: 'desc' }, { createdAt: 'desc' }],
         skip: (filter.page - 1) * filter.pageSize,
         take: filter.pageSize,
@@ -60,7 +64,7 @@ export class GoodsIssueService {
   async findOne(id: string) {
     const issue = await this.prisma.goodsIssueVoucher.findUnique({
       where: { id },
-      include: { lines: { orderBy: { lineNo: 'asc' } } },
+      include: { lines: { orderBy: { lineNo: 'asc' } }, customer: { select: { code: true } } },
     })
     if (!issue) throw new NotFoundException(`Không tìm thấy phiếu xuất kho ${id}`)
     return toIssueDto(issue)
@@ -72,6 +76,25 @@ export class GoodsIssueService {
     const date = voucherDate ? new Date(voucherDate) : new Date()
     const voucherNo = await nextVoucherNo(this.prisma, date)
     return { voucherNo }
+  }
+
+  // FE gửi MÃ khách hàng (code) từ picker, còn FK customer_id tham chiếu customers(id) —
+  // chấp nhận cả hai: uuid dùng thẳng, còn lại tra theo mã.
+  private async resolveCustomerRowId(
+    tx: Prisma.TransactionClient,
+    customerId?: string | null,
+  ): Promise<string | null> {
+    if (!customerId) return null
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      customerId,
+    )
+    const customer = await tx.customer.findUnique({
+      where: isUuid ? { id: customerId } : { code: customerId },
+    })
+    if (!customer) {
+      throw new BadRequestException(`Khách hàng "${customerId}" không tồn tại trong danh mục`)
+    }
+    return customer.id
   }
 
   async create(dto: CreateGoodsIssueDto) {
@@ -86,7 +109,7 @@ export class GoodsIssueService {
           voucherNo,
           postingDate: new Date(dto.postingDate),
           voucherDate: new Date(dto.voucherDate),
-          customerId: dto.customerId ?? null,
+          customerId: await this.resolveCustomerRowId(tx, dto.customerId),
           customerName: dto.customerName ?? null,
           receiver: dto.receiver ?? null,
           address: dto.address ?? null,
@@ -99,7 +122,7 @@ export class GoodsIssueService {
           totalAmount,
           lines: { create: lines },
         },
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: { lines: { orderBy: { lineNo: 'asc' } }, customer: { select: { code: true } } },
       })
     })
     return toIssueDto(created)
@@ -114,7 +137,9 @@ export class GoodsIssueService {
       const data: Prisma.GoodsIssueVoucherUncheckedUpdateInput = {
         postingDate: dto.postingDate ? new Date(dto.postingDate) : undefined,
         voucherDate: dto.voucherDate ? new Date(dto.voucherDate) : undefined,
-        customerId: dto.customerId ?? undefined,
+        customerId: dto.customerId
+          ? await this.resolveCustomerRowId(tx, dto.customerId)
+          : undefined,
         customerName: dto.customerName ?? undefined,
         receiver: dto.receiver ?? undefined,
         address: dto.address ?? undefined,
@@ -137,7 +162,7 @@ export class GoodsIssueService {
       return tx.goodsIssueVoucher.update({
         where: { id },
         data,
-        include: { lines: { orderBy: { lineNo: 'asc' } } },
+        include: { lines: { orderBy: { lineNo: 'asc' } }, customer: { select: { code: true } } },
       })
     })
     return toIssueDto(updated)
@@ -152,7 +177,7 @@ export class GoodsIssueService {
     const updated = await this.prisma.goodsIssueVoucher.update({
       where: { id },
       data: { posted },
-      include: { lines: { orderBy: { lineNo: 'asc' } } },
+      include: { lines: { orderBy: { lineNo: 'asc' } }, customer: { select: { code: true } } },
     })
     return toIssueDto(updated)
   }
@@ -434,6 +459,8 @@ function toIssueDto(v: IssueWithLines) {
     postingDate: toDateOnly(v.postingDate)!,
     voucherDate: toDateOnly(v.voucherDate)!,
     customerId: v.customerId,
+    // Mã KH (danh mục) cho picker FE — customerId là row id, không hiển thị được.
+    customerCode: v.customer?.code ?? null,
     customerName: v.customerName,
     receiver: v.receiver,
     address: v.address,

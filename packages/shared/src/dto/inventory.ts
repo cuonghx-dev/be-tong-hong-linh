@@ -112,7 +112,8 @@ export interface GoodsIssueDto {
   voucherNo: string // vd XK10601/2025
   postingDate: string // Ngày hạch toán (ISO date-only)
   voucherDate: string // Ngày chứng từ
-  customerId: string | null // Mã khách hàng
+  customerId: string | null // row id danh mục KH (FK)
+  customerCode: string | null // Mã khách hàng (danh mục) — dùng cho picker
   customerName: string | null // Tên khách hàng
   receiver: string | null // Người nhận (sản xuất: Tên người nhận)
   address: string | null // Địa chỉ

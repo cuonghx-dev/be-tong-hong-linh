@@ -50,7 +50,8 @@ export interface SalesVoucherDto {
   isPosInvoice: boolean // Là hóa đơn từ máy tính tiền
   postingDate: string // Ngày hạch toán (ISO date-only)
   voucherDate: string // Ngày chứng từ
-  customerId: string | null
+  customerId: string | null // row id danh mục KH (FK)
+  customerCode: string | null // mã KH danh mục — dùng cho picker "Mã khách hàng"
   customerName: string | null
   taxCode: string | null // MST/CCCD
   contactPerson: string | null // Người liên hệ

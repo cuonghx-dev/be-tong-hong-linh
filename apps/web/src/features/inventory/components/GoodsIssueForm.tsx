@@ -195,7 +195,8 @@ export function GoodsIssueForm({
       // Nhân bản → ngày về hôm nay (phiếu mới), sửa → giữ nguyên ngày gốc.
       postingDate: duplicating ? today() : v.postingDate.slice(0, 10),
       voucherDate: duplicating ? today() : v.voucherDate.slice(0, 10),
-      customerId: v.customerId ?? undefined,
+      // Picker Mã KH làm việc bằng MÃ danh mục — customerId của DTO là row id.
+      customerId: v.customerCode ?? undefined,
       customerName: v.customerName ?? undefined,
       receiver: v.receiver ?? undefined,
       address: v.address ?? undefined,
