@@ -7,7 +7,15 @@ export interface ParsedBankAccountBalance {
 }
 
 // Tên cột cần tìm trong header (theo file MISA số dư tài khoản ngân hàng và biến thể).
-const CODE_COLS = ['Số tài khoản', 'Số tài khoản ngân hàng', 'Số hiệu tài khoản', 'Số TK']
+// "Số tài khoản" để cuối: file MISA có cả cột "Số TK ngân hàng" (số TK thật) lẫn
+// "Số tài khoản" (mã TK kế toán 112x) — phải ưu tiên cột số TK ngân hàng.
+const CODE_COLS = [
+  'Số TK ngân hàng',
+  'Số tài khoản ngân hàng',
+  'Số hiệu tài khoản',
+  'Số TK',
+  'Số tài khoản',
+]
 const DEBIT_COLS = ['Dư Nợ', 'Số dư Nợ', 'Dư nợ đầu kỳ', 'Số dư nợ đầu kỳ']
 const CREDIT_COLS = ['Dư Có', 'Số dư Có', 'Dư có đầu kỳ', 'Số dư có đầu kỳ']
 // Cột số dư gộp 1 giá trị (dương → Dư Nợ, âm → Dư Có) khi file không tách Nợ/Có.
