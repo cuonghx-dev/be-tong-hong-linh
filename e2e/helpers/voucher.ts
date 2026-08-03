@@ -48,8 +48,12 @@ export async function fillFirstItemLine(
   await itemInput.click()
   // Panel picker tự đóng khi có scroll (listener capture) — race không tránh được
   // bằng 1 lượt gõ. Retry: xóa keyword + gõ lại (ký tự đầu tự mở lại panel qua onChange),
-  // rồi click cell mã hàng (cell text chỉ tồn tại trong bảng dropdown, panel fixed).
-  const cell = page.getByRole('cell', { name: itemCode, exact: true })
+  // rồi click cell mã hàng. Scope theo [data-picker-panel] (panel portal ra body):
+  // ô nhập trên dòng hàng cũng là cell có accessible name = giá trị đã gõ → strict violation
+  // nếu tra cell trên toàn page.
+  const cell = page
+    .locator('[data-picker-panel]')
+    .getByRole('cell', { name: itemCode, exact: true })
   for (let attempt = 0; ; attempt++) {
     await itemInput.press('ControlOrMeta+a')
     await itemInput.press('Backspace')
