@@ -1,4 +1,7 @@
+import { useOnboardingStore } from '@/features/onboarding'
 import { ModuleContent, type ModuleTab } from '@/layouts/ModuleContent'
+import { Button } from '@/shared/ui/button'
+import { PlayIcon } from '@/shared/ui/icons'
 import { CashflowWidget } from '../components/CashflowWidget'
 import { PayableAgingWidget, ReceivableAgingWidget } from '../components/DebtAgingWidget'
 import { ExpenseWidget } from '../components/ExpenseWidget'
@@ -32,5 +35,17 @@ function OverviewTab() {
 const TABS: ModuleTab[] = [{ key: 'overview', label: 'Tổng quan', render: () => <OverviewTab /> }]
 
 export function HomePage() {
-  return <ModuleContent tabs={TABS} defaultTab="overview" />
+  const openTutorial = useOnboardingStore((s) => s.setOpen)
+  return (
+    <ModuleContent
+      tabs={TABS}
+      defaultTab="overview"
+      actions={
+        <Button size="sm" className="mr-1" onClick={() => openTutorial(true)}>
+          <PlayIcon size={14} fill="currentColor" />
+          Bắt đầu sử dụng
+        </Button>
+      }
+    />
+  )
 }

@@ -11,7 +11,16 @@ export interface ModuleTab {
 
 // Khung "tabs trên + content dưới" cho mỗi phân hệ (§2 design.md).
 // Tab đang mở lưu ở URL `?tab=` (share link, back/forward) — không dùng state cục bộ.
-export function ModuleContent({ tabs, defaultTab }: { tabs: ModuleTab[]; defaultTab?: string }) {
+export function ModuleContent({
+  tabs,
+  defaultTab,
+  actions,
+}: {
+  tabs: ModuleTab[]
+  defaultTab?: string
+  /** Nút hành động riêng của phân hệ, đặt bên phải tabs bar (trước Help/Settings). */
+  actions?: ReactNode
+}) {
   const [params, setParams] = useSearchParams()
   const requested = params.get('tab') ?? defaultTab ?? tabs[0]?.key
   // `?tab=` không hợp lệ → rơi về tab đầu (active luôn khớp tab đang render).
@@ -33,6 +42,7 @@ export function ModuleContent({ tabs, defaultTab }: { tabs: ModuleTab[]; default
           className="overflow-x-auto"
         />
         <div className="ml-auto flex items-center gap-1 pl-2">
+          {actions}
           <button className="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:bg-slate-100">
             <HelpIcon size={18} />
           </button>

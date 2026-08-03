@@ -19,6 +19,7 @@ import {
   ListFilter,
   Minus,
   PanelLeft,
+  Play,
   Plus,
   ReceiptText,
   RefreshCw,
@@ -74,6 +75,7 @@ export const BuildingIcon = icon(Building2)
 export const LayersIcon = icon(Layers)
 export const SigmaIcon = icon(Sigma)
 export const PanelLeftIcon = icon(PanelLeft)
+export const PlayIcon = icon(Play)
 export const XIcon = icon(X)
 export const TrashIcon = icon(Trash2)
 export const SparkleIcon = icon(Sparkles)
