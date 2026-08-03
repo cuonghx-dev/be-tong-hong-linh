@@ -255,7 +255,8 @@ export class ReceivableService {
       const input = {
         postingDate: new Date(dto.postingDate),
         voucherDate: new Date(dto.voucherDate),
-        customerId: customer.id,
+        // partnerId trên phiếu thu = MÃ khách hàng (FE hiển thị trực tiếp).
+        customerCode: customer.code,
         customerName: customer.name,
         address: customer.address,
         reason: dto.description ?? `Thu tiền khách hàng ${customer.name}`,

@@ -14,6 +14,8 @@ import { UpdateSalesVoucherDto } from './dto/update-sales-voucher.dto'
 
 type VoucherWithRelations = SalesVoucher & {
   lines: SalesVoucherLine[]
+  // Mã KH (danh mục) — customerId là row id, PT tự sinh cần code cho partnerId.
+  customer?: { code: string } | null
   // Đối trừ thu tiền sau, chỉ dòng có nguồn đã ghi sổ (xem VOUCHER_INCLUDE) —
   // vắng mặt (create/update trả về) = coi như chưa có đối trừ.
   allocations?: { amount: Prisma.Decimal }[]
@@ -23,6 +25,7 @@ type VoucherWithRelations = SalesVoucher & {
 // ghi sổ (nguồn tiền posted) để tính TT thanh toán.
 const VOUCHER_INCLUDE = {
   lines: { orderBy: { lineNo: 'asc' } },
+  customer: { select: { code: true } },
   allocations: {
     where: { OR: [{ cashVoucher: { posted: true } }, { bankVoucher: { posted: true } }] },
     select: { amount: true },
@@ -493,7 +496,7 @@ function buildReceiptCore(v: VoucherWithRelations) {
   return {
     postingDate: v.postingDate,
     voucherDate: v.voucherDate,
-    customerId: v.customerId,
+    customerCode: v.customer?.code ?? null,
     customerName: v.customerName,
     address: v.address,
     reason: `Thu tiền bán hàng${v.customerName ? ` ${v.customerName}` : ''} theo chứng từ ${v.voucherNo}`,

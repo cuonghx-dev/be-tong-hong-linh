@@ -601,7 +601,7 @@ function buildPaymentCore(v: VoucherWithLines) {
   return {
     postingDate: v.postingDate,
     voucherDate: v.voucherDate,
-    supplierId: v.supplierId,
+    supplierCode: v.supplier?.code ?? null,
     supplierName: v.supplierName,
     address: v.address,
     // Diễn giải theo mẫu MISA: "Chi tiền mua hàng của <NCC> theo hóa đơn số <n>".
@@ -629,7 +629,7 @@ function buildReceiptInput(v: VoucherWithLines): PurchaseReceiptInput {
   return {
     postingDate: v.postingDate,
     voucherDate: v.voucherDate,
-    supplierId: v.supplierId,
+    supplierCode: v.supplier?.code ?? null,
     supplierName: v.supplierName,
     address: v.address,
     deliverer: v.deliverer,
