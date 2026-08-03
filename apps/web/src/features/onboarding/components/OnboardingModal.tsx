@@ -25,7 +25,7 @@ export function OnboardingModal() {
   const dismissed = useOnboardingStore((s) => (userId ? !!s.dismissed[userId] : false))
   const reportViewed = useOnboardingStore((s) => (userId ? !!s.reportViewed[userId] : false))
 
-  const { data } = useOnboardingProgress(!!userId && (!dismissed || open))
+  const { data, refetch } = useOnboardingProgress(!!userId && (!dismissed || open))
   const [activeKey, setActiveKey] = useState(ONBOARDING_STEPS[0]!.key)
 
   // Ẩn task ngoài quyền của vai trò → checklist vẫn có thể đạt 100%.
@@ -51,9 +51,11 @@ export function OnboardingModal() {
     setOpen(true)
   }, [data, autoOpened, dismissed, complete, pathname, markAutoOpened, setOpen])
 
-  // Mở modal → nhảy tới bước dở dang đầu tiên.
+  // Mở modal → refetch tiến độ (query mounted sẵn ở AppShell nên không tự refetch,
+  // dữ liệu có thể đã đổi sau các thao tác trước đó) + nhảy tới bước dở dang đầu tiên.
   useEffect(() => {
     if (!open) return
+    void refetch()
     const next = steps.find((s) => s.done < s.tasks.length) ?? steps[0]
     if (next) setActiveKey(next.key)
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
