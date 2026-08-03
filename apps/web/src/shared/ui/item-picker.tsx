@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/shared/lib/cn'
-import { ChevronDownIcon, SearchIcon } from '@/shared/ui/icons'
+import { ChevronDownIcon } from '@/shared/ui/icons'
 import { Input } from '@/shared/ui/input'
+import { PickerPanel } from '@/shared/ui/picker-panel'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 
 // VTHH chọn được trong picker (§ Mã hàng — MISA).
@@ -135,11 +136,7 @@ export function ItemPicker({
       />
 
       {open && (
-        <div
-          ref={panelRef}
-          style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width }}
-          className="z-50 overflow-hidden rounded-md border border-border bg-white shadow-lg"
-        >
+        <PickerPanel ref={panelRef} pos={pos} anchor={inputRef.current} minWidth={480}>
           <div className="max-h-72 overflow-auto">
             <Table>
               <TableHeader>
@@ -186,10 +183,7 @@ export function ItemPicker({
               </TableBody>
             </Table>
           </div>
-          <div className="flex items-center gap-1.5 border-t border-border bg-slate-50 px-3 py-1.5 text-xs text-slate-400">
-            <SearchIcon size={13} /> Tìm nhanh theo mã / tên
-          </div>
-        </div>
+        </PickerPanel>
       )}
     </div>
   )
