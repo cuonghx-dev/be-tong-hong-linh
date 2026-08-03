@@ -172,7 +172,8 @@ export class ReceiptService {
         voucherNo: p.voucherNo,
         postingDate: p.date,
         voucherDate: p.date,
-        partnerId: supplier?.id ?? null,
+        // partnerId trên phiếu = MÃ đối tượng (FE hiển thị trực tiếp), không phải UUID.
+        partnerId: supplier?.code ?? null,
         partnerName: supplier?.name ?? supplierName,
         deliverer: p.deliverer,
         description: p.description ?? 'Nhập kho',
@@ -309,7 +310,8 @@ export class ReceiptService {
 export type PurchaseReceiptInput = {
   postingDate: Date
   voucherDate: Date
-  supplierId: string | null
+  // MÃ nhà cung cấp (danh mục) — partnerId trên phiếu là mã hiển thị, không phải row id.
+  supplierCode: string | null
   supplierName: string | null
   address: string | null
   deliverer: string | null
@@ -336,7 +338,7 @@ function purchaseReceiptData(
   return {
     postingDate: input.postingDate,
     voucherDate: input.voucherDate,
-    partnerId: input.supplierId,
+    partnerId: input.supplierCode,
     partnerName: input.supplierName,
     address: input.address,
     deliverer: input.deliverer,

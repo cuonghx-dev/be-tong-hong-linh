@@ -208,9 +208,10 @@ export class BankService {
         voucherDate: p.date,
         bankAccountNo: p.bankAccountNo,
         partnerType: resolved?.type ?? null,
-        partnerId: resolved?.id ?? null,
+        // partnerId trên chứng từ = MÃ đối tượng (FE hiển thị trực tiếp), không phải UUID.
+        partnerId: resolved?.code ?? null,
         partnerName: p.partnerName,
-        employeeId: resolved?.type === PartnerType.EMPLOYEE ? resolved.id : null,
+        employeeId: resolved?.type === PartnerType.EMPLOYEE ? resolved.code : null,
         reason: p.reason,
         totalAmount: new Prisma.Decimal(p.amount),
         branchId: p.branchId,
@@ -226,7 +227,7 @@ export class BankService {
         debitAccount: isReceipt ? CHART_OF_ACCOUNTS.BANK_DEPOSIT : counter,
         creditAccount: isReceipt ? counter : CHART_OF_ACCOUNTS.BANK_DEPOSIT,
         amount: new Prisma.Decimal(p.amount),
-        partnerId: resolved?.id ?? null,
+        partnerId: resolved?.code ?? null,
         partnerName: p.partnerName,
       })
     }
@@ -298,7 +299,8 @@ export class BankService {
 export type BankCustomerReceiptInput = {
   postingDate: Date
   voucherDate: Date
-  customerId: string | null
+  // MÃ khách hàng (danh mục) — partnerId trên chứng từ là mã hiển thị, không phải row id.
+  customerCode: string | null
   customerName: string | null
   address: string | null
   reason: string
@@ -317,7 +319,7 @@ function customerReceiptData(input: BankCustomerReceiptInput) {
     bankAccountNo: input.bankAccountNo,
     bankName: input.bankName,
     partnerType: PartnerType.CUSTOMER,
-    partnerId: input.customerId,
+    partnerId: input.customerCode,
     partnerName: input.customerName,
     address: input.address,
     reason: input.reason,
@@ -334,7 +336,7 @@ function customerReceiptLines(input: BankCustomerReceiptInput) {
     debitAccount: CHART_OF_ACCOUNTS.BANK_DEPOSIT,
     creditAccount: l.creditAccount,
     amount: l.amount,
-    partnerId: input.customerId,
+    partnerId: input.customerCode,
     partnerName: input.customerName,
   }))
 }

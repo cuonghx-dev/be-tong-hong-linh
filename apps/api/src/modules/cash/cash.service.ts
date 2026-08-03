@@ -250,9 +250,10 @@ export class CashService {
         postingDate: p.date,
         voucherDate: p.date,
         partnerType: resolved?.type ?? null,
-        partnerId: resolved?.id ?? null,
+        // partnerId trên chứng từ = MÃ đối tượng (FE hiển thị trực tiếp), không phải UUID.
+        partnerId: resolved?.code ?? null,
         partnerName: p.partnerName,
-        employeeId: resolved?.type === PartnerType.EMPLOYEE ? resolved.id : null,
+        employeeId: resolved?.type === PartnerType.EMPLOYEE ? resolved.code : null,
         reason: p.reason,
         totalAmount: new Prisma.Decimal(p.amount),
         branchId: p.branchId,
@@ -269,7 +270,7 @@ export class CashService {
         debitAccount: isReceipt ? CHART_OF_ACCOUNTS.CASH_ON_HAND : counter,
         creditAccount: isReceipt ? counter : CHART_OF_ACCOUNTS.CASH_ON_HAND,
         amount: new Prisma.Decimal(p.amount),
-        partnerId: resolved?.id ?? null,
+        partnerId: resolved?.code ?? null,
         partnerName: p.partnerName,
       })
     }
@@ -480,7 +481,8 @@ export class CashService {
 export type SalesReceiptInput = {
   postingDate: Date
   voucherDate: Date
-  customerId: string | null
+  // MÃ khách hàng (danh mục) — partnerId trên phiếu là mã hiển thị, không phải row id.
+  customerCode: string | null
   customerName: string | null
   address: string | null
   reason: string
@@ -495,7 +497,7 @@ function salesReceiptData(input: SalesReceiptInput) {
     postingDate: input.postingDate,
     voucherDate: input.voucherDate,
     partnerType: PartnerType.CUSTOMER,
-    partnerId: input.customerId,
+    partnerId: input.customerCode,
     partnerName: input.customerName,
     payerReceiver: input.customerName,
     address: input.address,
@@ -513,7 +515,7 @@ function salesReceiptLines(input: SalesReceiptInput) {
     debitAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND,
     creditAccount: l.creditAccount,
     amount: l.amount,
-    partnerId: input.customerId,
+    partnerId: input.customerCode,
     partnerName: input.customerName,
   }))
 }
@@ -529,7 +531,8 @@ export type PurchasePaymentInput = {
   category: CashVoucherCategory // PURCHASE_SERVICE_CASH | PURCHASE_GOODS_CASH
   postingDate: Date
   voucherDate: Date
-  supplierId: string | null
+  // MÃ nhà cung cấp (danh mục) — partnerId trên phiếu là mã hiển thị, không phải row id.
+  supplierCode: string | null
   supplierName: string | null
   address: string | null
   reason: string
@@ -544,7 +547,7 @@ function purchasePaymentData(input: PurchasePaymentInput) {
     postingDate: input.postingDate,
     voucherDate: input.voucherDate,
     partnerType: PartnerType.SUPPLIER,
-    partnerId: input.supplierId,
+    partnerId: input.supplierCode,
     partnerName: input.supplierName,
     payerReceiver: input.supplierName,
     address: input.address,
@@ -562,7 +565,7 @@ function purchasePaymentLines(input: PurchasePaymentInput) {
     debitAccount: l.debitAccount,
     creditAccount: CHART_OF_ACCOUNTS.CASH_ON_HAND,
     amount: l.amount,
-    partnerId: input.supplierId,
+    partnerId: input.supplierCode,
     partnerName: input.supplierName,
   }))
 }
