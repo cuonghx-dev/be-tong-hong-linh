@@ -30,7 +30,6 @@ export enum CashVoucherCategory {
   PaymentEmployeeAdvance = 'PAYMENT_EMPLOYEE_ADVANCE', // 1. Tạm ứng cho nhân viên (Nợ 141)
   PaymentPurchaseWithInvoice = 'PAYMENT_PURCHASE_WITH_INVOICE', // 2. Chi mua ngoài có hóa đơn (Nợ tự nhập)
   DepositToBank = 'DEPOSIT_TO_BANK', // 3. Gửi tiền vào ngân hàng (Nợ 1121)
-  PaymentSalaryAdvance = 'PAYMENT_SALARY_ADVANCE', // Trả lương tạm ứng cho nhân viên (Nợ 3341)
   Payment = 'PAYMENT', // 4. Chi khác (Nợ tự nhập)
   PurchaseServiceCash = 'PURCHASE_SERVICE_CASH', // Chứng từ mua dịch vụ - Tiền mặt (PC tự sinh)
   PurchaseGoodsCash = 'PURCHASE_GOODS_CASH', // Mua hàng trong nước không qua kho - Tiền mặt (PC tự sinh)

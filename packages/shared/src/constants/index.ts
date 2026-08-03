@@ -54,7 +54,6 @@ export const CASH_RECEIPT_CREDIT_ACCOUNT: Readonly<Record<string, string>> = {
 export const CASH_PAYMENT_DEBIT_ACCOUNT: Readonly<Record<string, string>> = {
   PAYMENT_EMPLOYEE_ADVANCE: CHART_OF_ACCOUNTS.ADVANCE, // 141
   DEPOSIT_TO_BANK: CHART_OF_ACCOUNTS.BANK_DEPOSIT, // 1121
-  PAYMENT_SALARY_ADVANCE: CHART_OF_ACCOUNTS.SALARY_PAYABLE_EMPLOYEE, // 3341 (trả lương tạm ứng)
   PURCHASE_SERVICE_CASH: CHART_OF_ACCOUNTS.SERVICE_EXPENSE, // 642 (mua dịch vụ trả tiền mặt)
   PURCHASE_GOODS_CASH: CHART_OF_ACCOUNTS.GOODS, // 156 (mua hàng không qua kho trả tiền mặt)
   PAYMENT: CHART_OF_ACCOUNTS.OTHER_EXPENSE, // 811 (phiếu chi / chi khác không phân loại)

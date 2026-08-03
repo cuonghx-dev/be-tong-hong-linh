@@ -185,7 +185,7 @@ export function CashVoucherForm({
     setValue('partnerId', p.code)
     setValue('partnerName', p.name)
     setValue('partnerType', p.type)
-    // Đối tượng là nhân viên (Trả lương tạm ứng) → đồng bộ luôn trường Nhân viên.
+    // Đối tượng là nhân viên → đồng bộ luôn trường Nhân viên.
     if (p.type === PartnerType.Employee) setValue('employeeId', p.code)
     if (p.address) setValue('address', p.address)
     const reason = defaultReason(watch('category'), p.name)
@@ -395,22 +395,18 @@ export function CashVoucherForm({
           <div className="flex flex-wrap gap-x-10 gap-y-3">
             {/* Cột trái */}
             <div className="grid min-w-0 flex-1 basis-[520px] grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-              {/* Trả lương tạm ứng: đối tượng là nhân viên (tra danh mục Nhân viên) — theo form MISA */}
-              <Field label={header.employeeAsPartner ? 'Mã nhân viên' : 'Mã đối tượng'}>
+              <Field label="Mã đối tượng">
                 <PartnerPicker
                   value={watch('partnerId')}
-                  items={header.employeeAsPartner ? employeeItems : partnerItems}
-                  loading={header.employeeAsPartner ? employeeLoading : partnerLoading}
-                  keyword={header.employeeAsPartner ? employeeKw : partnerKw}
-                  onKeywordChange={header.employeeAsPartner ? setEmployeeKw : setPartnerKw}
-                  placeholder={header.employeeAsPartner ? 'Mã nhân viên' : undefined}
+                  items={partnerItems}
+                  loading={partnerLoading}
+                  keyword={partnerKw}
+                  onKeywordChange={setPartnerKw}
                   onSelect={selectPartner}
-                  onAddNew={() =>
-                    header.employeeAsPartner ? setEmployeeDialog(true) : setPartnerDialog(true)
-                  }
+                  onAddNew={() => setPartnerDialog(true)}
                 />
               </Field>
-              <Field label={header.employeeAsPartner ? 'Tên nhân viên' : 'Tên đối tượng'}>
+              <Field label="Tên đối tượng">
                 <Input {...register('partnerName')} />
               </Field>
 
@@ -453,7 +449,7 @@ export function CashVoucherForm({
                     </Field>
                     <AttachmentField register={register} />
                   </div>
-                  {/* Gửi tiền vào NH / Trả lương tạm ứng: MISA không có trường Nhân viên riêng */}
+                  {/* Gửi tiền vào NH: MISA không có trường Nhân viên riêng */}
                   {header.showEmployee && (
                     <Field label="Nhân viên">
                       <PartnerPicker
@@ -522,12 +518,12 @@ export function CashVoucherForm({
                   <TableHead className="px-2">Nghiệp&nbsp;vụ</TableHead>
                   {cols.showPartner && (
                     <TableHead className="px-2">
-                      {cols.employeeAsPartner ? 'Mã nhân viên' : 'Đối tượng'}
+                      Đối tượng
                     </TableHead>
                   )}
                   {cols.showPartner && (
                     <TableHead className="min-w-[160px] px-2">
-                      {cols.employeeAsPartner ? 'Tên nhân viên' : 'Tên đối tượng'}
+                      Tên đối tượng
                     </TableHead>
                   )}
                   {cols.showCostItem && (
@@ -919,9 +915,7 @@ export function CashVoucherForm({
         initialCode={employeeKw.trim() || undefined}
         onCreated={(p) => {
           setEmployeeKw('')
-          // Trả lương tạm ứng: nhân viên là đối tượng chính của phiếu.
-          if (header.employeeAsPartner) selectPartner(p)
-          else selectEmployee(p)
+          selectEmployee(p)
         }}
       />
     </form>

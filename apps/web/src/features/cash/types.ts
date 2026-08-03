@@ -7,7 +7,6 @@ export const CATEGORY_LABEL: Record<CashVoucherCategory, string> = {
   [CashVoucherCategory.PaymentEmployeeAdvance]: 'Tạm ứng cho nhân viên',
   [CashVoucherCategory.PaymentPurchaseWithInvoice]: 'Chi mua ngoài có hóa đơn',
   [CashVoucherCategory.DepositToBank]: 'Gửi tiền vào ngân hàng',
-  [CashVoucherCategory.PaymentSalaryAdvance]: 'Trả lương tạm ứng cho nhân viên',
   [CashVoucherCategory.Payment]: 'Chi khác',
   [CashVoucherCategory.PurchaseServiceCash]: 'Chứng từ mua dịch vụ - Tiền mặt',
   [CashVoucherCategory.PurchaseGoodsCash]: 'Mua hàng trong nước không qua kho - Tiền mặt',
@@ -21,7 +20,6 @@ const CATEGORY_REASON: Record<CashVoucherCategory, string> = {
   [CashVoucherCategory.PaymentEmployeeAdvance]: 'Tạm ứng cho ',
   [CashVoucherCategory.PaymentPurchaseWithInvoice]: 'Chi tiền mua hàng của ',
   [CashVoucherCategory.DepositToBank]: 'Gửi tiền vào ngân hàng',
-  [CashVoucherCategory.PaymentSalaryAdvance]: 'Trả lương tạm ứng cho nhân viên',
   [CashVoucherCategory.Payment]: 'Chi tiền cho ',
   [CashVoucherCategory.PurchaseServiceCash]: 'Chi tiền mua dịch vụ của ',
   [CashVoucherCategory.PurchaseGoodsCash]: 'Chi tiền mua hàng của ',
@@ -46,7 +44,6 @@ export const CATEGORY_OPTIONS: Record<CashVoucherType, CashVoucherCategory[]> = 
     CashVoucherCategory.PaymentEmployeeAdvance,
     CashVoucherCategory.PaymentPurchaseWithInvoice,
     CashVoucherCategory.DepositToBank,
-    CashVoucherCategory.PaymentSalaryAdvance,
     CashVoucherCategory.Payment,
   ],
 }
@@ -70,46 +67,35 @@ export interface LineColumnConfig {
   showCostItem: boolean // Khoản mục CP (PC - Chi khác / Chi mua ngoài có hóa đơn)
   showBank: boolean // TK ngân hàng + Tên ngân hàng (Gửi tiền vào NH)
   showPartner: boolean // Đối tượng + Tên đối tượng
-  // Cột đối tượng là nhân viên (Trả lương tạm ứng) — nhãn "Mã/Tên nhân viên".
-  employeeAsPartner: boolean
 }
 
 export function lineColumns(category: CashVoucherCategory): LineColumnConfig {
   if (category === CashVoucherCategory.DepositToBank) {
-    return { showCostItem: false, showBank: true, showPartner: false, employeeAsPartner: false }
-  }
-  if (category === CashVoucherCategory.PaymentSalaryAdvance) {
-    return { showCostItem: false, showBank: false, showPartner: true, employeeAsPartner: true }
+    return { showCostItem: false, showBank: true, showPartner: false }
   }
   if (
     category === CashVoucherCategory.Payment ||
     category === CashVoucherCategory.PaymentPurchaseWithInvoice
   ) {
-    return { showCostItem: true, showBank: false, showPartner: true, employeeAsPartner: false }
+    return { showCostItem: true, showBank: false, showPartner: true }
   }
-  return { showCostItem: false, showBank: false, showPartner: true, employeeAsPartner: false }
+  return { showCostItem: false, showBank: false, showPartner: true }
 }
 
 // Cấu hình vùng thông tin chung theo loại nghiệp vụ (theo form MISA).
 export interface HeaderConfig {
-  // Đối tượng là nhân viên (Trả lương tạm ứng): nhãn "Mã/Tên nhân viên",
-  // picker tra danh mục nhân viên, ẩn trường Nhân viên riêng.
-  employeeAsPartner: boolean
   showEmployee: boolean // Trường Nhân viên (Gửi tiền vào NH không có)
   showVatTab: boolean // Tab "Kê khai hóa đơn và hạch toán thuế" (Chi mua ngoài có HĐ)
 }
 
 export function headerConfig(category: CashVoucherCategory): HeaderConfig {
-  if (category === CashVoucherCategory.PaymentSalaryAdvance) {
-    return { employeeAsPartner: true, showEmployee: false, showVatTab: false }
-  }
   if (category === CashVoucherCategory.DepositToBank) {
-    return { employeeAsPartner: false, showEmployee: false, showVatTab: false }
+    return { showEmployee: false, showVatTab: false }
   }
   if (category === CashVoucherCategory.PaymentPurchaseWithInvoice) {
-    return { employeeAsPartner: false, showEmployee: true, showVatTab: true }
+    return { showEmployee: true, showVatTab: true }
   }
-  return { employeeAsPartner: false, showEmployee: true, showVatTab: false }
+  return { showEmployee: true, showVatTab: false }
 }
 
 // Danh mục báo cáo tiền mặt (tab "Báo cáo", theo MISA).

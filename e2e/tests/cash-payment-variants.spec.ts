@@ -4,7 +4,6 @@ import { fieldInput } from '../helpers/form'
 
 // Form phiếu chi biến thể theo loại nghiệp vụ (theo form MISA):
 // - Định khoản mặc định từng loại (map @app/shared + override Chi khác trống)
-// - Trả lương tạm ứng: đối tượng là nhân viên (header + cột bảng Mã/Tên nhân viên)
 // - Gửi tiền vào NH: không có trường Nhân viên, cột TK ngân hàng
 // - Chi mua ngoài có hóa đơn: bảng "Kê khai hóa đơn và hạch toán thuế" (dòng thuế 1331)
 
@@ -13,7 +12,6 @@ async function openPaymentForm(page: Page, category?: string) {
   await page.goto('/cash/vouchers/new?type=PAYMENT')
   await expect(page.getByRole('heading', { name: 'Phiếu chi' })).toBeVisible()
   if (category) {
-    // exact — "Tạm ứng cho nhân viên" là substring của "Trả lương tạm ứng cho nhân viên".
     await page.getByRole('combobox').first().click()
     await page.getByRole('option', { name: category, exact: true }).click()
   }
@@ -33,7 +31,6 @@ test.describe('Tiền mặt — form phiếu chi theo loại nghiệp vụ', () 
       ['Tạm ứng cho nhân viên', '141', '1111'],
       ['Chi mua ngoài có hóa đơn', '', '1111'],
       ['Gửi tiền vào ngân hàng', '1121', '1111'],
-      ['Trả lương tạm ứng cho nhân viên', '3341', '1111'],
       ['Chi khác', '', '1111'], // MISA để TK Nợ trống cho tự nhập
     ]
     for (const [label, debit, credit] of CASES) {
@@ -42,27 +39,6 @@ test.describe('Tiền mặt — form phiếu chi theo loại nghiệp vụ', () 
       await expect(debitInput(page)).toHaveValue(debit)
       await expect(creditInput(page)).toHaveValue(credit)
     }
-  })
-
-  test('trả lương tạm ứng: đối tượng là nhân viên, lưu được phiếu', async ({ page }) => {
-    await openPaymentForm(page, 'Trả lương tạm ứng cho nhân viên')
-
-    // Header đổi thành Mã/Tên nhân viên, KHÔNG còn trường Nhân viên riêng.
-    await expect(page.locator('label').filter({ hasText: /^Mã nhân viên$/ })).toBeVisible()
-    await expect(page.locator('label').filter({ hasText: /^Tên nhân viên$/ })).toBeVisible()
-    await expect(page.locator('label').filter({ hasText: /^Nhân viên$/ })).toHaveCount(0)
-    // Cột bảng hạch toán cũng theo nhân viên.
-    await expect(page.getByRole('columnheader', { name: 'Mã nhân viên' })).toBeVisible()
-
-    const voucherNo = await fieldInput(page, 'Số phiếu chi').inputValue()
-    await firstLine(page).getByPlaceholder('0').fill('5000000')
-    await page.getByRole('button', { name: 'Lưu', exact: true }).click()
-    await expect(page).toHaveURL(/\/cash(?!\/vouchers)/)
-
-    await page.goto('/cash?tab=txn')
-    const row = page.locator('tbody tr', { hasText: voucherNo })
-    await expect(row).toContainText('Trả lương tạm ứng cho nhân viên')
-    await expect(row).toContainText('5.000.000')
   })
 
   test('gửi tiền vào ngân hàng: không có trường Nhân viên, có cột TK ngân hàng', async ({ page }) => {
