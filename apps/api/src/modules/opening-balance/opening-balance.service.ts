@@ -235,7 +235,23 @@ export class OpeningBalanceService {
     const rows: Prisma.PartnerOpeningBalanceCreateManyInput[] = []
     for (const p of parsed) {
       const partnerId = idByCode.get(p.partnerCode)
-      if (!partnerId || seen.has(partnerId) || p.amount === 0) continue
+      if (!partnerId || seen.has(partnerId)) continue
+      if (p.debit !== undefined || p.credit !== undefined) {
+        // File tách cột Dư Nợ/Dư Có: ghi thẳng 2 vế theo file.
+        const debit = Math.abs(p.debit ?? 0)
+        const credit = Math.abs(p.credit ?? 0)
+        if (debit === 0 && credit === 0) continue
+        seen.add(partnerId) // chống trùng trong chính file
+        rows.push({
+          accountCode: code,
+          partnerType,
+          partnerId,
+          debitAmount: new Prisma.Decimal(debit),
+          creditAmount: new Prisma.Decimal(credit),
+        })
+        continue
+      }
+      if (p.amount === 0) continue
       seen.add(partnerId) // chống trùng trong chính file
       // Số dương: 131 còn phải thu → Dư Nợ, 331 còn phải trả → Dư Có. Số âm đảo vế
       // (KH trả trước → 131 Dư Có, trả thừa NCC → 331 Dư Nợ).
