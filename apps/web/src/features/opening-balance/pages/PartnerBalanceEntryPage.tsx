@@ -188,16 +188,20 @@ export function PartnerBalanceEntryPage() {
   const cancelAdd = () => setAddOpen(false)
 
   // Ghi cả bảng (backend thay thế toàn bộ số dư công nợ của TK bằng payload).
+  // Chỉ gửi dòng có số dư — `rows` chứa cả danh mục (hàng nghìn đối tượng 0đ),
+  // gửi hết vượt limit body của API (413); backend cũng tự bỏ dòng 0.
   const persist = (next: EditRow[]) => {
     setRows(next)
     save.mutate(
       {
         accountCode,
-        items: next.map((r) => ({
-          partnerId: r.partnerId,
-          debitAmount: r.debitAmount,
-          creditAmount: r.creditAmount,
-        })),
+        items: next
+          .filter((r) => r.debitAmount !== 0 || r.creditAmount !== 0)
+          .map((r) => ({
+            partnerId: r.partnerId,
+            debitAmount: r.debitAmount,
+            creditAmount: r.creditAmount,
+          })),
       },
       {
         onSuccess: () => toast({ variant: 'success', title: 'Đã lưu số dư công nợ' }),
