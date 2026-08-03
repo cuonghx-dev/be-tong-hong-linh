@@ -15,7 +15,9 @@ const badgeVariants = cva(
         danger: 'bg-red-50 text-red-700',
         info: 'bg-primary/10 text-primary',
         // Pill đếm số (vd số bộ lọc đang áp dụng).
-        count: 'ml-1 grid h-4 min-w-4 place-items-center bg-primary px-1 text-[10px] text-white',
+        // leading-none bắt buộc: text-[10px] loại text-xs khỏi class (mất line-height 1rem),
+        // badge sẽ thừa kế leading 20px của Button → số tụt xuống đáy pill 16px.
+        count: 'ml-1 grid h-4 min-w-4 place-items-center bg-primary px-1 py-0 text-[10px] leading-none text-white',
       },
     },
     defaultVariants: { variant: 'muted' },
