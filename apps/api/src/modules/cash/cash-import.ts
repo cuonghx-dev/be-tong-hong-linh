@@ -23,8 +23,8 @@ const CATEGORY_MAP: Record<string, CashVoucherCategory> = {
   'Gửi tiền vào ngân hàng': CashVoucherCategory.DEPOSIT_TO_BANK,
   'Chi mua ngoài có hóa đơn': CashVoucherCategory.PAYMENT_PURCHASE_WITH_INVOICE,
   'Tạm ứng cho nhân viên': CashVoucherCategory.PAYMENT_EMPLOYEE_ADVANCE,
-  'Trả lương tạm ứng cho nhân viên': CashVoucherCategory.PAYMENT_SALARY_ADVANCE,
   // Loại đã bỏ khỏi danh mục → quy về Chi khác khi nhập file cũ.
+  'Trả lương tạm ứng cho nhân viên': CashVoucherCategory.PAYMENT,
   'Trả tiền nhà cung cấp (không theo hóa đơn)': CashVoucherCategory.PAYMENT,
   'Trả lương nhân viên': CashVoucherCategory.PAYMENT,
   'Chuyển tiền cho chi nhánh khác': CashVoucherCategory.PAYMENT,
@@ -90,8 +90,19 @@ export function parseCashXlsx(buffer: Buffer): ParsedVoucher[] {
       ? CashVoucherType.RECEIPT
       : CashVoucherType.PAYMENT
     const catText = toStr(r[iCategory]) ?? ''
+    const reasonText = iReason >= 0 ? (toStr(r[iReason]) ?? '') : ''
+    // Biến thể file MISA: "Loại chứng từ" chỉ ghi loại chung (Phiếu thu/Phiếu chi),
+    // nghiệp vụ thật nằm ở "Lý do thu/chi" (Gửi tiền vào ngân hàng, Tạm ứng…).
+    // Ưu tiên loại cụ thể ở 2 cột; loại chung (RECEIPT/PAYMENT) chỉ là fallback.
+    const fromReason = CATEGORY_MAP[reasonText]
+    const fromCat = CATEGORY_MAP[catText]
+    const isGeneric = (c: CashVoucherCategory | undefined) =>
+      c === CashVoucherCategory.RECEIPT || c === CashVoucherCategory.PAYMENT
     const category =
-      CATEGORY_MAP[catText] ??
+      (!isGeneric(fromCat) ? fromCat : undefined) ??
+      (!isGeneric(fromReason) ? fromReason : undefined) ??
+      fromCat ??
+      fromReason ??
       (type === CashVoucherType.RECEIPT
         ? CashVoucherCategory.RECEIPT
         : CashVoucherCategory.PAYMENT)
