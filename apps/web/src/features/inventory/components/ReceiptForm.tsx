@@ -27,6 +27,7 @@ import { useNextReceiptNo, useReceipt } from '../api/useReceipts'
 import { useCreateReceipt, useUpdateReceipt } from '../api/useReceiptMutations'
 import { receiptSchema, type ReceiptFormValues, type ReceiptLineFormValues } from '../schema'
 import {
+  DEFAULT_RECEIPT_TYPE,
   MANUAL_RECEIPT_TYPES,
   RECEIPT_TYPE_OPTIONS,
   defaultCreditAccount,
@@ -159,14 +160,14 @@ export function ReceiptForm({
 
   const lines = watch('lines')
   const currentType = watch('receiptType')
-  // Chỉ liệt kê loại lập tay; phiếu do mua hàng sinh ra vẫn hiện đúng nhãn khi xem/sửa
-  // nhưng không đổi sang được (và ngược lại).
-  const typeOptions = RECEIPT_TYPE_OPTIONS.filter(
-    (o) => MANUAL_RECEIPT_TYPES.includes(o.type) || o.type === currentType,
-  )
-  const typeLocked = readOnly || !!receiptId || !MANUAL_RECEIPT_TYPES.includes(currentType)
+  // Liệt kê ĐỦ mọi loại (kể cả loại không lập tay) — KHÔNG lọc theo currentType: hidden
+  // native select của Radix chỉ có option đã render, nếu value đổi sang loại vừa được thêm
+  // trong cùng render nó tự reset và bắn onValueChange('') → mất receiptType.
+  // Loại không lập tay chỉ bị disable trong dropdown.
+  const typeSelectable = (t: InventoryReceiptType) => MANUAL_RECEIPT_TYPES.includes(t)
+  const typeLocked = readOnly || !!receiptId || !typeSelectable(currentType)
   // Trường/cột hiển thị đổi theo loại phiếu (form MISA khác nhau giữa mua hàng và thành phẩm SX).
-  const variant = RECEIPT_VARIANT[currentType]
+  const variant = RECEIPT_VARIANT[currentType] ?? RECEIPT_VARIANT[DEFAULT_RECEIPT_TYPE]
 
   // Tổng tiền = Σ thành tiền; tổng SL cho dòng tổng cộng của bảng (như MISA).
   const totalAmount = lines?.reduce((s, l) => s + num(l.quantity) * num(l.unitPrice), 0) ?? 0
@@ -219,14 +220,14 @@ export function ReceiptForm({
         <Select
           value={currentType}
           disabled={typeLocked}
-          onValueChange={(v) => setValue('receiptType', v as InventoryReceiptType)}
+          onValueChange={(v) => v && setValue('receiptType', v as InventoryReceiptType)}
         >
           <SelectTrigger className="h-9 w-72 shrink-0 bg-white" title="Loại chứng từ">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {typeOptions.map((o) => (
-              <SelectItem key={o.type} value={o.type}>
+            {RECEIPT_TYPE_OPTIONS.map((o) => (
+              <SelectItem key={o.type} value={o.type} disabled={!typeSelectable(o.type)}>
                 {o.label}
               </SelectItem>
             ))}
