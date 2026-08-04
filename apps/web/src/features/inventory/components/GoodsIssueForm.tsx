@@ -1,6 +1,6 @@
 import { GoodsIssueCategory, PartnerType, type CreateGoodsIssueInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { useCustomers } from '@/features/sales'
 import { useEmployeeOptions } from '@/shared/api/useEmployeeOptions'
@@ -57,6 +57,8 @@ interface Props {
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
+  // Nút hành động thêm ở thanh đáy khi xem (vd. Sửa nhanh / Ghi sổ) — page truyền vào.
+  actions?: ReactNode
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -94,6 +96,7 @@ export function GoodsIssueForm({
   readOnly = false,
   onSaved,
   onCancel,
+  actions,
 }: Props) {
   // Nạp dữ liệu từ phiếu đang sửa HOẶC phiếu nguồn khi nhân bản.
   const duplicating = !voucherId && !!duplicateFromId
@@ -686,9 +689,12 @@ export function GoodsIssueForm({
       <div className="flex shrink-0 items-center gap-3 border-t border-border px-4 py-2.5">
         <div className="ml-auto flex gap-2">
           {readOnly ? (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Đóng
-            </Button>
+            <>
+              {actions}
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Đóng
+              </Button>
+            </>
           ) : (
             <>
               <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>

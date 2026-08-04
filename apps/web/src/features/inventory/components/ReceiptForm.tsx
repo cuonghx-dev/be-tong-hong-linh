@@ -1,6 +1,6 @@
 import { InventoryReceiptType, type CreateInventoryReceiptInput } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
@@ -53,6 +53,8 @@ interface Props {
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
+  // Nút hành động thêm ở thanh đáy khi xem (vd. Sửa nhanh / Ghi sổ) — page truyền vào.
+  actions?: ReactNode
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -84,6 +86,7 @@ export function ReceiptForm({
   readOnly = false,
   onSaved,
   onCancel,
+  actions,
 }: Props) {
   // Nạp dữ liệu từ phiếu đang sửa HOẶC phiếu nguồn khi nhân bản.
   const duplicating = !receiptId && !!duplicateFromId
@@ -554,9 +557,12 @@ export function ReceiptForm({
       <div className="flex shrink-0 items-center gap-3 border-t border-border px-4 py-2.5">
         <div className="ml-auto flex gap-2">
           {readOnly ? (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Đóng
-            </Button>
+            <>
+              {actions}
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Đóng
+              </Button>
+            </>
           ) : (
             <>
               <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>

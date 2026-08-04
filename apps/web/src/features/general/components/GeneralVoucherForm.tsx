@@ -7,7 +7,7 @@ import {
   type CreateGeneralVoucherInput,
 } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { invalidToast } from '@/shared/lib/form'
@@ -59,6 +59,8 @@ interface GeneralVoucherFormProps {
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
+  // Nút hành động thêm ở thanh đáy khi xem (vd. Sửa nhanh / Ghi sổ) — page truyền vào.
+  actions?: ReactNode
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -97,6 +99,7 @@ export function GeneralVoucherForm({
   readOnly = false,
   onSaved,
   onCancel,
+  actions,
 }: GeneralVoucherFormProps) {
   // Nạp dữ liệu từ chứng từ đang sửa HOẶC chứng từ nguồn khi nhân bản.
   const duplicating = !voucherId && !!duplicateFromId
@@ -746,7 +749,9 @@ export function GeneralVoucherForm({
           {readOnly ? 'Đóng' : 'Hủy'}
         </Button>
 
-        {!readOnly && (
+        {readOnly ? (
+          actions && <div className="ml-auto flex gap-2">{actions}</div>
+        ) : (
           <div className="ml-auto flex gap-2">
             <Button type="button" variant="outline" onClick={submit(false)} disabled={saving}>
               {saving ? 'Đang lưu…' : 'Lưu'}
