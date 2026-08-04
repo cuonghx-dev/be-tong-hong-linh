@@ -1,3 +1,4 @@
+import { cn } from '@/shared/lib/cn'
 import { Skeleton } from './skeleton'
 
 interface RecordFormSkeletonProps {
@@ -18,7 +19,12 @@ export function RecordFormSkeleton({
   fields = 6,
 }: RecordFormSkeletonProps) {
   return (
-    <div role="status" aria-busy="true" className="flex h-full flex-col bg-white">
+    <div
+      role="status"
+      aria-busy="true"
+      // Form tự dựng header thì chiếm trọn màn hình; form nằm trong RecordPageShell thì h-full.
+      className={cn('flex flex-col bg-white', withHeader ? 'h-screen' : 'h-full')}
+    >
       <span className="sr-only">Đang tải chứng từ…</span>
 
       {withHeader && (
