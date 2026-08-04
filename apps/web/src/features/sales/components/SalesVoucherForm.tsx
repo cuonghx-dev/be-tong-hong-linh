@@ -8,7 +8,7 @@ import {
   type CreateSalesVoucherInput,
 } from '@app/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { useEmployeeOptions } from '@/shared/api/useEmployeeOptions'
@@ -70,6 +70,8 @@ interface SalesVoucherFormProps {
   readOnly?: boolean
   onSaved: () => void
   onCancel: () => void
+  // Nút hành động thêm ở thanh đáy khi xem (vd. Sửa nhanh / Ghi sổ) — page truyền vào.
+  actions?: ReactNode
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -140,6 +142,7 @@ export function SalesVoucherForm({
   readOnly = false,
   onSaved,
   onCancel,
+  actions,
 }: SalesVoucherFormProps) {
   // Nạp dữ liệu từ chứng từ đang sửa HOẶC chứng từ nguồn khi nhân bản.
   const duplicating = !voucherId && !!duplicateFromId
@@ -1267,9 +1270,12 @@ export function SalesVoucherForm({
       <div className="flex shrink-0 items-center gap-3 border-t border-border px-4 py-2.5">
         <div className="ml-auto flex gap-2">
           {readOnly ? (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Đóng
-            </Button>
+            <>
+              {actions}
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Đóng
+              </Button>
+            </>
           ) : (
             <>
               <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
