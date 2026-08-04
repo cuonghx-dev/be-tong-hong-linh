@@ -29,18 +29,24 @@ import { Checkbox } from '@/shared/ui/checkbox'
 import { CheckboxField } from '@/shared/ui/checkbox-field'
 import { CellInput, cellInputCls } from '@/shared/ui/cell-input'
 import { useGeneralVoucher, useNextGeneralVoucherNo } from '../api/useGeneralVouchers'
-import {
-  useCreateGeneralVoucher,
-  useUpdateGeneralVoucher,
-} from '../api/useGeneralVoucherMutations'
+import { useCreateGeneralVoucher, useUpdateGeneralVoucher } from '../api/useGeneralVoucherMutations'
 import {
   generalVoucherSchema,
   type GeneralLineFormValues,
   type GeneralTaxLineFormValues,
   type GeneralVoucherFormValues,
 } from '../schema'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shared/ui/table'
 import { TabBar } from '@/shared/ui/tab-bar'
+import { RecordFormSkeleton } from '@/shared/ui/record-skeleton'
 
 // Vế bút toán của ô đối tượng — dùng để dựng tên field (debitPartnerId / creditPartnerId).
 // 'tax' = ô đối tượng trên dòng kê khai hóa đơn (taxLines.*.partnerId).
@@ -113,9 +119,10 @@ export function GeneralVoucherForm({
   const [partnerKw, setPartnerKw] = useState('')
   const { items: partnerItems, loading: partnerLoading } = usePartnerOptions(partnerKw)
   // Dialog tạo nhanh gắn với ô đang thao tác (null = đóng) — nhớ cả vế để điền lại đúng cột.
-  const [partnerDialogAt, setPartnerDialogAt] = useState<{ line: number; side: PartnerSide } | null>(
-    null,
-  )
+  const [partnerDialogAt, setPartnerDialogAt] = useState<{
+    line: number
+    side: PartnerSide
+  } | null>(null)
   const selectLinePartner = (i: number, side: PartnerSide, p: PartnerOption) => {
     if (side === 'tax') {
       selectTaxPartner(i, p)
@@ -259,56 +266,59 @@ export function GeneralVoucherForm({
 
   const saving = create.isPending || update.isPending
 
+  // Chờ nạp chứng từ — tránh chớp form rỗng rồi mới điền dữ liệu.
+  if (editing.isLoading) return <RecordFormSkeleton />
+
   return (
     <form className="flex h-full flex-col">
       <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
         {/* Vùng thông tin chung — nền primary nhạt liền khối với page header (2 lớp màu, đồng bộ cash) */}
         <section className="space-y-3 bg-primary/5 px-6 pb-5 pt-2">
-        {/* Thông tin chung: diễn giải | ngày + số chứng từ | tổng tiền */}
-        <div className="flex flex-wrap gap-6">
-          <div className="min-w-[520px] flex-1 space-y-3">
-            <Field label="Diễn giải">
-              <Input
-                {...register('description', {
-                  onChange: (e) => syncDescription(e.target.value),
-                })}
-              />
-            </Field>
-            <div className="flex gap-3">
-              <Field label="Hạn thanh toán" className="w-56">
-                <Input type="date" {...register('dueDate')} />
+          {/* Thông tin chung: diễn giải | ngày + số chứng từ | tổng tiền */}
+          <div className="flex flex-wrap gap-6">
+            <div className="min-w-[520px] flex-1 space-y-3">
+              <Field label="Diễn giải">
+                <Input
+                  {...register('description', {
+                    onChange: (e) => syncDescription(e.target.value),
+                  })}
+                />
+              </Field>
+              <div className="flex gap-3">
+                <Field label="Hạn thanh toán" className="w-56">
+                  <Input type="date" {...register('dueDate')} />
+                </Field>
+              </div>
+            </div>
+
+            {/* Cột phải: ngày + số chứng từ */}
+            <div className="w-56 space-y-3">
+              <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
+                <Input type="date" {...register('postingDate')} />
+              </Field>
+              <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
+                <Input type="date" {...register('voucherDate')} />
+              </Field>
+              <Field label="Số chứng từ">
+                <Input
+                  value={voucherId ? (editing.data?.voucherNo ?? '…') : (nextNo.data ?? 'Tự động')}
+                  readOnly
+                  title="Số dự kiến — cấp chính thức khi Lưu"
+                  className="bg-slate-50 text-slate-500"
+                />
               </Field>
             </div>
-          </div>
 
-          {/* Cột phải: ngày + số chứng từ */}
-          <div className="w-56 space-y-3">
-            <Field label="Ngày hạch toán" error={formState.errors.postingDate?.message}>
-              <Input type="date" {...register('postingDate')} />
-            </Field>
-            <Field label="Ngày chứng từ" error={formState.errors.voucherDate?.message}>
-              <Input type="date" {...register('voucherDate')} />
-            </Field>
-            <Field label="Số chứng từ">
-              <Input
-                value={voucherId ? (editing.data?.voucherNo ?? '…') : (nextNo.data ?? 'Tự động')}
-                readOnly
-                title="Số dự kiến — cấp chính thức khi Lưu"
-                className="bg-slate-50 text-slate-500"
-              />
-            </Field>
-          </div>
-
-          {/* Tổng tiền */}
-          <div className="ml-auto text-right">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Tổng tiền
-            </div>
-            <div className="mt-1 text-3xl font-semibold tabular-nums text-slate-800">
-              {formatCurrency(total)}
+            {/* Tổng tiền */}
+            <div className="ml-auto text-right">
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Tổng tiền
+              </div>
+              <div className="mt-1 text-3xl font-semibold tabular-nums text-slate-800">
+                {formatCurrency(total)}
+              </div>
             </div>
           </div>
-        </div>
         </section>
 
         {/* Bảng hạch toán / kê khai hóa đơn — lớp nền trắng, 2 tab như MISA */}
@@ -325,167 +335,175 @@ export function GeneralVoucherForm({
           />
 
           <div className={cn('space-y-2', tab !== 'entry' && 'hidden')}>
-          <div className="overflow-x-auto rounded-md border border-border">
-            <Table data-testid="general-entry-table">
-              <TableHeader className="bg-slate-100">
-                <TableRow>
-                  <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
-                  <TableHead className="px-2 py-1.5">Diễn&nbsp;giải</TableHead>
-                  <TableHead className="w-24 px-2 py-1.5">TK Nợ</TableHead>
-                  <TableHead className="w-24 px-2 py-1.5">TK Có</TableHead>
-                  <TableHead className="w-36 px-2 py-1.5 text-right">Số&nbsp;tiền</TableHead>
-                  <TableHead className="w-40 px-2 py-1.5">Nghiệp&nbsp;vụ</TableHead>
-                  <TableHead className="px-2 py-1.5">Đối&nbsp;tượng Nợ</TableHead>
-                  <TableHead className="px-2 py-1.5">Tên đối&nbsp;tượng Nợ</TableHead>
-                  <TableHead className="px-2 py-1.5">Đối&nbsp;tượng Có</TableHead>
-                  <TableHead className="px-2 py-1.5">Tên đối&nbsp;tượng Có</TableHead>
-                  <TableHead className="w-8 px-2 py-1.5" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {fields.map((f, i) => (
-                  <TableRow key={f.id}>
-                    <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
-                    <TableCell className="px-2 py-1">
-                      <CellInput {...register(`lines.${i}.description`)} />
-                    </TableCell>
-                    <TableCell className="px-2 py-1">
-                      <Controller
-                        control={control}
-                        name={`lines.${i}.debitAccount`}
-                        render={({ field, fieldState }) => (
-                          <AccountPicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            inputClassName={cn(
-                              accountCellCls,
-                              fieldState.error && 'rounded ring-1 ring-inset ring-red-500',
-                            )}
-                          />
-                        )}
-                      />
-                    </TableCell>
-                    <TableCell className="px-2 py-1">
-                      <Controller
-                        control={control}
-                        name={`lines.${i}.creditAccount`}
-                        render={({ field, fieldState }) => (
-                          <AccountPicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            inputClassName={cn(
-                              accountCellCls,
-                              fieldState.error && 'rounded ring-1 ring-inset ring-red-500',
-                            )}
-                          />
-                        )}
-                      />
-                    </TableCell>
-                    <TableCell className="px-2 py-1">
-                      <Controller
-                        control={control}
-                        name={`lines.${i}.amount`}
-                        render={({ field }) => (
-                          <AmountInput value={field.value} onChange={field.onChange} className={cellInputCls} />
-                        )}
-                      />
-                    </TableCell>
-                    <TableCell className="px-2 py-1">
-                      <Controller
-                        control={control}
-                        name={`lines.${i}.operation`}
-                        render={({ field }) => (
-                          <Select value={field.value || undefined} onValueChange={field.onChange}>
-                            <SelectTrigger className={cellInputCls}>
-                              <SelectValue placeholder="--" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.values(GeneralLineOperation).map((op) => (
-                                <SelectItem key={op} value={op}>
-                                  {GENERAL_LINE_OPERATION_LABELS[op]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                    </TableCell>
-                    <TableCell className="px-2 py-1">
-                      <PartnerPicker
-                        value={lines?.[i]?.debitPartnerId}
-                        items={partnerItems}
-                        loading={partnerLoading}
-                        keyword={partnerKw}
-                        onKeywordChange={setPartnerKw}
-                        onSelect={(p) => selectLinePartner(i, 'debit', p)}
-                        onAddNew={() => setPartnerDialogAt({ line: i, side: 'debit' })}
-                        inputClassName="h-8"
-                      />
-                    </TableCell>
-                    <TableCell className="px-2 py-1">
-                      <CellInput {...register(`lines.${i}.debitPartnerName`)} />
-                    </TableCell>
-                    <TableCell className="px-2 py-1">
-                      <PartnerPicker
-                        value={lines?.[i]?.creditPartnerId}
-                        items={partnerItems}
-                        loading={partnerLoading}
-                        keyword={partnerKw}
-                        onKeywordChange={setPartnerKw}
-                        onSelect={(p) => selectLinePartner(i, 'credit', p)}
-                        onAddNew={() => setPartnerDialogAt({ line: i, side: 'credit' })}
-                        inputClassName="h-8"
-                      />
-                    </TableCell>
-                    <TableCell className="px-2 py-1">
-                      <CellInput {...register(`lines.${i}.creditPartnerName`)} />
-                    </TableCell>
-                    <TableCell className="px-2 py-1 text-center">
-                      <button
-                        type="button"
-                        onClick={() => fields.length > 1 && remove(i)}
-                        className="text-slate-400 hover:text-red-600"
-                        aria-label="Xóa dòng"
-                      >
-                        ✕
-                      </button>
-                    </TableCell>
+            <div className="overflow-x-auto rounded-md border border-border">
+              <Table data-testid="general-entry-table">
+                <TableHeader className="bg-slate-100">
+                  <TableRow>
+                    <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
+                    <TableHead className="px-2 py-1.5">Diễn&nbsp;giải</TableHead>
+                    <TableHead className="w-24 px-2 py-1.5">TK Nợ</TableHead>
+                    <TableHead className="w-24 px-2 py-1.5">TK Có</TableHead>
+                    <TableHead className="w-36 px-2 py-1.5 text-right">Số&nbsp;tiền</TableHead>
+                    <TableHead className="w-40 px-2 py-1.5">Nghiệp&nbsp;vụ</TableHead>
+                    <TableHead className="px-2 py-1.5">Đối&nbsp;tượng Nợ</TableHead>
+                    <TableHead className="px-2 py-1.5">Tên đối&nbsp;tượng Nợ</TableHead>
+                    <TableHead className="px-2 py-1.5">Đối&nbsp;tượng Có</TableHead>
+                    <TableHead className="px-2 py-1.5">Tên đối&nbsp;tượng Có</TableHead>
+                    <TableHead className="w-8 px-2 py-1.5" />
                   </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter className="bg-slate-100">
-                <TableRow>
-                  <TableCell className="px-2 py-1.5" colSpan={4} />
-                  <TableCell className="px-2 py-1.5 text-right tabular-nums">{formatCurrency(total)}</TableCell>
-                  <TableCell colSpan={6} />
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {fields.map((f, i) => (
+                    <TableRow key={f.id}>
+                      <TableCell className="px-2 py-1 text-center text-slate-400">
+                        {i + 1}
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`lines.${i}.description`)} />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.debitAccount`}
+                          render={({ field, fieldState }) => (
+                            <AccountPicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              inputClassName={cn(
+                                accountCellCls,
+                                fieldState.error && 'rounded ring-1 ring-inset ring-red-500',
+                              )}
+                            />
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.creditAccount`}
+                          render={({ field, fieldState }) => (
+                            <AccountPicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              inputClassName={cn(
+                                accountCellCls,
+                                fieldState.error && 'rounded ring-1 ring-inset ring-red-500',
+                              )}
+                            />
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.amount`}
+                          render={({ field }) => (
+                            <AmountInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              className={cellInputCls}
+                            />
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.operation`}
+                          render={({ field }) => (
+                            <Select value={field.value || undefined} onValueChange={field.onChange}>
+                              <SelectTrigger className={cellInputCls}>
+                                <SelectValue placeholder="--" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.values(GeneralLineOperation).map((op) => (
+                                  <SelectItem key={op} value={op}>
+                                    {GENERAL_LINE_OPERATION_LABELS[op]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <PartnerPicker
+                          value={lines?.[i]?.debitPartnerId}
+                          items={partnerItems}
+                          loading={partnerLoading}
+                          keyword={partnerKw}
+                          onKeywordChange={setPartnerKw}
+                          onSelect={(p) => selectLinePartner(i, 'debit', p)}
+                          onAddNew={() => setPartnerDialogAt({ line: i, side: 'debit' })}
+                          inputClassName="h-8"
+                        />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`lines.${i}.debitPartnerName`)} />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <PartnerPicker
+                          value={lines?.[i]?.creditPartnerId}
+                          items={partnerItems}
+                          loading={partnerLoading}
+                          keyword={partnerKw}
+                          onKeywordChange={setPartnerKw}
+                          onSelect={(p) => selectLinePartner(i, 'credit', p)}
+                          onAddNew={() => setPartnerDialogAt({ line: i, side: 'credit' })}
+                          inputClassName="h-8"
+                        />
+                      </TableCell>
+                      <TableCell className="px-2 py-1">
+                        <CellInput {...register(`lines.${i}.creditPartnerName`)} />
+                      </TableCell>
+                      <TableCell className="px-2 py-1 text-center">
+                        <button
+                          type="button"
+                          onClick={() => fields.length > 1 && remove(i)}
+                          className="text-slate-400 hover:text-red-600"
+                          aria-label="Xóa dòng"
+                        >
+                          ✕
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter className="bg-slate-100">
+                  <TableRow>
+                    <TableCell className="px-2 py-1.5" colSpan={4} />
+                    <TableCell className="px-2 py-1.5 text-right tabular-nums">
+                      {formatCurrency(total)}
+                    </TableCell>
+                    <TableCell colSpan={6} />
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
 
-          <div className="flex items-center justify-between text-sm text-slate-500">
-            <span>
-              Tổng số: <b className="text-slate-700">{fields.length}</b> bản ghi
-            </span>
-          </div>
+            <div className="flex items-center justify-between text-sm text-slate-500">
+              <span>
+                Tổng số: <b className="text-slate-700">{fields.length}</b> bản ghi
+              </span>
+            </div>
 
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => append(newLine())}>
-              <PlusIcon size={14} /> Thêm dòng
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => reset({ ...watch(), lines: [newLine()] })}
-            >
-              Xóa hết dòng
-            </Button>
-          </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => append(newLine())}>
+                <PlusIcon size={14} /> Thêm dòng
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => reset({ ...watch(), lines: [newLine()] })}
+              >
+                Xóa hết dòng
+              </Button>
+            </div>
 
-          {typeof formState.errors.lines?.message === 'string' && (
-            <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
-          )}
+            {typeof formState.errors.lines?.message === 'string' && (
+              <p className="text-sm text-red-600">{formState.errors.lines.message}</p>
+            )}
           </div>
 
           {/* Tab kê khai hóa đơn — dòng chỉ lên bảng kê thuế GTGT, không sinh bút toán */}
@@ -498,9 +516,13 @@ export function GeneralVoucherForm({
                     <TableHead className="min-w-[200px] px-2 py-1.5">Diễn&nbsp;giải thuế</TableHead>
                     <TableHead className="w-20 px-2 py-1.5 text-center">Có hóa&nbsp;đơn</TableHead>
                     <TableHead className="w-44 px-2 py-1.5">Loại&nbsp;thuế</TableHead>
-                    <TableHead className="w-40 px-2 py-1.5 text-right">Giá trị HHDV chưa&nbsp;thuế</TableHead>
+                    <TableHead className="w-40 px-2 py-1.5 text-right">
+                      Giá trị HHDV chưa&nbsp;thuế
+                    </TableHead>
                     <TableHead className="w-24 px-2 py-1.5 text-right">% thuế&nbsp;GTGT</TableHead>
-                    <TableHead className="w-36 px-2 py-1.5 text-right">Tiền thuế&nbsp;GTGT</TableHead>
+                    <TableHead className="w-36 px-2 py-1.5 text-right">
+                      Tiền thuế&nbsp;GTGT
+                    </TableHead>
                     <TableHead className="w-24 px-2 py-1.5">TK thuế&nbsp;GTGT</TableHead>
                     <TableHead className="w-28 px-2 py-1.5">Số hóa&nbsp;đơn</TableHead>
                     <TableHead className="w-36 px-2 py-1.5">Ngày hóa&nbsp;đơn</TableHead>
@@ -514,7 +536,9 @@ export function GeneralVoucherForm({
                 <TableBody>
                   {taxArray.fields.map((f, i) => (
                     <TableRow key={f.id}>
-                      <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                      <TableCell className="px-2 py-1 text-center text-slate-400">
+                        {i + 1}
+                      </TableCell>
                       <TableCell className="px-2 py-1">
                         <CellInput {...register(`taxLines.${i}.description`)} />
                       </TableCell>
@@ -583,11 +607,15 @@ export function GeneralVoucherForm({
                               max={100}
                               value={field.value ?? ''}
                               onChange={(e) => {
-                                const rate = e.target.value === '' ? undefined : Number(e.target.value)
+                                const rate =
+                                  e.target.value === '' ? undefined : Number(e.target.value)
                                 field.onChange(rate)
                                 if (rate != null && !Number.isNaN(rate)) {
                                   const base = num(watch(`taxLines.${i}.taxableAmount`))
-                                  setValue(`taxLines.${i}.vatAmount`, Math.round((base * rate) / 100))
+                                  setValue(
+                                    `taxLines.${i}.vatAmount`,
+                                    Math.round((base * rate) / 100),
+                                  )
                                 }
                               }}
                               className={cn('text-right')}
@@ -600,7 +628,11 @@ export function GeneralVoucherForm({
                           control={control}
                           name={`taxLines.${i}.vatAmount`}
                           render={({ field }) => (
-                            <AmountInput value={field.value ?? 0} onChange={field.onChange} className={cellInputCls} />
+                            <AmountInput
+                              value={field.value ?? 0}
+                              onChange={field.onChange}
+                              className={cellInputCls}
+                            />
                           )}
                         />
                       </TableCell>
@@ -621,15 +653,10 @@ export function GeneralVoucherForm({
                         <CellInput {...register(`taxLines.${i}.invoiceNo`)} />
                       </TableCell>
                       <TableCell className="px-2 py-1">
-                        <CellInput
-                          type="date"
-                          {...register(`taxLines.${i}.invoiceDate`)}
-                        />
+                        <CellInput type="date" {...register(`taxLines.${i}.invoiceDate`)} />
                       </TableCell>
                       <TableCell className="px-2 py-1">
-                        <CellInput
-                          {...register(`taxLines.${i}.goodsServiceGroup`)}
-                        />
+                        <CellInput {...register(`taxLines.${i}.goodsServiceGroup`)} />
                       </TableCell>
                       <TableCell className="px-2 py-1">
                         <PartnerPicker

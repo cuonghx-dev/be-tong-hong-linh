@@ -45,7 +45,16 @@ import {
   headerConfig,
   lineColumns,
 } from '../types'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shared/ui/table'
+import { RecordFormSkeleton } from '@/shared/ui/record-skeleton'
 
 interface CashVoucherPrefill {
   category?: CashVoucherCategory
@@ -349,6 +358,9 @@ export function CashVoucherForm({
   const colSpan =
     4 + (cols.showPartner ? 2 : 0) + (cols.showCostItem ? 1 : 0) + (cols.showBank ? 2 : 0)
 
+  // Chờ nạp chứng từ — tránh chớp form rỗng rồi mới điền dữ liệu.
+  if (editing.isLoading) return <RecordFormSkeleton />
+
   return (
     <form className="flex h-full flex-col">
       <fieldset disabled={readOnly} className="flex-1 overflow-y-auto disabled:opacity-90">
@@ -497,7 +509,6 @@ export function CashVoucherForm({
               </div>
             </div>
           </div>
-
         </section>
 
         {/* Bảng hạch toán — nền trắng */}
@@ -516,19 +527,11 @@ export function CashVoucherForm({
                   <TableHead className="w-24 px-2">TK Có</TableHead>
                   <TableHead className="w-36 px-2 text-right">Số&nbsp;tiền</TableHead>
                   <TableHead className="px-2">Nghiệp&nbsp;vụ</TableHead>
+                  {cols.showPartner && <TableHead className="px-2">Đối tượng</TableHead>}
                   {cols.showPartner && (
-                    <TableHead className="px-2">
-                      Đối tượng
-                    </TableHead>
+                    <TableHead className="min-w-[160px] px-2">Tên đối tượng</TableHead>
                   )}
-                  {cols.showPartner && (
-                    <TableHead className="min-w-[160px] px-2">
-                      Tên đối tượng
-                    </TableHead>
-                  )}
-                  {cols.showCostItem && (
-                    <TableHead className="px-2">Khoản&nbsp;mục CP</TableHead>
-                  )}
+                  {cols.showCostItem && <TableHead className="px-2">Khoản&nbsp;mục CP</TableHead>}
                   {cols.showBank && <TableHead className="px-2">TK ngân&nbsp;hàng</TableHead>}
                   {cols.showBank && <TableHead className="px-2">Tên ngân&nbsp;hàng</TableHead>}
                   <TableHead className="w-10 px-2" />
@@ -782,18 +785,13 @@ export function CashVoucherForm({
                           />
                         </TableCell>
                         <TableCell className="px-2 py-1">
-                          <CellInput
-                            type="date"
-                            {...register(`taxLines.${i}.invoiceDate`)}
-                          />
+                          <CellInput type="date" {...register(`taxLines.${i}.invoiceDate`)} />
                         </TableCell>
                         <TableCell className="px-2 py-1">
                           <CellInput {...register(`taxLines.${i}.invoiceNo`)} />
                         </TableCell>
                         <TableCell className="px-2 py-1">
-                          <CellInput
-                            {...register(`taxLines.${i}.goodsServiceGroup`)}
-                          />
+                          <CellInput {...register(`taxLines.${i}.goodsServiceGroup`)} />
                         </TableCell>
                         <TableCell className="px-2 py-1">
                           <CellInput {...register(`taxLines.${i}.partnerId`)} />
@@ -802,9 +800,7 @@ export function CashVoucherForm({
                           <CellInput {...register(`taxLines.${i}.partnerName`)} />
                         </TableCell>
                         <TableCell className="px-2 py-1">
-                          <CellInput
-                            {...register(`taxLines.${i}.supplierTaxCode`)}
-                          />
+                          <CellInput {...register(`taxLines.${i}.supplierTaxCode`)} />
                         </TableCell>
                         <TableCell className="px-2 py-1 text-center">
                           <button

@@ -49,8 +49,17 @@ import {
   PAYMENT_MODE_LABEL,
   VOUCHER_TYPE_LABEL,
 } from '../types'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shared/ui/table'
 import { TabBar } from '@/shared/ui/tab-bar'
+import { RecordFormSkeleton } from '@/shared/ui/record-skeleton'
 
 interface SalesVoucherFormProps {
   voucherId?: string | null
@@ -383,6 +392,9 @@ export function SalesVoucherForm({
     displayNo ? ` theo chứng từ ${displayNo}` : ''
   }`
 
+  // Chờ nạp chứng từ — tránh chớp form rỗng rồi mới điền dữ liệu.
+  if (editing.isLoading) return <RecordFormSkeleton withHeader />
+
   return (
     <form className="flex h-screen flex-col bg-white">
       {/* ── Page header (§5.2): tiêu đề + số CT · loại nghiệp vụ · ✕ — nền primary nhạt (2 lớp màu, đồng bộ cash) ── */}
@@ -526,10 +538,7 @@ export function SalesVoucherForm({
                   <Input {...register('passportNo')} />
                 </Field>
                 <Field label="Ký hiệu HĐ" className="md:col-span-3">
-                  <Input
-                    {...register('invoiceSerial')}
-                    placeholder="VD: C26TAA"
-                  />
+                  <Input {...register('invoiceSerial')} placeholder="VD: C26TAA" />
                 </Field>
 
                 {/* Hàng 3 */}
@@ -659,10 +668,7 @@ export function SalesVoucherForm({
                   />
                 </Field>
                 <Field label="Lý do xuất" className="md:col-span-4">
-                  <Input
-                    {...register('issueReason')}
-                    placeholder={autoIssueReason}
-                  />
+                  <Input {...register('issueReason')} placeholder={autoIssueReason} />
                 </Field>
                 <div className="hidden md:col-span-2 md:block" />
                 <Field label="Số phiếu xuất" className="md:col-span-3">
@@ -809,11 +815,7 @@ export function SalesVoucherForm({
                         <Input {...register('paymentTermId')} />
                       </Field>
                       <Field label="Số ngày được nợ">
-                        <Input
-                          type="number"
-                          min={0}
-                          {...register('creditDays')}
-                        />
+                        <Input type="number" min={0} {...register('creditDays')} />
                       </Field>
                       <Field label="Hạn thanh toán">
                         <Input type="date" {...register('dueDate')} />
@@ -874,7 +876,9 @@ export function SalesVoucherForm({
                         <TableHead className="w-24 px-2 py-1.5">TK kho</TableHead>
                         <TableHead className="w-16 px-2 py-1.5">ĐVT</TableHead>
                         <TableHead className="w-24 px-2 py-1.5 text-right">Số&nbsp;lượng</TableHead>
-                        <TableHead className="w-32 px-2 py-1.5 text-right">Đơn&nbsp;giá&nbsp;vốn</TableHead>
+                        <TableHead className="w-32 px-2 py-1.5 text-right">
+                          Đơn&nbsp;giá&nbsp;vốn
+                        </TableHead>
                         <TableHead className="w-32 px-2 py-1.5 text-right">Tiền&nbsp;vốn</TableHead>
                         <TableHead className="w-8 px-2 py-1.5" />
                       </TableRow>
@@ -882,7 +886,9 @@ export function SalesVoucherForm({
                     <TableBody>
                       {fields.map((f, i) => (
                         <TableRow key={f.id}>
-                          <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                          <TableCell className="px-2 py-1 text-center text-slate-400">
+                            {i + 1}
+                          </TableCell>
                           <TableCell className="px-2 py-1">
                             <ItemCell
                               value={lines?.[i]?.itemId}
@@ -948,7 +954,11 @@ export function SalesVoucherForm({
                               control={control}
                               name={`lines.${i}.costPrice`}
                               render={({ field }) => (
-                                <AmountInput value={field.value ?? 0} onChange={field.onChange} className={cellInputCls} />
+                                <AmountInput
+                                  value={field.value ?? 0}
+                                  onChange={field.onChange}
+                                  className={cellInputCls}
+                                />
                               )}
                             />
                           </TableCell>
@@ -973,7 +983,9 @@ export function SalesVoucherForm({
                         <TableCell className="px-2 py-1.5" colSpan={7}>
                           Tổng cộng
                         </TableCell>
-                        <TableCell className="px-2 py-1.5 text-right tabular-nums">{totalQty}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">
+                          {totalQty}
+                        </TableCell>
                         <TableCell />
                         <TableCell className="px-2 py-1.5 text-right tabular-nums">
                           {formatCurrency(totalCost)}
@@ -997,23 +1009,39 @@ export function SalesVoucherForm({
                         <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
                         <TableHead className="px-2 py-1.5">Mã hàng</TableHead>
                         <TableHead className="px-2 py-1.5">Tên hàng</TableHead>
-                        <TableHead className="w-28 px-2 py-1.5 text-right">CK&nbsp;thương&nbsp;mại</TableHead>
-                        {showAccounts && <TableHead className="w-24 px-2 py-1.5">TK công nợ</TableHead>}
-                        {showAccounts && <TableHead className="w-24 px-2 py-1.5">TK doanh thu</TableHead>}
+                        <TableHead className="w-28 px-2 py-1.5 text-right">
+                          CK&nbsp;thương&nbsp;mại
+                        </TableHead>
+                        {showAccounts && (
+                          <TableHead className="w-24 px-2 py-1.5">TK công nợ</TableHead>
+                        )}
+                        {showAccounts && (
+                          <TableHead className="w-24 px-2 py-1.5">TK doanh thu</TableHead>
+                        )}
                         <TableHead className="w-16 px-2 py-1.5">ĐVT</TableHead>
                         <TableHead className="w-20 px-2 py-1.5 text-right">Số&nbsp;lượng</TableHead>
                         <TableHead className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</TableHead>
-                        <TableHead className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</TableHead>
-                        <TableHead className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</TableHead>
-                        <TableHead className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</TableHead>
-                        {showAccounts && <TableHead className="w-24 px-2 py-1.5">TK thuế GTGT</TableHead>}
+                        <TableHead className="w-32 px-2 py-1.5 text-right">
+                          Thành&nbsp;tiền
+                        </TableHead>
+                        <TableHead className="w-16 px-2 py-1.5 text-right">
+                          %&nbsp;Thuế&nbsp;GTGT
+                        </TableHead>
+                        <TableHead className="w-28 px-2 py-1.5 text-right">
+                          Tiền&nbsp;thuế&nbsp;GTGT
+                        </TableHead>
+                        {showAccounts && (
+                          <TableHead className="w-24 px-2 py-1.5">TK thuế GTGT</TableHead>
+                        )}
                         <TableHead className="w-8 px-2 py-1.5" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {fields.map((f, i) => (
                         <TableRow key={f.id}>
-                          <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                          <TableCell className="px-2 py-1 text-center text-slate-400">
+                            {i + 1}
+                          </TableCell>
                           <TableCell className="px-2 py-1">
                             <ItemCell
                               value={lines?.[i]?.itemId}
@@ -1035,7 +1063,11 @@ export function SalesVoucherForm({
                               control={control}
                               name={`lines.${i}.tradeDiscount`}
                               render={({ field }) => (
-                                <AmountInput value={field.value ?? 0} onChange={field.onChange} className={cellInputCls} />
+                                <AmountInput
+                                  value={field.value ?? 0}
+                                  onChange={field.onChange}
+                                  className={cellInputCls}
+                                />
                               )}
                             />
                           </TableCell>
@@ -1086,7 +1118,11 @@ export function SalesVoucherForm({
                               control={control}
                               name={`lines.${i}.unitPrice`}
                               render={({ field }) => (
-                                <AmountInput value={field.value} onChange={field.onChange} className={cellInputCls} />
+                                <AmountInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  className={cellInputCls}
+                                />
                               )}
                             />
                           </TableCell>
@@ -1145,7 +1181,9 @@ export function SalesVoucherForm({
                         </TableCell>
                         {/* [TK công nợ, TK doanh thu], ĐVT */}
                         <TableCell colSpan={showAccounts ? 3 : 1} />
-                        <TableCell className="px-2 py-1.5 text-right tabular-nums">{totalQty}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">
+                          {totalQty}
+                        </TableCell>
                         {/* Đơn giá */}
                         <TableCell />
                         <TableCell className="px-2 py-1.5 text-right tabular-nums">

@@ -38,7 +38,16 @@ import {
   issueDefaultCreditAccount,
   issueDefaultDebitAccount,
 } from '../types'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shared/ui/table'
+import { RecordFormSkeleton } from '@/shared/ui/record-skeleton'
 
 interface Props {
   category: GoodsIssueCategory
@@ -274,6 +283,9 @@ export function GoodsIssueForm({
   const saving = create.isPending || update.isPending
   const displayNo = editing.data?.voucherNo ?? nextNo.data ?? ''
 
+  // Chờ nạp chứng từ — tránh chớp form rỗng rồi mới điền dữ liệu.
+  if (editing.isLoading) return <RecordFormSkeleton withHeader />
+
   return (
     <form className="flex h-screen flex-col bg-white">
       {/* ── Page header (§5.2): tiêu đề + số phiếu · lý do xuất · ✕ — nền primary nhạt (2 lớp màu) ── */}
@@ -480,7 +492,9 @@ export function GoodsIssueForm({
                     const amount = num(l?.quantity) * num(l?.unitPrice)
                     return (
                       <TableRow key={f.id}>
-                        <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                        <TableCell className="px-2 py-1 text-center text-slate-400">
+                          {i + 1}
+                        </TableCell>
                         <TableCell className="px-2 py-1">
                           <ItemCell value={l?.itemId} onPick={(item) => pickItem(i, item)} />
                         </TableCell>
@@ -550,7 +564,11 @@ export function GoodsIssueForm({
                             control={control}
                             name={`lines.${i}.unitPrice`}
                             render={({ field }) => (
-                              <AmountInput value={field.value} onChange={field.onChange} className={cellInputCls} />
+                              <AmountInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                className={cellInputCls}
+                              />
                             )}
                           />
                         </TableCell>
@@ -563,10 +581,7 @@ export function GoodsIssueForm({
                               <CellInput {...register(`lines.${i}.lotNo`)} />
                             </TableCell>
                             <TableCell className="px-2 py-1">
-                              <CellInput
-                                type="date"
-                                {...register(`lines.${i}.expiryDate`)}
-                              />
+                              <CellInput type="date" {...register(`lines.${i}.expiryDate`)} />
                             </TableCell>
                           </>
                         )}
@@ -598,14 +613,20 @@ export function GoodsIssueForm({
                     <TableCell className="px-2 py-1.5" colSpan={7}>
                       Tổng cộng
                     </TableCell>
-                    <TableCell className="px-2 py-1.5 text-right tabular-nums">{totalQty}</TableCell>
+                    <TableCell className="px-2 py-1.5 text-right tabular-nums">
+                      {totalQty}
+                    </TableCell>
                     {/* Đơn giá */}
                     <TableCell />
                     <TableCell className="px-2 py-1.5 text-right tabular-nums">
                       {formatCurrency(totalAmount)}
                     </TableCell>
                     {/* [Số lô, Hạn sử dụng] / [Thành phẩm] + cột xóa dòng */}
-                    <TableCell colSpan={(variant.showLot ? 2 : 0) + (variant.showFinishedProduct ? 1 : 0) + 1} />
+                    <TableCell
+                      colSpan={
+                        (variant.showLot ? 2 : 0) + (variant.showFinishedProduct ? 1 : 0) + 1
+                      }
+                    />
                   </TableRow>
                 </TableFooter>
               </Table>

@@ -33,7 +33,16 @@ import {
   defaultDebitAccount,
   RECEIPT_VARIANT,
 } from '../types'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shared/ui/table'
+import { RecordFormSkeleton } from '@/shared/ui/record-skeleton'
 
 interface Props {
   type: InventoryReceiptType
@@ -196,6 +205,9 @@ export function ReceiptForm({
 
   const saving = create.isPending || update.isPending
   const displayNo = editing.data?.voucherNo ?? nextNo.data ?? ''
+
+  // Chờ nạp chứng từ — tránh chớp form rỗng rồi mới điền dữ liệu.
+  if (editing.isLoading) return <RecordFormSkeleton withHeader />
 
   return (
     <form className="flex h-screen flex-col bg-white">
@@ -368,7 +380,9 @@ export function ReceiptForm({
                     const amount = num(l?.quantity) * num(l?.unitPrice)
                     return (
                       <TableRow key={f.id}>
-                        <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                        <TableCell className="px-2 py-1 text-center text-slate-400">
+                          {i + 1}
+                        </TableCell>
                         <TableCell className="px-2 py-1">
                           <ItemCell value={l?.itemId} onPick={(item) => pickItem(i, item)} />
                         </TableCell>
@@ -438,7 +452,11 @@ export function ReceiptForm({
                             control={control}
                             name={`lines.${i}.unitPrice`}
                             render={({ field }) => (
-                              <AmountInput value={field.value} onChange={field.onChange} className={cellInputCls} />
+                              <AmountInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                className={cellInputCls}
+                              />
                             )}
                           />
                         </TableCell>
@@ -451,10 +469,7 @@ export function ReceiptForm({
                               <CellInput {...register(`lines.${i}.lotNo`)} />
                             </TableCell>
                             <TableCell className="px-2 py-1">
-                              <CellInput
-                                type="date"
-                                {...register(`lines.${i}.expiryDate`)}
-                              />
+                              <CellInput type="date" {...register(`lines.${i}.expiryDate`)} />
                             </TableCell>
                           </>
                         )}
@@ -478,7 +493,9 @@ export function ReceiptForm({
                     <TableCell className="px-2 py-1.5" colSpan={7}>
                       Tổng cộng
                     </TableCell>
-                    <TableCell className="px-2 py-1.5 text-right tabular-nums">{totalQty}</TableCell>
+                    <TableCell className="px-2 py-1.5 text-right tabular-nums">
+                      {totalQty}
+                    </TableCell>
                     {/* Đơn giá */}
                     <TableCell />
                     <TableCell className="px-2 py-1.5 text-right tabular-nums">

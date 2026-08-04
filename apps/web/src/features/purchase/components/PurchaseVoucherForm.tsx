@@ -55,8 +55,17 @@ import {
   VOUCHER_TYPE_LABEL,
   hasWarehouse,
 } from '../types'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shared/ui/table'
 import { TabBar } from '@/shared/ui/tab-bar'
+import { RecordFormSkeleton } from '@/shared/ui/record-skeleton'
 
 interface Props {
   type: PurchaseVoucherType
@@ -337,10 +346,7 @@ export function PurchaseVoucherForm({
   const totalQty = lines?.reduce((s, l) => s + num(l.quantity), 0) ?? 0
   const totalGoods = lines?.reduce((s, l) => s + num(l.quantity) * num(l.unitPrice), 0) ?? 0
   const totalVat =
-    lines?.reduce(
-      (s, l) => s + (num(l.quantity) * num(l.unitPrice) * num(l.vatRate)) / 100,
-      0,
-    ) ?? 0
+    lines?.reduce((s, l) => s + (num(l.quantity) * num(l.unitPrice) * num(l.vatRate)) / 100, 0) ?? 0
   const totalPayment = totalGoods + totalVat
   const stockValue = totalGoods + purchaseCostValue
 
@@ -398,6 +404,9 @@ export function PurchaseVoucherForm({
   const saving = create.isPending || update.isPending
   const displayNo = editing.data?.voucherNo ?? nextNo.data ?? ''
 
+  // Chờ nạp chứng từ — tránh chớp form rỗng rồi mới điền dữ liệu.
+  if (editing.isLoading) return <RecordFormSkeleton withHeader />
+
   return (
     <form className="flex h-screen flex-col bg-white">
       {/* ── Page header (§5.2): tiêu đề + số CT · loại nghiệp vụ · số hợp đồng · ✕ — nền primary nhạt (2 lớp màu, đồng bộ cash) ── */}
@@ -451,7 +460,10 @@ export function PurchaseVoucherForm({
             {[PurchasePaymentMode.Unpaid, PurchasePaymentMode.Immediate].map((m) => (
               <div key={m} className="flex items-center gap-1.5">
                 <RadioGroupItem value={m} id={`purchase-payment-mode-${m}`} />
-                <Label htmlFor={`purchase-payment-mode-${m}`} className="cursor-pointer font-normal">
+                <Label
+                  htmlFor={`purchase-payment-mode-${m}`}
+                  className="cursor-pointer font-normal"
+                >
                   {PAYMENT_MODE_LABEL[m]}
                 </Label>
               </div>
@@ -547,16 +559,10 @@ export function PurchaseVoucherForm({
             // ký hiệu, số, ngày hóa đơn); chỉ có nghĩa khi nhận kèm HĐ.
             <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-3">
               <Field label="Mẫu số hóa đơn">
-                <Input
-                  {...register('invoiceTemplate')}
-                  placeholder="VD: 01GTKT0/001"
-                />
+                <Input {...register('invoiceTemplate')} placeholder="VD: 01GTKT0/001" />
               </Field>
               <Field label="Ký hiệu hóa đơn">
-                <Input
-                  {...register('invoiceSeries')}
-                  placeholder="VD: 1C24TYY"
-                />
+                <Input {...register('invoiceSeries')} placeholder="VD: 1C24TYY" />
               </Field>
               <Field label="Số hóa đơn">
                 <Input {...register('invoiceNo')} />
@@ -636,11 +642,7 @@ export function PurchaseVoucherForm({
 
                 {variant.hasAttachment && (
                   <Field label="Kèm theo (chứng từ gốc)">
-                    <Input
-                      type="number"
-                      min={0}
-                      {...register('attachmentCount')}
-                    />
+                    <Input type="number" min={0} {...register('attachmentCount')} />
                   </Field>
                 )}
               </div>
@@ -707,8 +709,12 @@ export function PurchaseVoucherForm({
                         <TableHead className="px-2 py-1.5">Số chứng từ</TableHead>
                         <TableHead className="px-2 py-1.5">Nhà cung cấp</TableHead>
                         <TableHead className="w-32 px-2 py-1.5 text-right">Tổng chi phí</TableHead>
-                        <TableHead className="w-40 px-2 py-1.5 text-right">Lũy kế số đã phân bổ</TableHead>
-                        <TableHead className="w-36 px-2 py-1.5 text-right">Số phân bổ lần này</TableHead>
+                        <TableHead className="w-40 px-2 py-1.5 text-right">
+                          Lũy kế số đã phân bổ
+                        </TableHead>
+                        <TableHead className="w-36 px-2 py-1.5 text-right">
+                          Số phân bổ lần này
+                        </TableHead>
                         <TableHead className="w-8 px-2 py-1.5" />
                       </TableRow>
                     </TableHeader>
@@ -724,15 +730,22 @@ export function PurchaseVoucherForm({
                         const a = costAllocs?.[i]
                         return (
                           <TableRow key={f.id}>
-                            <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                            <TableCell className="px-2 py-1 text-center text-slate-400">
+                              {i + 1}
+                            </TableCell>
                             <TableCell className="px-2 py-1">
                               {a?.postingDate ? formatDate(a.postingDate) : ''}
                             </TableCell>
                             <TableCell className="px-2 py-1">
                               {a?.voucherDate ? formatDate(a.voucherDate) : ''}
                             </TableCell>
-                            <TableCell className="px-2 py-1 font-medium text-primary">{a?.voucherNo}</TableCell>
-                            <TableCell className="max-w-56 truncate px-2 py-1">{a?.supplierName ?? ''}</TableCell>
+                            <TableCell className="px-2 py-1 font-medium text-primary">
+                              {a?.voucherNo}
+                            </TableCell>
+                            {/* Đối tượng: hiện đầy đủ, không cắt ngắn. */}
+                            <TableCell className="min-w-[180px] whitespace-normal break-words px-2 py-1">
+                              {a?.supplierName ?? ''}
+                            </TableCell>
                             <TableCell className="px-2 py-1 text-right tabular-nums text-slate-700">
                               {formatCurrency(a?.totalCost ?? 0)}
                             </TableCell>
@@ -744,7 +757,11 @@ export function PurchaseVoucherForm({
                                 control={control}
                                 name={`costAllocations.${i}.amount`}
                                 render={({ field }) => (
-                                  <AmountInput value={field.value ?? 0} onChange={field.onChange} className={cellInputCls} />
+                                  <AmountInput
+                                    value={field.value ?? 0}
+                                    onChange={field.onChange}
+                                    className={cellInputCls}
+                                  />
                                 )}
                               />
                             </TableCell>
@@ -825,9 +842,15 @@ export function PurchaseVoucherForm({
                       <TableHead className="w-8 px-2 py-1.5 text-center">#</TableHead>
                       <TableHead className="px-2 py-1.5">{variant.itemCodeLabel}</TableHead>
                       <TableHead className="px-2 py-1.5">{variant.itemNameLabel}</TableHead>
-                      <TableHead className="w-24 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</TableHead>
-                      <TableHead className="w-32 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</TableHead>
-                      {showAccounts && <TableHead className="w-28 px-2 py-1.5">TK thuế GTGT</TableHead>}
+                      <TableHead className="w-24 px-2 py-1.5 text-right">
+                        %&nbsp;Thuế&nbsp;GTGT
+                      </TableHead>
+                      <TableHead className="w-32 px-2 py-1.5 text-right">
+                        Tiền&nbsp;thuế&nbsp;GTGT
+                      </TableHead>
+                      {showAccounts && (
+                        <TableHead className="w-28 px-2 py-1.5">TK thuế GTGT</TableHead>
+                      )}
                       <TableHead className="w-32 px-2 py-1.5">Số hóa đơn</TableHead>
                       <TableHead className="w-36 px-2 py-1.5">Ngày hóa đơn</TableHead>
                       <TableHead className="w-8 px-2 py-1.5" />
@@ -840,7 +863,9 @@ export function PurchaseVoucherForm({
                       const vat = (amount * (l?.vatRate || 0)) / 100
                       return (
                         <TableRow key={f.id}>
-                          <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                          <TableCell className="px-2 py-1 text-center text-slate-400">
+                            {i + 1}
+                          </TableCell>
                           <TableCell className="px-2 py-1">
                             <ItemCell
                               value={l?.itemId}
@@ -900,11 +925,7 @@ export function PurchaseVoucherForm({
                               control={control}
                               name="invoiceDate"
                               render={({ field }) => (
-                                <CellInput
-                                  type="date"
-                                  {...field}
-                                  value={field.value ?? ''}
-                                />
+                                <CellInput type="date" {...field} value={field.value ?? ''} />
                               )}
                             />
                           </TableCell>
@@ -946,18 +967,28 @@ export function PurchaseVoucherForm({
                         <TableHead className="px-2 py-1.5">{variant.itemNameLabel}</TableHead>
                         {showWarehouse && <TableHead className="px-2 py-1.5">Kho</TableHead>}
                         {showAccounts && (
-                          <TableHead className="w-24 px-2 py-1.5">{variant.stockAccountLabel}</TableHead>
+                          <TableHead className="w-24 px-2 py-1.5">
+                            {variant.stockAccountLabel}
+                          </TableHead>
                         )}
-                        {showAccounts && <TableHead className="w-24 px-2 py-1.5">TK Công nợ</TableHead>}
+                        {showAccounts && (
+                          <TableHead className="w-24 px-2 py-1.5">TK Công nợ</TableHead>
+                        )}
                         <TableHead className="w-16 px-2 py-1.5">ĐVT</TableHead>
                         <TableHead className="w-20 px-2 py-1.5 text-right">Số&nbsp;lượng</TableHead>
                         <TableHead className="w-28 px-2 py-1.5 text-right">Đơn&nbsp;giá</TableHead>
-                        <TableHead className="w-32 px-2 py-1.5 text-right">Thành&nbsp;tiền</TableHead>
+                        <TableHead className="w-32 px-2 py-1.5 text-right">
+                          Thành&nbsp;tiền
+                        </TableHead>
                         {vatInline && (
-                          <TableHead className="w-16 px-2 py-1.5 text-right">%&nbsp;Thuế&nbsp;GTGT</TableHead>
+                          <TableHead className="w-16 px-2 py-1.5 text-right">
+                            %&nbsp;Thuế&nbsp;GTGT
+                          </TableHead>
                         )}
                         {vatInline && (
-                          <TableHead className="w-28 px-2 py-1.5 text-right">Tiền&nbsp;thuế&nbsp;GTGT</TableHead>
+                          <TableHead className="w-28 px-2 py-1.5 text-right">
+                            Tiền&nbsp;thuế&nbsp;GTGT
+                          </TableHead>
                         )}
                         {vatInline && showAccounts && (
                           <TableHead className="w-24 px-2 py-1.5">TK thuế GTGT</TableHead>
@@ -972,7 +1003,9 @@ export function PurchaseVoucherForm({
                         const vat = (amount * (l?.vatRate || 0)) / 100
                         return (
                           <TableRow key={f.id}>
-                            <TableCell className="px-2 py-1 text-center text-slate-400">{i + 1}</TableCell>
+                            <TableCell className="px-2 py-1 text-center text-slate-400">
+                              {i + 1}
+                            </TableCell>
                             <TableCell className="px-2 py-1">
                               <ItemCell
                                 value={l?.itemId}
@@ -1052,7 +1085,11 @@ export function PurchaseVoucherForm({
                                 control={control}
                                 name={`lines.${i}.unitPrice`}
                                 render={({ field }) => (
-                                  <AmountInput value={field.value} onChange={field.onChange} className={cellInputCls} />
+                                  <AmountInput
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    className={cellInputCls}
+                                  />
                                 )}
                               />
                             </TableCell>
@@ -1110,7 +1147,9 @@ export function PurchaseVoucherForm({
                         <TableCell className="px-2 py-1.5" colSpan={leadCols}>
                           Tổng cộng
                         </TableCell>
-                        <TableCell className="px-2 py-1.5 text-right tabular-nums">{totalQty}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-right tabular-nums">
+                          {totalQty}
+                        </TableCell>
                         <TableCell />
                         <TableCell className="px-2 py-1.5 text-right tabular-nums">
                           {formatCurrency(totalGoods)}
