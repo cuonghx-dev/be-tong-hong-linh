@@ -80,7 +80,10 @@ export function CostVoucherPickerDialog({ open, onClose, pickedIds, onPick }: Pr
                   <TableRow key={o.id} className={cn('border-t border-border', exhausted && 'opacity-50')}>
                     <TableCell className="px-2 py-1.5 font-medium text-primary">{o.voucherNo}</TableCell>
                     <TableCell className="px-2 py-1.5">{formatDate(o.postingDate)}</TableCell>
-                    <TableCell className="max-w-48 truncate px-2 py-1.5">{o.supplierName ?? ''}</TableCell>
+                    {/* Đối tượng: hiện đầy đủ, không cắt ngắn. */}
+                    <TableCell className="min-w-[180px] whitespace-normal break-words px-2 py-1.5">
+                      {o.supplierName ?? ''}
+                    </TableCell>
                     <TableCell className="px-2 py-1.5 text-right tabular-nums">
                       {formatCurrency(Number(o.totalCost))}
                     </TableCell>

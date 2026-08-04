@@ -64,7 +64,8 @@ export function PurchaseDetailReport({ filter }: { filter: PurchaseReportFilter 
                 <TableCell className={`${tdClass} whitespace-nowrap`}>{r.voucherNo}</TableCell>
                 <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(r.voucherDate)}</TableCell>
                 <TableCell className={`${tdClass} whitespace-nowrap`}>{r.invoiceNo}</TableCell>
-                <TableCell className={`${tdClass} max-w-[220px] truncate`} title={r.supplierName ?? ''}>
+                {/* Đối tượng: hiện đầy đủ, không cắt ngắn. */}
+                <TableCell className={`${tdClass} min-w-[200px] whitespace-normal break-words`}>
                   {r.supplierName}
                 </TableCell>
                 <TableCell className={`${tdClass} max-w-[260px] truncate`} title={r.description ?? ''}>

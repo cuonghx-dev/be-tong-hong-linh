@@ -267,11 +267,9 @@ export function PurchaseTable() {
                     </span>
                   )}
                 </TableCell>
-                <TableCell
-                  className="min-w-[180px] max-w-[280px] text-slate-700"
-                  title={r.supplierName || ''}
-                >
-                  <div className="line-clamp-2 break-words">{r.supplierName}</div>
+                {/* Đối tượng: hiện đầy đủ, không cắt ngắn (§ yêu cầu nghiệp vụ). */}
+                <TableCell className="min-w-[200px] text-slate-700">
+                  <div className="whitespace-normal break-words">{r.supplierName}</div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-right tabular-nums text-slate-700">
                   {formatCurrency(Number(r.totalPayment))}

@@ -233,11 +233,9 @@ export function SalesVoucherTable() {
                   )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-slate-600">{r.invoiceNo}</TableCell>
-                <TableCell
-                  className="min-w-[180px] max-w-[300px] text-slate-700"
-                  title={r.customerName || ''}
-                >
-                  <div className="line-clamp-2 break-words">{r.customerName}</div>
+                {/* Đối tượng: hiện đầy đủ, không cắt ngắn (§ yêu cầu nghiệp vụ). */}
+                <TableCell className="min-w-[200px] text-slate-700">
+                  <div className="whitespace-normal break-words">{r.customerName}</div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-right tabular-nums text-slate-800">
                   {formatCurrency(Number(r.totalAmount))}

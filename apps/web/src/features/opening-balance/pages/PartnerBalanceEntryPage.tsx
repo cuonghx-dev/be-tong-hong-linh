@@ -339,7 +339,8 @@ export function PartnerBalanceEntryPage() {
               <TableRow key={r.partnerId}>
                 <TableCell className="py-1.5 tabular-nums text-slate-700">{accountCode}</TableCell>
                 <TableCell className="py-1.5 text-slate-700">{r.partnerCode}</TableCell>
-                <TableCell className="max-w-[360px] truncate py-1.5 text-slate-700">
+                {/* Đối tượng: hiện đầy đủ, không cắt ngắn. */}
+                <TableCell className="min-w-[200px] whitespace-normal break-words py-1.5 text-slate-700">
                   {r.partnerName}
                 </TableCell>
                 <TableCell className="py-1.5 text-right tabular-nums text-slate-700">

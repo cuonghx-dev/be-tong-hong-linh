@@ -33,7 +33,8 @@ export function ReceivableSummaryReport({ filter }: { filter: SalesReportFilter 
         {rows.map((r, i) => (
           <TableRow key={`${r.customerId ?? r.customerName}-${i}`}>
             <TableCell className={`${tdClass} whitespace-nowrap`}>{r.customerCode}</TableCell>
-            <TableCell className={`${tdClass} max-w-[320px] truncate`} title={r.customerName}>
+            {/* Đối tượng: hiện đầy đủ, không cắt ngắn. */}
+            <TableCell className={`${tdClass} min-w-[200px] whitespace-normal break-words`}>
               {r.customerName}
             </TableCell>
             <TableCell className={tdMoney}>{money(r.openingBalance)}</TableCell>

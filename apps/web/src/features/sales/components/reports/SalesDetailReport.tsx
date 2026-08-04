@@ -40,7 +40,8 @@ export function SalesDetailReport({ filter }: { filter: SalesReportFilter }) {
             <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(r.postingDate)}</TableCell>
             <TableCell className={`${tdClass} whitespace-nowrap`}>{formatDate(r.voucherDate)}</TableCell>
             <TableCell className={`${tdClass} whitespace-nowrap`}>{r.voucherNo}</TableCell>
-            <TableCell className={`${tdClass} max-w-[220px] truncate`} title={r.customerName ?? ''}>
+            {/* Đối tượng: hiện đầy đủ, không cắt ngắn. */}
+            <TableCell className={`${tdClass} min-w-[200px] whitespace-normal break-words`}>
               {r.customerName}
             </TableCell>
             <TableCell className={`${tdClass} max-w-[220px] truncate`} title={r.itemName ?? ''}>

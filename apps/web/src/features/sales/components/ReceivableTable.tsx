@@ -162,7 +162,8 @@ export function ReceivableTable() {
               return (
                 <TableRow key={r.customerId} className="group">
                   <TableCell className="text-slate-700">{r.customerCode}</TableCell>
-                  <TableCell className="max-w-[240px] truncate text-slate-700" title={r.customerName}>
+                  {/* Đối tượng: hiện đầy đủ, không cắt ngắn (§ yêu cầu nghiệp vụ). */}
+                  <TableCell className="min-w-[200px] whitespace-normal break-words text-slate-700">
                     {r.customerName}
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-slate-700">

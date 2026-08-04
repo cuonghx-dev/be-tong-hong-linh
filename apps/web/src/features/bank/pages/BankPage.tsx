@@ -256,11 +256,9 @@ function BankTable() {
                   >
                     {formatCurrency(signed)}
                   </TableCell>
-                  <TableCell
-                    className="min-w-[140px] max-w-[220px] text-slate-600"
-                    title={r.partnerName || ''}
-                  >
-                    <div className="line-clamp-2 break-words">{r.partnerName}</div>
+                  {/* Đối tượng: hiện đầy đủ, không cắt ngắn (§ yêu cầu nghiệp vụ). */}
+                  <TableCell className="min-w-[180px] text-slate-600">
+                    <div className="whitespace-normal break-words">{r.partnerName}</div>
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-slate-600">{r.bankAccountNo}</TableCell>
                   <TableCell

@@ -185,14 +185,14 @@ export function SupplierTable() {
                       {r.code}
                     </button>
                   </TableCell>
-                  <TableCell className="max-w-[220px]">
-                    <div className="flex items-center gap-1.5">
+                  {/* Tên đối tượng: hiện đầy đủ, không cắt ngắn. */}
+                  <TableCell className="min-w-[200px]">
+                    <div className="flex items-start gap-1.5">
                       <span
                         className={cn(
-                          'min-w-0 truncate',
+                          'whitespace-normal break-words',
                           r.isActive ? 'text-slate-700' : 'text-slate-400',
                         )}
-                        title={r.name}
                       >
                         {r.name}
                       </span>
