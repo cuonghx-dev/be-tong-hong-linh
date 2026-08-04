@@ -7,6 +7,7 @@ import {
 } from '@app/shared'
 import { useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useCan } from '@/features/auth'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { formatCurrency } from '@/shared/lib/currency'
 import { AddMenu } from '@/shared/ui/add-menu'
@@ -42,6 +43,9 @@ export function PurchaseTable() {
   const importXlsx = useImportPurchaseVouchers()
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+  const can = useCan()
+  // "Trả tiền" tạo phiếu chi bên Tiền mặt → cần cash:write; không có quyền thì hành động chính là Xem.
+  const canPay = can('cash:write')
 
   // Điều hướng sang trang chứng từ full-page (§5).
   const openNew = (type: PurchaseVoucherType) => navigate(`/purchase/vouchers/new?type=${type}`)
@@ -287,13 +291,18 @@ export function PurchaseTable() {
                 </TableCell>
                 <TableCell className="sticky right-0 z-10 bg-white shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                   <RowActionMenu
-                    primaryLabel="Trả tiền"
-                    onPrimary={() => openPay(r)}
+                    primaryLabel={canPay ? 'Trả tiền' : 'Xem'}
+                    onPrimary={() => (canPay ? openPay(r) : openView(r.id, r.type))}
                     items={[
-                      {
-                        label: 'Xem',
-                        onClick: () => openView(r.id, r.type),
-                      },
+                      ...(canPay
+                        ? [
+                            {
+                              label: 'Xem',
+                              action: 'read' as const,
+                              onClick: () => openView(r.id, r.type),
+                            },
+                          ]
+                        : []),
                       {
                         label: 'Nhân bản',
                         onClick: () => openDuplicate(r.id, r.type),

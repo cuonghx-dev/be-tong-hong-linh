@@ -16,8 +16,8 @@ export interface RowAction {
   onClick: () => void
   danger?: boolean
   icon?: ReactNode
-  /** Quyền cần có trên domain hiện tại — mặc định 'write' (Sửa/Xóa/Nhân bản). Ghi sổ dùng 'post'. */
-  action?: 'write' | 'post'
+  /** Quyền cần có trên domain hiện tại — mặc định 'write' (Sửa/Xóa/Nhân bản). Xem dùng 'read', ghi sổ dùng 'post'. */
+  action?: 'read' | 'write' | 'post'
 }
 
 interface Props {

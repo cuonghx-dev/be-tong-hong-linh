@@ -1,6 +1,7 @@
 import type { SupplierFilter } from '@app/shared'
 import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useCan } from '@/features/auth'
 import { formatCurrency } from '@/shared/lib/currency'
 import { cn } from '@/shared/lib/cn'
 import { AddMenu } from '@/shared/ui/add-menu'
@@ -40,6 +41,9 @@ export function SupplierTable() {
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const confirm = useConfirm()
+  const can = useCan()
+  // "Lập CT mua hàng" tạo chứng từ mua → cần purchase:write; không có quyền thì hành động chính là Xem.
+  const canWrite = can('purchase:write')
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -215,18 +219,27 @@ export function SupplierTable() {
                   <TableCell className="text-slate-600">{r.taxCode}</TableCell>
                   <TableCell className="sticky right-0 z-10 bg-white shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
                     <RowActionMenu
-                      primaryLabel="Lập CT mua hàng"
+                      primaryLabel={canWrite ? 'Lập CT mua hàng' : 'Xem'}
                       onPrimary={() => {
+                        if (!canWrite) {
+                          setFormState({ supplierId: r.id, readOnly: true })
+                          return
+                        }
                         // Điền sẵn NCC vào chứng từ mua hàng mới qua query params.
                         const q = new URLSearchParams({ supplier: r.code, supplierName: r.name })
                         if (r.address) q.set('supplierAddress', r.address)
                         navigate(`/purchase/vouchers/new?${q.toString()}`)
                       }}
                       items={[
-                        {
-                          label: 'Xem',
-                          onClick: () => setFormState({ supplierId: r.id, readOnly: true }),
-                        },
+                        ...(canWrite
+                          ? [
+                              {
+                                label: 'Xem',
+                                action: 'read' as const,
+                                onClick: () => setFormState({ supplierId: r.id, readOnly: true }),
+                              },
+                            ]
+                          : []),
                         {
                           label: 'Sửa',
                           onClick: () => setFormState({ supplierId: r.id }),

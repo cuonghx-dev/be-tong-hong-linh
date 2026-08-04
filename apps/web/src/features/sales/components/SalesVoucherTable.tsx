@@ -6,6 +6,7 @@ import {
 } from '@app/shared'
 import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useCan } from '@/features/auth'
 import { getApiErrorMessage } from '@/shared/lib/api'
 import { cn } from '@/shared/lib/cn'
 import { formatCurrency } from '@/shared/lib/currency'
@@ -38,6 +39,9 @@ export function SalesVoucherTable() {
   const fileRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const confirm = useConfirm()
+  const can = useCan()
+  // Không có quyền ghi → hành động chính luôn là Xem (không chìa "Phát hành hóa đơn").
+  const canWrite = can('sales:write')
   // Chứng từ đang phát hành hóa đơn (chưa có số HĐ) — null = đóng dialog.
   const [issueFor, setIssueFor] = useState<{ id: string; voucherNo: string } | null>(null)
 
@@ -262,16 +266,18 @@ export function SalesVoucherTable() {
                   <Badge on={r.isInventoryIssue} onLabel="Đã xuất" offLabel="Chưa xuất" />
                 </TableCell>
                 <TableCell className="sticky right-0 z-10 bg-white shadow-[-6px_0_6px_-4px_rgba(0,0,0,0.08)] group-hover:bg-slate-50">
-                  {/* Chưa có số hóa đơn → hành động chính là Phát hành hóa đơn, Xem lùi vào menu */}
+                  {/* Chưa có số hóa đơn → hành động chính là Phát hành hóa đơn (cần quyền ghi), Xem lùi vào menu */}
                   <RowActionMenu
-                    primaryLabel={r.invoiceNo ? 'Xem' : 'Phát hành hóa đơn'}
+                    primaryLabel={r.invoiceNo || !canWrite ? 'Xem' : 'Phát hành hóa đơn'}
                     onPrimary={() =>
-                      r.invoiceNo
+                      r.invoiceNo || !canWrite
                         ? openView(r.id)
                         : setIssueFor({ id: r.id, voucherNo: r.voucherNo })
                     }
                     items={[
-                      ...(r.invoiceNo ? [] : [{ label: 'Xem', onClick: () => openView(r.id) }]),
+                      ...(r.invoiceNo || !canWrite
+                        ? []
+                        : [{ label: 'Xem', action: 'read' as const, onClick: () => openView(r.id) }]),
                       { label: 'Sửa', onClick: () => openEdit(r.id) },
                       {
                         label: r.posted ? 'Bỏ ghi' : 'Ghi sổ',
