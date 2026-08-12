@@ -24,8 +24,12 @@ import { UsersModule } from './modules/users/users.module'
     ConfigModule.forRoot({ isGlobal: true }),
     LoggerModule.forRoot({
       pinoHttp: {
+        level: process.env.LOG_LEVEL ?? 'info',
+        // pino-pretty chạy trong worker thread — bật ở test sẽ giữ jest không thoát.
         transport:
-          process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+          process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test'
+            ? { target: 'pino-pretty' }
+            : undefined,
       },
     }),
     DatabaseModule,
