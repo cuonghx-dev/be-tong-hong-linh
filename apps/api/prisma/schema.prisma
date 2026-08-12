@@ -254,13 +254,6 @@ enum SupplierType {
   INDIVIDUAL
 }
 
-// Hình thức thanh toán khi thu tiền khách hàng (đối trừ công nợ):
-// tiền mặt → phiếu thu; chuyển khoản → thu tiền gửi.
-enum PaymentMethod {
-  CASH
-  BANK_TRANSFER
-}
-
 // Nhà cung cấp (§6).
 model Supplier {
   id                 String       @id @default(uuid())
@@ -1129,7 +1122,6 @@ model VoucherType {
   updatedAt DateTime @updatedAt @map("updated_at")
   createdBy String?  @map("created_by")
 
-  @@index([code])
   @@map("voucher_types")
 }
 
@@ -1180,8 +1172,8 @@ model PartnerOpeningBalance {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // accountCode đã là leading column của unique phía trên — không cần index riêng.
   @@unique([accountCode, partnerType, partnerId])
-  @@index([accountCode])
   @@map("partner_opening_balances")
 }
 
@@ -1223,8 +1215,9 @@ model BankAccountOpeningBalance {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // accountCode đã là leading column của unique phía trên; index FK phục vụ Cascade từ bank_accounts.
   @@unique([accountCode, bankAccountId])
-  @@index([accountCode])
+  @@index([bankAccountId])
   @@map("bank_account_opening_balances")
 }
 
@@ -1237,7 +1230,8 @@ model InventoryOpeningBalance {
   productId     String  @map("product_id")
   product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   warehouseCode String  @map("warehouse_code") // Mã kho
-  quantity      Decimal @default(0) @db.Decimal(18, 2) // Số lượng tồn
+  // Decimal(18,4) đồng bộ precision số lượng với các bảng *_lines.
+  quantity      Decimal @default(0) @db.Decimal(18, 4) // Số lượng tồn
   amount        Decimal @default(0) @db.Decimal(18, 2) // Giá trị tồn
 
   createdAt DateTime @default(now()) @map("created_at")
