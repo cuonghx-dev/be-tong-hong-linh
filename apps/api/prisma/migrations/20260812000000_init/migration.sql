@@ -11,7 +11,7 @@ CREATE TYPE "CashVoucherCategory" AS ENUM ('SALES_CASH', 'RECEIPT', 'PAYMENT_EMP
 CREATE TYPE "PartnerType" AS ENUM ('CUSTOMER', 'SUPPLIER', 'EMPLOYEE');
 
 -- CreateEnum
-CREATE TYPE "BankVoucherType" AS ENUM ('RECEIPT', 'PAYMENT');
+CREATE TYPE "BankVoucherType" AS ENUM ('RECEIPT', 'PAYMENT', 'TRANSFER');
 
 -- CreateEnum
 CREATE TYPE "BankVoucherCategory" AS ENUM ('RECEIPT', 'INTERNAL_TRANSFER', 'PAYMENT');
@@ -53,7 +53,16 @@ CREATE TYPE "SalesVoucherType" AS ENUM ('DOMESTIC_GOODS');
 CREATE TYPE "SalesPaymentMode" AS ENUM ('UNPAID', 'PAID_NOW');
 
 -- CreateEnum
+CREATE TYPE "InvoicePaymentForm" AS ENUM ('CASH', 'TRANSFER', 'CASH_OR_TRANSFER');
+
+-- CreateEnum
 CREATE TYPE "CustomerType" AS ENUM ('ORG', 'INDIVIDUAL');
+
+-- CreateEnum
+CREATE TYPE "GeneralLineOperation" AS ENUM ('SALES_TRADE_DISCOUNT', 'SALES_REBATE', 'SALES_RETURN', 'TAX_DEDUCT_BUSINESS', 'TAX_DEDUCT_INVESTMENT');
+
+-- CreateEnum
+CREATE TYPE "GeneralTaxType" AS ENUM ('INPUT_INCREASE', 'INPUT_DECREASE', 'OUTPUT_INCREASE', 'OUTPUT_DECREASE');
 
 -- CreateEnum
 CREATE TYPE "ProductType" AS ENUM ('GOODS', 'SERVICE', 'FINISHED', 'MATERIAL', 'TOOL');
@@ -128,6 +137,13 @@ CREATE TABLE "cash_voucher_lines" (
     "cost_item_id" TEXT,
     "bank_account_no" TEXT,
     "bank_name" TEXT,
+    "is_vat_line" BOOLEAN NOT NULL DEFAULT false,
+    "has_invoice" BOOLEAN,
+    "vat_rate" DECIMAL(5,2),
+    "invoice_date" DATE,
+    "invoice_no" TEXT,
+    "goods_service_group" TEXT,
+    "supplier_tax_code" TEXT,
 
     CONSTRAINT "cash_voucher_lines_pkey" PRIMARY KEY ("id")
 );
@@ -146,6 +162,7 @@ CREATE TABLE "bank_vouchers" (
     "bank_account_no" TEXT,
     "bank_name" TEXT,
     "receiver_account_no" TEXT,
+    "receiver_bank_name" TEXT,
     "partner_type" "PartnerType",
     "partner_id" TEXT,
     "partner_name" TEXT,
@@ -211,8 +228,12 @@ CREATE TABLE "purchase_vouchers" (
     "origin" "PurchaseOrigin" NOT NULL DEFAULT 'DOMESTIC',
     "payment_mode" "PurchasePaymentMode" NOT NULL DEFAULT 'UNPAID',
     "receive_with_invoice" BOOLEAN NOT NULL DEFAULT false,
+    "is_purchase_cost" BOOLEAN NOT NULL DEFAULT false,
     "voucher_no" TEXT NOT NULL,
+    "invoice_template" TEXT,
+    "invoice_series" TEXT,
     "invoice_no" TEXT,
+    "invoice_date" DATE,
     "posting_date" DATE NOT NULL,
     "voucher_date" DATE NOT NULL,
     "supplier_id" TEXT,
@@ -265,6 +286,17 @@ CREATE TABLE "purchase_voucher_lines" (
     "vat_account" TEXT NOT NULL,
 
     CONSTRAINT "purchase_voucher_lines_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "purchase_cost_allocations" (
+    "id" TEXT NOT NULL,
+    "voucher_id" TEXT NOT NULL,
+    "cost_voucher_id" TEXT NOT NULL,
+    "amount" DECIMAL(18,2) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "purchase_cost_allocations_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -323,6 +355,8 @@ CREATE TABLE "goods_issue_vouchers" (
     "receiver" TEXT,
     "address" TEXT,
     "sales_employee_id" TEXT,
+    "receiver_id" TEXT,
+    "department" TEXT,
     "description" TEXT,
     "attachment_count" INTEGER NOT NULL DEFAULT 0,
     "delivery_location" TEXT,
@@ -354,6 +388,7 @@ CREATE TABLE "goods_issue_lines" (
     "amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "lot_no" TEXT,
     "expiry_date" DATE,
+    "finished_product" TEXT,
 
     CONSTRAINT "goods_issue_lines_pkey" PRIMARY KEY ("id")
 );
@@ -413,6 +448,17 @@ CREATE TABLE "sales_vouchers" (
     "total_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "einvoice_lookup_code" TEXT,
     "einvoice_lookup_url" TEXT,
+    "issue_reason" TEXT,
+    "invoice_form" TEXT,
+    "invoice_serial" TEXT,
+    "invoice_date" DATE,
+    "buyer_name" TEXT,
+    "invoice_payment_form" "InvoicePaymentForm",
+    "bank_account_no" TEXT,
+    "phone" TEXT,
+    "budget_relation_code" TEXT,
+    "id_card_no" TEXT,
+    "passport_no" TEXT,
     "receipt_id" TEXT,
     "issue_id" TEXT,
     "posted" BOOLEAN NOT NULL DEFAULT true,
@@ -442,6 +488,10 @@ CREATE TABLE "sales_voucher_lines" (
     "vat_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "vat_account" TEXT NOT NULL,
     "lot_no" TEXT,
+    "warehouse_id" TEXT,
+    "cost_account" TEXT,
+    "inventory_account" TEXT,
+    "cost_price" DECIMAL(18,2) NOT NULL DEFAULT 0,
 
     CONSTRAINT "sales_voucher_lines_pkey" PRIMARY KEY ("id")
 );
@@ -464,10 +514,13 @@ CREATE TABLE "general_vouchers" (
     "voucher_no" TEXT NOT NULL,
     "posting_date" DATE NOT NULL,
     "voucher_date" DATE NOT NULL,
+    "due_date" DATE,
     "description" TEXT,
+    "reference_no" TEXT,
     "total_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "branch_id" TEXT,
     "posted" BOOLEAN NOT NULL DEFAULT true,
+    "exclude_from_vat_report" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "created_by" TEXT,
@@ -484,10 +537,35 @@ CREATE TABLE "general_voucher_lines" (
     "debit_account" TEXT NOT NULL,
     "credit_account" TEXT NOT NULL,
     "amount" DECIMAL(18,2) NOT NULL,
-    "partner_id" TEXT,
-    "partner_name" TEXT,
+    "operation" "GeneralLineOperation",
+    "debit_partner_id" TEXT,
+    "debit_partner_name" TEXT,
+    "credit_partner_id" TEXT,
+    "credit_partner_name" TEXT,
 
     CONSTRAINT "general_voucher_lines_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "general_voucher_tax_lines" (
+    "id" TEXT NOT NULL,
+    "voucher_id" TEXT NOT NULL,
+    "line_no" INTEGER NOT NULL,
+    "description" TEXT,
+    "has_invoice" BOOLEAN NOT NULL DEFAULT true,
+    "tax_type" "GeneralTaxType",
+    "taxable_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "vat_rate" DECIMAL(5,2),
+    "vat_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "vat_account" TEXT,
+    "invoice_no" TEXT,
+    "invoice_date" DATE,
+    "goods_service_group" TEXT,
+    "partner_id" TEXT,
+    "partner_name" TEXT,
+    "supplier_tax_code" TEXT,
+
+    CONSTRAINT "general_voucher_tax_lines_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -512,6 +590,7 @@ CREATE TABLE "products" (
     "sale_price" DECIMAL(18,2),
     "min_stock" DECIMAL(18,2),
     "vat_rate" TEXT,
+    "tax_reduction" TEXT,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -583,6 +662,7 @@ CREATE TABLE "product_groups" (
 CREATE TABLE "bank_accounts" (
     "id" TEXT NOT NULL,
     "account_number" TEXT NOT NULL,
+    "bank_id" TEXT,
     "bank_name" TEXT NOT NULL,
     "bank_branch" TEXT,
     "account_holder" TEXT,
@@ -838,10 +918,13 @@ CREATE UNIQUE INDEX "cash_vouchers_voucher_no_key" ON "cash_vouchers"("voucher_n
 CREATE INDEX "cash_vouchers_type_posting_date_idx" ON "cash_vouchers"("type", "posting_date");
 
 -- CreateIndex
+CREATE INDEX "cash_vouchers_posting_date_idx" ON "cash_vouchers"("posting_date");
+
+-- CreateIndex
 CREATE INDEX "cash_vouchers_partner_id_idx" ON "cash_vouchers"("partner_id");
 
 -- CreateIndex
-CREATE INDEX "cash_voucher_lines_voucher_id_idx" ON "cash_voucher_lines"("voucher_id");
+CREATE UNIQUE INDEX "cash_voucher_lines_voucher_id_line_no_key" ON "cash_voucher_lines"("voucher_id", "line_no");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "bank_vouchers_voucher_no_key" ON "bank_vouchers"("voucher_no");
@@ -850,10 +933,13 @@ CREATE UNIQUE INDEX "bank_vouchers_voucher_no_key" ON "bank_vouchers"("voucher_n
 CREATE INDEX "bank_vouchers_type_posting_date_idx" ON "bank_vouchers"("type", "posting_date");
 
 -- CreateIndex
+CREATE INDEX "bank_vouchers_posting_date_idx" ON "bank_vouchers"("posting_date");
+
+-- CreateIndex
 CREATE INDEX "bank_vouchers_partner_id_idx" ON "bank_vouchers"("partner_id");
 
 -- CreateIndex
-CREATE INDEX "bank_voucher_lines_voucher_id_idx" ON "bank_voucher_lines"("voucher_id");
+CREATE UNIQUE INDEX "bank_voucher_lines_voucher_id_line_no_key" ON "bank_voucher_lines"("voucher_id", "line_no");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "suppliers_code_key" ON "suppliers"("code");
@@ -868,10 +954,22 @@ CREATE UNIQUE INDEX "purchase_vouchers_voucher_no_key" ON "purchase_vouchers"("v
 CREATE INDEX "purchase_vouchers_type_posting_date_idx" ON "purchase_vouchers"("type", "posting_date");
 
 -- CreateIndex
+CREATE INDEX "purchase_vouchers_posting_date_idx" ON "purchase_vouchers"("posting_date");
+
+-- CreateIndex
 CREATE INDEX "purchase_vouchers_supplier_id_idx" ON "purchase_vouchers"("supplier_id");
 
 -- CreateIndex
-CREATE INDEX "purchase_voucher_lines_voucher_id_idx" ON "purchase_voucher_lines"("voucher_id");
+CREATE INDEX "purchase_voucher_lines_item_id_warehouse_id_idx" ON "purchase_voucher_lines"("item_id", "warehouse_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "purchase_voucher_lines_voucher_id_line_no_key" ON "purchase_voucher_lines"("voucher_id", "line_no");
+
+-- CreateIndex
+CREATE INDEX "purchase_cost_allocations_cost_voucher_id_idx" ON "purchase_cost_allocations"("cost_voucher_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "purchase_cost_allocations_voucher_id_cost_voucher_id_key" ON "purchase_cost_allocations"("voucher_id", "cost_voucher_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "inventory_receipts_voucher_no_key" ON "inventory_receipts"("voucher_no");
@@ -880,7 +978,10 @@ CREATE UNIQUE INDEX "inventory_receipts_voucher_no_key" ON "inventory_receipts"(
 CREATE INDEX "inventory_receipts_receipt_type_posting_date_idx" ON "inventory_receipts"("receipt_type", "posting_date");
 
 -- CreateIndex
-CREATE INDEX "inventory_receipt_lines_receipt_id_idx" ON "inventory_receipt_lines"("receipt_id");
+CREATE INDEX "inventory_receipt_lines_item_id_warehouse_id_idx" ON "inventory_receipt_lines"("item_id", "warehouse_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "inventory_receipt_lines_receipt_id_line_no_key" ON "inventory_receipt_lines"("receipt_id", "line_no");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "goods_issue_vouchers_voucher_no_key" ON "goods_issue_vouchers"("voucher_no");
@@ -889,10 +990,16 @@ CREATE UNIQUE INDEX "goods_issue_vouchers_voucher_no_key" ON "goods_issue_vouche
 CREATE INDEX "goods_issue_vouchers_category_posting_date_idx" ON "goods_issue_vouchers"("category", "posting_date");
 
 -- CreateIndex
+CREATE INDEX "goods_issue_vouchers_posting_date_idx" ON "goods_issue_vouchers"("posting_date");
+
+-- CreateIndex
 CREATE INDEX "goods_issue_vouchers_customer_id_idx" ON "goods_issue_vouchers"("customer_id");
 
 -- CreateIndex
-CREATE INDEX "goods_issue_lines_voucher_id_idx" ON "goods_issue_lines"("voucher_id");
+CREATE INDEX "goods_issue_lines_item_id_warehouse_id_idx" ON "goods_issue_lines"("item_id", "warehouse_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "goods_issue_lines_voucher_id_line_no_key" ON "goods_issue_lines"("voucher_id", "line_no");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "customers_code_key" ON "customers"("code");
@@ -907,13 +1014,19 @@ CREATE UNIQUE INDEX "sales_vouchers_voucher_no_key" ON "sales_vouchers"("voucher
 CREATE INDEX "sales_vouchers_voucher_type_posting_date_idx" ON "sales_vouchers"("voucher_type", "posting_date");
 
 -- CreateIndex
+CREATE INDEX "sales_vouchers_posting_date_idx" ON "sales_vouchers"("posting_date");
+
+-- CreateIndex
 CREATE INDEX "sales_vouchers_customer_id_idx" ON "sales_vouchers"("customer_id");
 
 -- CreateIndex
 CREATE INDEX "sales_vouchers_payment_mode_idx" ON "sales_vouchers"("payment_mode");
 
 -- CreateIndex
-CREATE INDEX "sales_voucher_lines_voucher_id_idx" ON "sales_voucher_lines"("voucher_id");
+CREATE INDEX "sales_voucher_lines_item_id_idx" ON "sales_voucher_lines"("item_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "sales_voucher_lines_voucher_id_line_no_key" ON "sales_voucher_lines"("voucher_id", "line_no");
 
 -- CreateIndex
 CREATE INDEX "payment_allocations_sales_voucher_id_idx" ON "payment_allocations"("sales_voucher_id");
@@ -931,7 +1044,10 @@ CREATE UNIQUE INDEX "general_vouchers_voucher_no_key" ON "general_vouchers"("vou
 CREATE INDEX "general_vouchers_posting_date_idx" ON "general_vouchers"("posting_date");
 
 -- CreateIndex
-CREATE INDEX "general_voucher_lines_voucher_id_idx" ON "general_voucher_lines"("voucher_id");
+CREATE UNIQUE INDEX "general_voucher_lines_voucher_id_line_no_key" ON "general_voucher_lines"("voucher_id", "line_no");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "general_voucher_tax_lines_voucher_id_line_no_key" ON "general_voucher_tax_lines"("voucher_id", "line_no");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "products_code_key" ON "products"("code");
@@ -968,6 +1084,9 @@ CREATE INDEX "product_groups_name_idx" ON "product_groups"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "bank_accounts_account_number_key" ON "bank_accounts"("account_number");
+
+-- CreateIndex
+CREATE INDEX "bank_accounts_bank_id_idx" ON "bank_accounts"("bank_id");
 
 -- CreateIndex
 CREATE INDEX "bank_accounts_bank_name_idx" ON "bank_accounts"("bank_name");
@@ -1069,10 +1188,22 @@ ALTER TABLE "cash_voucher_lines" ADD CONSTRAINT "cash_voucher_lines_voucher_id_f
 ALTER TABLE "bank_voucher_lines" ADD CONSTRAINT "bank_voucher_lines_voucher_id_fkey" FOREIGN KEY ("voucher_id") REFERENCES "bank_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "purchase_vouchers" ADD CONSTRAINT "purchase_vouchers_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "suppliers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "purchase_voucher_lines" ADD CONSTRAINT "purchase_voucher_lines_voucher_id_fkey" FOREIGN KEY ("voucher_id") REFERENCES "purchase_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "purchase_cost_allocations" ADD CONSTRAINT "purchase_cost_allocations_voucher_id_fkey" FOREIGN KEY ("voucher_id") REFERENCES "purchase_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "purchase_cost_allocations" ADD CONSTRAINT "purchase_cost_allocations_cost_voucher_id_fkey" FOREIGN KEY ("cost_voucher_id") REFERENCES "purchase_vouchers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "inventory_receipt_lines" ADD CONSTRAINT "inventory_receipt_lines_receipt_id_fkey" FOREIGN KEY ("receipt_id") REFERENCES "inventory_receipts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "goods_issue_vouchers" ADD CONSTRAINT "goods_issue_vouchers_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "goods_issue_lines" ADD CONSTRAINT "goods_issue_lines_voucher_id_fkey" FOREIGN KEY ("voucher_id") REFERENCES "goods_issue_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1096,8 +1227,30 @@ ALTER TABLE "payment_allocations" ADD CONSTRAINT "payment_allocations_bank_vouch
 ALTER TABLE "general_voucher_lines" ADD CONSTRAINT "general_voucher_lines_voucher_id_fkey" FOREIGN KEY ("voucher_id") REFERENCES "general_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "general_voucher_tax_lines" ADD CONSTRAINT "general_voucher_tax_lines_voucher_id_fkey" FOREIGN KEY ("voucher_id") REFERENCES "general_vouchers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "bank_accounts" ADD CONSTRAINT "bank_accounts_bank_id_fkey" FOREIGN KEY ("bank_id") REFERENCES "banks"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "bank_account_opening_balances" ADD CONSTRAINT "bank_account_opening_balances_bank_account_id_fkey" FOREIGN KEY ("bank_account_id") REFERENCES "bank_accounts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "inventory_opening_balances" ADD CONSTRAINT "inventory_opening_balances_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+
+-- ===== SQL viết tay (Prisma schema không biểu diễn được) =====
+
+-- CHECK XOR: nguồn tiền đối trừ đúng 1 trong 2 (phiếu thu TM / thu tiền gửi CK).
+-- Prisma không hỗ trợ khai CHECK trong schema → thêm tay, migrate diff bỏ qua (không drift).
+ALTER TABLE "payment_allocations" ADD CONSTRAINT "payment_allocations_source_xor"
+  CHECK (("cash_voucher_id" IS NULL) <> ("bank_voucher_id" IS NULL));
+
+-- TK 3341 "Phải trả công nhân viên" (con của 334) — TK Nợ mặc định của
+-- phiếu chi "Trả lương tạm ứng cho nhân viên" (theo form MISA).
+-- Không có trong xlsx hệ thống TK seed → chèn tại đây; parent gán sau khi import HTK.
+INSERT INTO "accounts" ("id", "number", "name", "nature", "parent_id", "is_active", "created_at", "updated_at")
+SELECT gen_random_uuid(), '3341', 'Phải trả công nhân viên', 'CREDIT',
+       (SELECT "id" FROM "accounts" WHERE "number" = '334'),
+       true, now(), now()
+WHERE NOT EXISTS (SELECT 1 FROM "accounts" WHERE "number" = '3341');
