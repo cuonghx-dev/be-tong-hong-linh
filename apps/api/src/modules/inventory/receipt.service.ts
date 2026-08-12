@@ -3,6 +3,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { randomUUID } from 'node:crypto'
 import {
   InventoryReceiptType,
+  PartnerType,
   Prisma,
   type InventoryReceipt,
   type InventoryReceiptLine,
@@ -87,6 +88,13 @@ export class ReceiptService {
           voucherNo,
           postingDate: new Date(dto.postingDate),
           voucherDate: new Date(dto.voucherDate),
+          // Nhập mua hàng có đối tượng → NCC; thành phẩm SX không có loại đối tượng.
+          partnerType:
+            dto.partnerType ??
+            (dto.receiptType === InventoryReceiptType.PURCHASE &&
+            (dto.partnerId || dto.partnerName)
+              ? PartnerType.SUPPLIER
+              : null),
           partnerId: dto.partnerId ?? null,
           partnerName: dto.partnerName ?? null,
           address: dto.address ?? null,
@@ -95,7 +103,7 @@ export class ReceiptService {
           reference: dto.reference ?? null,
           attachmentCount: dto.attachmentCount ?? 0,
           totalAmount,
-          branchName: dto.branchName ?? null,
+          branchId: dto.branchId ?? null,
           lines: { create: lines },
         },
         include: { lines: { orderBy: { lineNo: 'asc' } } },
@@ -113,6 +121,7 @@ export class ReceiptService {
       const data: Prisma.InventoryReceiptUpdateInput = {
         postingDate: dto.postingDate ? new Date(dto.postingDate) : undefined,
         voucherDate: dto.voucherDate ? new Date(dto.voucherDate) : undefined,
+        partnerType: dto.partnerType ?? undefined,
         partnerId: dto.partnerId ?? undefined,
         partnerName: dto.partnerName ?? undefined,
         address: dto.address ?? undefined,
@@ -120,7 +129,7 @@ export class ReceiptService {
         description: dto.description ?? undefined,
         reference: dto.reference ?? undefined,
         attachmentCount: dto.attachmentCount ?? undefined,
-        branchName: dto.branchName ?? undefined,
+        branchId: dto.branchId ?? undefined,
       }
 
       if (dto.lines) {
@@ -173,12 +182,16 @@ export class ReceiptService {
         postingDate: p.date,
         voucherDate: p.date,
         // partnerId trên phiếu = MÃ đối tượng (FE hiển thị trực tiếp), không phải UUID.
+        partnerType:
+          p.receiptType === InventoryReceiptType.PURCHASE && (supplier || supplierName)
+            ? PartnerType.SUPPLIER
+            : null,
         partnerId: supplier?.code ?? null,
         partnerName: supplier?.name ?? supplierName,
         deliverer: p.deliverer,
         description: p.description ?? 'Nhập kho',
         totalAmount: total,
-        branchName: p.branchName,
+        branchId: p.branchId,
       })
       // Mức tổng hợp không có dòng hàng chi tiết → 1 dòng đại diện theo định khoản mặc định.
       lines.push({
@@ -338,6 +351,8 @@ function purchaseReceiptData(
   return {
     postingDate: input.postingDate,
     voucherDate: input.voucherDate,
+    partnerType:
+      input.supplierCode || input.supplierName ? PartnerType.SUPPLIER : null,
     partnerId: input.supplierCode,
     partnerName: input.supplierName,
     address: input.address,
@@ -424,14 +439,16 @@ function computeTotal(lines: { amount: Prisma.Decimal }[]): Prisma.Decimal {
 // Số chứng từ auto tăng: NK##### chạy toàn cục, không kèm năm (vd NK07099).
 // Lấy MAX(số) hiện có + 1 (không dùng count để tránh trùng khi dữ liệu nhập khẩu đứt quãng).
 async function nextVoucherNo(tx: Prisma.TransactionClient): Promise<string> {
-  const last = await tx.inventoryReceipt.findFirst({
+  // MAX theo giá trị số (không orderBy chuỗi: "NK9999" > "NK10000" khi so lexicographic).
+  const rows = await tx.inventoryReceipt.findMany({
     where: { voucherNo: { startsWith: 'NK' } },
-    orderBy: { voucherNo: 'desc' },
     select: { voucherNo: true },
   })
-  const lastSeq = last ? Number(last.voucherNo.replace(/\D/g, '')) : 0
-  const seq = Number.isFinite(lastSeq) ? lastSeq : 0
-  return `NK${String(seq + 1).padStart(5, '0')}`
+  const maxSeq = rows.reduce((max, r) => {
+    const n = Number.parseInt(r.voucherNo.replace(/\D/g, ''), 10)
+    return Number.isNaN(n) ? max : Math.max(max, n)
+  }, 0)
+  return `NK${String(maxSeq + 1).padStart(5, '0')}`
 }
 
 function toDateOnly(d: Date | null): string | null {
@@ -445,6 +462,7 @@ function toReceiptDto(r: ReceiptWithLines) {
     voucherNo: r.voucherNo,
     postingDate: toDateOnly(r.postingDate)!,
     voucherDate: toDateOnly(r.voucherDate)!,
+    partnerType: r.partnerType,
     partnerId: r.partnerId,
     partnerName: r.partnerName,
     address: r.address,
@@ -453,7 +471,7 @@ function toReceiptDto(r: ReceiptWithLines) {
     reference: r.reference,
     attachmentCount: r.attachmentCount,
     totalAmount: r.totalAmount.toString(),
-    branchName: r.branchName,
+    branchId: r.branchId,
     posted: r.posted,
     lines: r.lines.map((l) => ({
       id: l.id,

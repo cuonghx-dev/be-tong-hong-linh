@@ -113,6 +113,8 @@ model CashVoucherLine {
   debitAccount  String      @map("debit_account")
   creditAccount String      @map("credit_account")
   amount        Decimal     @db.Decimal(18, 2)
+  // Nghiệp vụ: ô text tự do trên form (khác GeneralVoucherLine.operation là enum
+  // dropdown) — người dùng gõ tay, không có danh sách cố định nên giữ String.
   operation     String?
   // Đối tượng theo dòng: báo cáo công nợ chỉ SELECT rồi quy nhóm in-memory
   // (filter WHERE bằng debit/credit_account + posting_date) — không cần index.
@@ -393,6 +395,7 @@ model PurchaseCostAllocation {
   voucher       PurchaseVoucher @relation("VoucherCostAllocations", fields: [voucherId], references: [id], onDelete: Cascade)
   costVoucherId String          @map("cost_voucher_id")
   costVoucher   PurchaseVoucher @relation("CostVoucherAllocations", fields: [costVoucherId], references: [id], onDelete: Restrict)
+  // CHECK (amount > 0) — raw SQL trong migration 20260812130000.
   amount        Decimal         @db.Decimal(18, 2)
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -418,6 +421,9 @@ model InventoryReceipt {
   voucherNo       String                 @unique @map("voucher_no")
   postingDate     DateTime               @map("posting_date") @db.Date
   voucherDate     DateTime               @map("voucher_date") @db.Date
+  // Loại đối tượng của partnerId (nhập mua → SUPPLIER; thành phẩm SX có thể trống).
+  partnerType     PartnerType?           @map("partner_type")
+  // Mã đối tượng hiển thị (không phải row id) — như các chứng từ khác.
   partnerId       String?                @map("partner_id")
   partnerName     String?                @map("partner_name")
   address         String?
@@ -426,7 +432,7 @@ model InventoryReceipt {
   reference       String?
   attachmentCount Int                    @default(0) @map("attachment_count")
   totalAmount     Decimal                @default(0) @map("total_amount") @db.Decimal(18, 2)
-  branchName      String?                @map("branch_name")
+  branchId        String?                @map("branch_id")
   // Ghi sổ / bỏ ghi: bỏ ghi = loại khỏi sổ sách nhưng không xóa dữ liệu.
   posted          Boolean                @default(true)
   lines           InventoryReceiptLine[]
@@ -713,6 +719,7 @@ model PaymentAllocation {
   cashVoucher    CashVoucher? @relation(fields: [cashVoucherId], references: [id], onDelete: Cascade)
   bankVoucherId  String?      @map("bank_voucher_id")
   bankVoucher    BankVoucher? @relation(fields: [bankVoucherId], references: [id], onDelete: Cascade)
+  // CHECK (amount > 0) — raw SQL trong migration 20260812130000; XOR nguồn tiền ở init.
   amount         Decimal      @db.Decimal(18, 2)
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -1093,7 +1100,9 @@ enum TransferSide {
 // Mã kết chuyển là khóa tự nhiên (unique), dạng "<từ>-<đến>" (VD "511-911").
 model TransferAccount {
   id          String       @id @default(uuid())
-  order       Int          @map("transfer_order") // Thứ tự kết chuyển (chạy tăng dần)
+  // Thứ tự kết chuyển (chạy tăng dần). Cho phép trùng (nhập khẩu nhiều file có STT
+  // chồng nhau) — thứ tự vẫn tất định nhờ sort phụ theo code (orderBy [order, code]).
+  order       Int          @map("transfer_order")
   code        String       @unique // Mã kết chuyển (VD "511-911")
   fromAccount String       @map("from_account") // Kết chuyển từ (mã TK)
   toAccount   String       @map("to_account") // Kết chuyển đến (mã TK)
@@ -1114,7 +1123,9 @@ model TransferAccount {
 // Không có mã riêng — định danh theo loại nghiệp vụ (tên có thể trùng nếu khác định khoản).
 model DefaultAccount {
   id            String  @id @default(uuid())
-  order         Int     @map("default_order") // STT trong danh sách MISA (giữ thứ tự gốc)
+  // STT trong danh sách MISA (giữ thứ tự gốc) — chỉ để hiển thị, cho phép trùng;
+  // danh sách vẫn tất định nhờ sort phụ theo name (orderBy [order, name]).
+  order         Int     @map("default_order")
   name          String // Loại nghiệp vụ (cột "Loại")
   debitAccount  String? @map("debit_account") // TK Nợ ngầm định (có thể để trống)
   creditAccount String? @map("credit_account") // TK Có ngầm định (có thể để trống)
@@ -1164,6 +1175,8 @@ model Unit {
 
 // Số dư tài khoản đầu kỳ — mỗi TK 1 dòng Dư Nợ/Dư Có (Danh_sach_so_du_tai_khoan.xlsx).
 // Lưu cả TK tổng hợp lẫn TK chi tiết như file MISA; không tự cộng dồn cha-con.
+// Các bảng số dư đầu kỳ có CHECK (debit/credit/quantity/amount >= 0) — raw SQL
+// migration 20260812130000; số âm phải chuẩn hóa sang vế đối diện trước khi ghi.
 model AccountOpeningBalance {
   id           String  @id @default(uuid())
   accountCode  String  @unique @map("account_code")
@@ -1264,6 +1277,7 @@ model InventoryOpeningBalance {
 
 // Khóa sổ kỳ kế toán: 1 dòng duy nhất (id = 1). Chứng từ có ngày hạch toán ≤ lock_date
 // không được thêm/sửa/xóa. Bỏ khóa sổ = xóa dòng.
+// Singleton ép ở DB: CHECK (id = 1) — raw SQL trong migration 20260812130000.
 model BookLock {
   id        Int      @id @default(1)
   lockDate  DateTime @map("lock_date") @db.Date

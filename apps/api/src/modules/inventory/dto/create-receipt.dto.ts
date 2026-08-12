@@ -1,4 +1,4 @@
-import { InventoryReceiptType } from '@app/shared'
+import { InventoryReceiptType, PartnerType } from '@app/shared'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
@@ -80,6 +80,14 @@ export class CreateInventoryReceiptDto {
   @IsDateString()
   voucherDate!: string
 
+  @ApiPropertyOptional({
+    enum: PartnerType,
+    description: 'Loại đối tượng — bỏ trống: nhập mua có đối tượng tự hiểu là NCC',
+  })
+  @IsOptional()
+  @IsEnum(PartnerType)
+  partnerType?: PartnerType
+
   @ApiPropertyOptional({ description: 'Mã đối tượng' })
   @IsOptional()
   @IsString()
@@ -119,7 +127,7 @@ export class CreateInventoryReceiptDto {
   @ApiPropertyOptional({ description: 'Chi nhánh' })
   @IsOptional()
   @IsString()
-  branchName?: string
+  branchId?: string
 
   @ApiProperty({ type: [CreateInventoryReceiptLineDto] })
   @IsArray()

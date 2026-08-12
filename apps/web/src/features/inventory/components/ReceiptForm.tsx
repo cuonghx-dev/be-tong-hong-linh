@@ -145,7 +145,7 @@ export function ReceiptForm({
       deliverer: v.deliverer ?? undefined,
       description: v.description ?? undefined,
       attachmentCount: v.attachmentCount,
-      branchName: v.branchName ?? undefined,
+      branchId: v.branchId ?? undefined,
       lines: v.lines.map((l) => ({
         itemId: l.itemId ?? undefined,
         itemName: l.itemName ?? undefined,
@@ -342,7 +342,7 @@ export function ReceiptForm({
             </div>
             {variant.showBranch && (
               <Field label="Chi nhánh" className="md:col-span-3">
-                <Input {...register('branchName')} />
+                <Input {...register('branchId')} />
               </Field>
             )}
             <div className="hidden md:col-span-2 md:block" />

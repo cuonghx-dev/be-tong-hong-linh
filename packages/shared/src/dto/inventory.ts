@@ -1,5 +1,5 @@
 // Type request/response phân hệ Kho — Nhập kho + Xuất kho (05-kho) — dùng chung FE ↔ BE.
-import type { GoodsIssueCategory, InventoryReceiptType } from '../enums'
+import type { GoodsIssueCategory, InventoryReceiptType, PartnerType } from '../enums'
 
 // ── Phiếu nhập kho ───────────────────────────────────────────────────────────
 
@@ -27,6 +27,7 @@ export interface InventoryReceiptDto {
   voucherNo: string // vd NK07099
   postingDate: string // Ngày hạch toán (ISO date-only)
   voucherDate: string // Ngày chứng từ
+  partnerType: PartnerType | null // Loại đối tượng (nhập mua → SUPPLIER)
   partnerId: string | null // Mã đối tượng
   partnerName: string | null // Tên đối tượng
   address: string | null // Địa chỉ
@@ -35,7 +36,7 @@ export interface InventoryReceiptDto {
   reference: string | null // Tham chiếu
   attachmentCount: number // Kèm theo (chứng từ gốc)
   totalAmount: string // Tổng tiền
-  branchName: string | null // Chi nhánh
+  branchId: string | null // Chi nhánh
   posted: boolean // Đã ghi sổ; bỏ ghi = còn nháp, loại khỏi sổ/báo cáo
   lines: InventoryReceiptLineDto[]
   createdAt: string
@@ -61,6 +62,7 @@ export interface CreateInventoryReceiptInput {
   receiptType: InventoryReceiptType
   postingDate: string
   voucherDate: string
+  partnerType?: PartnerType | null
   partnerId?: string | null
   partnerName?: string | null
   address?: string | null
@@ -68,7 +70,7 @@ export interface CreateInventoryReceiptInput {
   description?: string | null
   reference?: string | null
   attachmentCount?: number
-  branchName?: string | null
+  branchId?: string | null
   lines: CreateInventoryReceiptLineInput[]
 }
 

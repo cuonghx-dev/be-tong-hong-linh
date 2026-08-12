@@ -32,7 +32,7 @@ export const receiptSchema = z.object({
   deliverer: z.string().optional(),
   description: z.string().optional(),
   attachmentCount: z.coerce.number().int().min(0).optional(),
-  branchName: z.string().optional(),
+  branchId: z.string().optional(),
   lines: z
     .array(receiptLineSchema)
     .min(1, 'Cần ít nhất 1 dòng hàng')

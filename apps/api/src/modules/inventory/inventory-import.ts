@@ -8,7 +8,7 @@ export interface ParsedReceipt {
   description: string | null
   totalAmount: number
   deliverer: string | null
-  branchName: string | null
+  branchId: string | null
 }
 
 // Tên cột cần tìm trong header (mẫu Nhap_kho.xlsx).
@@ -83,7 +83,7 @@ export function parseReceiptXlsx(buffer: Buffer): ParsedReceipt[] {
       description: iDesc >= 0 ? toStr(r[iDesc]) : null,
       totalAmount: iTotal >= 0 ? toNumber(r[iTotal]) : 0,
       deliverer: iDeliverer >= 0 ? toStr(r[iDeliverer]) : null,
-      branchName: iBranch >= 0 ? toStr(r[iBranch]) : null,
+      branchId: iBranch >= 0 ? toStr(r[iBranch]) : null,
     })
   }
   return out
