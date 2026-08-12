@@ -26,7 +26,7 @@ pnpm --filter @app/web dev
 ```
 
 - Swagger: http://localhost:3000/api/docs (mọi route có prefix `/api`)
-- **Test**: Jest (`jest --passWithNoTests` — chưa có test nào). Chạy 1 test: `pnpm --filter @app/api test -- <pattern>`. Web chưa cấu hình test.
+- **Test**: Jest. Unit (`pnpm --filter @app/api test`) không cần DB. Integration (`pnpm --filter @app/api test:integration`, cần `pnpm docker:up`): app Nest thật + supertest trên DB riêng `ketoan_sme_it` (globalSetup tự `migrate reset` + seed); vòng lặp dev dùng `IT_REUSE_DB=1` để bỏ qua reset+seed, chạy 1 test bằng `-- -t "<tên>"` hoặc `-- --testPathPattern <file>`. Spec ở `apps/api/test/integration/`. Web chưa cấu hình test.
 - `lint` = `eslint --fix`; `packages/shared` phải `build` (tsc) trước khi api/web typecheck vì chúng import `dist`.
 
 ## Kiến trúc
@@ -81,7 +81,7 @@ Commit theo Conventional Commits, scope = tên phân hệ (`cash`, `bank`, `purc
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **ke-toan-SME** (4376 symbols, 11979 relationships, 154 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **ke-toan-SME** (4437 symbols, 12183 relationships, 160 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

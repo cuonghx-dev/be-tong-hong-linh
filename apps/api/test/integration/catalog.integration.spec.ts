@@ -24,10 +24,11 @@ describe('Catalog (integration)', () => {
   const auth = () => `Bearer ${token}`
 
   describe('accounts — CRUD đại diện', () => {
-    it('GET list trả danh mục seed (hệ thống TK TT133)', async () => {
+    it('GET list trả danh mục seed (hệ thống TK TT133, 137 tài khoản)', async () => {
       const res = await http().get('/api/catalog/accounts').set('Authorization', auth()).expect(200)
-      const rows = Array.isArray(res.body) ? res.body : res.body.data
-      expect(rows.length).toBeGreaterThan(100)
+      // List phân trang mặc định 20 dòng — tổng nằm ở pagination.total.
+      expect(res.body.pagination.total).toBeGreaterThan(100)
+      expect(res.body.data.length).toBeGreaterThan(0)
     })
 
     it('POST tạo → GET :id → PATCH → DELETE', async () => {
