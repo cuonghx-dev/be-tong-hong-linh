@@ -155,13 +155,21 @@ describe('Sales vouchers (integration)', () => {
     await http().get(`/api/sales/vouchers/${id}`).set('Authorization', auth()).expect(404)
   })
 
-  it('reports smoke: detail + receivable-summary', async () => {
+  it('reports smoke: detail + by-item + receivable-summary + receivable-detail', async () => {
     await http()
       .get(`/api/sales/reports/detail?fromDate=${YEAR}-01-01&toDate=${YEAR}-12-31`)
       .set('Authorization', auth())
       .expect(200)
     await http()
+      .get(`/api/sales/reports/by-item?fromDate=${YEAR}-01-01&toDate=${YEAR}-12-31`)
+      .set('Authorization', auth())
+      .expect(200)
+    await http()
       .get(`/api/sales/reports/receivable-summary?fromDate=${YEAR}-01-01&toDate=${YEAR}-12-31`)
+      .set('Authorization', auth())
+      .expect(200)
+    await http()
+      .get(`/api/sales/reports/receivable-detail?fromDate=${YEAR}-01-01&toDate=${YEAR}-12-31`)
       .set('Authorization', auth())
       .expect(200)
   })

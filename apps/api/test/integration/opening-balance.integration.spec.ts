@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common'
 import request from 'supertest'
-import { createTestApp, loginAs } from '../helpers/test-app'
+import { createTestApp, loginAs, prismaOf } from '../helpers/test-app'
 
 describe('Opening balance (integration)', () => {
   let app: INestApplication
@@ -95,5 +95,57 @@ describe('Opening balance (integration)', () => {
       .set('Authorization', auth())
       .expect(200)
     expect(empty.body).toHaveLength(0)
+  })
+
+  it('inventory: PUT thay toàn bộ + đồng bộ TK kho, validation Min(0)', async () => {
+    // PUT tồn kho đầu kỳ ghi đè cả account_opening_balances (sync TK kho) —
+    // snapshot 2 bảng và khôi phục trong finally để không lây sang spec khác.
+    const prisma = prismaOf(app)
+    const accountsBefore = await prisma.accountOpeningBalance.findMany()
+    const invBefore = await prisma.inventoryOpeningBalance.findMany()
+
+    try {
+      const before = await http()
+        .get('/api/opening-balance/inventory')
+        .set('Authorization', auth())
+        .expect(200)
+      // Trả { items, warehouses }; seed betonghonglinh có 542 VTHH tồn kho được → luôn có dòng.
+      expect(before.body.items.length).toBeGreaterThan(0)
+      const productId = before.body.items[0].productId
+
+      // Số lượng âm → 400 (Min(0)).
+      await http()
+        .put('/api/opening-balance/inventory')
+        .set('Authorization', auth())
+        .send({ items: [{ productId, warehouseCode: 'KHO VAT TU', quantity: -1, amount: 0 }] })
+        .expect(400)
+
+      await http()
+        .put('/api/opening-balance/inventory')
+        .set('Authorization', auth())
+        .send({ items: [{ productId, warehouseCode: 'KHO VAT TU', quantity: 5, amount: 1000000 }] })
+        .expect(200)
+
+      const after = await http()
+        .get('/api/opening-balance/inventory')
+        .set('Authorization', auth())
+        .expect(200)
+      const row = after.body.items.find(
+        (r: { productId: string; warehouseCode: string }) =>
+          r.productId === productId && r.warehouseCode === 'KHO VAT TU',
+      )
+      expect(row).toBeDefined()
+      expect(Number(row.quantity)).toBe(5)
+      expect(Number(row.amount)).toBe(1000000)
+    } finally {
+      await prisma.inventoryOpeningBalance.deleteMany()
+      if (invBefore.length) {
+        await prisma.inventoryOpeningBalance.createMany({ data: invBefore })
+      }
+      await prisma.accountOpeningBalance.deleteMany()
+      if (accountsBefore.length) {
+        await prisma.accountOpeningBalance.createMany({ data: accountsBefore })
+      }
+    }
   })
 })

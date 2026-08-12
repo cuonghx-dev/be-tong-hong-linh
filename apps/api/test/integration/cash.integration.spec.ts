@@ -255,4 +255,92 @@ describe('Cash vouchers (integration)', () => {
       await http().get(`/api/cash/vouchers/${created.body.id}`).set('Authorization', auth()).expect(404)
     })
   })
+
+  describe('reports (S03a1/S03a2, sổ quỹ, số dư ngày)', () => {
+    const RANGE = `fromDate=${YEAR}-01-01&toDate=${YEAR}-12-31`
+
+    it('receipt-journal: có PT0001, totalAmount = Σ rows; thiếu fromDate → 400', async () => {
+      const res = await http()
+        .get(`/api/cash/reports/receipt-journal?${RANGE}`)
+        .set('Authorization', auth())
+        .expect(200)
+
+      const nos = res.body.rows.map((r: { voucherNo: string }) => r.voucherNo)
+      expect(nos).toContain(`PT0001/${YEAR}`)
+      const sum = res.body.rows.reduce(
+        (s: number, r: { amount: string }) => s + Number(r.amount),
+        0,
+      )
+      expect(Number(res.body.totalAmount)).toBe(sum)
+      expect(sum).toBeGreaterThan(0)
+
+      // Kỳ báo cáo bắt buộc cả 2 đầu (IsDateString).
+      await http().get('/api/cash/reports/receipt-journal').set('Authorization', auth()).expect(400)
+    })
+
+    it('payment-journal: chỉ tính phiếu đã ghi sổ — bỏ ghi thì biến mất', async () => {
+      const created = await http()
+        .post('/api/cash/vouchers')
+        .set('Authorization', auth())
+        .send({
+          type: 'PAYMENT',
+          category: 'PAYMENT',
+          postingDate: DATE,
+          voucherDate: DATE,
+          reason: `${TAG} chi cho sổ nhật ký`,
+          lines: [{ debitAccount: '642', creditAccount: '1111', amount: 200000 }],
+        })
+        .expect(201)
+      expect(created.body.posted).toBe(true)
+
+      const before = await http()
+        .get(`/api/cash/reports/payment-journal?${RANGE}`)
+        .set('Authorization', auth())
+        .expect(200)
+      expect(before.body.rows.map((r: { voucherNo: string }) => r.voucherNo)).toContain(
+        created.body.voucherNo,
+      )
+
+      await http()
+        .patch(`/api/cash/vouchers/${created.body.id}/posted`)
+        .set('Authorization', auth())
+        .send({ posted: false })
+        .expect(200)
+
+      const after = await http()
+        .get(`/api/cash/reports/payment-journal?${RANGE}`)
+        .set('Authorization', auth())
+        .expect(200)
+      expect(after.body.rows.map((r: { voucherNo: string }) => r.voucherNo)).not.toContain(
+        created.body.voucherNo,
+      )
+    })
+
+    it('cash-book: closing = opening + tổng thu − tổng chi, khớp số dư dòng cuối', async () => {
+      const res = await http()
+        .get(`/api/cash/reports/cash-book?${RANGE}`)
+        .set('Authorization', auth())
+        .expect(200)
+
+      const { openingBalance, totalReceipt, totalPayment, closingBalance, rows } = res.body
+      expect(Number(closingBalance)).toBe(
+        Number(openingBalance) + Number(totalReceipt) - Number(totalPayment),
+      )
+      expect(rows.length).toBeGreaterThanOrEqual(1)
+      expect(rows[rows.length - 1].balance).toBe(closingBalance)
+    })
+
+    it('daily-balance: closing = opening + thu − chi, có ngày phát sinh của spec', async () => {
+      const res = await http()
+        .get(`/api/cash/reports/daily-balance?${RANGE}`)
+        .set('Authorization', auth())
+        .expect(200)
+
+      const { openingBalance, totalReceipt, totalPayment, closingBalance, rows } = res.body
+      expect(Number(closingBalance)).toBe(
+        Number(openingBalance) + Number(totalReceipt) - Number(totalPayment),
+      )
+      expect(rows.map((r: { date: string }) => r.date)).toContain(DATE)
+    })
+  })
 })

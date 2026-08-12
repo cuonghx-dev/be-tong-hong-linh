@@ -132,6 +132,53 @@ describe('Inventory (integration)', () => {
 
       await http().delete('/api/book-lock').set('Authorization', auth()).expect(200)
     })
+
+    it('next-no sau XK00001 → XK00002/<năm>', async () => {
+      const res = await http()
+        .get(`/api/inventory/issues/next-no?voucherDate=${DATE}`)
+        .set('Authorization', auth())
+        .expect(200)
+      expect(res.body.voucherNo).toBe(`XK00002/${YEAR}`)
+    })
+
+    it('CRUD: list / get / update / posted / delete', async () => {
+      const list = await http()
+        .get(`/api/inventory/issues?keyword=${TAG}`)
+        .set('Authorization', auth())
+        .expect(200)
+      expect(list.body.data.length).toBeGreaterThanOrEqual(1)
+      const id = list.body.data[0].id
+
+      await http().get(`/api/inventory/issues/${id}`).set('Authorization', auth()).expect(200)
+
+      const updated = await http()
+        .patch(`/api/inventory/issues/${id}`)
+        .set('Authorization', auth())
+        .send({
+          lines: [
+            {
+              itemId: 'BECHUADAU',
+              itemName: 'Bể chứa nhiên liệu 15M3',
+              warehouseId: 'KHO VAT TU',
+              quantity: 2,
+              unitPrice: 4000000,
+            },
+          ],
+        })
+        .expect(200)
+      expect(updated.body.lines).toHaveLength(1)
+      expect(updated.body.voucherNo).toBe(`XK00001/${YEAR}`)
+
+      const posted = await http()
+        .patch(`/api/inventory/issues/${id}/posted`)
+        .set('Authorization', auth())
+        .send({ posted: false })
+        .expect(200)
+      expect(posted.body.posted).toBe(false)
+
+      await http().delete(`/api/inventory/issues/${id}`).set('Authorization', auth()).expect(200)
+      await http().get(`/api/inventory/issues/${id}`).set('Authorization', auth()).expect(404)
+    })
   })
 
   describe('Reports', () => {

@@ -156,6 +156,82 @@ describe('Purchase vouchers (integration)', () => {
       .get(`/api/purchase/reports/detail?fromDate=${YEAR}-01-01&toDate=${YEAR}-12-31`)
       .set('Authorization', auth())
       .expect(200)
+    await http()
+      .get(`/api/purchase/reports/by-item?fromDate=${YEAR}-01-01&toDate=${YEAR}-12-31`)
+      .set('Authorization', auth())
+      .expect(200)
+    await http()
+      .get(`/api/purchase/reports/payable-detail?fromDate=${YEAR}-01-01&toDate=${YEAR}-12-31`)
+      .set('Authorization', auth())
+      .expect(200)
+  })
+
+  it('update đổi lines → tổng tiền hàng tính lại, voucherNo giữ nguyên', async () => {
+    const created = await http()
+      .post('/api/purchase/vouchers')
+      .set('Authorization', auth())
+      .send(serviceVoucher('UNPAID', { description: `${TAG} update` }))
+      .expect(201)
+
+    const updated = await http()
+      .patch(`/api/purchase/vouchers/${created.body.id}`)
+      .set('Authorization', auth())
+      .send({
+        lines: [
+          { itemName: 'Dịch vụ A', quantity: 2, unitPrice: 1500000 },
+          { itemName: 'Dịch vụ B', quantity: 1, unitPrice: 500000 },
+        ],
+      })
+      .expect(200)
+
+    expect(updated.body.lines).toHaveLength(2)
+    expect(Number(updated.body.totalGoods)).toBe(3500000)
+    expect(updated.body.voucherNo).toBe(created.body.voucherNo)
+  })
+
+  it('PATCH :id/posted ghi sổ / bỏ ghi', async () => {
+    const created = await http()
+      .post('/api/purchase/vouchers')
+      .set('Authorization', auth())
+      .send(serviceVoucher('UNPAID', { description: `${TAG} posted` }))
+      .expect(201)
+
+    const unposted = await http()
+      .patch(`/api/purchase/vouchers/${created.body.id}/posted`)
+      .set('Authorization', auth())
+      .send({ posted: false })
+      .expect(200)
+    expect(unposted.body.posted).toBe(false)
+
+    const posted = await http()
+      .patch(`/api/purchase/vouchers/${created.body.id}/posted`)
+      .set('Authorization', auth())
+      .send({ posted: true })
+      .expect(200)
+    expect(posted.body.posted).toBe(true)
+  })
+
+  it('cost-vouchers: chỉ MDV đã ghi sổ có isPurchaseCost', async () => {
+    const created = await http()
+      .post('/api/purchase/vouchers')
+      .set('Authorization', auth())
+      .send(serviceVoucher('UNPAID', { isPurchaseCost: true, description: `${TAG} chi phí mua` }))
+      .expect(201)
+
+    const res = await http()
+      .get(`/api/purchase/vouchers/cost-vouchers?keyword=${encodeURIComponent(created.body.voucherNo)}`)
+      .set('Authorization', auth())
+      .expect(200)
+    expect(res.body.map((r: { id: string }) => r.id)).toContain(created.body.id)
+
+    // MDV0001 (UNPAID thường, không isPurchaseCost) không được nằm trong ứng viên.
+    const all = await http()
+      .get('/api/purchase/vouchers/cost-vouchers')
+      .set('Authorization', auth())
+      .expect(200)
+    expect(all.body.map((r: { voucherNo: string }) => r.voucherNo)).not.toContain(
+      `MDV0001/${YEAR}`,
+    )
   })
 
   it('suppliers CRUD: tạo trùng mã → lỗi, get theo id, update', async () => {

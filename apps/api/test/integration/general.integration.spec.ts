@@ -130,4 +130,12 @@ describe('General vouchers — NVK (integration)', () => {
       .expect(200)
     await http().get(`/api/general/vouchers/${created.body.id}`).set('Authorization', auth()).expect(404)
   })
+
+  it('next-no = MAX+1 trong năm (import tới NVK901 → NVK902, kể cả sau khi xóa NVK902)', async () => {
+    const res = await http()
+      .get(`/api/general/vouchers/next-no?voucherDate=${DATE}`)
+      .set('Authorization', auth())
+      .expect(200)
+    expect(res.body.voucherNo).toBe(`NVK902/${YEAR}`)
+  })
 })
