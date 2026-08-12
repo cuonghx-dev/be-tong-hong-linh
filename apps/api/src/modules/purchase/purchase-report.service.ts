@@ -279,6 +279,19 @@ export class PurchaseReportService {
     }
   }
 
+  // Công nợ 331 hiện tại theo NCC (toàn bộ lịch sử) — cột "Số tiền nợ" danh sách
+  // NCC. Không lưu DB (snapshot sẽ lệch ngay sau chứng từ mới), luôn tính từ
+  // số dư khai báo + chứng từ. Chỉ trả NCC khớp id danh mục; NCC chỉ có tên
+  // (dữ liệu nhập khẩu) không gắn được vào dòng danh sách nên bỏ qua.
+  async payableBalances(): Promise<Map<string, Prisma.Decimal>> {
+    const buckets = await this.payableBuckets({ fromDate: '1900-01-01', toDate: '9999-12-31' })
+    const balances = new Map<string, Prisma.Decimal>()
+    for (const b of buckets) {
+      if (b.supplierId) balances.set(b.supplierId, b.opening.add(b.credit).sub(b.debit))
+    }
+    return balances
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   // Gom công nợ 331 theo NCC: dư đầu (khai báo + phát sinh trước kỳ) + phát sinh

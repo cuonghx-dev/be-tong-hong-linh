@@ -4,12 +4,16 @@ import { Prisma, type Supplier } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { CreateSupplierDto } from './dto/create-supplier.dto'
 import { SupplierFilterDto } from './dto/supplier-filter.dto'
+import { PurchaseReportService } from './purchase-report.service'
 import { parseSupplierXlsx } from './supplier-import'
 import { UpdateSupplierDto } from './dto/update-supplier.dto'
 
 @Injectable()
 export class SupplierService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly report: PurchaseReportService,
+  ) {}
 
   async list(filter: SupplierFilterDto): Promise<Paginated<ReturnType<typeof toSupplierDto>>> {
     const where: Prisma.SupplierWhereInput = {}
@@ -23,18 +27,21 @@ export class SupplierService {
       ]
     }
 
-    const [rows, total] = await this.prisma.$transaction([
-      this.prisma.supplier.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (filter.page - 1) * filter.pageSize,
-        take: filter.pageSize,
-      }),
-      this.prisma.supplier.count({ where }),
+    const [[rows, total], debts] = await Promise.all([
+      this.prisma.$transaction([
+        this.prisma.supplier.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (filter.page - 1) * filter.pageSize,
+          take: filter.pageSize,
+        }),
+        this.prisma.supplier.count({ where }),
+      ]),
+      this.report.payableBalances(),
     ])
 
     return {
-      data: rows.map(toSupplierDto),
+      data: rows.map((s) => toSupplierDto(s, debts.get(s.id))),
       pagination: { page: filter.page, pageSize: filter.pageSize, total },
     }
   }
@@ -42,7 +49,8 @@ export class SupplierService {
   async findOne(id: string) {
     const supplier = await this.prisma.supplier.findUnique({ where: { id } })
     if (!supplier) throw new NotFoundException(`Không tìm thấy nhà cung cấp ${id}`)
-    return toSupplierDto(supplier)
+    const debts = await this.report.payableBalances()
+    return toSupplierDto(supplier, debts.get(supplier.id))
   }
 
   async create(dto: CreateSupplierDto) {
@@ -120,7 +128,6 @@ export class SupplierService {
         phone: p.phone,
         website: p.website,
         address: p.address,
-        debtAmount: new Prisma.Decimal(p.debtAmount),
         invoiceRisk: p.invoiceRisk,
       })
     }
@@ -150,7 +157,9 @@ export class SupplierService {
   }
 }
 
-function toSupplierDto(s: Supplier) {
+// debtAmount không lưu DB — công nợ 331 hiện tại tính từ PurchaseReportService
+// .payableBalances() (snapshot lưu cột sẽ lệch ngay sau chứng từ mới).
+function toSupplierDto(s: Supplier, debt?: Prisma.Decimal) {
   return {
     id: s.id,
     code: s.code,
@@ -165,7 +174,7 @@ function toSupplierDto(s: Supplier) {
     groupId: s.groupId,
     employeeId: s.employeeId,
     isInternal: s.isInternal,
-    debtAmount: s.debtAmount.toString(),
+    debtAmount: (debt ?? 0).toString(),
     invoiceRisk: s.invoiceRisk,
     isActive: s.isActive,
     createdAt: s.createdAt.toISOString(),

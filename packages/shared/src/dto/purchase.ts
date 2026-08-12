@@ -180,7 +180,7 @@ export interface SupplierDto {
   groupId: string | null // Nhóm NCC
   employeeId: string | null // Nhân viên mua hàng
   isInternal: boolean // Đối tượng nội bộ
-  debtAmount: string // Số tiền nợ
+  debtAmount: string // Số tiền nợ — công nợ 331 hiện tại, BE tính runtime (không lưu DB)
   invoiceRisk: string | null // Rủi ro về hóa đơn
   isActive: boolean // Ngừng sử dụng = false (ẩn khỏi picker, giữ dữ liệu cũ)
   createdAt: string

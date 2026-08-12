@@ -1,6 +1,8 @@
 // Prisma schema — model bổ sung theo nghiệp vụ (misa-specs).
 // Nguyên tắc: tiền dùng Decimal @db.Decimal(18,2); audit created_at/updated_at/created_by;
-// soft delete bằng cờ trạng thái, KHÔNG xóa cứng chứng từ; bút toán kép cân Nợ = Có.
+// bút toán kép cân Nợ = Có. Chứng từ "bỏ ghi" (posted=false) = loại khỏi sổ/báo cáo
+// nhưng giữ dữ liệu; xóa chứng từ là xóa cứng (Cascade line + đối trừ, xem từng FK).
+// Danh mục không xóa — ngừng dùng qua cờ is_active (ẩn khỏi picker, dữ liệu cũ giữ nguyên).
 
 generator client {
   provider = "prisma-client-js"
@@ -95,6 +97,8 @@ model CashVoucher {
   @@index([type, postingDate])
   // Sổ nhật ký chung filter chỉ theo posting_date (không type) — cần index riêng.
   @@index([postingDate])
+  // nextVoucherNo lọc type + khoảng voucher_date trong năm khi đánh số chứng từ.
+  @@index([type, voucherDate])
   @@index([partnerId])
   @@map("cash_vouchers")
 }
@@ -110,6 +114,8 @@ model CashVoucherLine {
   creditAccount String      @map("credit_account")
   amount        Decimal     @db.Decimal(18, 2)
   operation     String?
+  // Đối tượng theo dòng: báo cáo công nợ chỉ SELECT rồi quy nhóm in-memory
+  // (filter WHERE bằng debit/credit_account + posting_date) — không cần index.
   partnerId     String?     @map("partner_id")
   partnerName   String?     @map("partner_name")
   costItemId    String?     @map("cost_item_id")
@@ -193,6 +199,8 @@ model BankVoucher {
   @@index([type, postingDate])
   // Sổ nhật ký chung filter chỉ theo posting_date (không type) — cần index riêng.
   @@index([postingDate])
+  // nextVoucherNo lọc type + khoảng voucher_date trong năm khi đánh số chứng từ.
+  @@index([type, voucherDate])
   @@index([partnerId])
   @@map("bank_vouchers")
 }
@@ -269,7 +277,8 @@ model Supplier {
   groupId            String?      @map("group_id")
   employeeId         String?      @map("employee_id")
   isInternal         Boolean      @default(false) @map("is_internal")
-  debtAmount         Decimal      @default(0) @map("debt_amount") @db.Decimal(18, 2)
+  // Công nợ ("Số tiền nợ") KHÔNG lưu cột — tính runtime từ công nợ 331
+  // (PurchaseReportService.payableBalances), snapshot lưu DB sẽ lệch ngay.
   invoiceRisk        String?      @map("invoice_risk")
   // Ngừng sử dụng: ẩn khỏi picker khi lập chứng từ, dữ liệu cũ giữ nguyên.
   isActive           Boolean      @default(true) @map("is_active")
@@ -342,6 +351,8 @@ model PurchaseVoucher {
   @@index([type, postingDate])
   // Sổ nhật ký chung filter chỉ theo posting_date (không type) — cần index riêng.
   @@index([postingDate])
+  // nextVoucherNo lọc type + khoảng voucher_date trong năm khi đánh số chứng từ.
+  @@index([type, voucherDate])
   @@index([supplierId])
   @@map("purchase_vouchers")
 }
@@ -425,6 +436,8 @@ model InventoryReceipt {
   createdBy String?  @map("created_by")
 
   @@index([receiptType, postingDate])
+  // Sổ nhật ký chung filter chỉ theo posting_date (không receiptType) — cần index riêng.
+  @@index([postingDate])
   @@map("inventory_receipts")
 }
 
@@ -646,6 +659,8 @@ model SalesVoucher {
   @@index([voucherType, postingDate])
   // Sổ nhật ký chung filter chỉ theo posting_date (không voucherType) — cần index riêng.
   @@index([postingDate])
+  // nextVoucherNo lọc khoảng voucher_date trong năm khi đánh số chứng từ.
+  @@index([voucherDate])
   @@index([customerId])
   @@index([paymentMode])
   @@map("sales_vouchers")
@@ -742,6 +757,8 @@ model GeneralVoucher {
   createdBy String?  @map("created_by")
 
   @@index([postingDate])
+  // nextVoucherNo lọc khoảng voucher_date trong năm khi đánh số chứng từ.
+  @@index([voucherDate])
   @@map("general_vouchers")
 }
 
@@ -757,6 +774,8 @@ model GeneralVoucherLine {
   amount        Decimal        @db.Decimal(18, 2)
   operation     GeneralLineOperation? // Nghiệp vụ (dropdown MISA)
   // Đối tượng theo từng vế bút toán (MISA tách Đối tượng Nợ / Đối tượng Có).
+  // Báo cáo công nợ chỉ SELECT rồi quy nhóm in-memory (filter WHERE bằng
+  // debit/credit_account + posting_date) — không cần index các cột này.
   debitPartnerId    String? @map("debit_partner_id")
   debitPartnerName  String? @map("debit_partner_name")
   creditPartnerId   String? @map("credit_partner_id")

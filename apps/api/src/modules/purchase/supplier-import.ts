@@ -10,7 +10,6 @@ export interface ParsedSupplier {
   phone: string | null
   website: string | null
   address: string | null
-  debtAmount: number
   invoiceRisk: string | null
 }
 
@@ -25,7 +24,6 @@ const COL = {
   phone: ['Điện thoại', 'Số điện thoại', 'SĐT'],
   website: ['Website'],
   address: ['Địa chỉ'],
-  debtAmount: ['Số tiền nợ', 'Công nợ', 'Nợ đầu kỳ'],
   invoiceRisk: ['Rủi ro về hóa đơn', 'Rủi ro hóa đơn'],
 }
 
@@ -33,12 +31,6 @@ function toStr(v: unknown): string | null {
   if (v === null || v === undefined) return null
   const s = String(v).trim()
   return s === '' ? null : s
-}
-
-function toNumber(v: unknown): number {
-  if (typeof v === 'number') return v
-  const n = Number(String(v ?? '').replace(/[^\d.-]/g, ''))
-  return Number.isFinite(n) ? n : 0
 }
 
 // Chuẩn hóa header để so khớp: bỏ khoảng trắng thừa + hạ chữ thường.
@@ -86,7 +78,6 @@ export function parseSupplierXlsx(buffer: Buffer): ParsedSupplier[] {
   const iPhone = idx(COL.phone)
   const iWebsite = idx(COL.website)
   const iAddress = idx(COL.address)
-  const iDebt = idx(COL.debtAmount)
   const iRisk = idx(COL.invoiceRisk)
 
   const out: ParsedSupplier[] = []
@@ -104,7 +95,6 @@ export function parseSupplierXlsx(buffer: Buffer): ParsedSupplier[] {
       phone: iPhone >= 0 ? toStr(r[iPhone]) : null,
       website: iWebsite >= 0 ? toStr(r[iWebsite]) : null,
       address: iAddress >= 0 ? toStr(r[iAddress]) : null,
-      debtAmount: iDebt >= 0 ? toNumber(r[iDebt]) : 0,
       invoiceRisk: iRisk >= 0 ? toStr(r[iRisk]) : null,
     })
   }
