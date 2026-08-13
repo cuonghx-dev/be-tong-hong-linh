@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { fillWarehouse } from '../helpers/account'
-import { fieldInput } from '../helpers/form'
+import { fieldInput, readVoucherNo } from '../helpers/form'
 import { fillFirstItemLine } from '../helpers/voucher'
 import { pickOrCreateCustomer } from '../helpers/sales'
 
@@ -32,7 +32,7 @@ test.describe('Bán hàng — kiêm phiếu xuất kho', () => {
     await page.getByRole('checkbox', { name: 'Kiêm phiếu xuất' }).check()
 
     await pickOrCreateCustomer(page)
-    const voucherNo = await fieldInput(page, 'Số chứng từ').inputValue()
+    const voucherNo = await readVoucherNo(page)
     await fillFirstItemLine(page, 'BINHDAU', '500000')
 
     // Tab Giá vốn: kho lấy theo ngầm định VTHH, chưa có thì điền tay.

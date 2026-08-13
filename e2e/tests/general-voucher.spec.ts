@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { fillAccount } from '../helpers/account'
-import { fieldInput, selectValue } from '../helpers/form'
+import { fieldInput, readVoucherNo, selectValue } from '../helpers/form'
 import { rowMenuAction } from '../helpers/voucher'
 
 // Chứng từ nghiệp vụ khác (NVK) — form MISA: hạn thanh toán ở thông tin chung,
@@ -81,7 +81,7 @@ test.describe('Tổng hợp — chứng từ nghiệp vụ khác', () => {
   test('kê khai hóa đơn: tự tính tiền thuế và lưu kèm chứng từ', async ({ page }) => {
     await openNewGeneralVoucher(page)
     await fieldInput(page, 'Diễn giải').fill('NVK kê khai thuế E2E')
-    const voucherNo = await fieldInput(page, 'Số chứng từ').inputValue()
+    const voucherNo = await readVoucherNo(page)
 
     await fillAccount(page, debitCell(page), '1331')
     await fillAccount(page, creditCell(page), '3331')

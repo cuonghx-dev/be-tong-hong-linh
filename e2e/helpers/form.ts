@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 // Label trên form chứng từ không có htmlFor → getByLabel không dùng được.
 // Định vị theo container Field (div.space-y-1 chứa <label> đúng text) rồi lấy input/textarea đầu tiên.
@@ -37,6 +37,14 @@ export function fieldSelectIn(scope: Locator, page: Page, label: string) {
     .locator('div.space-y-1', { has: page.locator('label', { hasText: label }) })
     .getByRole('combobox')
     .first()
+}
+
+// Ô "Số chứng từ" hiện 'Tự động'/'…' tới khi query nextNo trả về — đọc sớm dính race.
+// Chờ có số thật rồi mới trả về.
+export async function readVoucherNo(page: Page, label = 'Số chứng từ') {
+  const input = fieldInput(page, label)
+  await expect(input).not.toHaveValue(/^(Tự động|…)?$/)
+  return input.inputValue()
 }
 
 export const ADMIN = { email: 'admin@ketoan.vn', password: 'admin123' }

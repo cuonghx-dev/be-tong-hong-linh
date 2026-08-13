@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { fillAccount } from '../helpers/account'
-import { fieldInput } from '../helpers/form'
+import { fieldInput, readVoucherNo } from '../helpers/form'
 import { createCashVoucher, rowMenuAction } from '../helpers/voucher'
 import { createSalesVoucher } from '../helpers/sales'
 
@@ -10,7 +10,7 @@ test.describe('Xóa chứng từ', () => {
   test('xóa chứng từ nghiệp vụ khác (NVK) kèm xác nhận', async ({ page }) => {
     await page.goto('/general/vouchers/new')
     await expect(page.getByRole('heading', { name: /Chứng từ nghiệp vụ khác/ })).toBeVisible()
-    const voucherNo = await fieldInput(page, 'Số chứng từ').inputValue()
+    const voucherNo = await readVoucherNo(page)
     await fieldInput(page, 'Diễn giải').fill('NVK để xóa E2E')
     const row = page.getByTestId('general-entry-table').locator('tbody tr').first()
     await fillAccount(page, row.locator('input').nth(1), '1121')

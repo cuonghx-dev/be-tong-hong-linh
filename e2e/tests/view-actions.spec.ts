@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { fieldInput } from '../helpers/form'
+import { fieldInput, readVoucherNo } from '../helpers/form'
 import { fillFirstItemLine, rowMenuAction } from '../helpers/voucher'
 import { fillWarehouse } from '../helpers/account'
 import { createSalesVoucher } from '../helpers/sales'
@@ -17,6 +17,10 @@ test.describe('Trang xem chứng từ — Sửa nhanh / Ghi sổ / Bỏ ghi', ()
     // Chứng từ mới posted mặc định → footer hiện "Bỏ ghi"; toggle đảo lại được.
     await page.getByRole('button', { name: 'Bỏ ghi', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Ghi sổ', exact: true })).toBeVisible()
+    // Toast "Bỏ ghi" đè footer chặn click; chuột đứng trên vùng toast còn giữ nó
+    // không tự tắt (sonner pause khi hover) — rời chuột rồi chờ toast biến hẳn.
+    await page.mouse.move(0, 0)
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0, { timeout: 10_000 })
     await page.getByRole('button', { name: 'Ghi sổ', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Bỏ ghi', exact: true })).toBeVisible()
 
@@ -30,7 +34,7 @@ test.describe('Trang xem chứng từ — Sửa nhanh / Ghi sổ / Bỏ ghi', ()
   test('phiếu nhập kho: bỏ ghi + ghi sổ + sửa nhanh từ trang xem', async ({ page }) => {
     await page.goto('/inventory/receipts/new')
     await expect(page.getByRole('heading', { name: /Phiếu nhập kho/ })).toBeVisible()
-    const voucherNo = await fieldInput(page, 'Số chứng từ').inputValue()
+    const voucherNo = await readVoucherNo(page)
     await fieldInput(page, 'Diễn giải').fill('NK xem tại chỗ E2E')
     await fillFirstItemLine(page, 'BINHDAU', '100000')
     await fillWarehouse(page.locator('table tbody tr').first())
@@ -43,6 +47,10 @@ test.describe('Trang xem chứng từ — Sửa nhanh / Ghi sổ / Bỏ ghi', ()
 
     await page.getByRole('button', { name: 'Bỏ ghi', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Ghi sổ', exact: true })).toBeVisible()
+    // Toast "Bỏ ghi" đè footer chặn click; chuột đứng trên vùng toast còn giữ nó
+    // không tự tắt (sonner pause khi hover) — rời chuột rồi chờ toast biến hẳn.
+    await page.mouse.move(0, 0)
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0, { timeout: 10_000 })
     await page.getByRole('button', { name: 'Ghi sổ', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Bỏ ghi', exact: true })).toBeVisible()
 
