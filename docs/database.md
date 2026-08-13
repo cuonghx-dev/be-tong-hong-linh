@@ -2,7 +2,7 @@
 
 Toàn bộ schema Postgres của phần mềm, sinh từ [`apps/api/prisma/schema.prisma`](../apps/api/prisma/schema.prisma) — nhóm theo phân hệ nghiệp vụ. Mỗi chứng từ = 1 header + nhiều dòng bút toán kép (Nợ/Có).
 
-**42 bảng · 28 enum · PostgreSQL/Prisma · migration `20260812000000_init` · tiền = `NUMERIC(18,2)`**
+**42 bảng · 27 enum · PostgreSQL/Prisma · migration mới nhất `20260812130000_schema_review_fixes` · tiền = `NUMERIC(18,2)`**
 
 Quy ước vẽ:
 
@@ -90,7 +90,7 @@ erDiagram
 
 ## Mua hàng (`purchase`)
 
-Ba loại: nhập kho / không qua kho / dịch vụ. Chứng từ dịch vụ đánh dấu `is_purchase_cost` mới được đem phân bổ chi phí vào phiếu nhập kho (§10.4). Xóa chứng từ chi phí đang được phân bổ bị chặn (Restrict) — tránh âm thầm đổi giá trị nhập kho của phiếu khác.
+Ba loại: nhập kho / không qua kho / dịch vụ. Chứng từ dịch vụ đánh dấu `is_purchase_cost` mới được đem phân bổ chi phí vào phiếu nhập kho (§10.4). Xóa chứng từ chi phí đang được phân bổ bị chặn (Restrict) — tránh âm thầm đổi giá trị nhập kho của phiếu khác. Công nợ NCC không lưu snapshot trên `suppliers` — tính runtime từ số dư đầu kỳ 331 + phát sinh chứng từ.
 
 ```mermaid
 erDiagram
@@ -108,7 +108,6 @@ erDiagram
     text code UK
     text name
     bool is_customer
-    decimal debt_amount
   }
   purchase_vouchers {
     uuid id PK
@@ -139,7 +138,7 @@ erDiagram
 
 ## Bán hàng & đối trừ công nợ (`sales`)
 
-Hai chứng từ: chưa thu tiền (BH) và thu tiền mặt ngay (PT tự sinh). Thu tiền sau đối trừ qua `payment_allocations` — trạng thái thanh toán = tổng phân bổ so với tổng tiền. CHECK `payment_allocations_source_xor`: đúng 1 trong 2 nguồn tiền (phiếu thu TM hoặc thu tiền gửi). Cascade cả 3 phía — xóa chứng từ nào đối trừ cũng tự mất.
+Hai chứng từ: chưa thu tiền (BH) và thu tiền mặt ngay (PT tự sinh). Thu tiền sau đối trừ qua `payment_allocations` — trạng thái thanh toán = tổng phân bổ so với tổng tiền. CHECK `payment_allocations_source_xor`: đúng 1 trong 2 nguồn tiền (phiếu thu TM hoặc thu tiền gửi); CHECK `amount > 0` trên cả 2 bảng đối trừ (`payment_allocations`, `purchase_cost_allocations`). Cascade cả 3 phía — xóa chứng từ nào đối trừ cũng tự mất.
 
 ```mermaid
 erDiagram
@@ -205,6 +204,8 @@ erDiagram
     enum receipt_type "PURCHASE | FINISHED_GOODS"
     text voucher_no UK
     date posting_date
+    enum partner_type "CUSTOMER | SUPPLIER | EMPLOYEE"
+    text partner_id "ma doi tuong (long)"
     decimal total_amount
     bool posted
   }
@@ -335,11 +336,11 @@ Các bảng danh mục còn lại (đứng độc lập, cờ `is_active` thay x
 | `units` | Đơn vị tính | `name` |
 | `organization_units` | Cơ cấu tổ chức (cây 3 cấp) | `code` |
 | `users` | Người dùng — RBAC 4 vai trò (ADMIN/KETOAN/THUQUY/VIEWER) | `email` |
-| `book_locks` | Khóa sổ kỳ kế toán (1 dòng duy nhất, id = 1) | — |
+| `book_locks` | Khóa sổ kỳ kế toán (singleton — CHECK `id = 1`) | — |
 
 ## Số dư đầu kỳ (`opening-balance`)
 
-5 bảng khai báo trước ngày bắt đầu hạch toán. TK tổng trong `account_opening_balances` = tổng các dòng chi tiết cùng mã TK ở bảng con tương ứng. `partner_opening_balances` đa hình theo `partner_type` — không FK cứng vì đối tượng nằm ở 2 bảng customers/suppliers.
+5 bảng khai báo trước ngày bắt đầu hạch toán. TK tổng trong `account_opening_balances` = tổng các dòng chi tiết cùng mã TK ở bảng con tương ứng. `partner_opening_balances` đa hình theo `partner_type` — không FK cứng vì đối tượng nằm ở 2 bảng customers/suppliers. CHECK không âm trên mọi cột debit/credit/quantity/amount — số âm phải chuẩn hóa sang vế đối diện trước khi ghi.
 
 ```mermaid
 erDiagram
@@ -393,7 +394,7 @@ erDiagram
 - **Ghi sổ / bỏ ghi** — cờ `posted` trên mọi header; bỏ ghi là loại khỏi sổ/báo cáo, không xóa cứng dữ liệu.
 - **Tiền = Decimal** — mọi cột tiền `NUMERIC(18,2)`, số lượng `NUMERIC(18,4)`, không float. DTO serialize `.toString()`.
 - **Mã vs. row id** — cột đối tượng trên chứng từ (`partner_id`, `item_id`…) lưu **mã** hiển thị (tham chiếu lỏng); FK thật (uuid) chỉ ở các quan hệ vẽ nét liền.
-- **Số chứng từ** — `voucher_no` unique, tự tăng theo `MAX(seq trong năm) + 1`, không dùng count+1.
+- **Số chứng từ** — `voucher_no` unique, tự tăng theo `MAX(seq trong năm) + 1`, không dùng count+1; mọi bảng header có index phủ `voucher_date` (kèm `type` nếu có) phục vụ truy vấn này.
 - **Audit** — mọi bảng có `created_at` / `updated_at`, đa số kèm `created_by`; danh mục dùng cờ `is_active` thay xóa cứng.
 
 Lưu ý: mỗi entity trong diagram chỉ liệt kê cột chủ chốt (PK/FK + trường nghiệp vụ chính). Schema đầy đủ xem `apps/api/prisma/schema.prisma`.
