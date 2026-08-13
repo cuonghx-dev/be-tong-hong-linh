@@ -23,7 +23,7 @@ interface Props {
   user: UserListItem | null
 }
 
-const empty = { email: '', name: '', role: UserRole.KeToan, password: '' }
+const empty = { email: '', name: '', role: UserRole.KeToan, password: '', passwordConfirm: '' }
 
 // Dialog tạo/sửa người dùng — sửa: email khóa, không đổi mật khẩu ở đây
 // (cấp lại mật khẩu là thao tác riêng — ResetPasswordDialog).
@@ -36,7 +36,11 @@ export function UserDialog({ open, onClose, user }: Props) {
 
   useEffect(() => {
     if (open) {
-      setForm(user ? { email: user.email, name: user.name, role: user.role, password: '' } : empty)
+      setForm(
+        user
+          ? { email: user.email, name: user.name, role: user.role, password: '', passwordConfirm: '' }
+          : empty,
+      )
     }
   }, [open, user])
 
@@ -47,6 +51,14 @@ export function UserDialog({ open, onClose, user }: Props) {
     }
     if (!user && form.password.length < 6) {
       toast({ variant: 'error', title: 'Mật khẩu quá ngắn', description: 'Tối thiểu 6 ký tự.' })
+      return
+    }
+    if (!user && form.password !== form.passwordConfirm) {
+      toast({
+        variant: 'error',
+        title: 'Mật khẩu không khớp',
+        description: 'Nhập lại mật khẩu phải trùng với mật khẩu.',
+      })
       return
     }
     try {
@@ -124,13 +136,22 @@ export function UserDialog({ open, onClose, user }: Props) {
           </Select>
         </Field>
         {!user && (
-          <Field label="Mật khẩu" required>
-            <Input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            />
-          </Field>
+          <>
+            <Field label="Mật khẩu" required>
+              <Input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              />
+            </Field>
+            <Field label="Nhập lại mật khẩu" required>
+              <Input
+                type="password"
+                value={form.passwordConfirm}
+                onChange={(e) => setForm((f) => ({ ...f, passwordConfirm: e.target.value }))}
+              />
+            </Field>
+          </>
         )}
       </div>
     </Modal>
