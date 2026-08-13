@@ -21,6 +21,7 @@ test.describe('Người dùng', () => {
     await fieldInputIn(dialog, page, 'Họ tên').fill('Kế toán E2E')
     await selectValue(page, fieldSelectIn(dialog, page, 'Vai trò'), 'Kế toán')
     await fieldInputIn(dialog, page, 'Mật khẩu').fill('ketoan123')
+    await fieldInputIn(dialog, page, 'Nhập lại mật khẩu').fill('ketoan123')
     await dialog.getByRole('button', { name: 'Lưu', exact: true }).click()
     await expect(dialog).toBeHidden()
 

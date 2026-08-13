@@ -17,6 +17,7 @@ test.describe('Phân quyền', () => {
       await fieldInputIn(dialog, page, 'Họ tên').fill(VIEWER.name)
       await selectValue(page, fieldSelectIn(dialog, page, 'Vai trò'), 'Giám đốc')
       await fieldInputIn(dialog, page, 'Mật khẩu').fill(VIEWER.password)
+      await fieldInputIn(dialog, page, 'Nhập lại mật khẩu').fill(VIEWER.password)
       await dialog.getByRole('button', { name: 'Lưu', exact: true }).click()
       await expect(dialog).toBeHidden()
     }

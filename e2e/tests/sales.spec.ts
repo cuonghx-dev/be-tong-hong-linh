@@ -1,31 +1,7 @@
-import { test, expect, type Page } from '@playwright/test'
-import { fieldInput, fieldInputIn } from '../helpers/form'
+import { test, expect } from '@playwright/test'
+import { fieldInput } from '../helpers/form'
 import { fillFirstItemLine } from '../helpers/voucher'
-
-const CUSTOMER = { code: 'KH-E2E', name: 'Khách hàng E2E' }
-
-// Chọn khách hàng trong PartnerPicker; chưa có thì tạo nhanh qua dialog "Thêm đối tượng".
-async function pickOrCreateCustomer(page: Page) {
-  const picker = page.getByPlaceholder('Mã KH')
-  await picker.click()
-  await picker.pressSequentially(CUSTOMER.code, { delay: 20 })
-  // Chờ dropdown load xong (row khớp hoặc empty-state) rồi mới quyết định.
-  const existing = page.getByRole('cell', { name: CUSTOMER.code, exact: true })
-  const empty = page.getByText('Không có đối tượng phù hợp.')
-  await expect(existing.or(empty).first()).toBeVisible()
-  if (await existing.count()) {
-    await existing.first().click()
-    return
-  }
-  // 2 nút "Thêm đối tượng" (KH + nhân viên bán hàng) → lấy nút cạnh picker KH (đầu tiên).
-  await page.getByLabel('Thêm đối tượng').first().click()
-  const dialog = page.getByRole('dialog')
-  await expect(dialog.getByText('Thêm đối tượng')).toBeVisible()
-  await fieldInputIn(dialog, page, 'Mã đối tượng').fill(CUSTOMER.code)
-  await fieldInputIn(dialog, page, 'Tên đối tượng').fill(CUSTOMER.name)
-  await dialog.getByRole('button', { name: 'Lưu', exact: true }).click()
-  await expect(dialog).toBeHidden()
-}
+import { CUSTOMER, pickOrCreateCustomer } from '../helpers/sales'
 
 test.describe('Bán hàng', () => {
   test('tạo chứng từ bán chưa thu tiền (BH)', async ({ page }) => {

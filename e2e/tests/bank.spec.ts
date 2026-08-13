@@ -1,28 +1,6 @@
-import { test, expect, type Page } from '@playwright/test'
-import { fieldInput, fieldInputIn, fieldSelectIn, selectValue } from '../helpers/form'
-
-// Chọn TK ngân hàng trong picker; chưa có thì tạo nhanh qua dialog "Thêm tài khoản ngân hàng".
-// `nth`: form CTNB có 2 picker cùng placeholder (tài khoản đi = 0, tài khoản đến = 1).
-async function pickOrCreateBankAccount(page: Page, accountNumber: string, nth = 0) {
-  const picker = page.getByPlaceholder('Số TK ngân hàng').nth(nth)
-  await picker.click()
-  await picker.pressSequentially(accountNumber, { delay: 20 })
-  // Chờ dropdown load xong (row khớp hoặc empty-state) rồi mới quyết định.
-  const existing = page.getByRole('cell', { name: accountNumber, exact: true })
-  const empty = page.getByText('Không có tài khoản phù hợp.')
-  await expect(existing.or(empty).first()).toBeVisible()
-  if (await existing.count()) {
-    await existing.first().click()
-    return
-  }
-  await page.getByLabel('Thêm tài khoản ngân hàng').nth(nth).click()
-  const dialog = page.getByRole('dialog')
-  await expect(dialog.getByText('Thêm tài khoản ngân hàng')).toBeVisible()
-  await fieldInputIn(dialog, page, 'Số tài khoản').fill(accountNumber)
-  await selectValue(page, fieldSelectIn(dialog, page, 'Tên ngân hàng'), { index: 0 })
-  await dialog.getByRole('button', { name: 'Lưu', exact: true }).click()
-  await expect(dialog).toBeHidden()
-}
+import { test, expect } from '@playwright/test'
+import { fieldInput } from '../helpers/form'
+import { pickOrCreateBankAccount } from '../helpers/bank'
 
 test.describe('Tiền gửi', () => {
   test('danh sách chứng từ tiền gửi render', async ({ page }) => {
