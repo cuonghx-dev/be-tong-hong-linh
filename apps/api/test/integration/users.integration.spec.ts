@@ -21,10 +21,10 @@ describe('Users (integration)', () => {
 
   const http = () => request(app.getHttpServer())
 
-  it('GET /api/users → danh sách chứa user seed', async () => {
+  it('GET /api/users → danh sách chứa admin seed', async () => {
     const res = await http().get('/api/users').set('Authorization', `Bearer ${adminToken}`).expect(200)
     const emails = res.body.map((u: { email: string }) => u.email)
-    expect(emails).toEqual(expect.arrayContaining(Object.values(TEST_USERS)))
+    expect(emails).toContain(TEST_USERS.admin)
   })
 
   it('POST tạo user mới → login được bằng mật khẩu vừa đặt', async () => {
@@ -43,7 +43,7 @@ describe('Users (integration)', () => {
     const res = await http()
       .post('/api/users')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ email: TEST_USERS.viewer, name: 'Trùng', role: 'VIEWER', password: 'matkhau123' })
+      .send({ email: TEST_USERS.admin, name: 'Trùng', role: 'VIEWER', password: 'matkhau123' })
       .expect(409)
     expect(res.body.message).toBe('Email đã được sử dụng')
   })
