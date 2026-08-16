@@ -90,10 +90,13 @@ Máy chủ yếu (2 GB RAM): build ở máy dev/CI rồi rsync/copy 4 thư mục
 
 ## 6. Mạng & bảo mật
 
-- Mở cổng vào: **8080** (web, hoặc 80/443 nếu đặt reverse proxy). **Không** mở 3000 (API) và 5432 (Postgres) ra ngoài — API đã được web-server proxy nội bộ.
-- Băng thông: bundle web ~1 MB gzip cho lần tải đầu, sau đó cache theo hash. Mỗi thao tác lưu chứng từ vài chục KB JSON. LAN 100 Mbps là dư; truy cập qua Internet cần ≥ 5 Mbps upload phía máy chủ cho 10 người dùng.
+Mô hình triển khai: **máy chủ đặt trong LAN nội bộ, không public ra Internet.**
+
+- Mở cổng vào: **8080** (web) và chỉ cho dải LAN. **Không** mở 3000 (API), 5432 (Postgres) — API đã được web-server proxy qua `127.0.0.1`.
+- Máy chủ cần **IP tĩnh** (hoặc DHCP reservation) + bản ghi DNS nội bộ để người dùng gõ tên thay vì IP.
+- Băng thông: bundle web ~1 MB gzip lần tải đầu, sau đó cache theo hash. Mỗi thao tác lưu chứng từ vài chục KB JSON. **LAN 100 Mbps dư sức cho 50 người dùng**; switch gigabit là thoải mái.
 - Import Excel: payload JSON giới hạn 5 MB (`app.useBodyParser('json', { limit: '5mb' })` trong `apps/api/src/main.ts`). File `.xlsx` lớn hơn phải chia lô.
-- HTTPS: bắt buộc nếu truy cập ngoài LAN — JWT truyền trong header, không có TLS thì lộ token.
+- HTTPS: **không bắt buộc** khi chạy thuần LAN. Cần khi có Wi-Fi khách/mạng không tin cậy hoặc mở truy cập từ xa — khi đó dùng VPN hoặc IIS + chứng chỉ nội bộ, xem deploy doc §6.
 
 ## 7. Ảo hóa / cloud
 

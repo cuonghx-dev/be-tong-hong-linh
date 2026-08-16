@@ -2,6 +2,8 @@
 
 Hướng dẫn cài đặt Kế toán SME trên máy chủ Windows Server 2019/2022/2025, chạy **native** (không Docker Desktop — bản Server không có, và Docker trên Windows tốn RAM gấp đôi).
 
+Mô hình triển khai: **máy chủ đặt trong LAN nội bộ của doanh nghiệp, không public ra Internet** — người dùng truy cập `http://<ip-máy-chủ>:8080` từ máy trạm cùng mạng. Xem §6 cho firewall và trường hợp cần HTTPS/truy cập từ xa.
+
 Cấu hình phần cứng cần có: [hardware-requirements.md](hardware-requirements.md).
 
 Kiến trúc sau khi cài:
@@ -137,34 +139,56 @@ Cách thay thế — [NSSM](https://nssm.cc/): tạo service chạy trực tiế
 `node C:\apps\ke-toan-SME\apps\api\dist\main.js` và
 `node C:\apps\ke-toan-SME\scripts\windows\web-server.cjs`, bỏ pm2 hoàn toàn.
 
-## 6. Tường lửa & HTTPS
+## 6. Tường lửa (triển khai LAN nội bộ)
 
-Chỉ mở cổng web, chặn API và Postgres từ ngoài:
+Mô hình triển khai chuẩn: **máy chủ chỉ phục vụ trong mạng LAN, không NAT/port-forward ra Internet.**
+Cấu hình dưới đây chỉ mở cổng web cho đúng dải LAN, chặn API và Postgres từ mọi nơi khác.
 
 ```powershell
-New-NetFirewallRule -DisplayName "Ketoan SME Web" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow
-# API/DB chỉ dùng nội bộ máy chủ:
-New-NetFirewallRule -DisplayName "Block Ketoan API tu ngoai" -Direction Inbound -Protocol TCP -LocalPort 3000 -RemoteAddress Any -Action Block
-New-NetFirewallRule -DisplayName "Block Postgres tu ngoai"  -Direction Inbound -Protocol TCP -LocalPort 5432 -RemoteAddress Any -Action Block
+# Sửa dải LAN cho đúng thực tế (vd 192.168.1.0/24, 10.0.0.0/24)
+$Lan = '192.168.1.0/24'
+
+New-NetFirewallRule -DisplayName "Ketoan SME Web (LAN)" -Direction Inbound -Protocol TCP `
+  -LocalPort 8080 -RemoteAddress $Lan -Action Allow
+
+# API và DB chỉ dùng nội bộ máy chủ (web-server.cjs proxy qua 127.0.0.1)
+New-NetFirewallRule -DisplayName "Block Ketoan API" -Direction Inbound -Protocol TCP `
+  -LocalPort 3000 -RemoteAddress Any -Action Block
+New-NetFirewallRule -DisplayName "Block Postgres"  -Direction Inbound -Protocol TCP `
+  -LocalPort 5432 -RemoteAddress Any -Action Block
 ```
 
-> Cảnh báo bảo mật: NestJS lắng nghe trên mọi interface (`app.listen(port)`), nên nếu không có rule chặn cổng 3000, toàn bộ API truy cập được trực tiếp từ mạng ngoài, bỏ qua lớp web. Đừng bỏ hai rule Block ở trên.
+> Cảnh báo bảo mật: NestJS lắng nghe trên mọi interface (`app.listen(port)`), nên nếu không có rule chặn cổng 3000 thì bất kỳ máy nào trong LAN cũng gọi thẳng được API, bỏ qua lớp web. Giữ nguyên hai rule Block.
 
-**Truy cập ngoài LAN thì bắt buộc HTTPS** — JWT nằm trong header `Authorization`, không TLS là lộ token. Hai cách:
+Kiểm tra từ một máy trạm trong LAN:
 
-**a) IIS làm reverse proxy** (cần Application Request Routing + URL Rewrite):
-1. Cài IIS role → cài [ARR](https://www.iis.net/downloads/microsoft/application-request-routing) và [URL Rewrite](https://www.iis.net/downloads/microsoft/url-rewrite).
-2. Tạo site trống, bind 443 với chứng chỉ.
-3. URL Rewrite → rule inbound: pattern `(.*)` → rewrite `http://localhost:8080/{R:1}`, type `Rewrite`.
-4. Đóng 8080 khỏi firewall, chỉ mở 443.
-
-**b) Caddy** (đơn giản hơn, tự xin/gia hạn Let's Encrypt) — `Caddyfile`:
-
+```powershell
+Test-NetConnection <ip-may-chu> -Port 8080   # TcpTestSucceeded : True
+Test-NetConnection <ip-may-chu> -Port 3000   # phai False
+Test-NetConnection <ip-may-chu> -Port 5432   # phai False
 ```
-ketoan.congty.vn {
-    reverse_proxy 127.0.0.1:8080
-}
-```
+
+Nên đặt **IP tĩnh** (hoặc DHCP reservation) cho máy chủ và một bản ghi DNS nội bộ
+(vd `ketoan.local` trên DNS của domain controller) để người dùng gõ `http://ketoan.local:8080`
+thay vì nhớ IP. Nếu không có DNS nội bộ, thêm dòng vào `C:\Windows\System32\drivers\etc\hosts` của từng máy trạm.
+
+### HTTPS — khi nào cần
+
+Chạy thuần LAN, không public: **HTTP cổng 8080 là đủ**, không cần chứng chỉ. Không xin được
+Let's Encrypt cho tên miền nội bộ (không có DNS công khai), nên đừng dựng Caddy/ACME ở mô hình này.
+
+Vẫn nên bật TLS nếu: LAN có Wi-Fi khách/không tin cậy, có yêu cầu tuân thủ nội bộ, hoặc
+sau này mở truy cập từ xa. Khi đó chọn 1 trong 2 và **không mở cổng ra Internet**:
+
+- **VPN** (khuyến nghị cho truy cập từ xa): giữ nguyên HTTP:8080, người dùng vào qua VPN của công ty. Không đổi gì trong ứng dụng.
+- **IIS làm reverse proxy TLS** với chứng chỉ do AD Certificate Services (hoặc self-signed) cấp:
+  1. Cài IIS role → [ARR](https://www.iis.net/downloads/microsoft/application-request-routing) + [URL Rewrite](https://www.iis.net/downloads/microsoft/url-rewrite).
+  2. Tạo site trống, bind 443 với chứng chỉ nội bộ.
+  3. URL Rewrite → rule inbound: pattern `(.*)` → rewrite `http://localhost:8080/{R:1}`, type `Rewrite`.
+  4. Đổi firewall: mở 443 cho `$Lan`, gỡ rule 8080.
+  5. Push CA nội bộ vào Trusted Root của máy trạm bằng Group Policy, nếu không trình duyệt sẽ cảnh báo.
+
+Dù chạy LAN, **vẫn giữ mật khẩu mạnh và JWT secret ngẫu nhiên** (script `setup-database.ps1` đã sinh sẵn) — phần lớn rủi ro rò rỉ dữ liệu kế toán đến từ máy trạm trong mạng, không phải từ Internet.
 
 ## 7. Backup & phục hồi
 
