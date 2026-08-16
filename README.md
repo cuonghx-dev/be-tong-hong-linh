@@ -39,6 +39,11 @@ pnpm dev                       # chạy web + api song song (turbo)
 - API: http://localhost:3000/api
 - Swagger: http://localhost:3000/api/docs
 
+## Triển khai (production)
+
+- Windows Server: [docs/deploy-windows-server.md](docs/deploy-windows-server.md) — script tự động ở `scripts/windows/`
+- Yêu cầu phần cứng / sizing: [docs/hardware-requirements.md](docs/hardware-requirements.md)
+
 ## Scripts (root, qua turbo)
 
 | Lệnh | Việc |

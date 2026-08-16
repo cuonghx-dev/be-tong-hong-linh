@@ -16,6 +16,10 @@ build/
 .env
 .env.local
 .env.*.local
+.env.production
+
+# runtime (pm2 trên máy chủ)
+logs/
 
 # prisma
 apps/api/prisma/*.db
