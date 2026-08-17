@@ -4,6 +4,8 @@ Hướng dẫn cài đặt Kế toán SME trên máy chủ Windows Server 2019/2
 
 Mô hình triển khai: **máy chủ đặt trong LAN nội bộ của doanh nghiệp, không public ra Internet** — người dùng truy cập `http://<ip-máy-chủ>:8080` từ máy trạm cùng mạng. Xem §6 cho firewall và trường hợp cần HTTPS/truy cập từ xa.
 
+Windows 10/11 cũng chạy được toàn bộ hướng dẫn này (đã kiểm chứng trên Windows 11 build 26200), chỉ thêm 2 lưu ý: máy client hay thiếu `winget` (tải installer trực tiếp, xem §2) và mặc định tự ngủ (tắt sleep, xem §5).
+
 Cấu hình phần cứng cần có: [hardware-requirements.md](hardware-requirements.md).
 
 Kiến trúc sau khi cài:
@@ -118,7 +120,14 @@ pm2 logs ketoan-api --lines 50
 
 ## 5. Cho pm2 tự chạy sau khi reboot
 
-pm2 trên Windows không có `pm2 startup` như Linux. Dùng `pm2-installer` (khuyến nghị):
+> **Bắt buộc dùng pm2 5.x.** pm2 7.0.3 làm `ketoan-api` chết ngay khi start với
+> `Cannot find module '@nestjs/common'` (ném từ `require-in-the-middle` trong
+> `ProcessContainerFork`), dù `node dist/main.js` chạy tay hoàn toàn bình thường.
+> Đặt `NODE_PATH` vào store ẩn của pnpm và cài lại deps kiểu `node-linker=hoisted`
+> đều **không** chữa được. `install-prereqs.ps1` đã pin `pm2@5.4.3`; `deploy.ps1`
+> chặn luôn nếu phát hiện bản khác.
+
+pm2 trên Windows không có `pm2 startup` như Linux. Dùng `pm2-installer`:
 
 ```powershell
 # Tải https://github.com/jessety/pm2-installer → giải nén → trong thư mục đó:
@@ -127,17 +136,51 @@ npm run configure-policy
 npm run setup
 ```
 
-Sau đó lưu danh sách tiến trình hiện tại vào dump của service:
+Nó tạo service `pm2.exe` với `PM2_HOME=C:\ProgramData\pm2\home`. Bước `setup` có thể
+treo ở đoạn chờ service khởi động — cứ Ctrl+C rồi `Start-Service pm2.exe` bằng tay,
+service vẫn dùng được.
+
+### Service phải chạy bằng account người dùng, không phải LocalSystem
+
+Mặc định pm2-installer chạy service dưới `LocalSystem`, và trong ngữ cảnh đó api lại
+lỗi `MODULE_NOT_FOUND` y như với pm2 7. Đổi sang account đang cài đặt (thay tên/mật khẩu):
 
 ```powershell
+Stop-Service pm2.exe -Force
+sc.exe config pm2.exe obj= ".\<tên-user>" password= "<mật-khẩu>"
+Start-Service pm2.exe
+```
+
+Nếu service báo lỗi 1069 (đăng nhập thất bại), cấp quyền **Log on as a service** cho
+account đó: `secpol.msc → Local Policies → User Rights Assignment → Log on as a service`.
+
+Sau đó nạp app vào daemon của service và lưu lại:
+
+```powershell
+$env:PM2_HOME = [Environment]::GetEnvironmentVariable('PM2_HOME','Machine')
+pm2 start C:\apps\ke-toan-SME\scripts\windows\ecosystem.config.cjs --update-env
 pm2 save
 ```
 
-Kiểm tra: `Get-Service pm2.exe` phải `Running`. Reboot thử một lần rồi `pm2 status`.
+`$env:PM2_HOME` là bắt buộc ở mọi phiên: thiếu nó, `pm2` tự dựng daemon riêng theo
+phiên đăng nhập, và **Windows kết liễu daemon đó khi phiên SSH/RDP đóng** — app tắt theo.
+
+Kiểm tra: `Get-Service pm2.exe` phải `Running`, `pm2 status` thấy 2 app `online`.
+Reboot thử một lần rồi `pm2 status` lại.
 
 Cách thay thế — [NSSM](https://nssm.cc/): tạo service chạy trực tiếp
 `node C:\apps\ke-toan-SME\apps\api\dist\main.js` và
-`node C:\apps\ke-toan-SME\scripts\windows\web-server.cjs`, bỏ pm2 hoàn toàn.
+`node C:\apps\ke-toan-SME\scripts\windows\web-server.cjs`, bỏ pm2 hoàn toàn. Cách này
+tránh được cả hai vấn đề pm2 ở trên, đổi lại mất `pm2 logs`/`pm2 monit`.
+
+### Máy chủ không được ngủ
+
+Bản Windows client (10/11) mặc định sleep sau ít phút — app và SSH đứt theo:
+
+```powershell
+powercfg /change standby-timeout-ac 0
+powercfg /change hibernate-timeout-ac 0
+```
 
 ## 6. Tường lửa (triển khai LAN nội bộ)
 
@@ -247,7 +290,12 @@ File log ghi ở `C:\apps\ke-toan-SME\logs\` (`api-out.log`, `api-err.log`, `web
 
 | Triệu chứng | Nguyên nhân & cách xử lý |
 |---|---|
+| `pm2 status` → `errored`, log có `Cannot find module '@nestjs/common'` | Sai bản pm2 (phải 5.x) hoặc service đang chạy dưới LocalSystem. Xem §5. Kiểm tra nhanh: `node apps\api\dist\main.js` chạy tay được mà pm2 thì không ⇒ đúng lỗi này. |
+| `pm2 status` rỗng, mỗi lần đăng nhập lại thấy `Spawning PM2 daemon` | Thiếu `$env:PM2_HOME` nên pm2 nói chuyện với daemon riêng của phiên, daemon đó chết khi thoát SSH/RDP. Xem §5. |
 | `pm2 status` → `errored`, log có `Cannot find module '.prisma/client'` | Thiếu bước generate. Chạy `pnpm --filter @app/api prisma:generate` rồi `pm2 restart ketoan-api`. |
+| `prisma generate` lỗi `EPERM: operation not permitted, rename ... query_engine-windows.dll.node` | API đang chạy và giữ file engine. `pm2 stop ketoan-api` rồi generate lại (`deploy.ps1` đã tự làm). |
+| Script `.ps1` báo `Missing closing '}'` / `The string is missing the terminator` dù code đúng | File `.ps1` bị lưu mất BOM: Windows PowerShell 5.1 đọc theo ANSI nên ký tự tiếng Việt/em dash hoá thành dấu nháy. Lưu lại UTF-8 **có BOM**. |
+| Cài PostgreSQL qua SSH lỗi `Error writing file ... temp_check_comspec.bat` | Installer EDB cần session tương tác. Chạy qua Scheduled Task dưới SYSTEM, hoặc cài trực tiếp tại máy/RDP. |
 | API log `P1001: Can't reach database server` | Service `postgresql-x64-16` chưa chạy, hoặc `DATABASE_URL` sai. `Get-Service postgresql*`; kiểm tra `apps\api\.env`. |
 | API log `P1000: Authentication failed` | Sai mật khẩu role `ketoan`. Chạy lại `setup-database.ps1 -Force -DbPassword ...`. |
 | Web mở được nhưng mọi API trả 502 | `ketoan-api` chết. `pm2 logs ketoan-api`. |

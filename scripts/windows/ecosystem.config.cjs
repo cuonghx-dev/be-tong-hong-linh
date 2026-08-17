@@ -17,6 +17,15 @@ const logDir = path.join(repoRoot, 'logs')
 const API_PORT = process.env.API_PORT || 3000
 const WEB_PORT = process.env.WEB_PORT || 8080
 
+// Yêu cầu pm2 5.x (xem install-prereqs.ps1). Với pm2 7.0.3, tiến trình con không
+// resolve được dependency của api: "Cannot find module '@nestjs/common'" ném từ
+// require-in-the-middle trong ProcessContainerFork, dù chạy `node dist/main.js`
+// trực tiếp thì bình thường. Đặt NODE_PATH hay cài lại deps kiểu hoisted đều không
+// chữa được — chỉ hạ pm2 mới hết.
+//
+// Service pm2 cũng phải chạy bằng account người dùng, KHÔNG phải LocalSystem: dưới
+// LocalSystem lỗi MODULE_NOT_FOUND quay lại y như trên.
+
 module.exports = {
   apps: [
     {

@@ -41,9 +41,28 @@ if (-not (Test-Path (Join-Path $repoRoot 'apps\api\.env'))) {
   throw 'Thieu apps\api\.env. Chay .\scripts\windows\setup-database.ps1 truoc.'
 }
 
+$pm2Ver = (pm2 -v 2>&1 | Select-Object -Last 1).Trim()
+if ($pm2Ver -notlike '5.*') {
+  throw "pm2 $pm2Ver khong chay duoc api (can 5.x). Xem install-prereqs.ps1."
+}
+
+# pm2 client phai tro vao PM2_HOME cua service, khong thi no spawn daemon rieng theo
+# phien dang nhap va daemon do bi Windows ket lieu khi phien SSH/RDP dong.
+$svcHome = [Environment]::GetEnvironmentVariable('PM2_HOME', 'Machine')
+if ($svcHome) {
+  $env:PM2_HOME = $svcHome
+  Write-Host "PM2_HOME = $svcHome" -ForegroundColor DarkGray
+} else {
+  Write-Host 'Chua co PM2_HOME cap may — pm2 chua duoc cai thanh Windows Service (xem docs §5).' -ForegroundColor Yellow
+}
+
 if (-not $SkipInstall) {
   Invoke-Step 'pnpm install' { pnpm install --frozen-lockfile }
 }
+
+# Prisma khong ghi de duoc query_engine-windows.dll.node khi api dang chay (EPERM khi
+# rename file .tmp) → dung api truoc, pm2 start lai o cuoi script.
+pm2 stop ketoan-api 2>&1 | Out-Null
 
 # Khong co postinstall → phai generate Prisma Client thu cong truoc khi build.
 Invoke-Step 'prisma generate' { pnpm --filter @app/api prisma:generate }

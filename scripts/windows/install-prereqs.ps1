@@ -83,13 +83,19 @@ if ($SkipPostgres) {
   Write-Host 'Mat khau superuser postgres do trinh cai dat hoi (mac dinh winget: postgres).' -ForegroundColor Yellow
 }
 
-# --- pm2 + pm2-installer (chay app nhu Windows Service) ---
+# --- pm2 (BAT BUOC ban 5.x) ---
+# pm2 7.0.3 lam api chet ngay khi start: "Cannot find module '@nestjs/common'" ném từ
+# require-in-the-middle trong ProcessContainerFork, du `node dist/main.js` chay binh thuong.
+# Da thu NODE_PATH va cai lai deps kieu hoisted -> khong chua duoc. Nen pin 5.x.
 Refresh-Path
-if (Test-Cmd 'pm2') {
-  Write-Host "pm2 da co: $(pm2 -v)" -ForegroundColor Green
+$pm2Wanted = '5.4.3'
+$pm2Have = if (Test-Cmd 'pm2') { (pm2 -v 2>&1 | Select-Object -Last 1).Trim() } else { $null }
+if ($pm2Have -like '5.*') {
+  Write-Host "pm2 da co ban phu hop: $pm2Have" -ForegroundColor Green
 } else {
-  Write-Host '==> Cai pm2 toan cuc' -ForegroundColor Cyan
-  npm install -g pm2
+  if ($pm2Have) { Write-Host "pm2 $pm2Have khong dung (can 5.x), cai lai" -ForegroundColor Yellow }
+  Write-Host "==> Cai pm2@$pm2Wanted toan cuc" -ForegroundColor Cyan
+  npm install -g "pm2@$pm2Wanted"
   Refresh-Path
 }
 
