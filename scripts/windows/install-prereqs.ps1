@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Cài phần mềm nền cho Kế toán SME trên Windows Server (Node 20 LTS, pnpm 9, PostgreSQL 16, pm2).
 

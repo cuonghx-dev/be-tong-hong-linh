@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Backup database Kế toán SME bang pg_dump (format custom, nen san).
 

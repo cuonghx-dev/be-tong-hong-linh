@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Build + migrate + (re)start Kế toán SME bang pm2 tren Windows Server.
 

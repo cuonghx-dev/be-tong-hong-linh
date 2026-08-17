@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Tao role + database Postgres cho Kế toán SME va sinh file .env production.
 
@@ -49,7 +49,8 @@ $$;
 $sqlRole | psql -h $DbHost -p $DbPort -U $SuperUser -d postgres -v ON_ERROR_STOP=1 -f -
 if ($LASTEXITCODE -ne 0) { throw 'Tao role that bai.' }
 
-$exists = (psql -h $DbHost -p $DbPort -U $SuperUser -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DbName'").Trim()
+# DB chưa tồn tại → psql không in dòng nào → biến là $null, bọc "$(...)" để khỏi gọi .Trim() trên null.
+$exists = "$(psql -h $DbHost -p $DbPort -U $SuperUser -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DbName'")".Trim()
 if ($exists -ne '1') {
   psql -h $DbHost -p $DbPort -U $SuperUser -d postgres -v ON_ERROR_STOP=1 `
     -c "CREATE DATABASE $DbName OWNER $DbUser ENCODING 'UTF8' TEMPLATE template0;"
