@@ -53,11 +53,13 @@ if (-not $SkipMigrate) {
   Invoke-Step 'prisma migrate deploy' { pnpm --filter @app/api prisma:deploy }
 }
 
+# Build TRUOC seed: seed chay bang ts-node va import @app/shared, ma package do
+# resolve qua "main": dist/index.js → chua build thi loi TS2307 Cannot find module.
+Invoke-Step 'build (shared + api + web)' { pnpm build }
+
 if ($Seed) {
   Invoke-Step 'prisma db seed (danh muc ban dau)' { pnpm --filter @app/api prisma:initial-db }
 }
-
-Invoke-Step 'build (shared + api + web)' { pnpm build }
 
 $ecosystem = Join-Path $PSScriptRoot 'ecosystem.config.cjs'
 Write-Host '==> pm2 start/reload' -ForegroundColor Cyan
