@@ -62,7 +62,9 @@ if (-not $SkipInstall) {
 
 # Prisma khong ghi de duoc query_engine-windows.dll.node khi api dang chay (EPERM khi
 # rename file .tmp) → dung api truoc, pm2 start lai o cuoi script.
-pm2 stop ketoan-api 2>&1 | Out-Null
+# Boc qua cmd /c: lan deploy dau tien process chua ton tai, pm2 in ra stderr va
+# $ErrorActionPreference='Stop' se bien no thanh terminating error lam script chet.
+cmd /c 'pm2 stop ketoan-api >NUL 2>&1'
 
 # Khong co postinstall → phai generate Prisma Client thu cong truoc khi build.
 Invoke-Step 'prisma generate' { pnpm --filter @app/api prisma:generate }
