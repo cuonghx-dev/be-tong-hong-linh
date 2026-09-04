@@ -96,9 +96,37 @@ powercfg /setactive SCHEME_CURRENT
 
 ### 1.4 Giữ chính sách "Quick removal"
 
-Windows mặc định đặt ổ rời ở *Quick removal* (tắt write cache) — **giữ nguyên**. Đổi sang *Better performance* là bật write cache: mất điện hoặc rút nhầm ổ sẽ hỏng data directory PostgreSQL.
+Windows mặc định đặt ổ rời ở *Quick removal* — tắt write cache của thiết bị, mọi lệnh ghi xuống thẳng ổ. **Giữ nguyên.**
 
-Kiểm tra: Device Manager → ổ đĩa → tab *Policies*.
+*Better performance* bật write cache: Windows báo "đã ghi xong" trong khi dữ liệu còn nằm trong RAM. Mất điện hoặc rút nhầm ổ ⇒ WAL và data file của PostgreSQL ghi dở, sai thứ tự ⇒ hỏng data directory, phải phục hồi từ backup.
+
+Kiểm tra và đặt lại:
+
+1. `Win+X` → *Device Manager* (hoặc `Win+R` → `devmgmt.msc`).
+2. Mở nhánh **Disk drives**, chọn đúng ổ rời theo tên model (vd `Samsung T7 USB Device`). Nhánh *Universal Serial Bus controllers* không có tab này — đừng nhầm.
+3. Chuột phải → *Properties* → tab **Policies**.
+4. Chọn **Quick removal (default)**. Nếu đang ở *Better performance*, bỏ luôn cả checkbox *Enable write caching on the device* bên dưới.
+5. OK. Windows có thể yêu cầu rút–cắm lại ổ để áp dụng.
+
+Không có tab *Policies* = ổ đang gắn qua cầu USB báo mình là ổ cố định (một số enclosure/NVMe adapter). Khi đó xử lý như ổ trong máy: giữ nguyên mặc định của Windows, và bù lại bằng UPS + backup (§7) — vì write cache của ổ cố định luôn bật.
+
+Kiểm tra nhanh bằng PowerShell (key chỉ xuất hiện khi đã từng đổi tay, `1` = đang bật cache, phải sửa lại):
+
+```powershell
+Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Enum\USBSTOR' -Recurse -ErrorAction SilentlyContinue |
+  Where-Object { $_.PSChildName -eq 'Classpnp' } |
+  ForEach-Object { Get-ItemProperty $_.PSPath -Name UserWriteCacheSetting -ErrorAction SilentlyContinue }
+```
+
+Tab *Policies* trong Device Manager mới là nguồn chính xác — registry chỉ để soát nhanh.
+
+Ba điểm dễ hiểu nhầm:
+
+- Chính sách gắn theo **từng thiết bị**, đôi khi theo từng cổng USB. Đổi cổng hoặc thay ổ là phải kiểm tra lại.
+- *Quick removal* chỉ tắt cache **phía Windows**. Cache DRAM trong bản thân ổ SSD/enclosure vẫn còn và vẫn có thể nói dối lúc mất điện. Cho nên vẫn cần UPS cho máy chủ và backup hằng ngày ra ổ khác.
+- *Quick removal* **không** có nghĩa rút ổ lúc nào cũng được. Tiến trình đang mở file (PostgreSQL) thì rút vẫn hỏng. Luôn theo trình tự ở §8.
+
+Đừng đụng vào `fsync`, `synchronous_commit`, `full_page_writes` trong `postgresql.conf` — mặc định đã đúng, tắt đi để chạy nhanh hơn trên ổ rời là cách nhanh nhất để mất dữ liệu kế toán.
 
 ### 1.5 BitLocker
 
