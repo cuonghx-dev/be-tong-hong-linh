@@ -130,11 +130,39 @@ Ba điểm dễ hiểu nhầm:
 
 ### 1.5 BitLocker
 
-Ổ rời bật BitLocker To Go mà không auto-unlock thì sau reboot ổ vẫn khoá, service PostgreSQL fail dù đã đặt delayed start. Hoặc tắt BitLocker cho ổ này, hoặc:
+**Chỉ làm mục này khi ổ rời đang bật BitLocker To Go.** Kiểm tra trước:
+
+```powershell
+Get-BitLockerVolume | Select-Object MountPoint, VolumeType, ProtectionStatus, AutoUnlockEnabled
+```
+
+`ProtectionStatus = Off` trên `F:` ⇒ ổ không mã hoá, bỏ qua toàn bộ §1.5, sang §1.6.
+
+Ổ có BitLocker mà không auto-unlock thì sau reboot ổ vẫn khoá, service PostgreSQL fail dù đã đặt delayed start, người dùng không vào được phần mềm. Hai lựa chọn:
+
+**Tắt mã hoá cho ổ dữ liệu (khuyến nghị với mô hình LAN nội bộ, ổ cắm cố định):**
+
+```powershell
+Disable-BitLocker -MountPoint F:
+Get-BitLockerVolume -MountPoint F: | Select-Object VolumeStatus, EncryptionPercentage   # cho toi khi FullyDecrypted
+```
+
+Giải mã chạy nền, có thể vài chục phút tới vài giờ tuỳ dung lượng — không rút ổ, không tắt máy giữa chừng. Đánh đổi: ai cầm được ổ vật lý là đọc được toàn bộ dữ liệu kế toán; bù lại bằng kiểm soát ra vào phòng máy và mã hoá bản backup.
+
+**Giữ mã hoá, bật auto-unlock** (khi có quy định nội bộ bắt mã hoá). Auto-unlock đòi ổ hệ điều hành `C:` cũng phải được BitLocker bảo vệ — bật cho `C:` trước, rồi:
 
 ```powershell
 Enable-BitLockerAutoUnlock -MountPoint F:
 ```
+
+Đừng dùng phương án nhập mật khẩu tay cho ổ dữ liệu: mỗi lần reboot phải có người ngồi tại máy gõ mật khẩu, nếu không DB không lên.
+
+| Lỗi của `Enable-BitLockerAutoUnlock` | Nghĩa | Xử lý |
+|---|---|---|
+| `BitLocker Drive Encryption is not enabled on this drive` (`0x80310008`, `FVE_E_NOT_ACTIVATED`) | Ổ `F:` không mã hoá | Không phải sự cố. Bỏ qua §1.5. |
+| `The operating system volume is not protected` (`FVE_E_OS_NOT_PROTECTED`) | `C:` chưa bật BitLocker | Bật BitLocker cho `C:`, hoặc `Disable-BitLocker -MountPoint F:`. |
+| `The term 'Enable-BitLockerAutoUnlock' is not recognized` | Windows bản Home, không có module BitLocker | Không dùng BitLocker To Go được. Để ổ không mã hoá, hoặc nâng lên Pro. |
+| `Access is denied` | Chưa nâng quyền | Mở PowerShell **Run as Administrator**. |
 
 ### 1.6 Phần cứng
 
