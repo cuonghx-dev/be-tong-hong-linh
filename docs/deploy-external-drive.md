@@ -40,9 +40,9 @@ Chữ ổ đổi thì gãy đồng loạt, không cái nào tự chữa:
 
 | Thành phần | Đường dẫn dính chữ ổ | Hậu quả |
 |---|---|---|
-| Service PostgreSQL | `binPath` có `-D "F:\pgdata"` (§3) | Service không start, log `could not open directory`. API kèm theo lỗi `P1001`. |
-| pm2 | `pm2 save` ghi cứng đường dẫn `ecosystem.config.cjs` và script vào dump (§6) | Sau reboot pm2 resurrect fail, `ketoan-api`/`ketoan-web` không lên. |
-| Scheduled Task backup | `-File F:\apps\...\backup-db.ps1` (§7) | Backup fail âm thầm hằng đêm — chỉ lộ ra lúc cần phục hồi. |
+| Service PostgreSQL | `binPath` có `-D "F:\pgdata"` (§4) | Service không start, log `could not open directory`. API kèm theo lỗi `P1001`. |
+| pm2 | `pm2 save` ghi cứng đường dẫn `ecosystem.config.cjs` và script vào dump (§7) | Sau reboot pm2 resurrect fail, `ketoan-api`/`ketoan-web` không lên. |
+| Scheduled Task backup | `-File F:\apps\...\backup-db.ps1` (§8) | Backup fail âm thầm hằng đêm — chỉ lộ ra lúc cần phục hồi. |
 | `apps\api\.env` | Không dính (trỏ `localhost`) | Không ảnh hưởng. |
 
 Gán chữ:
@@ -108,7 +108,7 @@ Kiểm tra và đặt lại:
 4. Chọn **Quick removal (default)**. Nếu đang ở *Better performance*, bỏ luôn cả checkbox *Enable write caching on the device* bên dưới.
 5. OK. Windows có thể yêu cầu rút–cắm lại ổ để áp dụng.
 
-Không có tab *Policies* = ổ đang gắn qua cầu USB báo mình là ổ cố định (một số enclosure/NVMe adapter). Khi đó xử lý như ổ trong máy: giữ nguyên mặc định của Windows, và bù lại bằng UPS + backup (§7) — vì write cache của ổ cố định luôn bật.
+Không có tab *Policies* = ổ đang gắn qua cầu USB báo mình là ổ cố định (một số enclosure/NVMe adapter). Khi đó xử lý như ổ trong máy: giữ nguyên mặc định của Windows, và bù lại bằng UPS + backup (§8) — vì write cache của ổ cố định luôn bật.
 
 Kiểm tra nhanh bằng PowerShell (key chỉ xuất hiện khi đã từng đổi tay, `1` = đang bật cache, phải sửa lại):
 
@@ -124,7 +124,7 @@ Ba điểm dễ hiểu nhầm:
 
 - Chính sách gắn theo **từng thiết bị**, đôi khi theo từng cổng USB. Đổi cổng hoặc thay ổ là phải kiểm tra lại.
 - *Quick removal* chỉ tắt cache **phía Windows**. Cache DRAM trong bản thân ổ SSD/enclosure vẫn còn và vẫn có thể nói dối lúc mất điện. Cho nên vẫn cần UPS cho máy chủ và backup hằng ngày ra ổ khác.
-- *Quick removal* **không** có nghĩa rút ổ lúc nào cũng được. Tiến trình đang mở file (PostgreSQL) thì rút vẫn hỏng. Luôn theo trình tự ở §8.
+- *Quick removal* **không** có nghĩa rút ổ lúc nào cũng được. Tiến trình đang mở file (PostgreSQL) thì rút vẫn hỏng. Luôn theo trình tự ở §9.
 
 Đừng đụng vào `fsync`, `synchronous_commit`, `full_page_writes` trong `postgresql.conf` — mặc định đã đúng, tắt đi để chạy nhanh hơn trên ổ rời là cách nhanh nhất để mất dữ liệu kế toán.
 
@@ -168,12 +168,39 @@ Enable-BitLockerAutoUnlock -MountPoint F:
 
 Nên dùng SSD qua USB 3.0 trở lên. HDD 5400rpm qua USB 2.0 làm PostgreSQL chậm thấy rõ và `pnpm install` kéo dài hàng chục phút.
 
-## 2. Cài phần mềm nền (trên C:, như bình thường)
+## 2. Lấy mã nguồn về ổ rời
+
+Phải làm **trước** khi cài phần mềm nền, vì script cài nằm trong repo.
+
+```powershell
+git --version
+```
+
+Chưa có git thì cài, rồi **đóng và mở lại PowerShell** (as Administrator) cho PATH nạp lệnh mới:
+
+```powershell
+winget install --id Git.Git -e --source winget
+```
+
+```powershell
+git clone <repo-url> F:\apps\ke-toan-SME
+cd F:\apps\ke-toan-SME
+```
+
+Repo private sẽ hỏi đăng nhập: dùng **Personal Access Token** làm mật khẩu (GitHub không nhận mật khẩu tài khoản cho HTTPS). Tạo ở GitHub → *Settings → Developer settings → Personal access tokens → Fine-grained*, cấp quyền `Contents: Read` trên đúng repo này.
+
+Không muốn dựng git trên máy chủ: tải zip (*Code → Download ZIP*) rồi giải nén vào `F:\apps\ke-toan-SME`. Đánh đổi: nâng cấp sau này không `git pull` được, phải tải lại zip.
+
+Mọi lệnh từ đây trở đi chạy tại `F:\apps\ke-toan-SME`.
+
+## 3. Cài phần mềm nền (trên C:, như bình thường)
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\scripts\windows\install-prereqs.ps1
 ```
+
+`.\scripts\...` báo `is not recognized` = đang đứng sai thư mục. `cd F:\apps\ke-toan-SME` rồi chạy lại.
 
 Node 20 LTS, pnpm 9, **pm2 5.4.3** (bắt buộc 5.x — xem deploy-windows-server §5), PostgreSQL 16. Ghi lại mật khẩu superuser `postgres`.
 
@@ -189,7 +216,7 @@ Loại trừ antivirus cho ổ dữ liệu — Defender quét real-time trên US
 Add-MpPreference -ExclusionPath 'F:\pgdata','F:\apps\ke-toan-SME','F:\pnpm-store'
 ```
 
-## 3. Chuyển data directory PostgreSQL sang F:
+## 4. Chuyển data directory PostgreSQL sang F:
 
 Bỏ qua mục này nếu chỉ muốn mã nguồn nằm trên ổ rời, còn DB để nguyên `C:`.
 
@@ -216,17 +243,15 @@ psql -U postgres -c "SHOW data_directory;"    # F:/pgdata
 
 Chạy ổn định rồi mới đổi tên thư mục data cũ thành `data.bak`; giữ 1–2 tuần trước khi xoá.
 
-## 4. Đưa mã nguồn lên ổ rời + tạo database
+## 5. Tạo database + file .env
 
 ```powershell
-git clone <repo-url> F:\apps\ke-toan-SME
-cd F:\apps\ke-toan-SME
 .\scripts\windows\setup-database.ps1 -DbPassword 'MatKhauManh#2026'
 ```
 
 Sinh `apps\api\.env` và `apps\web\.env.production`. Không phải sửa gì cho ổ rời: `scripts/windows/ecosystem.config.cjs` tính `repoRoot` theo vị trí file nên tự bám `F:`.
 
-## 5. Build + chạy
+## 6. Build + chạy
 
 ```powershell
 $env:INITIAL_DB_ADMIN_PASSWORD = 'MatKhauAdmin#2026'
@@ -238,7 +263,7 @@ Mở `http://<ip-may-chu>:8080`. **Đổi mật khẩu admin ngay sau lần đă
 
 `pnpm install` lỗi `EPERM` khi tạo symlink → bật Developer Mode hoặc chạy PowerShell as Administrator.
 
-## 6. pm2 tự chạy sau khi reboot
+## 7. pm2 tự chạy sau khi reboot
 
 Làm theo deploy-windows-server §5, hai khác biệt:
 
@@ -260,7 +285,7 @@ pm2 save
 
 Reboot thử một lần, rồi kiểm tra `Get-Service pm2.exe`, `Get-Service postgresql-x64-16`, `pm2 status`.
 
-## 7. Tường lửa và backup
+## 8. Tường lửa và backup
 
 Firewall giữ nguyên deploy-windows-server §6 (mở 8080 cho LAN, chặn 3000 và 5432).
 
@@ -273,7 +298,7 @@ schtasks /Create /SC DAILY /ST 01:00 /RU SYSTEM /TN "KetoanSME-Backup" `
 
 `backup-db.ps1` cần mật khẩu DB từ `%PGPASSWORD%` hoặc `%APPDATA%\postgresql\pgpass.conf` vì Task Scheduler chạy không tương tác.
 
-## 8. Rút ổ rời — đọc kỹ
+## 9. Rút ổ rời — đọc kỹ
 
 > **Không rút ổ khi ứng dụng đang chạy.** PostgreSQL đang ghi mà mất ổ đột ngột sẽ hỏng data directory, nguy cơ mất toàn bộ dữ liệu kế toán.
 
@@ -291,14 +316,14 @@ Start-Service postgresql-x64-16
 pm2 start all
 ```
 
-## 9. Xử lý sự cố riêng của mô hình ổ rời
+## 10. Xử lý sự cố riêng của mô hình ổ rời
 
 | Triệu chứng | Nguyên nhân & cách xử lý |
 |---|---|
-| Sau reboot PostgreSQL `errored`, log `could not open directory "F:\pgdata"` | Service chạy trước khi Windows mount ổ. Đặt `sc.exe config postgresql-x64-16 start= delayed-auto` (§3). Nếu ổ có BitLocker: bật auto-unlock (§1.5). |
+| Sau reboot PostgreSQL `errored`, log `could not open directory "F:\pgdata"` | Service chạy trước khi Windows mount ổ. Đặt `sc.exe config postgresql-x64-16 start= delayed-auto` (§4). Nếu ổ có BitLocker: bật auto-unlock (§1.5). |
 | Chữ ổ nhảy thành `G:` | Ghim lại `F` trong `diskmgmt.msc` (§1.2). Nếu đã lỡ chạy với chữ ổ khác, sửa lại `binPath` của service PostgreSQL. |
 | `pnpm install` lỗi `EPERM` khi tạo symlink | Ổ không phải NTFS (§1.1), hoặc thiếu quyền — bật Developer Mode / chạy as Administrator. |
-| `pnpm install` rất chậm, ổ đầy nhanh | pnpm store nằm khác volume nên không hardlink được. `pnpm config set store-dir F:\pnpm-store`, xoá `node_modules` rồi cài lại (§2). |
-| `initdb`/`pg_ctl` báo permission denied trên `F:\pgdata` | Thiếu ACL cho user `postgres`. Chạy lại `icacls` ở §3. |
-| App chậm bất thường, disk 100% | Ổ USB ngủ (§1.3), antivirus quét (§2), hoặc phần cứng là HDD/USB 2.0 (§1.6). Cân nhắc để `pgdata` lại trên SSD trong máy, chỉ để mã nguồn + backup trên ổ rời. |
+| `pnpm install` rất chậm, ổ đầy nhanh | pnpm store nằm khác volume nên không hardlink được. `pnpm config set store-dir F:\pnpm-store`, xoá `node_modules` rồi cài lại (§3). |
+| `initdb`/`pg_ctl` báo permission denied trên `F:\pgdata` | Thiếu ACL cho user `postgres`. Chạy lại `icacls` ở §4. |
+| App chậm bất thường, disk 100% | Ổ USB ngủ (§1.3), antivirus quét (§3), hoặc phần cứng là HDD/USB 2.0 (§1.6). Cân nhắc để `pgdata` lại trên SSD trong máy, chỉ để mã nguồn + backup trên ổ rời. |
 | Mất điện xong DB không mở được | Write cache đang bật. Kiểm tra chính sách *Quick removal* (§1.4), phục hồi từ backup theo deploy-windows-server §7. |
