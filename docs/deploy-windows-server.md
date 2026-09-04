@@ -8,6 +8,8 @@ Windows 10/11 cũng chạy được toàn bộ hướng dẫn này (đã kiểm 
 
 Cấu hình phần cứng cần có: [hardware-requirements.md](hardware-requirements.md).
 
+Đặt mã nguồn và dữ liệu trên ổ cứng rời cắm cố định: [deploy-external-drive.md](deploy-external-drive.md) (chỉ khác đường dẫn và vài bước chuẩn bị ổ).
+
 Kiến trúc sau khi cài:
 
 ```
