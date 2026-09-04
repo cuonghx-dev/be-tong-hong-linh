@@ -34,9 +34,48 @@ Format-Volume -DriveLetter F -FileSystem NTFS -NewFileSystemLabel 'KETOAN'
 
 ### 1.2 Ghim chữ ổ đĩa
 
-`diskmgmt.msc` → chuột phải phân vùng → *Change Drive Letter and Paths* → chọn `F`.
+Windows lưu ánh xạ chữ ổ ↔ volume trong registry `HKLM\SYSTEM\MountedDevices`. Ánh xạ này có dính, nhưng vẫn mất khi: rút ổ ra rồi cắm USB/thẻ nhớ khác vào (thiết bị mới chiếm mất chữ, ổ kế toán cắm lại nhận chữ trống kế tiếp), đổi cổng USB trên vài controller, hoặc thêm phân vùng/ổ mạng trùng chữ. Chỉ chữ **gán tay** mới là entry cố định.
 
-Chữ ổ nhảy (do cắm USB khác) = `binPath` của service PostgreSQL và đường dẫn pm2 trỏ sai ⇒ cả hai chết.
+Chữ ổ đổi thì gãy đồng loạt, không cái nào tự chữa:
+
+| Thành phần | Đường dẫn dính chữ ổ | Hậu quả |
+|---|---|---|
+| Service PostgreSQL | `binPath` có `-D "F:\pgdata"` (§3) | Service không start, log `could not open directory`. API kèm theo lỗi `P1001`. |
+| pm2 | `pm2 save` ghi cứng đường dẫn `ecosystem.config.cjs` và script vào dump (§6) | Sau reboot pm2 resurrect fail, `ketoan-api`/`ketoan-web` không lên. |
+| Scheduled Task backup | `-File F:\apps\...\backup-db.ps1` (§7) | Backup fail âm thầm hằng đêm — chỉ lộ ra lúc cần phục hồi. |
+| `apps\api\.env` | Không dính (trỏ `localhost`) | Không ảnh hưởng. |
+
+Gán chữ:
+
+1. `Win+R` → `diskmgmt.msc`.
+2. Panel dưới, tìm đúng đĩa của ổ rời — đối chiếu dung lượng và nhãn `KETOAN` đặt ở §1.1. Nhìn nhầm là gán chữ cho ổ khác.
+3. Chuột phải **ô phân vùng** (ô có nhãn, không phải ô `Disk 2` bên trái) → *Change Drive Letter and Paths…*
+4. *Change…* → *Assign the following drive letter* → chọn `F` → OK → Yes.
+
+Nên chọn chữ ở cuối bảng chữ cái (`P:`, `S:`, `Z:`) thay vì `F:`: Windows cấp phát tự động cho USB mới theo thứ tự từ `D:` lên, chữ cao gần như không bị tranh. Đổi chữ thì phải sửa đồng loạt `binPath` service PostgreSQL, `pnpm config set store-dir`, đường dẫn đã `pm2 save`, Scheduled Task backup và exclusion Defender.
+
+Kiểm tra:
+
+```powershell
+Get-Volume F | Select-Object DriveLetter, FileSystemLabel, FileSystemType
+Get-Partition -DriveLetter F | Select-Object DiskNumber, PartitionNumber, Guid
+```
+
+Rồi rút ổ, cắm một USB khác vào, cắm ổ lại: `Get-Volume F` vẫn phải ra đúng nhãn `KETOAN`.
+
+#### Cách chắc hơn: mount vào thư mục, bỏ chữ ổ đĩa
+
+NTFS cho mount volume vào một **thư mục rỗng** thay vì chữ cái. Đường dẫn khi đó nằm trên `C:`, không có gì để nhảy:
+
+```powershell
+New-Item -ItemType Directory C:\ketoan-data -Force
+# diskmgmt.msc -> Change Drive Letter and Paths -> Add
+#   -> Mount in the following empty NTFS folder -> C:\ketoan-data
+```
+
+Rồi thay `F:\` bằng `C:\ketoan-data\` ở mọi mục sau (`C:\ketoan-data\pgdata`, `C:\ketoan-data\apps\ke-toan-SME`, …). Vẫn là ổ rời vật lý, chỉ khác cách trỏ tới.
+
+Đánh đổi: mở Explorer không nhận ra dữ liệu đang nằm trên ổ rời, và **khi ổ chưa cắm thì `C:\ketoan-data` trông như thư mục rỗng bình thường** — chạy tay `initdb` hay `deploy.ps1` lúc đó sẽ ghi thẳng vào ổ `C:`. Cắm cố định một máy thì gán chữ như trên là đủ và dễ vận hành hơn.
 
 ### 1.3 Tắt ngủ ổ đĩa và USB selective suspend
 
